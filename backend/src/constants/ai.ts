@@ -45,6 +45,12 @@ export const CLASSIFICATION_STATUS = {
   NO_CONTENT: 'NO_CONTENT'
 } as const;
 
+export const AI_LOG_MESSAGES = {
+  requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
+  invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
+  fallbackReturned: 'AI request failed; structured fallback response returned'
+} as const;
+
 export const NEW_CATEGORY_SENTINEL = 'NEW_CATEGORY_SUGGESTION';
 
 export const AI_MAX_LINE_ITEMS_IN_PROMPT = 150;

@@ -8,7 +8,7 @@ import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME 
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
 import { D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
-import { CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
+import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
 import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
 import logger from '../src/utils/logger';
 import { geminiService } from '../src/services/geminiService';
@@ -2203,6 +2203,59 @@ describe('Cloudflare worker core routes', () => {
         anomalies: [],
         error: 'anomaly service offline'
       });
+    });
+
+    it('logs AI provider failures with request correlation and the fallback action', async () => {
+      const errorLog = vi.spyOn(logger, 'error');
+      vi.spyOn(geminiService, 'extractLineItems').mockRejectedValueOnce(new Error('extract provider unavailable'));
+      vi.spyOn(aiCategorizationService, 'categorizeLineItems').mockRejectedValueOnce(new Error('categorizer unavailable'));
+      const { aiReportService } = await import('../src/services/aiReportService');
+      vi.spyOn(aiReportService, 'generateExecutiveSummary').mockRejectedValueOnce(new Error('report provider unavailable'));
+      vi.spyOn(aiAnomalyService, 'analyzeAnomalies').mockRejectedValueOnce(new Error('anomaly provider unavailable'));
+
+      const cases = [
+        {
+          operation: 'extract', path: '/api/ai/extract', error: 'extract provider unavailable',
+          init: jsonBody('POST', { documentText: 'Invoice' })
+        },
+        {
+          operation: 'categorize', path: '/api/ai/categorize', error: 'categorizer unavailable',
+          init: jsonBody('POST', { items: [] })
+        },
+        {
+          operation: 'executive-summary', path: '/api/ai/executive-summary', error: 'report provider unavailable',
+          init: jsonBody('POST', { tenantName: 'Acme' })
+        },
+        {
+          operation: 'analyze-anomalies', path: '/api/ai/analyze-anomalies', error: 'anomaly provider unavailable',
+          init: jsonBody('POST', { records: [] })
+        }
+      ];
+
+      for (const [index, testCase] of cases.entries()) {
+        const response = await send(testCase.path, {
+          ...testCase.init,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-id': `ai-fallback-${index + 1}`
+          }
+        });
+
+        expect(response.status).toBe(500);
+        expect(errorLog).toHaveBeenCalledWith(
+          AI_LOG_MESSAGES.fallbackReturned,
+          expect.objectContaining({
+            requestId: `ai-fallback-${index + 1}`,
+            method: 'POST',
+            path: testCase.path,
+            operation: testCase.operation,
+            statusCode: 500,
+            fallbackApplied: true,
+            durationMs: expect.any(Number)
+          }),
+          expect.objectContaining({ name: 'Error', message: testCase.error, stack: expect.any(String) })
+        );
+      }
     });
 
     it('falls back to a generic AI message when the failure carries no message', async () => {

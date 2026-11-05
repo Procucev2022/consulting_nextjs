@@ -4,7 +4,7 @@ import {
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
-import type { CloudflareEnvironment, CloudflareExecutionContext, CloudflareD1Database } from './types/cloudflare';
+import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
 import { handleUpgradeRoute } from './services/workerCommercialUpgrade';
 import { handleSubscriptionRoute } from './services/workerCommercialSubscriptions';
@@ -17,18 +17,11 @@ import {
   handleCryptoRoute,
   getTenantFromD1,
   getTaxonomyFromD1,
-  lookupTaxonomyRecordFromD1,
   getProcurementCategoryMappingsFromD1,
   requireD1Binding
 } from './workerD1';
-import { geminiService } from './services/geminiService';
-import { aiCategorizationService } from './services/aiCategorizationService';
-import { aiReportService } from './services/aiReportService';
-import { aiAnomalyService } from './services/aiAnomalyService';
-import { EXTRACTION_STATUS, CLASSIFICATION_STATUS } from './constants/ai';
-import type { AiCategorizationItem } from './types/ai';
 import {
-  d1DatasetScopeSchema, requestHeadersSchema, taxonomyQuerySchema, AI_EXTRACT_JSON_MAX_BYTES
+  d1DatasetScopeSchema, requestHeadersSchema, taxonomyQuerySchema
 } from './constants/validation';
 import logger from './utils/logger';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
@@ -48,151 +41,13 @@ import { handleGraphQLRoute } from './workerGraphql';
 import { handleDatabaseRoute } from './workerD1Database';
 import { handleD1DataRoute } from './workerD1DataRoutes';
 import { handleIngestionRoute } from './workerD1IngestionRoutes';
-
-const requestJsonFailureResponse = (request: Request, error: unknown): Response | null => {
-  const tooLarge = error instanceof RequestBodyTooLargeError;
-  if (!(error instanceof RequestJsonParseError) && !tooLarge) return null;
-  const message = tooLarge ? error.message : D1_ROUTE_MESSAGES.invalidJsonBody;
-  logger.warn(tooLarge ? 'AI endpoint rejected an oversized JSON request body' : 'AI endpoint rejected an invalid JSON request body', {
-    requestId: request.headers.get('x-request-id') || undefined,
-    method: request.method,
-    path: new URL(request.url).pathname,
-    statusCode: tooLarge ? 413 : 400,
-    maxBytes: tooLarge ? error.maxBytes : undefined
-  }, error instanceof RequestJsonParseError ? error.underlyingError : error);
-  return jsonResponse({
-    success: false,
-    message: tooLarge ? message : D1_ROUTE_MESSAGES.validationFailed,
-    errors: [{ path: 'body', message }]
-  }, tooLarge ? 413 : 400, request);
-};
+import { handleAiRoute } from './workerAiRoutes';
 
 const getTenant = async (environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
   requireD1Binding(environment.DB);
   return { ...await getTenantFromD1(environment.DB, environment.REQUEST_TENANT_ID) };
 };
 
-
-const handleAiRoute = async (request: Request, url: URL, environment: CloudflareEnvironment): Promise<Response> => {
-  geminiService.configureForEnvironment(environment);
-  aiCategorizationService.configureTaxonomyLookup(
-    environment.DB ? (query) => lookupTaxonomyRecordFromD1(environment.DB as CloudflareD1Database, query) : undefined
-  );
-  const start = Date.now();
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/config` && request.method === 'GET') {
-    const isConfigured = geminiService.isConfigured();
-    const models = geminiService.resolveModelChain();
-    return jsonResponse({
-      success: true,
-      configured: isConfigured,
-      primaryModel: models[0] || null,
-      fallbackModels: models.slice(1)
-    }, 200, request);
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/extract` && request.method === 'POST') {
-    try {
-      const body = await readJson(request, AI_EXTRACT_JSON_MAX_BYTES);
-      const result = await geminiService.extractLineItems({
-        documentText: body.documentText as string | undefined,
-        inlineData: body.inlineData as string | undefined,
-        mimeType: body.mimeType as string | undefined,
-        fileName: body.fileName as string | undefined
-      });
-      return jsonResponse({
-        success: result.status === EXTRACTION_STATUS.SUCCESS,
-        ...result,
-        durationMs: Date.now() - start
-      }, 200, request);
-    } catch (err: unknown) {
-      const invalidBodyResponse = requestJsonFailureResponse(request, err);
-      if (invalidBodyResponse) return invalidBodyResponse;
-      const errorObj = err as Error;
-      return jsonResponse({
-        success: false,
-        status: EXTRACTION_STATUS.AI_FAILED,
-        items: [],
-        error: errorObj.message || 'Internal AI Extraction Error'
-      }, 500, request);
-    }
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/categorize` && request.method === 'POST') {
-    try {
-      const body = await readJson(request);
-      const items = (Array.isArray(body.items) ? body.items : []) as AiCategorizationItem[];
-      const result = await aiCategorizationService.categorizeLineItems(items);
-      return jsonResponse({
-        success: result.status === CLASSIFICATION_STATUS.SUCCESS,
-        ...result,
-        durationMs: Date.now() - start
-      }, 200, request);
-    } catch (err: unknown) {
-      const invalidBodyResponse = requestJsonFailureResponse(request, err);
-      if (invalidBodyResponse) return invalidBodyResponse;
-      const errorObj = err as Error;
-      return jsonResponse({
-        success: false,
-        status: CLASSIFICATION_STATUS.AI_FAILED,
-        mappings: [],
-        error: errorObj.message || 'Internal AI Categorization Error'
-      }, 500, request);
-    }
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/executive-summary` && request.method === 'POST') {
-    try {
-      const body = await readJson(request);
-      const result = await aiReportService.generateExecutiveSummary({
-        tenantName: body.tenantName as string | undefined,
-        totalSpendInrCr: Number(body.totalSpendInrCr || 0),
-        categories: (body.categories as any) || [],
-        vendors: (body.vendors as any) || [],
-        currency: body.currency as string | undefined
-      });
-      return jsonResponse({
-        success: result.status === EXTRACTION_STATUS.SUCCESS,
-        ...result,
-        durationMs: Date.now() - start
-      }, 200, request);
-    } catch (err: unknown) {
-      const invalidBodyResponse = requestJsonFailureResponse(request, err);
-      if (invalidBodyResponse) return invalidBodyResponse;
-      const errorObj = err as Error;
-      return jsonResponse({
-        success: false,
-        status: EXTRACTION_STATUS.AI_FAILED,
-        data: null,
-        error: errorObj.message || 'Internal AI Executive Report Error'
-      }, 500, request);
-    }
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/analyze-anomalies` && request.method === 'POST') {
-    try {
-      const body = await readJson(request);
-      const records = (body.records as any) || [];
-      const result = await aiAnomalyService.analyzeAnomalies(records);
-      return jsonResponse({
-        success: result.status === EXTRACTION_STATUS.SUCCESS,
-        ...result,
-        durationMs: Date.now() - start
-      }, 200, request);
-    } catch (err: unknown) {
-      const invalidBodyResponse = requestJsonFailureResponse(request, err);
-      if (invalidBodyResponse) return invalidBodyResponse;
-      const errorObj = err as Error;
-      return jsonResponse({
-        success: false,
-        status: EXTRACTION_STATUS.AI_FAILED,
-        anomalies: [],
-        error: errorObj.message || 'Internal AI Anomaly Detection Error'
-      }, 500, request);
-    }
-  }
-
-  return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
-};
 
 const handleTaxonomyRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
   const validation = taxonomyQuerySchema.safeParse(Object.fromEntries(url.searchParams));

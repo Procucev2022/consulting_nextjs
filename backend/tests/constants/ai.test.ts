@@ -4,6 +4,7 @@ import {
   GEMINI_INLINE_MIME_TYPES,
   EXTRACTION_STATUS,
   CLASSIFICATION_STATUS,
+  AI_LOG_MESSAGES,
   NEW_CATEGORY_SENTINEL,
   AI_MAX_LINE_ITEMS_IN_PROMPT,
   AI_MAX_CATEGORIES_IN_PROMPT,
@@ -41,6 +42,14 @@ describe('AI Constants and Prompts', () => {
     expect(EXTRACTION_STATUS.AI_FAILED).toBe('AI_FAILED');
     expect(CLASSIFICATION_STATUS.SUCCESS).toBe('SUCCESS');
     expect(NEW_CATEGORY_SENTINEL).toBe('NEW_CATEGORY_SUGGESTION');
+  });
+
+  it('should define detailed AI request and fallback log messages', () => {
+    expect(AI_LOG_MESSAGES).toEqual({
+      requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
+      invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
+      fallbackReturned: 'AI request failed; structured fallback response returned'
+    });
   });
 
   it('should define limits and non-empty prompt templates', () => {
