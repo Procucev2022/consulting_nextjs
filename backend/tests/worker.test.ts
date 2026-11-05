@@ -1578,6 +1578,7 @@ describe('Cloudflare worker core routes', () => {
       insertRows(fixture.db, 'INSERT INTO CategoryYearDetail (id, tenant_id, rank, category, total_3yr_spend_inr_cr) VALUES (?, ?, ?, ?, ?)', [
         ['CD-1', 'TNT-1', 1, 'Chemicals', 50]
       ]);
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
 
       const data = await dataOf(await send('/api/report?tenantId=TNT-1'));
 
@@ -1585,6 +1586,9 @@ describe('Cloudflare worker core routes', () => {
       expect(data.tenant).toMatchObject({ tenant_id: 'TNT-1' });
       expect(data.categoryHighlights).toHaveLength(1);
       expect((data.topActionableOpportunities as Array<{ opp_id: string }>).map((row) => row.opp_id)).toEqual(['OPP-2', 'OPP-1']);
+      expect(prepareSpy.mock.calls).toHaveLength(4);
+      expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('SUM(converted_inr_crores'))).toHaveLength(1);
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*) AS count FROM ValidationPreCheckRecord'))).toBe(false);
     });
 
     it('returns empty cached datasets when D1 omits report result arrays', async () => {
