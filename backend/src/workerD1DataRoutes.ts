@@ -109,17 +109,15 @@ const handleStaticDataRoute = async (
       const parsed = deployOpportunitySchema.safeParse(await readJson(request));
       if (!parsed.success) return jsonResponse({ success: false, message: 'Opportunity deployment request is invalid.', errors: parsed.error.issues }, 400, request);
       const { opp_id: opportunityId, targetModule } = parsed.data;
-      await database.prepare(`
+      const deployed = await database.prepare(`
         UPDATE SavingsOpportunity SET recommended_module = ?, push_to_module = ?, status = 'DEPLOYED'
         WHERE opp_id = ? AND EXISTS (
           SELECT 1 FROM SavingsOpportunityTenantScope AS scope
           WHERE scope.opp_id = SavingsOpportunity.opp_id AND scope.tenant_id = ?
         )
-      `).bind(targetModule, targetModule, opportunityId, tenantId).run();
+        RETURNING *
+      `).bind(targetModule, targetModule, opportunityId, tenantId).first<Record<string, unknown>>();
       invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
-      const deployed = await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
-        INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
-        WHERE opportunity.opp_id = ? AND scope.tenant_id = ?`).bind(opportunityId, tenantId).first<Record<string, unknown>>();
       if (!deployed) return jsonResponse({ success: false, message: `Savings opportunity ${opportunityId} was not found.` }, 404, request);
       logger.info('Savings opportunity deployed from D1', {
         opportunityId, targetModule, requestId: request.headers.get('x-request-id') || undefined

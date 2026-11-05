@@ -1836,7 +1836,8 @@ describe('Cloudflare worker core routes', () => {
       await send('/api/savings?tenantId=TNT-1');
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const deployed = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: 'OPP-DEPLOY', targetModule: 'DPS NXT' }));
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(2);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       const persisted = await fixture.d1.prepare('SELECT recommended_module, push_to_module, status FROM SavingsOpportunity WHERE opp_id = ?')
         .bind('OPP-DEPLOY').first();
