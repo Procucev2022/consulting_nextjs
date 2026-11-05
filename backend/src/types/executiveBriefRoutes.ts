@@ -47,4 +47,4 @@ export interface ExecutiveBriefIssueInput {
 
 export type ExecutiveBriefParseResult<TData> =
   | { ok: true; data: TData }
-  | { ok: false; issues: ExecutiveBriefValidationIssue[] };
+  | { ok: false; issues: ExecutiveBriefValidationIssue[]; statusCode?: number };

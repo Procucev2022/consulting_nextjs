@@ -29,6 +29,15 @@ beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.le
 // A cold import (slower under coverage instrumentation) can exceed findByRole's 1s default.
 const LAZY_MODAL_TIMEOUT_MS = 5000;
 
+const renderAndSettleIndustryCatalog = async (element: React.ReactElement) => {
+  const view = render(element);
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return view;
+};
+
 const sampleSpendCategories = [
   {
     id: 'CAT-1',
@@ -147,7 +156,7 @@ describe('Module2Categorization Component', () => {
   ];
 
   it('renders correctly and switches AI models', async () => {
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -173,8 +182,8 @@ describe('Module2Categorization Component', () => {
     });
   });
 
-  it('filters line items by bucket, year, confidence, and search query', () => {
-    render(
+  it('filters line items by bucket, year, confidence, and search query', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -202,8 +211,8 @@ describe('Module2Categorization Component', () => {
     fireEvent.change(yearSelect, { target: { value: 'ALL' } });
   });
 
-  it('allows live explorer search and bucket filtering', () => {
-    render(
+  it('allows live explorer search and bucket filtering', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -221,12 +230,12 @@ describe('Module2Categorization Component', () => {
     fireEvent.change(explorerBucketSelect, { target: { value: 'Direct Materials' } });
   });
 
-  it('triggers onConfirmMapping and onReassignMapping and onProceedToTrend', () => {
+  it('triggers onConfirmMapping and onReassignMapping and onProceedToTrend', async () => {
     const onConfirmMapping = vi.fn();
     const onReassignMapping = vi.fn();
     const onProceedToTrend = vi.fn();
 
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -249,7 +258,7 @@ describe('Module2Categorization Component', () => {
     expect(onProceedToTrend).toHaveBeenCalled();
   });
 
-  it('handles AI model toggle, year filters 2023/2024/2026, confirmed item status, and unranked categories', () => {
+  it('handles AI model toggle, year filters 2023/2024/2026, confirmed item status, and unranked categories', async () => {
     const unrankedCategories = [
       {
         category_id: 'CAT-UNRANKED-1',
@@ -294,7 +303,7 @@ describe('Module2Categorization Component', () => {
       }
     ];
 
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={unrankedCategories as any}
         lineItems={mixedLineItems as any}
@@ -322,8 +331,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText('2024')).toBeInTheDocument();
   });
 
-  it('renders CategoryVendorBreakdownView with tenant prop inside categorization module', () => {
-    render(
+  it('renders CategoryVendorBreakdownView with tenant prop inside categorization module', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -342,7 +351,7 @@ describe('Module2Categorization Component', () => {
   it('triggers onStartAICategorization and transitions to completed state after timer', async () => {
     vi.useFakeTimers();
     const handleStartMock = vi.fn();
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -367,7 +376,7 @@ describe('Module2Categorization Component', () => {
   });
 
   it('renders Year-Wise Category Spend Valuation Matrix with multi-year comparisons and drilldowns', async () => {
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -387,8 +396,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.total)).toBeInTheDocument();
   }, 15000);
 
-  it('renders data-backed Material DNA profile summary and filters by sector relevance', () => {
-    render(
+  it('renders data-backed Material DNA profile summary and filters by sector relevance', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -417,7 +426,7 @@ describe('Module2Categorization Component', () => {
     fireEvent.change(sectorRelevanceFilter, { target: { value: 'ALL' } });
   });
 
-  it('renders Material code, description, PO number, vendor entity, and UNSPSC commodity/class titles in table', () => {
+  it('renders Material code, description, PO number, vendor entity, and UNSPSC commodity/class titles in table', async () => {
     const detailedLineItems = [
       {
         mapping_id: 'MAP-DET-1',
@@ -442,7 +451,7 @@ describe('Module2Categorization Component', () => {
       }
     ];
 
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={detailedLineItems as any}
@@ -485,7 +494,7 @@ describe('Module2Categorization Component', () => {
   });
 
   it('displays Commodity Title and Class Title on catalog cards and opens UNSPSCDetailModal pop-up on click', async () => {
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -519,7 +528,7 @@ describe('Module2Categorization Component', () => {
   });
 
   it('opens UNSPSCDetailModal pop-up via keyboard Enter or Space key on catalog card', async () => {
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -552,8 +561,8 @@ describe('Module2Categorization Component', () => {
     });
   });
 
-  it('renders Vendor Rankings by default and toggles between Strategic Risk and UNSPSC Catalog tabs', () => {
-    render(
+  it('renders Vendor Rankings by default and toggles between Strategic Risk and UNSPSC Catalog tabs', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -584,8 +593,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
   });
 
-  it('renders consolidated Vendor Intelligence area with Vendor Rankings, Concentration Risk, and Catalog tabs', () => {
-    render(
+  it('renders consolidated Vendor Intelligence area with Vendor Rankings, Concentration Risk, and Catalog tabs', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -601,8 +610,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByTestId('tab-unspsc-catalog')).toBeInTheDocument();
   });
 
-  it('renders authoritative Strategic Sourcing workspace in Area C without standalone duplicate engines', () => {
-    render(
+  it('renders authoritative Strategic Sourcing workspace in Area C without standalone duplicate engines', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -617,9 +626,9 @@ describe('Module2Categorization Component', () => {
     expect(screen.queryByTestId('po-consolidation-section-container')).not.toBeInTheDocument();
   });
 
-  it('renders masked overlay for Bronze customer and handles upgrade trigger', () => {
+  it('renders masked overlay for Bronze customer and handles upgrade trigger', async () => {
     const onUpgrade = vi.fn();
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -637,9 +646,9 @@ describe('Module2Categorization Component', () => {
     expect(onUpgrade).toHaveBeenCalledWith('SILVER');
   });
 
-  it('renders summary breakdown for Silver customer and masks line items with Gold upgrade trigger', () => {
+  it('renders summary breakdown for Silver customer and masks line items with Gold upgrade trigger', async () => {
     const onUpgrade = vi.fn();
-    render(
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -657,11 +666,11 @@ describe('Module2Categorization Component', () => {
     expect(onUpgrade).toHaveBeenCalledWith('GOLD');
   });
 
-  it('handles targetSection navigation to vendor-consolidation, po-consolidation, strategic-risk, and vendor-supply', () => {
+  it('handles targetSection navigation to vendor-consolidation, po-consolidation, strategic-risk, and vendor-supply', async () => {
     const scrollIntoViewMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
 
-    const { rerender } = render(
+    const { rerender } = await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -715,8 +724,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByTestId('vendor-rankings-container')).toBeInTheDocument();
   });
 
-  it('navigates across the 4 consolidated areas via primary navigation tabs', () => {
-    render(
+  it('navigates across the 4 consolidated areas via primary navigation tabs', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}
@@ -759,8 +768,8 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByTestId('strategic-sourcing-area')).not.toHaveClass('hidden');
   });
 
-  it('filters line items by review status in AI Review workbench and displays distinct status chips', () => {
-    render(
+  it('filters line items by review status in AI Review workbench and displays distinct status chips', async () => {
+    await renderAndSettleIndustryCatalog(
       <Module2Categorization
         categories={sampleSpendCategories}
         lineItems={sampleLineItems as any}

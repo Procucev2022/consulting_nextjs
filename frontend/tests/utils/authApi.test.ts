@@ -1,6 +1,8 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { authApiClient, buildAdminUserQueryParams } from '../../src/utils/authApi';
 import { AUTH_STORAGE_KEYS } from '../../src/constants/auth';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { RegisterFormData, LoginFormData, UserProfile } from '../../src/types';
 
 describe('authApiClient and auth utilities', () => {
@@ -553,6 +555,58 @@ describe('authApiClient and auth utilities', () => {
     });
   });
 
+  describe('administrator tenant provisioning', () => {
+    it('loads tenant choices with the stored administrator token', async () => {
+      authApiClient.setStoredSession('stored-admin-token', mockUser);
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({ success: true, tenants: [
+          { tenant_id: 'tenant-alpha', enterprise_name: 'Alpha Industries', status: 'ACTIVE' }
+        ] })
+      });
+
+      const response = await authApiClient.getAdminTenants();
+      const [url, init] = vi.mocked(global.fetch).mock.calls[0];
+
+      expect(response.tenants).toHaveLength(1);
+      expect(String(url)).toContain('/api/admin/tenants');
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer stored-admin-token');
+    });
+
+    it('uses the localized tenant registry error when the response schema is invalid', async () => {
+      const errorLog = vi.spyOn((await import('../../src/utils/logger')).default, 'error');
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({ success: true, tenants: [{ tenant_id: 'bad' }] })
+      });
+
+      await expect(authApiClient.getAdminTenants()).rejects.toThrow(UI_STRINGS.admin.tenantListInvalid);
+      expect(errorLog).toHaveBeenCalledOnce();
+    });
+
+    it('validates the selected tenant before making an assignment request', async () => {
+      global.fetch = vi.fn();
+
+      await expect(authApiClient.assignAdminUserTenant(mockUser.id, '')).rejects.toThrow();
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('assigns a tenant with the stored token and parses the assigned profile', async () => {
+      authApiClient.setStoredSession('stored-admin-token', mockUser);
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({ success: true, user: { ...mockUser, tenant_id: 'tenant-alpha' } })
+      });
+
+      const response = await authApiClient.assignAdminUserTenant(mockUser.id, 'tenant-alpha');
+      const [url, init] = vi.mocked(global.fetch).mock.calls[0];
+
+      expect(response.user.tenant_id).toBe('tenant-alpha');
+      expect(String(url)).toContain(`/api/admin/users/${mockUser.id}/tenant`);
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer stored-admin-token');
+    });
+  });
+
   describe('updateAdminUserTier', () => {
     it('should update user tier successfully with token', async () => {
       global.fetch = vi.fn().mockResolvedValue({
@@ -566,15 +620,12 @@ describe('authApiClient and auth utilities', () => {
       const res = await authApiClient.updateAdminUserTier(mockUser.id, 'GOLD', 'admin-token');
       expect(res.success).toBe(true);
       expect(res.user.subscription_tier).toBe('GOLD');
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/api/admin/users/${mockUser.id}/tier`),
-        expect.objectContaining({
+      expectApiFetchCall(global.fetch, expect.stringContaining(`/api/admin/users/${mockUser.id}/tier`), expect.objectContaining({
           method: 'PATCH',
           headers: expect.objectContaining({
             Authorization: 'Bearer admin-token'
           })
-        })
-      );
+        }));
     });
 
     it('should update user tier without token parameter using stored token', async () => {
@@ -589,14 +640,9 @@ describe('authApiClient and auth utilities', () => {
 
       const res = await authApiClient.updateAdminUserTier(mockUser.id, 'SILVER');
       expect(res.success).toBe(true);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/api/admin/users/${mockUser.id}/tier`),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer stored-admin-token'
-          })
-        })
-      );
+      const [url, init] = vi.mocked(global.fetch).mock.calls[0];
+      expect(String(url)).toContain(`/api/admin/users/${mockUser.id}/tier`);
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer stored-admin-token');
     });
 
     it('should throw validation error on invalid tier input', async () => {

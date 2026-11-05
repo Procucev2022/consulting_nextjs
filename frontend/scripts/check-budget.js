@@ -37,17 +37,55 @@ function inspectFile(filePath, baseDir) {
   };
 }
 
+function loadBuildManifest(baseDir) {
+  const nextDir = path.resolve(baseDir, '.next');
+  const legacyManifestPath = path.join(nextDir, 'app-build-manifest.json');
+  if (fs.existsSync(legacyManifestPath)) {
+    return JSON.parse(fs.readFileSync(legacyManifestPath, 'utf-8'));
+  }
+
+  const nextManifestPath = path.join(nextDir, 'build-manifest.json');
+  const appClientManifestPath = path.join(nextDir, 'server/app/page_client-reference-manifest.js');
+  if (!fs.existsSync(nextManifestPath) || !fs.existsSync(appClientManifestPath)) return null;
+
+  const source = fs.readFileSync(appClientManifestPath, 'utf-8');
+  const assignmentIndex = source.indexOf('globalThis.__RSC_MANIFEST["/page"]');
+  if (assignmentIndex < 0) return null;
+  const jsonStart = source.indexOf('=', assignmentIndex) + 1;
+  const jsonEnd = source.lastIndexOf(';');
+  if (jsonStart <= 0 || jsonEnd < jsonStart) return null;
+
+  const appManifest = JSON.parse(source.slice(jsonStart, jsonEnd).trim());
+  const layoutJs = appManifest.entryJSFiles?.['[project]/src/app/layout'] || [];
+  const pageJs = appManifest.entryJSFiles?.['[project]/src/app/page'] || [];
+  const layoutCss = (appManifest.entryCSSFiles?.['[project]/src/app/layout'] || [])
+    .filter((entry) => typeof entry.path === 'string' && !entry.inlined)
+    .map((entry) => entry.path);
+
+  return {
+    pages: {
+      '/layout': layoutCss,
+      '/_not-found/page': layoutJs,
+      '/page': [...new Set([...layoutJs, ...pageJs])]
+    }
+  };
+}
+
 function runBudgetCheck() {
   const baseDir = path.resolve(__dirname, '..');
-  const manifestPath = path.resolve(baseDir, '.next/app-build-manifest.json');
-
-  if (!fs.existsSync(manifestPath)) {
-    console.error('\n❌ Error: Production build manifest (.next/app-build-manifest.json) not found.');
-    console.error('Please execute `npm run build` prior to running performance budget checks.\n');
+  let manifest;
+  try {
+    manifest = loadBuildManifest(baseDir);
+  } catch (error) {
+    console.error('\n❌ Error: Could not read the production build manifest.', error);
     process.exit(1);
   }
 
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  if (!manifest) {
+    console.error('\n❌ Error: Production build manifest was not found or did not contain App Router assets.');
+    console.error('Please execute `npm run build` prior to running performance budget checks.\n');
+    process.exit(1);
+  }
   const violations = [];
   const assetMetrics = [];
 
@@ -153,4 +191,6 @@ function runBudgetCheck() {
   }
 }
 
-runBudgetCheck();
+if (require.main === module) runBudgetCheck();
+
+module.exports = { loadBuildManifest };

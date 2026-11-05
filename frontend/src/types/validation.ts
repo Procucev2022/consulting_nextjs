@@ -6,15 +6,25 @@
 
 import type { z } from 'zod';
 import type {
+  clientErrorReportSchema,
+  apiRequestIdSchema,
   taxonomyPageRequestSchema,
   taxonomyPageResponseSchema,
   conversionStagesResponseSchema,
   executiveOpportunityBriefResponseSchema,
   executiveBriefEmailRequestSchema,
+  provisionSubscriptionDetailsSchema,
+  provisionSubscriptionOtpSchema,
+  provisionSubscriptionOtpRequestSchema,
+  provisionSubscriptionRequestSchema,
+  provisionSubscriptionOtpResponseSchema,
+  provisionSubscriptionResponseSchema,
   databaseSchemaResponseSchema,
   procurementCategoryMappingsResponseSchema,
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
+  pcbiHistoricalObservationsQuerySchema,
+  pcbiHistoricalObservationsResponseSchema,
   headerTenantSchema,
   headerCurrencySchema,
   d1CurrencyRatesResponseSchema,
@@ -39,15 +49,26 @@ import type {
 import type { pcbiGapResolutionRequestSchema } from '../constants/orchestrationValidation';
 
 export type TaxonomyPageRequest = z.infer<typeof taxonomyPageRequestSchema>;
+export type ClientErrorReport = z.infer<typeof clientErrorReportSchema>;
+export type ApiRequestId = z.infer<typeof apiRequestIdSchema>;
 export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
 export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
 export type ExecutiveOpportunityBriefResponse = z.infer<typeof executiveOpportunityBriefResponseSchema>;
 export type ExecutiveOpportunityBriefReportData = ExecutiveOpportunityBriefResponse['data'];
 export type ExecutiveBriefEmailRequest = z.infer<typeof executiveBriefEmailRequestSchema>;
+export type ProvisionSubscriptionDetails = z.infer<typeof provisionSubscriptionDetailsSchema>;
+export type ProvisionSubscriptionOtp = z.infer<typeof provisionSubscriptionOtpSchema>;
+export type ProvisionSubscriptionOtpRequest = z.infer<typeof provisionSubscriptionOtpRequestSchema>;
+export type ProvisionSubscriptionRequest = z.infer<typeof provisionSubscriptionRequestSchema>;
+export type ProvisionSubscriptionOtpResponse = z.infer<typeof provisionSubscriptionOtpResponseSchema>;
+export type ProvisionSubscriptionResponse = z.infer<typeof provisionSubscriptionResponseSchema>;
 export type DatabaseSchemaResponse = z.infer<typeof databaseSchemaResponseSchema>;
 export type ProcurementCategoryMappingsResponse = z.infer<typeof procurementCategoryMappingsResponseSchema>;
 export type PcbiBenchmarkResponse = z.infer<typeof pcbiBenchmarkResponseSchema>;
 export type PcbiWeeklyIndexResponse = z.infer<typeof pcbiWeeklyIndexResponseSchema>;
+export type PcbiHistoricalObservationsQuery = z.input<typeof pcbiHistoricalObservationsQuerySchema>;
+export type PcbiHistoricalObservationsParsedQuery = z.output<typeof pcbiHistoricalObservationsQuerySchema>;
+export type PcbiHistoricalObservationsResponse = z.infer<typeof pcbiHistoricalObservationsResponseSchema>;
 export type PCBIGapResolutionRequest = z.infer<typeof pcbiGapResolutionRequestSchema>;
 
 export type HeaderTenantInput = z.infer<typeof headerTenantSchema>;

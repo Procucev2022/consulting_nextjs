@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { savingsApiClient } from '../../src/utils/savingsApi';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
@@ -54,7 +55,7 @@ describe('savingsApiClient Unit Tests', () => {
 
       const result = await savingsApiClient.getConsolidatedSavings('ASS-100');
       expect(result).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/savings/consolidated?assessmentId=ASS-100'));
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/consolidated?assessmentId=ASS-100'));
     });
 
     it('fetches consolidated savings without assessmentId query parameter', async () => {
@@ -69,7 +70,7 @@ describe('savingsApiClient Unit Tests', () => {
 
       const result = await savingsApiClient.getConsolidatedSavings();
       expect(result).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/savings/consolidated'));
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/consolidated'));
       expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('?assessmentId='));
     });
   });
@@ -96,9 +97,7 @@ describe('savingsApiClient Unit Tests', () => {
       });
 
       expect(result).toEqual(mockUpdated);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/savings/action-plan/update'),
-        expect.objectContaining({
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/action-plan/update'), expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -108,8 +107,7 @@ describe('savingsApiClient Unit Tests', () => {
             priority: 'HIGH',
             comments: 'Initiated negotiation'
           })
-        })
-      );
+        }));
     });
 
     it('throws validation error when action plan payload is invalid', async () => {
@@ -132,17 +130,14 @@ describe('savingsApiClient Unit Tests', () => {
 
       const result = await savingsApiClient.updateSavingsOpportunityStatus('OPP-101', 'APPROVED');
       expect(result).toEqual(mockUpdated);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/savings/opportunity/status'),
-        expect.objectContaining({
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/opportunity/status'), expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             opp_id: 'OPP-101',
             status: 'APPROVED'
           })
-        })
-      );
+        }));
     });
 
     it('throws validation error when opportunity status payload is invalid', async () => {

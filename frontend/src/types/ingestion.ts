@@ -1,4 +1,4 @@
-import type { RawDocumentIngestion } from './models';
+import type { RawDocumentIngestion, ValidationPreCheckRecord } from './models';
 
 export interface IngestionUploadPayload {
   fileName: string;
@@ -30,4 +30,47 @@ export interface IngestionUploadResponse {
   success: boolean;
   data?: IngestionUploadData;
   message?: string;
+}
+
+export interface IngestionQueuePageCursor {
+  uploadedAt: string;
+  docId: string;
+}
+
+export interface ValidationRecordPageCursor {
+  createdAt: string;
+  recordId: string;
+}
+
+export interface IngestionPageRequest {
+  queueCursor?: IngestionQueuePageCursor;
+  validationCursor?: ValidationRecordPageCursor;
+  queueDocumentId?: string;
+}
+
+export interface IngestionPageMetadata<TCursor> {
+  hasMore: boolean;
+  nextCursor: TCursor | null;
+}
+
+export interface IngestionDataResponse {
+  queue: RawDocumentIngestion[];
+  validationRecords: ValidationPreCheckRecord[];
+  pagination: {
+    queue: IngestionPageMetadata<IngestionQueuePageCursor>;
+    validationRecords: IngestionPageMetadata<ValidationRecordPageCursor>;
+  };
+  summary?: {
+    totalFiles: number;
+    totalRecords: number;
+    cleanCount: number;
+    anomaliesCount: number;
+    allResolvedCount: number;
+    pendingActionsCount: number;
+    conversionCount: number;
+    vendorDuplicationCount: number;
+    itemDuplicationCount: number;
+    totalSpendCr: number;
+    pendingSpendCr: number;
+  };
 }

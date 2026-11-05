@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../../utils/apiFetch';
 
 /**
  * Admin Subscription Management Dashboard (Prompt 288 §14 & §35)
@@ -27,7 +28,7 @@ const adminApiFetch = (path: string, init: RequestInit = {}): Promise<Response> 
   const token = authApiClient.getStoredToken();
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+  return apiFetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
 };
 
 const BADGE_CLASSES: Record<string, string> = {

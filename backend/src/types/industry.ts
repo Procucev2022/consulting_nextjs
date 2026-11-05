@@ -59,3 +59,15 @@ export interface IndustrySectorPreset {
   majorSector: IndustryMajorSector;
   minorSector: string;
 }
+
+export interface IndustryProfileStorageRow {
+  profile_id: string;
+  major_sector: string;
+  minor_sector: string;
+  profile_json: string;
+}
+
+export interface D1IndustryCatalog {
+  profiles: Record<string, unknown>[];
+  presets: IndustrySectorPreset[];
+}

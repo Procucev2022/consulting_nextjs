@@ -125,7 +125,6 @@ describe('AuthCard Component', () => {
     vi.spyOn(apiClient, 'register').mockResolvedValue({
       success: true,
       message: 'OK',
-      token: 'jwt-reg',
       user: {
         id: 'usr-2',
         name: 'User 2',
@@ -134,7 +133,7 @@ describe('AuthCard Component', () => {
         company_name: 'C2',
         company_address: 'A2',
         role: 'USER',
-        status: 'ACTIVE',
+        status: 'PENDING',
         created_at: '2026-01-01',
         updated_at: '2026-01-01'
       }
@@ -153,11 +152,10 @@ describe('AuthCard Component', () => {
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountPrimaryCta }));
 
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.auth.registrationSuccess)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.auth.registrationPending)).toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/');
-    }, { timeout: 1500 });
+    expect(screen.getByLabelText(UI_STRINGS.auth.emailLabel)).toHaveValue('u2@e.com');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('handles registration API failure', async () => {

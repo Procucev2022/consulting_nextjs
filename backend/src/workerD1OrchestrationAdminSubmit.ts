@@ -146,11 +146,11 @@ const deliverNotificationEmail = async (
 /** Customer notification that announces a submitted report. */
 const buildCustomerNotificationDraft = (
   context: OrchestrationRequestContext,
-  job: Pick<AssessmentJobRow, 'customer_id' | 'assessment_id' | 'assessment_period_start' | 'assessment_period_end'>,
+  job: Pick<AssessmentJobRow, 'tenant_id' | 'customer_id' | 'assessment_id' | 'assessment_period_start' | 'assessment_period_end'>,
   reportVersionId: string
 ): NotificationRow => buildNotificationRow(buildNotificationInput(context.runtime, {
   recipientType: 'CUSTOMER',
-  tenantId: job.customer_id,
+  tenantId: job.tenant_id,
   assessmentId: job.assessment_id,
   reportVersionId,
   title: ORCHESTRATION_MESSAGES.notificationReportReadyTitle,
@@ -165,7 +165,7 @@ const buildCustomerNotificationDraft = (
 /** Submits a report to the customer after the quality gate checklist is confirmed for that report. */
 export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(reportReferenceSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   if (report.workflow_state !== 'ADMIN_REVIEW') {
     throw conflictError(
@@ -191,7 +191,7 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
       notification
     ),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',
@@ -223,7 +223,7 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
 /** Resends the report notification using the configured transactional email provider. */
 export const resendNotification: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(reportReferenceSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   if (!isCustomerVisibleState(report.workflow_state)) {
     throw conflictError(ORCHESTRATION_MESSAGES.reportNotSubmitted(report.report_version_id));
@@ -232,7 +232,7 @@ export const resendNotification: OrchestrationHandler = async (context) => {
   await runAtomically(context.database, [
     insertNotificationStatement(context.database, notification),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',

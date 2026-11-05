@@ -72,7 +72,7 @@ export const loadReportForJob = async (
   job: AssessmentJobRow,
   reportVersionId: string
 ): Promise<ReportRow> => {
-  const report = await findReportRow(database, reportVersionId);
+  const report = await findReportRow(database, reportVersionId, job.tenant_id);
   if (!report || report.assessment_id !== job.assessment_id) {
     throw notFoundError(ORCHESTRATION_MESSAGES.reportNotFound(reportVersionId));
   }
@@ -86,12 +86,12 @@ export const buildJobDetail = async (
 ): Promise<AnalysisJobDetailPayload> => {
   const assessmentId = row.assessment_id;
   const [versionRows, statsRows, reportRows, correctionRows, openCount, pcbiRows] = await Promise.all([
-    listVersionRows(database, assessmentId),
-    listProcurementStats(database, assessmentId),
-    listReportRows(database, assessmentId),
-    listCorrectionRows(database, assessmentId),
-    countOpenCorrections(database, assessmentId),
-    listPcbiGapRows(database, assessmentId, row.current_version_id)
+    listVersionRows(database, assessmentId, row.tenant_id),
+    listProcurementStats(database, assessmentId, row.tenant_id),
+    listReportRows(database, assessmentId, row.tenant_id),
+    listCorrectionRows(database, assessmentId, row.tenant_id),
+    countOpenCorrections(database, assessmentId, row.tenant_id),
+    listPcbiGapRows(database, assessmentId, row.current_version_id, row.tenant_id)
   ]);
   const isAdmin = actor.role === 'ADMIN';
   const activeReport = reportRows.find((report) => isActiveReportState(report.workflow_state)) ?? null;

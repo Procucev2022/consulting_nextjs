@@ -1,9 +1,39 @@
+import type { QueryAuditLog } from './db';
+
 export type D1Record = Record<string, unknown>;
 
 export interface WorkerD1Result {
   data: unknown;
   status?: number;
   response?: Response;
+}
+
+export interface D1RequestMetrics {
+  totalQueries: number;
+  failedQueries: number;
+  slowQueries: number;
+  cacheHits: number;
+  cacheMisses: number;
+  totalDurationMs: number;
+  totalRowsRead: number;
+  totalRowsWritten: number;
+}
+
+export interface D1RuntimeMetricsState extends D1RequestMetrics {
+  recentAudits: QueryAuditLog[];
+}
+
+export interface D1RuntimeMetrics extends D1RequestMetrics {
+  cacheHitRatio: number;
+  averageDurationMs: number;
+  recentAudits: QueryAuditLog[];
+}
+
+export interface D1QueryMetaRecord {
+  duration?: number;
+  rows_read?: number;
+  rows_written?: number;
+  changes?: number;
 }
 
 export interface D1MetricRow {
@@ -67,6 +97,37 @@ export interface D1TenantRow {
   total_spend_evaluated_inr: number | null;
   major_sector: string | null;
   minor_sector: string | null;
+}
+
+export interface D1IngestionQueueCursor {
+  uploadedAt: string;
+  docId: string;
+}
+
+export interface D1ValidationRecordCursor {
+  createdAt: string;
+  recordId: string;
+}
+
+export interface D1IngestionPageOptions {
+  queueCursor?: D1IngestionQueueCursor;
+  validationCursor?: D1ValidationRecordCursor;
+  queueDocumentId?: string;
+  requestId?: string;
+  includeQueue?: boolean;
+  includeValidationRecords?: boolean;
+  includeSummary?: boolean;
+}
+
+export interface D1StoredCurrencyContext {
+  tenantId: string;
+  documentId?: string;
+  requestId?: string;
+}
+
+export interface D1IngestionPageMetadata {
+  hasMore: boolean;
+  nextCursor: D1IngestionQueueCursor | D1ValidationRecordCursor | null;
 }
 
 export interface D1CustomerRow {
@@ -178,6 +239,17 @@ export interface D1SchemaTableRow {
   sql: string;
 }
 
-export interface D1SchemaColumnRow {
-  name: string;
+export interface D1SchemaQueryRow {
+  table_name: string;
+  table_sql: string;
+  column_name: string;
+  column_cid: number;
+}
+
+export interface D1SchemaTable {
+  entity_name: string;
+  primary_attributes: string;
+  system_usage: string;
+  sample_records: unknown[];
+  ddl: string;
 }

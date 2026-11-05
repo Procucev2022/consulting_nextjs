@@ -51,9 +51,9 @@ describe('importIngestionWorkbook', () => {
       { transaction_id: 'DOC-TEST-1-ROW-2', tenant_id: 'TNT-1', assessment_id: 'AIC-1', source_document_id: 'DOC-TEST-1', source_row_number: 2, po_number: 'PO-1', supplier_name: 'Acme Ltd', total_inr_raw: 840 },
       { transaction_id: 'DOC-TEST-1-ROW-3', tenant_id: 'TNT-1', assessment_id: 'AIC-1', source_document_id: 'DOC-TEST-1', source_row_number: 3, po_number: 'PO-2', supplier_name: 'Unmapped Supplier', total_inr_raw: 10 }
     ]);
-    expect(fixture.db.prepare('SELECT record_id, issue_flag, action_status, resolved FROM ValidationPreCheckRecord ORDER BY record_id').all()).toEqual([
-      { record_id: 'REC-DOC-TEST-1-ROW-2', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: 1 },
-      { record_id: 'REC-DOC-TEST-1-ROW-3', issue_flag: 'Unmapped Supplier Name', action_status: 'Merge Vendor', resolved: 0 }
+    expect(fixture.db.prepare('SELECT record_id, tenant_id, issue_flag, action_status, resolved FROM ValidationPreCheckRecord ORDER BY record_id').all()).toEqual([
+      { record_id: 'REC-DOC-TEST-1-ROW-2', tenant_id: 'TNT-1', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: 1 },
+      { record_id: 'REC-DOC-TEST-1-ROW-3', tenant_id: 'TNT-1', issue_flag: 'Unmapped Supplier Name', action_status: 'Merge Vendor', resolved: 0 }
     ]);
     expect(fixture.db.prepare('SELECT raw_json FROM ProcurementTransaction WHERE transaction_id = ?').get('DOC-TEST-1-ROW-2')).toMatchObject({ raw_json: expect.stringContaining('Resin') });
   });
@@ -89,6 +89,21 @@ describe('importIngestionWorkbook', () => {
       db: fixture.d1, bytes: asBytes([['PO Number', 'Currency']]), fileName: 'empty.xlsx',
       fileType: 'XLSX', docId: 'DOC-EMPTY', tenantId: 'TNT-1'
     })).resolves.toEqual({ importedCount: 0, validationCount: 0, totalInrCrores: 0, detectedCurrencies: [] });
+  });
+
+  it('defaults missing quantity and price columns safely for sparse workbooks', async () => {
+    const fixture = createFixture();
+    const result = await importIngestionWorkbook({
+      db: fixture.d1,
+      bytes: asBytes([['Supplier', 'Currency'], ['Sparse Supplier', 'INR']]),
+      fileName: 'sparse.xlsx', fileType: 'XLSX', docId: 'DOC-SPARSE', tenantId: 'TNT-1'
+    });
+
+    expect(result.importedCount).toBe(1);
+    expect(fixture.db.prepare('SELECT order_quantity, net_price FROM ProcurementTransaction').get()).toEqual({
+      order_quantity: 1,
+      net_price: 0
+    });
   });
 
   it('imports legacy XLS files and converts explicit crore totals without an FX lookup', async () => {

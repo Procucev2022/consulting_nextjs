@@ -199,11 +199,11 @@ export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
           <ul className="text-xs text-slate-600 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
-              <span><strong>Sub-second (&lt;800ms)</strong> query rendering speed over multi-million record datasets.</span>
+              <span>{UI_STRINGS.schema.slaCards.queryTelemetry}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
-              <span>Document ETL processing speed <strong>under 15 minutes</strong> for 2GB multi-year batch uploads.</span>
+              <span>{UI_STRINGS.schema.slaCards.readCache}</span>
             </li>
           </ul>
         </div>
@@ -217,11 +217,11 @@ export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
           <ul className="text-xs text-slate-600 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-              <span>End-to-end encryption (<strong>AES-256</strong> at rest, <strong>TLS 1.3</strong> in transit).</span>
+              <span>{UI_STRINGS.schema.slaCards.encryptionDescription}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-              <span><strong>SOC2 Type II</strong> audit readiness, MFA, RBAC, GDPR, NA, EU, and APAC trade compliance.</span>
+              <span>{UI_STRINGS.schema.slaCards.complianceDescription}</span>
             </li>
           </ul>
         </div>
@@ -235,11 +235,11 @@ export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
           <ul className="text-xs text-slate-600 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
-              <span><strong>99.95%</strong> platform availability SLA with multi-region active-passive failover.</span>
+              <span>{UI_STRINGS.schema.slaCards.availabilityDescription}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
-              <span>Daily automated data backups and automated instant disaster recovery.</span>
+              <span>{UI_STRINGS.schema.slaCards.recoveryDescription}</span>
             </li>
           </ul>
         </div>

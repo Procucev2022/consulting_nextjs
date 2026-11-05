@@ -1,9 +1,15 @@
 import { D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
+import { DEFAULT_CACHE_TTL_MS, D1_REFERENCE_CACHE_KEYS } from './constants/db';
+import { PCBI_PUBLISHED_PAYLOAD_QUERY } from './constants/pcbiHistorical';
 import { pcbiAdminImportSchema, pcbiAdminPublishSchema } from './constants/validation';
+import { queryD1Rows } from './services/workerD1Query';
+import { clearD1ReferenceDataCache } from './services/d1ReferenceDataCache';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
+import type { PCBIPublishedPayloadCacheEntry } from './types/pcbi';
 import type { PcbiAdminImportInput } from './types/validation';
 import logger from './utils/logger';
+import { readJson, requestJsonFailureResult } from './workerHttp';
 
 type ImportIssue = { field: string; message: string; row?: number };
 type VersionRow = D1Record & {
@@ -15,6 +21,10 @@ type VersionRow = D1Record & {
   validation_report_json: string;
   payload_json: string;
 };
+
+let publishedPayloadCache = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadCacheEntry>();
+let publishedPayloadLoads = new WeakMap<CloudflareD1Database, Promise<PcbiAdminImportInput | null>>();
+let publishedPayloadGenerations = new WeakMap<CloudflareD1Database, number>();
 
 const jsonObject = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -109,9 +119,7 @@ const serializeVersion = (row: VersionRow): Record<string, unknown> => ({
   published_by: row.published_by || null
 });
 
-const readBody = async (request: Request): Promise<unknown> => {
-  try { return await request.json(); } catch { return null; }
-};
+const readBody = async (request: Request): Promise<unknown> => readJson(request);
 
 const invalidInput = (message: string, errors: unknown): WorkerD1Result => ({
   status: 400,
@@ -222,12 +230,52 @@ const publishVersion = async (
   };
 };
 
-export const getPublishedPcbiPayload = async (db: CloudflareD1Database): Promise<PcbiAdminImportInput | null> => {
-  const row = await db.prepare(`SELECT payload_json FROM ${D1_TABLES.pcbiMasterVersions} WHERE status = 'PUBLISHED' ORDER BY published_at DESC LIMIT 1`)
-    .first<{ payload_json: string }>();
-  if (!row) return null;
-  const parsed = pcbiAdminImportSchema.safeParse(parseJsonField(row.payload_json));
-  return parsed.success ? parsed.data : null;
+export const clearPublishedPcbiPayloadCache = (db?: CloudflareD1Database): void => {
+  if (db) {
+    publishedPayloadGenerations.set(db, (publishedPayloadGenerations.get(db) || 0) + 1);
+    publishedPayloadCache.delete(db);
+    publishedPayloadLoads.delete(db);
+  } else {
+    publishedPayloadCache = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadCacheEntry>();
+    publishedPayloadLoads = new WeakMap<CloudflareD1Database, Promise<PcbiAdminImportInput | null>>();
+    publishedPayloadGenerations = new WeakMap<CloudflareD1Database, number>();
+  }
+};
+
+export const getPublishedPcbiPayload = async (
+  db: CloudflareD1Database, requestId?: string
+): Promise<PcbiAdminImportInput | null> => {
+  const cached = publishedPayloadCache.get(db);
+  if (cached && cached.expiresAt > Date.now()) {
+    logger.debug('Used cached published PCBI payload', {
+      model: D1_TABLES.pcbiMasterVersions, cacheStatus: 'hit', requestId
+    });
+    return cached.payload;
+  }
+  if (cached) publishedPayloadCache.delete(db);
+  const pending = publishedPayloadLoads.get(db);
+  if (pending) {
+    logger.debug('Joined in-flight published PCBI payload read', {
+      model: D1_TABLES.pcbiMasterVersions, cacheStatus: 'coalesced', requestId
+    });
+    return pending;
+  }
+  const generation = publishedPayloadGenerations.get(db) || 0;
+  const load = (async (): Promise<PcbiAdminImportInput | null> => {
+    const [row] = await queryD1Rows<{ payload_json: string }>(db, PCBI_PUBLISHED_PAYLOAD_QUERY, [], requestId);
+    const parsed = row ? pcbiAdminImportSchema.safeParse(parseJsonField(row.payload_json)) : null;
+    const payload = parsed?.success ? parsed.data : null;
+    if ((publishedPayloadGenerations.get(db) || 0) === generation) {
+      publishedPayloadCache.set(db, { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, payload });
+    }
+    return payload;
+  })();
+  publishedPayloadLoads.set(db, load);
+  try {
+    return await load;
+  } finally {
+    if (publishedPayloadLoads.get(db) === load) publishedPayloadLoads.delete(db);
+  }
 };
 
 export const handlePcbiAdminRoute = async (
@@ -238,16 +286,20 @@ export const handlePcbiAdminRoute = async (
   const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
   const root = '/api/admin/pcbi';
   const path = url.pathname.slice(root.length) || '/';
+  try {
   if (path === '/versions' && request.method === 'GET') {
     const rows = await database.prepare(`SELECT * FROM ${D1_TABLES.pcbiMasterVersions} ORDER BY uploaded_at DESC`).all<VersionRow>();
     const versions = rows.results.map(serializeVersion);
     const active = versions.find((version) => version.status === 'PUBLISHED');
     return { data: { success: true, total: versions.length, active_version: active?.version || null, versions } };
   }
-  if (path === '/import' && request.method === 'POST') return importVersion(database, request, requestId);
+  if (path === '/import' && request.method === 'POST') return await importVersion(database, request, requestId);
   const publishMatch = path.match(/^\/publish\/([^/]+)$/);
   if (publishMatch && request.method === 'POST') {
-    return publishVersion(database, request, decodeURIComponent(publishMatch[1]), requestId);
+    const result = await publishVersion(database, request, decodeURIComponent(publishMatch[1]), requestId);
+    clearPublishedPcbiPayloadCache(database);
+    clearD1ReferenceDataCache(database, D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS);
+    return result;
   }
   const versionMatch = path.match(/^\/versions\/([^/]+)$/);
   if (versionMatch && request.method === 'GET') {
@@ -262,5 +314,10 @@ export const handlePcbiAdminRoute = async (
     status: path === '/versions' || path === '/import' || path.startsWith('/versions/') || path.startsWith('/publish/') ? 405 : 404,
     data: { success: false, message: D1_ROUTE_MESSAGES.pcbiAdminMethod(allowedMethod) }
   };
+  } catch (error: unknown) {
+    const failure = requestJsonFailureResult(request, error);
+    if (failure) return failure;
+    throw error;
+  }
 };
 

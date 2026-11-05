@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { executeGraphQL, fetchDashboardOverview } from '../../src/utils/graphqlClient';
 import { DASHBOARD_OVERVIEW_QUERY } from '../../src/constants/graphql';
@@ -22,13 +23,10 @@ describe('Frontend GraphQL Client Utility', () => {
 
     const result = await executeGraphQL<typeof mockData>('{ tenant { enterprise_name } }');
     expect(result).toEqual(mockData);
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/graphql'),
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/graphql'), expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ 'Content-Type': 'application/json' })
-      })
-    );
+      }));
   });
 
   it('should support custom endpoint and custom headers', async () => {
@@ -102,8 +100,8 @@ describe('Frontend GraphQL Client Utility', () => {
         categories: [],
         opportunities: [],
         funnelStages: [],
-        ingestionQueue: [],
-        validationRecords: [],
+        ingestionQueue: { items: [], pageInfo: { hasNextPage: false, endCursor: null } },
+        validationRecords: { items: [], pageInfo: { hasNextPage: false, endCursor: null } },
         queryMetrics: {
           totalQueries: 10,
           slowQueries: 0,
@@ -121,15 +119,12 @@ describe('Frontend GraphQL Client Utility', () => {
 
       const overview = await fetchDashboardOverview();
       expect(overview).toEqual(mockOverview);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/graphql'),
-        expect.objectContaining({
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/graphql'), expect.objectContaining({
           body: JSON.stringify({
             query: DASHBOARD_OVERVIEW_QUERY,
             variables: undefined
           })
-        })
-      );
+        }));
     });
   });
 });

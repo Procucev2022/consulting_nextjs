@@ -5,7 +5,7 @@
 
 const JOB_SELECT = `
 SELECT
-  a.assessment_id, a.customer_id, a.customer_name, c.contact_email AS customer_contact_email, a.assessment_owner,
+  a.assessment_id, a.tenant_id, a.customer_id, a.customer_name, c.contact_email AS customer_contact_email, a.assessment_owner,
   a.assessment_period_start, a.assessment_period_end, a.total_spend_cr AS record_spend_cr,
   a.created_at, a.updated_at,
   cur.data_version_id AS current_version_id, cur.uploaded_by AS current_uploaded_by,
@@ -21,7 +21,7 @@ SELECT
     WHERE qc.report_version_id = rpt.report_version_id
     ORDER BY qc.created_at DESC, qc.checklist_id DESC LIMIT 1) AS checklist_complete
 FROM AssessmentRecord a
-LEFT JOIN CustomerRecord c ON c.customer_id = a.customer_id
+LEFT JOIN CustomerRecord c ON c.customer_id = a.customer_id AND c.tenant_id = a.tenant_id
 LEFT JOIN AssessmentDataVersion cur ON cur.data_version_id = (
   SELECT d.data_version_id FROM AssessmentDataVersion d WHERE d.assessment_id = a.assessment_id
   ORDER BY d.version_number DESC, d.uploaded_at DESC, d.data_version_id DESC LIMIT 1)
@@ -54,11 +54,11 @@ const AUDIT_COLUMNS = `
   event_id, tenant_id, assessment_id, actor_id, actor_role, event_type, entity_type, entity_id,
   previous_state, new_state, metadata_json, created_at`;
 
-export const SQL_JOBS_ALL = `${JOB_SELECT} ORDER BY a.created_at DESC, a.assessment_id ASC`;
+export const SQL_JOBS_ALL = `${JOB_SELECT} WHERE a.tenant_id = ?1 ORDER BY a.created_at DESC, a.assessment_id ASC`;
 export const SQL_JOBS_FOR_CUSTOMER = `${JOB_SELECT}
-WHERE a.customer_id = ?1
+WHERE a.tenant_id = ?1 AND a.customer_id = ?2
 ORDER BY a.created_at DESC, a.assessment_id ASC`;
-export const SQL_JOB_BY_ID = `${JOB_SELECT} WHERE a.assessment_id = ?1`;
+export const SQL_JOB_BY_ID = `${JOB_SELECT} WHERE a.assessment_id = ?1 AND a.tenant_id = ?2`;
 
 export const SQL_VERSIONS_FOR_JOB = `
 SELECT dv.data_version_id, dv.assessment_id, dv.version_number, dv.file_name, dv.file_size, dv.checksum,
@@ -67,16 +67,17 @@ SELECT dv.data_version_id, dv.assessment_id, dv.version_number, dv.file_name, dv
 FROM AssessmentDataVersion dv
 LEFT JOIN OrchestrationDatasetCorrection correction ON correction.data_version_id = dv.data_version_id
 WHERE dv.assessment_id = ?1
+  AND EXISTS (SELECT 1 FROM AssessmentRecord a WHERE a.assessment_id = dv.assessment_id AND a.tenant_id = ?2)
 ORDER BY dv.version_number ASC, dv.uploaded_at ASC, dv.data_version_id ASC`;
 
-/** Per-version procurement statistics. Scans ProcurementTransaction by assessment_id (no index yet). */
+/** Per-version procurement statistics use the assessment-first transaction index; tenant scope is also required. */
 export const SQL_PROCUREMENT_STATS_FOR_JOB = `
 SELECT source_document_id,
   COUNT(DISTINCT supplier_name) AS supplier_count,
   COUNT(DISTINCT plant) AS plant_count,
   COUNT(DISTINCT material_group) AS category_count,
   COALESCE(SUM(total_in_cr_raw), 0) AS spend_cr
-FROM ProcurementTransaction WHERE assessment_id = ?1
+FROM ProcurementTransaction WHERE assessment_id = ?1 AND tenant_id = ?2
 GROUP BY source_document_id`;
 
 export const SQL_PCBI_GAPS_FOR_JOB = `
@@ -104,6 +105,7 @@ LEFT JOIN OrchestrationPCBIGapResolution resolution
 LEFT JOIN PCBIBenchmarkMaster benchmark
   ON benchmark.pcbi_id = resolution.target_pcbi_series AND benchmark.active = 1
 WHERE tx.assessment_id = ?1
+  AND tx.tenant_id = ?4
   AND tx.source_document_id IN (?2, ?3)
   AND COALESCE(UPPER(TRIM(tx.deletion_indicator)), '') <> 'L'
 GROUP BY category_key, resolution.action, resolution.target_pcbi_series,
@@ -127,12 +129,16 @@ ON CONFLICT (assessment_id, data_version_id, category_key) DO UPDATE SET
   resolved_at = excluded.resolved_at`;
 
 export const SQL_REPORTS_FOR_JOB = `
-SELECT ${REPORT_COLUMNS} FROM OrchestrationReportVersion WHERE assessment_id = ?1 ORDER BY sequence_number ASC`;
+SELECT ${REPORT_COLUMNS} FROM OrchestrationReportVersion r WHERE assessment_id = ?1
+  AND EXISTS (SELECT 1 FROM AssessmentRecord a WHERE a.assessment_id = r.assessment_id AND a.tenant_id = ?2)
+ORDER BY sequence_number ASC`;
 
-export const SQL_REPORT_BY_ID = `SELECT ${REPORT_COLUMNS} FROM OrchestrationReportVersion WHERE report_version_id = ?1`;
+export const SQL_REPORT_BY_ID = `SELECT ${REPORT_COLUMNS} FROM OrchestrationReportVersion r WHERE report_version_id = ?1
+  AND EXISTS (SELECT 1 FROM AssessmentRecord a WHERE a.assessment_id = r.assessment_id AND a.tenant_id = ?2)`;
 
 export const SQL_NEXT_REPORT_SEQUENCE = `
-SELECT COALESCE(MAX(sequence_number), 0) + 1 AS next_sequence FROM OrchestrationReportVersion WHERE assessment_id = ?1`;
+SELECT COALESCE(MAX(sequence_number), 0) + 1 AS next_sequence FROM OrchestrationReportVersion r WHERE assessment_id = ?1
+  AND EXISTS (SELECT 1 FROM AssessmentRecord a WHERE a.assessment_id = r.assessment_id AND a.tenant_id = ?2)`;
 
 export const SQL_LATEST_CHECKLIST_FOR_REPORT = `
 SELECT ${CHECKLIST_COLUMNS} FROM OrchestrationQualityChecklist
@@ -147,23 +153,24 @@ export const SQL_CORRECTIONS_FOR_JOB = `
 SELECT request_id, assessment_id, tenant_id, user_id, category, description, supporting_file_name, status,
   reviewed_by, admin_response, created_at
 FROM OrchestrationCorrectionRequest WHERE assessment_id = ?1
+  AND tenant_id = ?2
 ORDER BY created_at DESC, request_id DESC`;
 
 export const SQL_OPEN_CORRECTIONS_FOR_JOB = `
-SELECT COUNT(*) AS open_count FROM OrchestrationCorrectionRequest WHERE assessment_id = ?1 AND status = 'OPEN'`;
+SELECT COUNT(*) AS open_count FROM OrchestrationCorrectionRequest WHERE assessment_id = ?1 AND tenant_id = ?2 AND status = 'OPEN'`;
 
 export const SQL_OPEN_CORRECTIONS_ALL = `
-SELECT COUNT(*) AS open_count FROM OrchestrationCorrectionRequest WHERE status = 'OPEN'`;
+SELECT COUNT(*) AS open_count FROM OrchestrationCorrectionRequest WHERE tenant_id = ?1 AND status = 'OPEN'`;
 
 export const SQL_RECENT_NOTIFICATIONS = `
-SELECT ${NOTIFICATION_COLUMNS} FROM OrchestrationNotification
-ORDER BY created_at DESC, notification_id DESC LIMIT ?1`;
+SELECT ${NOTIFICATION_COLUMNS} FROM OrchestrationNotification WHERE tenant_id = ?1
+ORDER BY created_at DESC, notification_id DESC LIMIT ?2`;
 
 export const SQL_RECENT_AUDIT_EVENTS = `
-SELECT ${AUDIT_COLUMNS} FROM OrchestrationAuditEvent
-ORDER BY created_at DESC, event_id DESC LIMIT ?1`;
+SELECT ${AUDIT_COLUMNS} FROM OrchestrationAuditEvent WHERE tenant_id = ?1
+ORDER BY created_at DESC, event_id DESC LIMIT ?2`;
 
-export const SQL_USER_BY_ID = 'SELECT id, name, role, status FROM User WHERE id = ?1';
+export const SQL_USER_BY_ID = 'SELECT id, name, email, role, status, tenant_id FROM User WHERE id = ?1';
 
 export const SQL_INSERT_REPORT = `
 INSERT INTO OrchestrationReportVersion (

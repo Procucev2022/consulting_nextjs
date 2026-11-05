@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from '../../../utils/apiFetchAssertions';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -175,20 +176,14 @@ describe('AdminSubscriptionsPage Dashboard', () => {
     fireEvent.click(suspendBtn);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/subscription/admin/sub-1/status',
-        expect.objectContaining({ method: 'PATCH' })
-      );
+      expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-1/status', expect.objectContaining({ method: 'PATCH' }));
     });
 
     const reactivateBtn = screen.getByRole('button', { name: 'Reactivate' });
     fireEvent.click(reactivateBtn);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/subscription/admin/sub-2/status',
-        expect.objectContaining({ method: 'PATCH' })
-      );
+      expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-2/status', expect.objectContaining({ method: 'PATCH' }));
     });
   });
 
@@ -244,5 +239,25 @@ describe('AdminSubscriptionsPage Dashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('No subscription records found.')).toBeInTheDocument();
     });
+  });
+
+  it('keeps the current rows when list, status, and audit endpoints return unsuccessful responses', async () => {
+    render(<AdminSubscriptionsPage />);
+
+    await waitFor(() => expect(screen.getByText('Corp One')).toBeInTheDocument());
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/status')) return Promise.resolve({ ok: false, json: async () => ({ success: false }) } as Response);
+      if (url.includes('/audit-trail')) return Promise.resolve({ ok: true, json: async () => ({ success: false }) } as Response);
+      return Promise.resolve({ ok: true, json: async () => ({ success: false }) } as Response);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-1/status', expect.any(Object)));
+    fireEvent.click(screen.getByTestId('refresh-subscriptions-btn'));
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/list', expect.any(Object)));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Audit' })[0]);
+
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/audit-trail?subscription_id=sub-1', expect.any(Object)));
+    expect(screen.getByText('Corp One')).toBeInTheDocument();
   });
 });

@@ -18,6 +18,10 @@ import { INR_CRORES_DIVISOR, UI_STRINGS } from '../constants';
 
 export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps> = ({
   validationRecords,
+  validationDataSummary,
+  hasMoreValidationRecords = false,
+  isLoadingMoreValidationRecords = false,
+  onLoadMoreValidationRecords,
   onFixCurrency,
   onMergeVendor,
   onMergeItem,
@@ -32,34 +36,34 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
   const [filterIssue, setFilterIssue] = useState<ValidationIssueCategoryFilter>('ALL');
 
   // Metrics derived from canonical backend or fallback records
-  const totalValidationCount = canonicalViewModel?.sourceRowCount || validationRecords.length;
-  const allResolvedCount = canonicalViewModel?.validRowCount || validationRecords.filter((r) => r.resolved || r.issue_flag === 'Passed Clean').length;
+  const totalValidationCount = canonicalViewModel?.sourceRowCount ?? validationDataSummary?.totalRecords ?? validationRecords.length;
+  const allResolvedCount = canonicalViewModel?.validRowCount ?? validationDataSummary?.allResolvedCount ?? validationRecords.filter((r) => r.resolved || r.issue_flag === 'Passed Clean').length;
   const pendingActionsCount = canonicalViewModel
     ? (canonicalViewModel.excludedRowCount + canonicalViewModel.anomalyRowCount)
-    : validationRecords.filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean').length;
+    : validationDataSummary?.pendingActionsCount ?? validationRecords.filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean').length;
 
-  const conversionCount = validationRecords.filter(
+  const conversionCount = validationDataSummary?.conversionCount ?? validationRecords.filter(
     (r) => !r.resolved && (r.issue_category === 'CONVERSION' || r.issue_flag === 'Missing Currency Code' || r.issue_flag === 'Tax Discrepancy')
   ).length;
 
-  const vendorDupCount = validationRecords.filter(
+  const vendorDupCount = validationDataSummary?.vendorDuplicationCount ?? validationRecords.filter(
     (r) => !r.resolved && (r.issue_category === 'VENDOR_DUPLICATION' || r.issue_flag === 'Unmapped Supplier Name')
   ).length;
 
-  const itemDupCount = validationRecords.filter(
+  const itemDupCount = validationDataSummary?.itemDuplicationCount ?? validationRecords.filter(
     (r) => !r.resolved && (r.issue_category === 'ITEM_DUPLICATION' || r.issue_flag === 'Duplicate Item Description')
   ).length;
 
   const totalEvaluatedSpendInrCr = canonicalViewModel
     ? canonicalViewModel.validFxNormalizedSpendCr
-    : validationRecords.reduce(
+    : validationDataSummary?.totalSpendCr ?? validationRecords.reduce(
         (acc, r) => acc + (r.inr_crores ?? (r.amount_inr != null ? r.amount_inr / INR_CRORES_DIVISOR : 0)),
         0
       );
 
   const pendingIssuesSpendCr = canonicalViewModel
     ? ((canonicalViewModel.validationSummary.excludedSpendCr || 0) + (canonicalViewModel.validationSummary.anomalySpendCr || 0))
-    : validationRecords
+    : validationDataSummary?.pendingSpendCr ?? validationRecords
         .filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean')
         .reduce(
           (acc, r) => acc + (r.inr_crores ?? (r.amount_inr != null ? r.amount_inr / INR_CRORES_DIVISOR : 0)),
@@ -317,6 +321,9 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
       </div>
 
       {/* Validation Records Table */}
+      <p className="text-xs text-slate-500" aria-live="polite">
+        {UI_STRINGS.module1.showingValidationRecords(validationRecords.length, totalValidationCount)}
+      </p>
       <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -463,6 +470,21 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
           </table>
         </div>
       </div>
+
+      {hasMoreValidationRecords && onLoadMoreValidationRecords && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={onLoadMoreValidationRecords}
+            disabled={isLoadingMoreValidationRecords}
+            className="px-4 py-2 text-xs font-semibold text-cyan-800 bg-cyan-50 hover:bg-cyan-100 disabled:opacity-60 rounded-lg border border-cyan-200 transition-colors"
+          >
+            {isLoadingMoreValidationRecords
+              ? UI_STRINGS.module1.loadingMoreValidationRecords
+              : UI_STRINGS.module1.loadMoreValidationRecords}
+          </button>
+        </div>
+      )}
 
       {/* CTA Button & Refresh Option */}
       <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">

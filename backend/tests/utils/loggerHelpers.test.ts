@@ -7,7 +7,7 @@ import {
   computeLogStats,
   searchAndFilterLogs
 } from '../../src/utils/loggerHelpers';
-import type { LogEntry } from '../../src/types';
+import type { LogEntry, LoggerDiagnosticReporter } from '../../src/types';
 
 describe('Logger Helpers Suite', () => {
   const testDir = path.resolve(__dirname, '../temp_helpers_logs');
@@ -25,9 +25,11 @@ describe('Logger Helpers Suite', () => {
   beforeEach(() => {
     cleanDir();
     fs.mkdirSync(testDir, { recursive: true });
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     cleanDir();
   });
 
@@ -61,6 +63,24 @@ describe('Logger Helpers Suite', () => {
       expect(config.enableFilePersistence).toBe(false);
       expect(config.retentionDays).toBe(30);
     });
+
+    it('honors explicit false file persistence even outside production', () => {
+      const previousNodeEnv = process.env.NODE_ENV;
+      const previousPersistence = process.env.LOG_PERSISTENCE;
+      try {
+        process.env.NODE_ENV = 'development';
+        process.env.LOG_PERSISTENCE = 'false';
+
+        const config = resolveLoggerConfig();
+
+        expect(config.enableFilePersistence).toBe(false);
+      } finally {
+        if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = previousNodeEnv;
+        if (previousPersistence === undefined) delete process.env.LOG_PERSISTENCE;
+        else process.env.LOG_PERSISTENCE = previousPersistence;
+      }
+    });
   });
 
   describe('purgeOldLogFiles', () => {
@@ -91,10 +111,52 @@ describe('Logger Helpers Suite', () => {
       const statSpy = vi.spyOn(fs, 'statSync').mockImplementationOnce(() => {
         throw new Error('EACCES');
       });
+      const reportFailure = vi.fn<LoggerDiagnosticReporter>();
 
-      const result = purgeOldLogFiles(testDir, 1);
+      const result = purgeOldLogFiles(testDir, 1, reportFailure);
       expect(result.retentionDays).toBe(1);
+      expect(reportFailure).toHaveBeenCalledWith('logger.purge-file', expect.any(Error), { fileName: 'app-2020-01-01.log' });
       statSpy.mockRestore();
+    });
+
+    it('reports directory enumeration errors while preserving the cleanup result', () => {
+      const enumerationError = new Error('Directory unavailable');
+      vi.spyOn(fs, 'readdirSync').mockImplementationOnce(() => { throw enumerationError; });
+      const reportFailure = vi.fn<LoggerDiagnosticReporter>();
+
+      const result = purgeOldLogFiles(testDir, 14, reportFailure);
+
+      expect(result).toMatchObject({ purgedFiles: [], bytesFreed: 0, retentionDays: 14 });
+      expect(reportFailure).toHaveBeenCalledWith('logger.purge-directory', enumerationError);
+    });
+
+    it('emits a structured fallback diagnostic when no logger callback was provided', () => {
+      const enumerationError = new Error('Directory unavailable');
+      const readSpy = vi.spyOn(fs, 'readdirSync').mockImplementationOnce(() => { throw enumerationError; });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      purgeOldLogFiles(testDir, 14);
+
+      const entry = JSON.parse(String(consoleErrorSpy.mock.calls[0]?.[0])) as Record<string, unknown>;
+      expect(entry).toMatchObject({
+        level: 'error',
+        service: 'consulting-backend',
+        message: 'Logger helper operation failed',
+        context: { action: 'logger.purge-directory' },
+        error: { name: 'Error', message: 'Directory unavailable', stack: expect.any(String) }
+      });
+      readSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('keeps purge behavior non-throwing if the helper console fallback fails', () => {
+      const readSpy = vi.spyOn(fs, 'readdirSync').mockImplementationOnce(() => { throw new Error('Directory unavailable'); });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { throw new Error('Console unavailable'); });
+
+      expect(() => purgeOldLogFiles(testDir, 14)).not.toThrow();
+
+      readSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -111,6 +173,18 @@ describe('Logger Helpers Suite', () => {
       const stats = computeLogStats(path.join(testDir, 'non_existent'), 14);
       expect(stats.totalFiles).toBe(0);
       expect(stats.totalSizeBytes).toBe(0);
+    });
+
+    it('reports stat failures and returns the available file count', () => {
+      fs.writeFileSync(path.join(testDir, 'app.log'), 'test log data', 'utf8');
+      const statError = new Error('Metadata unavailable');
+      vi.spyOn(fs, 'statSync').mockImplementationOnce(() => { throw statError; });
+      const reportFailure = vi.fn<LoggerDiagnosticReporter>();
+
+      const stats = computeLogStats(testDir, 14, reportFailure);
+
+      expect(stats.totalFiles).toBe(0);
+      expect(reportFailure).toHaveBeenCalledWith('logger.stat-file', statError, { fileName: 'app.log' });
     });
   });
 
@@ -162,9 +236,25 @@ describe('Logger Helpers Suite', () => {
     it('reads and deduplicates logs from file persistence', () => {
       const appLogPath = path.join(testDir, 'app.log');
       fs.writeFileSync(appLogPath, JSON.stringify(sampleEntries[0]) + '\n\ninvalid-json\n', 'utf8');
+      const reportFailure = vi.fn<LoggerDiagnosticReporter>();
 
-      const results = searchAndFilterLogs(sampleEntries, testDir, true, { limit: 10 });
+      const results = searchAndFilterLogs(sampleEntries, testDir, true, { limit: 10 }, reportFailure);
       expect(results.length).toBe(2);
+      expect(reportFailure).toHaveBeenCalledWith('logger.parse-app-log', expect.any(Error), {
+        fileName: 'app.log', malformedLineCount: 1
+      });
+    });
+
+    it('reports unreadable log files and keeps in-memory results available', () => {
+      fs.writeFileSync(path.join(testDir, 'app.log'), 'valid log entry', 'utf8');
+      const readError = new Error('File temporarily unavailable');
+      vi.spyOn(fs, 'readFileSync').mockImplementationOnce(() => { throw readError; });
+      const reportFailure = vi.fn<LoggerDiagnosticReporter>();
+
+      const results = searchAndFilterLogs(sampleEntries, testDir, true, {}, reportFailure);
+
+      expect(results).toEqual([...sampleEntries].reverse());
+      expect(reportFailure).toHaveBeenCalledWith('logger.read-app-log', readError, { fileName: 'app.log' });
     });
   });
 });

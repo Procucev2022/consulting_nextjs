@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import {
   BACKEND_API_BASE_URL,
   UI_STRINGS,
@@ -48,7 +49,7 @@ const postMappingBatch = async (
   let requestId: string | null = null;
   try {
     const endpoint = `${BACKEND_API_BASE_URL}${VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_UPDATE_ENDPOINT}`;
-    const response = await fetch(endpoint, {
+    const response = await apiFetch(endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

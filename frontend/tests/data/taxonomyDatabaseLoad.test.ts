@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from '../utils/apiFetchAssertions';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { TAXONOMY_PAGE_SIZE } from '../../src/constants/taxonomy';
@@ -28,8 +29,8 @@ describe('database commodity catalog hydration', () => {
     expect(taxonomy.getTaxonomyLoadState().isLoading).toBe(true);
     finish(response(page));
     await first;
-    expect(fetcher).toHaveBeenNthCalledWith(1, '/api/taxonomy?limit=1000&offset=0');
-    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/taxonomy?limit=1000&offset=1000');
+    expectApiFetchCall(fetcher, '/api/taxonomy?limit=1000&offset=0', undefined, 1);
+    expectApiFetchCall(fetcher, '/api/taxonomy?limit=1000&offset=1000', undefined, 2);
     expect(taxonomy.unspscOfficialDictionary).toHaveLength(page.length + taxonomyRecords.length);
     expect(taxonomy.getTaxonomyLoadState()).toEqual({ isLoading: false, error: null });
     expect(listener).toHaveBeenCalledTimes(2);

@@ -4,7 +4,9 @@
  */
 import type { z } from 'zod';
 import logger from './utils/logger';
-import { jsonResponse } from './workerHttp';
+import {
+  jsonResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError
+} from './workerHttp';
 import {
   ORCHESTRATION_ERROR_CATEGORY,
   ORCHESTRATION_HTTP_STATUS,
@@ -85,13 +87,21 @@ export const parseWithSchema = <TSchema extends z.ZodType>(schema: TSchema, valu
 };
 
 /** Reads the request body as JSON. An empty body is treated as an empty object. */
-export const readJsonBody = async (request: Request): Promise<unknown> => {
-  const text = await request.text();
-  if (text.trim().length === 0) return {};
+export const readJsonBody = async (request: Request, maxBytes?: number): Promise<unknown> => {
   try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    throw validationError([{ path: [], message: ORCHESTRATION_MESSAGES.invalidJson }]);
+    return await readJson(request, maxBytes);
+  } catch (error: unknown) {
+    if (error instanceof RequestBodyTooLargeError) {
+      throw new OrchestrationError(
+        ORCHESTRATION_HTTP_STATUS.PAYLOAD_TOO_LARGE,
+        ORCHESTRATION_ERROR_CATEGORY.VALIDATION,
+        error.message
+      );
+    }
+    if (error instanceof RequestJsonParseError) {
+      throw validationError([{ path: [], message: ORCHESTRATION_MESSAGES.invalidJson }]);
+    }
+    throw error;
   }
 };
 

@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pcbiAdminApi } from '../../src/utils/pcbiAdminApi';
 import { authApiClient } from '../../src/utils/authApi';
@@ -24,14 +25,14 @@ describe('PCBI Admin API Client (frontend/src/utils/pcbiAdminApi.ts)', () => {
     const res = await pcbiAdminApi.getVersions();
     expect(res.success).toBe(true);
     expect(res.versions).toHaveLength(1);
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/versions'), { headers: { 'Content-Type': 'application/json' } });
+    expectApiFetchCall(fetch, expect.stringContaining('/api/admin/pcbi/versions'), { headers: { 'Content-Type': 'application/json' } });
   });
 
   it('sends the stored Worker administrator token with protected version requests', async () => {
     vi.mocked(authApiClient.getStoredToken).mockReturnValue('d1-admin-session');
     global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, versions: [] }) });
     await pcbiAdminApi.getVersions();
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/versions'), {
+    expectApiFetchCall(fetch, expect.stringContaining('/api/admin/pcbi/versions'), {
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer d1-admin-session' }
     });
   });

@@ -631,6 +631,19 @@ describe('step2VendorBreakdown branch coverage (lines 30, 39, 50, 53, 54, 79, 10
     const emptyRes = calculateVendorYearDetails([], 42.0);
     expect(emptyRes.length).toBe(0);
   });
+
+  it('sorts zero-spend vendor items and uses the supplied denominator fallback', () => {
+    const items = [
+      { ...baseItem, mapping_id: 'MAP-ZERO-A', line_item_id: 'LINE-ZERO-A', raw_desc: 'Item A', vendor_identified: 'Zero Vendor', inr_crores: 0, total_spend: 0, core_bucket: 'Zinc' },
+      { ...baseItem, mapping_id: 'MAP-ZERO-B', line_item_id: 'LINE-ZERO-B', raw_desc: 'Item B', vendor_identified: 'Zero Vendor', inr_crores: 0, total_spend: 0, core_bucket: 'Aluminium' }
+    ];
+
+    const result = calculateVendorYearDetails(items, 42);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.spend_share_pct).toBe(0);
+    expect(result[0]?.top_items.map((item) => item.item_name)).toEqual(['Item A', 'Item B']);
+  });
 });
 
 describe('step2CategoryBreakdown branch coverage (lines 63, 116-117)', () => {
@@ -726,5 +739,19 @@ describe('step2CategoryBreakdown branch coverage (lines 63, 116-117)', () => {
     ] as any[];
     const resItems = calculateCategoryYearDetails(items);
     expect(resItems.length).toBe(2);
+  });
+
+  it('uses the default fallback category label and sorts same-category zero-spend items', () => {
+    const fallback = calculateCategoryYearDetails([], [{ id: 'FB-EMPTY', spend_fy24_cr: 1 } as any]);
+    const items = [
+      { ...baseItem, mapping_id: 'MAP-ZERO-C1', line_item_id: 'LINE-ZERO-C1', raw_desc: 'Category Item A', core_bucket: 'Zero Spend', inr_crores: 0, total_spend: 0 },
+      { ...baseItem, mapping_id: 'MAP-ZERO-C2', line_item_id: 'LINE-ZERO-C2', raw_desc: 'Category Item B', core_bucket: 'Zero Spend', inr_crores: 0, total_spend: 0 }
+    ];
+    const result = calculateCategoryYearDetails(items, [], 25);
+
+    expect(fallback[0]?.category).toBe('Direct Materials');
+    expect(result).toHaveLength(1);
+    expect(result[0]?.spend_share_pct).toBe(0);
+    expect(result[0]?.top_items).toHaveLength(2);
   });
 });

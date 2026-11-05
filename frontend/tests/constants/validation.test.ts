@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  apiRequestIdSchema,
   headerTenantSchema,
   headerCurrencySchema,
   d1CurrencyRatesResponseSchema,
@@ -25,13 +26,77 @@ import {
   changePasswordFormSchema,
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
+  pcbiHistoricalObservationsQuerySchema,
+  pcbiHistoricalObservationsResponseSchema,
   procurementCategoryMappingsResponseSchema,
   executiveOpportunityBriefResponseSchema,
-  executiveBriefEmailRequestSchema
+  executiveBriefEmailRequestSchema,
+  provisionSubscriptionDetailsSchema,
+  provisionSubscriptionOtpSchema,
+  provisionSubscriptionOtpRequestSchema,
+  provisionSubscriptionRequestSchema,
+  provisionSubscriptionOtpResponseSchema,
+  provisionSubscriptionResponseSchema,
+  INGESTION_UPLOAD_MAX_FILE_BYTES
 } from '../../src/constants/validation';
 import { pcbiGapResolutionRequestSchema } from '../../src/constants/orchestrationValidation';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
+  it('accepts only bounded request IDs safe for forwarding and response headers', () => {
+    expect(apiRequestIdSchema.safeParse('client_123.request-1').success).toBe(true);
+    expect(apiRequestIdSchema.safeParse('invalid request id').success).toBe(false);
+    expect(apiRequestIdSchema.safeParse('x'.repeat(129)).success).toBe(false);
+  });
+
+  it('keeps the browser ingestion limit aligned with the Worker upload cap', () => {
+    expect(INGESTION_UPLOAD_MAX_FILE_BYTES).toBe(10 * 1024 * 1024);
+  });
+
+  it('validates tenant-assigned subscription provisioning details and requests', () => {
+    const details = {
+      tenantId: 'TNT-CUSTOMER-1', customerId: 'usr-customer-1', customerEmail: 'buyer@example.com',
+      customerName: 'Buyer', companyName: 'Example Company', tier: 'GOLD', paymentReference: 'INV-100'
+    };
+    expect(provisionSubscriptionDetailsSchema.safeParse(details).success).toBe(true);
+    const invalidEmail = provisionSubscriptionDetailsSchema.safeParse({ ...details, customerEmail: 'invalid' });
+    expect(invalidEmail.success).toBe(false);
+    if (!invalidEmail.success) expect(invalidEmail.error.issues[0].message).toBe(UI_STRINGS.subscription.provisionModal.inputValidation.emailInvalid);
+
+    const otpRequest = { customer_id: details.customerId, action: 'PROVISION' };
+    expect(provisionSubscriptionOtpRequestSchema.safeParse(otpRequest).success).toBe(true);
+    expect(provisionSubscriptionOtpRequestSchema.safeParse({ ...otpRequest, unrecognized: true }).success).toBe(false);
+
+    const request = {
+      tenant_id: details.tenantId, customer_id: details.customerId, customer_email: details.customerEmail,
+      customer_name: details.customerName, company_name: details.companyName, tier: details.tier,
+      commercial_status: 'PAYMENT_RECEIVED', payment_reference: details.paymentReference,
+      payment_confirmed: true, otp_session_id: 'otp-session-1', otp_code: '123456'
+    };
+    expect(provisionSubscriptionRequestSchema.safeParse(request).success).toBe(true);
+    const invalidRequest = provisionSubscriptionRequestSchema.safeParse({ ...request, otp_code: '12x456' });
+    expect(invalidRequest.success).toBe(false);
+    if (!invalidRequest.success) expect(invalidRequest.error.issues[0].message).toBe(UI_STRINGS.subscription.provisionModal.inputValidation.otpInvalid);
+  });
+
+  it('validates provisioning OTP sessions and subscription response shape', () => {
+    expect(provisionSubscriptionOtpSchema.safeParse({ otpSessionId: 'otp-session-1', otpCode: '123456' }).success).toBe(true);
+    const invalidOtp = provisionSubscriptionOtpSchema.safeParse({ otpSessionId: '', otpCode: '12' });
+    expect(invalidOtp.success).toBe(false);
+
+    expect(provisionSubscriptionOtpResponseSchema.safeParse({ success: true, session_id: 'otp-session-1' }).success).toBe(true);
+    expect(provisionSubscriptionOtpResponseSchema.safeParse({ success: false, session_id: '' }).success).toBe(false);
+
+    const subscription = {
+      id: 'sub-1', tenant_id: 'TNT-CUSTOMER-1', customer_id: 'usr-customer-1', customer_email: 'buyer@example.com',
+      customer_name: 'Buyer', company_name: 'Example Company', tier: 'GOLD', status: 'ACTIVE',
+      commercial_status: 'COMPLETED', payment_confirmed: true, start_date: '2026-11-04T00:00:00.000Z',
+      end_date: '2027-11-04T00:00:00.000Z', created_at: '2026-11-04T00:00:00.000Z', updated_at: '2026-11-04T00:00:00.000Z'
+    };
+    expect(provisionSubscriptionResponseSchema.safeParse({ success: true, subscription }).success).toBe(true);
+    expect(provisionSubscriptionResponseSchema.safeParse({ success: true, subscription: { ...subscription, tenant_id: '' } }).success).toBe(false);
+  });
+
   it('validates D1 FX catalogs and historical conversion responses', () => {
     const rates = {
       success: true,
@@ -108,6 +173,41 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
     expect(pcbiWeeklyIndexResponseSchema.safeParse([{
       pcbi_id: 'PCBI-TEST', week_start: '', index_value: Number.NaN
     }]).success).toBe(false);
+  });
+
+  it('validates archived PCBI query filters and keeps monthly observations explicitly archive-only', () => {
+    expect(pcbiHistoricalObservationsQuerySchema.parse({})).toEqual({ limit: 100 });
+    expect(pcbiHistoricalObservationsQuerySchema.safeParse({
+      pcbiId: ' PCBI-TEST ', startDate: '2021-01-01', endDate: '2021-12-31', limit: 500
+    }).success).toBe(true);
+    expect(pcbiHistoricalObservationsQuerySchema.safeParse({ startDate: '2022-01-01', endDate: '2021-01-01' }).success).toBe(false);
+    expect(pcbiHistoricalObservationsQuerySchema.safeParse({ startDate: 'bad-date' }).success).toBe(false);
+    expect(pcbiHistoricalObservationsQuerySchema.safeParse({ limit: 501 }).success).toBe(false);
+    expect(pcbiHistoricalObservationsQuerySchema.safeParse({ limit: 0 }).success).toBe(false);
+
+    const valid = {
+      success: true,
+      data: {
+        archiveOnly: true,
+        frequency: 'MONTHLY',
+        count: 1,
+        observations: [{
+          pcbi_id: 'PCBI-TEST', observation_date: '2021-04-01', value_inr: 695420,
+          original_value: 9320, original_currency: 'USD', fx_rate: 74.6159,
+          unit: 'INR/MT', source: 'LME/JPC', status: 'VALIDATED', observation_frequency: 'MONTHLY'
+        }]
+      }
+    };
+    expect(pcbiHistoricalObservationsResponseSchema.safeParse(valid).success).toBe(true);
+    expect(pcbiHistoricalObservationsResponseSchema.safeParse({
+      ...valid, data: { ...valid.data, archiveOnly: false }
+    }).success).toBe(false);
+    expect(pcbiHistoricalObservationsResponseSchema.safeParse({
+      ...valid, data: { ...valid.data, observations: [{ ...valid.data.observations[0], fx_rate: 0 }] }
+    }).success).toBe(false);
+    expect(pcbiHistoricalObservationsResponseSchema.safeParse({
+      ...valid, data: { ...valid.data, count: 0 }
+    }).success).toBe(false);
   });
 
   it('validates procurement category mapping data from D1', () => {

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Dedicated Admin Management API Service (Frontend)
  */
@@ -39,7 +40,7 @@ export const adminAuthApiClient = {
       headers.Authorization = `Bearer ${authToken}`;
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CREATE_ADMIN}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CREATE_ADMIN}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(validation.data)

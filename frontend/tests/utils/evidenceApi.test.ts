@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 /**
  * Unit Tests for Frontend evidenceApi Client (Prompt 305)
  */
@@ -33,10 +34,7 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     } as any);
 
     const res = await evidenceApi.getInventory('job-001');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-001/inventory',
-      expect.objectContaining({ headers: expect.any(Object) })
-    );
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-001/inventory', expect.objectContaining({ headers: expect.any(Object) }));
     expect(res.success).toBe(true);
     expect(res.items.length).toBe(1);
   });
@@ -62,10 +60,7 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     } as any);
 
     const res = await evidenceApi.getParityValidation('job-001', 'FINANCIAL_VALIDATION');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-001/parity?workbookType=FINANCIAL_VALIDATION',
-      expect.any(Object)
-    );
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-001/parity?workbookType=FINANCIAL_VALIDATION', expect.any(Object));
     expect(res.success).toBe(true);
     expect(res.parity.overallStatus).toBe('PASS');
   });
@@ -88,17 +83,11 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     } as any);
 
     const resAll = await evidenceApi.getSavingsInventory('job-001');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-001/savings/inventory',
-      expect.any(Object)
-    );
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-001/savings/inventory', expect.any(Object));
     expect(resAll.success).toBe(true);
 
     const resSingle = await evidenceApi.getSavingsInventory('job-001', 'VENDOR_CONSOLIDATION');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-001/savings/VENDOR_CONSOLIDATION/inventory',
-      expect.any(Object)
-    );
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-001/savings/VENDOR_CONSOLIDATION/inventory', expect.any(Object));
     expect(resSingle.success).toBe(true);
   });
 
@@ -109,7 +98,8 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
       id: 'USR-777',
       role: 'ADMIN',
       name: 'Auditor Pro',
-      company_name: 'Acme Audit'
+      company_name: 'Acme Audit',
+      tenant_id: 'TNT-AUDIT-777'
     } as any);
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -117,19 +107,32 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     } as any);
 
     await evidenceApi.getInventory('job-auth');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-auth/inventory',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-auth/inventory', expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer jwt-token-xyz',
           'x-user-role': 'ADMIN',
           'x-user-id': 'USR-777',
           'x-user-name': 'Auditor Pro',
           'x-company-name': 'Acme Audit',
-          'x-tenant-id': 'USR-777'
+          'x-tenant-id': 'TNT-AUDIT-777'
         })
-      })
-    );
+      }));
+  });
+
+  it('does not synthesize a tenant header for a user without an assignment', async () => {
+    const { apiClient } = await import('../../src/utils/api');
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      id: 'USR-UNASSIGNED',
+      role: 'USER'
+    } as any);
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ success: true, items: [] })
+    } as any);
+
+    await evidenceApi.getInventory('job-unassigned');
+
+    const [, options] = vi.mocked(global.fetch).mock.calls[0];
+    expect((options as RequestInit).headers).not.toHaveProperty('x-tenant-id');
   });
 
   it('should fetch parity validation without workbookType query when omitted', async () => {
@@ -138,10 +141,7 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     } as any);
 
     const res = await evidenceApi.getParityValidation('job-002');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-002/parity',
-      expect.any(Object)
-    );
+    expectApiFetchCall(global.fetch, '/api/evidence/jobs/job-002/parity', expect.any(Object));
     expect(res.success).toBe(true);
   });
 });

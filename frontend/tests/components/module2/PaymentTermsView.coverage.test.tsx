@@ -140,7 +140,7 @@ describe('PaymentTermsView coverage', () => {
     render(<PaymentTermsView assessmentId={ASSESSMENT_ID} />);
     await screen.findByRole('heading', { name: PAYMENT_TERMS_UI_STRINGS.TITLE });
 
-    expect(fetchSpy).toHaveBeenCalledWith(API_URL);
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(API_URL);
   });
 
   it('shows the back control only when a back handler is provided, and calls it', async () => {

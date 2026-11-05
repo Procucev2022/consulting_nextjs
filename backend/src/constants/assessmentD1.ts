@@ -49,6 +49,11 @@ export const ASSESSMENT_D1_DEFAULT_ACTORS = {
 } as const;
 
 export const ASSESSMENT_D1_MESSAGES = {
+  tenantScopeRequired: 'An authenticated tenant assignment is required to access customer and assessment records.',
+  customerNotFound: (customerId: string): string => `Customer ${customerId} not found in the assigned tenant. Refresh the customer list and retry.`,
+  customerValidation: 'Customer details are invalid. Correct the highlighted fields and retry.',
+  customerUpdateValidation: 'Customer update is invalid. Correct the highlighted fields and retry.',
+  assessmentValidation: 'Assessment details are invalid. Correct the highlighted fields and retry.',
   actionValidation: 'Assessment action request is invalid. Correct the highlighted fields and retry.',
   permissionDenied: 'This assessment action requires an internal analyst or administrator role.',
   missingRecord: (assessmentId: string): string => `Assessment ${assessmentId} not found`,

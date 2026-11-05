@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Module 2 Strategic Sourcing API Client
  * Version: MODULE_2_SOURCING_LOGIC_V1.0
@@ -20,6 +21,8 @@ import type {
   VendorConsolidationResult
 } from '../types/module2VendorConsolidation';
 import { logger } from './logger';
+import { API_REQUEST_ID_HEADER } from '../constants/app';
+import type { Module2ApiRequestError } from '../types/errors';
 
 export interface Module2CategoryProfilesResponse {
   profiles: CategoryStrategicSourcingProfile[];
@@ -62,6 +65,19 @@ export class Module2StrategicSourcingApi {
     return query ? `${basePath}?${query}` : basePath;
   }
 
+  private static createRequestError(
+    error: unknown,
+    feature: string,
+    response?: Response
+  ): Module2ApiRequestError {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    return Object.assign(normalizedError, {
+      feature,
+      statusCode: response && !response.ok ? response.status : undefined,
+      requestId: response?.headers?.get(API_REQUEST_ID_HEADER) || undefined
+    });
+  }
+
   /**
    * Fetch 10 KPI Dashboard Summary
    */
@@ -69,6 +85,7 @@ export class Module2StrategicSourcingApi {
     refresh = false,
     assessmentId?: string
   ): Promise<Module2StrategicSourcingDashboardSummary | null> {
+    let response: Response | undefined;
     try {
       const resolvedAssessmentId =
         assessmentId ||
@@ -80,13 +97,12 @@ export class Module2StrategicSourcingApi {
         assessmentId: resolvedAssessmentId
       });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      const json = await res.json();
+      response = await apiFetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const json = await response.json();
       return json.data as Module2StrategicSourcingDashboardSummary;
     } catch (err) {
-      logger.debug('Module 2 Sourcing Dashboard Summary fetch skipped or unavailable in current runtime', { err });
-      return null;
+      throw this.createRequestError(err, 'dashboard', response);
     }
   }
 
@@ -97,6 +113,7 @@ export class Module2StrategicSourcingApi {
     refresh = false,
     assessmentId?: string
   ): Promise<CategoryStrategicSourcingProfile[]> {
+    let response: Response | undefined;
     try {
       const resolvedAssessmentId =
         assessmentId ||
@@ -108,13 +125,12 @@ export class Module2StrategicSourcingApi {
         assessmentId: resolvedAssessmentId
       });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      const json = await res.json();
+      response = await apiFetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const json = await response.json();
       return (json.data?.profiles as CategoryStrategicSourcingProfile[]) || [];
     } catch (err) {
-      logger.debug('Category Sourcing Profiles fetch skipped or unavailable in current runtime', { err });
-      return [];
+      throw this.createRequestError(err, 'category-profiles', response);
     }
   }
 
@@ -128,12 +144,12 @@ export class Module2StrategicSourcingApi {
     try {
       const path = this.appendQueryParams(`/category/${encodeURIComponent(id)}`, { assessmentId });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return json.data as CategoryStrategicSourcingProfile;
     } catch (err) {
-      logger.debug('Category Sourcing Profile fetch skipped or unavailable in current runtime', { id, err });
+      logger.warn('Category sourcing profile request failed; returning the unavailable fallback.', { feature: 'category-profile', id }, err);
       return null;
     }
   }
@@ -147,12 +163,12 @@ export class Module2StrategicSourcingApi {
     try {
       const path = this.appendQueryParams('/suppliers', { assessmentId });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return (json.data?.suppliers as Module2SupplierDeepDiveItem[]) || [];
     } catch (err) {
-      logger.debug('Supplier Deep Dive fetch skipped or unavailable in current runtime', { err });
+      logger.warn('Supplier deep dive request failed; returning the empty-state fallback.', { feature: 'supplier-deep-dive' }, err);
       return [];
     }
   }
@@ -166,12 +182,12 @@ export class Module2StrategicSourcingApi {
     try {
       const path = this.appendQueryParams('/handoff', { assessmentId });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return (json.data?.packages as Module2ToModule4HandoffPackage[]) || [];
     } catch (err) {
-      logger.debug('Handoff Packages fetch skipped or unavailable in current runtime', { err });
+      logger.warn('Handoff package request failed; returning the empty-state fallback.', { feature: 'handoff-packages' }, err);
       return [];
     }
   }
@@ -185,12 +201,12 @@ export class Module2StrategicSourcingApi {
     try {
       const path = this.appendQueryParams('/export', { assessmentId });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return json.data as Record<string, unknown>;
     } catch (err) {
-      logger.debug('Export Sourcing Dossier fetch skipped or unavailable in current runtime', { err });
+      logger.warn('Sourcing dossier export request failed; returning the unavailable fallback.', { feature: 'audit-dossier' }, err);
       return null;
     }
   }
@@ -210,7 +226,7 @@ export class Module2StrategicSourcingApi {
         category: options?.category
       });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return json.data as DirectPriceImprovementResult;
@@ -236,7 +252,7 @@ export class Module2StrategicSourcingApi {
         materialCode: options?.materialCode
       });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return json.data as EAuctionResult;
@@ -261,7 +277,7 @@ export class Module2StrategicSourcingApi {
         materialCode: options?.materialCode
       });
       const url = this.getFullUrl(path);
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const json = await res.json();
       return json.data as VendorConsolidationResult;

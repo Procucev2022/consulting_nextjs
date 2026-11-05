@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useMemo } from 'react';
 import { Search, AlertTriangle, Clock, ShieldCheck } from 'lucide-react';
@@ -57,7 +58,7 @@ export const VendorConsolidationMappingQueueTable: React.FC<VendorConsolidationM
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       const token = authApiClient.getStoredToken();
       if (token) headers.Authorization = `Bearer ${token}`;
-      const response = await fetch(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_UPDATE_ENDPOINT, {
+      const response = await apiFetch(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_UPDATE_ENDPOINT, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)

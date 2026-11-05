@@ -3,7 +3,6 @@
  * and (on demand) the ledger detail used by workbook sheets.
  */
 
-import { EVIDENCE_ERROR_CATEGORIES, EVIDENCE_HTTP_STATUS, EVIDENCE_MESSAGES } from '../constants/evidenceMessages';
 import type { CloudflareD1Database } from '../types/cloudflare';
 import type {
   EvidenceJobAccessRecord,
@@ -15,10 +14,8 @@ import {
   loadAnalysisRunRecords,
   loadDataVersionRecords,
   loadLedgerDetail,
-  loadLedgerTotals,
-  loadTenantId
+  loadLedgerTotals
 } from './evidenceD1Repository';
-import { EvidenceRequestError } from './evidenceRequestError';
 
 export const isActiveRun = (run: EvidenceRunRecord): boolean => run.isApproved && !run.isSuperseded;
 
@@ -29,14 +26,7 @@ export const loadEvidenceSnapshot = async (
 ): Promise<EvidenceSnapshot> => {
   const { requestId } = options;
   const jobId = job.assessmentId;
-  const tenantId = await loadTenantId(db, requestId);
-  if (tenantId === null) {
-    throw new EvidenceRequestError(
-      EVIDENCE_HTTP_STATUS.SERVICE_UNAVAILABLE,
-      EVIDENCE_ERROR_CATEGORIES.SERVER,
-      EVIDENCE_MESSAGES.tenantMissing
-    );
-  }
+  const tenantId = job.tenantId;
   const [runs, versions, ledger] = await Promise.all([
     loadAnalysisRunRecords(db, jobId, requestId),
     loadDataVersionRecords(db, jobId, requestId),

@@ -38,6 +38,7 @@ export const EVIDENCE_MESSAGES = {
     `Analysis job ${jobId} was not found in D1. Check the job ID and refresh the evidence panel.`,
   accessDenied: (jobId: string): string =>
     `Access denied: analysis job ${jobId} is not linked to your account. The sign-in email must match the contact email on the job's customer record. Ask an administrator to confirm it.`,
+  tenantAssignmentRequired: 'Evidence export requires a trusted tenant assignment. Ask an administrator to assign your account to one tenant and select that tenant before retrying.',
   tenantMissing: 'D1 has no TenantMaster row, so evidence cannot be scoped to a tenant. Seed D1 with the tenant record and retry.',
   routeNotFound: 'Evidence endpoint not found. Use /api/evidence/jobs/{jobId}/inventory, /parity, /workbooks/{workbookType}/download, /package/download, or /savings/.',
   methodNotAllowed: 'Evidence endpoints accept GET requests only. Send a GET request to the same URL.',

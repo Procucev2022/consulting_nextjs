@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { handleAssessmentRoute } from '../../src/workerD1Assessment';
+import { handleAssessmentLifecycleAction } from '../../src/services/assessmentLifecycleD1';
 import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
 import { ASSESSMENT_REVIEW_GATE_KEYS } from '../../src/constants/assessmentD1';
 import type { CloudflareEnvironment } from '../../src/types/cloudflare';
@@ -24,10 +25,10 @@ const seedAssessment = (fixture: ReturnType<typeof createWorkerDatabase>, option
   const assessmentId = String(options.assessmentId || 'A-LIFECYCLE');
   const runId = options.activeRunId === null ? '' : String(options.activeRunId || 'RUN-LIFECYCLE');
   fixture.db.prepare(`INSERT INTO AssessmentRecord (
-    assessment_id, customer_id, customer_name, industry, assessment_owner, status, is_test_data,
+    assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, status, is_test_data,
     assessment_period_start, assessment_period_end
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    assessmentId, 'C-LIFECYCLE', 'Lifecycle Client', 'Manufacturing', 'analyst@example.test',
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    assessmentId, 'C-LIFECYCLE', 'C-LIFECYCLE', 'Lifecycle Client', 'Manufacturing', 'analyst@example.test',
     String(options.status || 'ANALYST_REVIEW'), Number(options.isTestData || 0), '2025-04-01', '2026-03-31'
   );
   if (!options.missingVersion) {
@@ -70,13 +71,21 @@ const invoke = async (
 ) => {
   const assessmentId = options.assessmentId || 'A-LIFECYCLE';
   const path = `/${assessmentId}/${action}`;
-  const headers = { ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }), ...options.headers };
+  const headers = {
+    'x-resolved-tenant-id': 'C-LIFECYCLE',
+    ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...options.headers
+  };
   const request = new Request(`https://consulting.edge/api/assessment${path}`, {
     method: options.method || 'POST',
     headers,
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) })
   });
-  return handleAssessmentRoute(fixture.d1, path, request, new URL(request.url), options.environment || createArtifactEnvironment().environment);
+  const environment = options.environment || createArtifactEnvironment().environment;
+  return handleAssessmentRoute(fixture.d1, path, request, new URL(request.url), {
+    ...environment,
+    REQUEST_TENANT_ID: 'C-LIFECYCLE'
+  });
 };
 
 const expectStatus = async (
@@ -426,5 +435,24 @@ describe('D1 assessment lifecycle actions', () => {
 
   it('returns not found when closing an unknown assessment', async () => {
     await expectStatus('close', 404, {}, { body: {}, assessmentId: 'UNKNOWN' });
+  });
+
+  it('returns not found when approval targets a missing assessment record', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const result = await handleAssessmentLifecycleAction({
+        db: fixture.d1,
+        environment: {},
+        assessmentId: 'UNKNOWN',
+        action: 'approve',
+        body: { approvalComment: 'Reviewed and approved' },
+        actorEmail: 'analyst@example.test',
+        actorRole: 'ANALYST',
+        requestId: 'missing-assessment-approval'
+      });
+      expect(result.status).toBe(404);
+    } finally {
+      fixture.close();
+    }
   });
 });

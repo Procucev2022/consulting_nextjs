@@ -45,3 +45,9 @@ export interface LoggerOptions {
   retentionDays?: number;
   autoPurge?: boolean;
 }
+
+export type LoggerDiagnosticReporter = (
+  action: string,
+  error: unknown,
+  context?: Record<string, unknown>
+) => void;

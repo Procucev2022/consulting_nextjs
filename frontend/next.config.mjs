@@ -8,9 +8,6 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },
@@ -48,15 +45,6 @@ const nextConfig = {
         destination: `${backendOrigin}/api/:path*`,
       },
     ];
-  },
-  webpack(config, { isServer }) {
-    if (!isServer) {
-      // Disable webpack's built-in performance hints — Next.js 15.5+ promotes
-      // these warnings to exit code 1, which conflicts with our authoritative
-      // budget enforcement in scripts/check-budget.js (250 KB shared JS limit).
-      config.performance = { hints: false };
-    }
-    return config;
   },
 };
 

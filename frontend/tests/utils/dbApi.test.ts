@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { dbApiClient } from '../../src/utils/dbApi';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
@@ -7,7 +8,7 @@ describe('dbApiClient', () => {
     const data = [{ entity_name: 'D1Only', ddl: 'CREATE TABLE D1Only (id TEXT)', primary_attributes: 'id', system_usage: 'D1', sample_records: [] }];
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data })));
     await expect(dbApiClient.getDBSchema()).resolves.toEqual(data);
-    expect(fetch).toHaveBeenCalledWith('/api/db/schema');
+    expectApiFetchCall(fetch, '/api/db/schema');
     vi.mocked(fetch).mockResolvedValueOnce(new Response('{}', { status: 503 }));
     await expect(dbApiClient.getDBSchema()).rejects.toThrow(UI_STRINGS.databaseData.schemaLoadFailed);
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: [{ ddl: null }] })));
@@ -30,7 +31,7 @@ describe('dbApiClient', () => {
     });
 
     const res = await dbApiClient.getDBStatus();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/status');
+    expectApiFetchCall(global.fetch, '/api/db/status');
     expect(res).toEqual(mockHealth);
   });
 
@@ -42,7 +43,7 @@ describe('dbApiClient', () => {
     });
 
     const res = await dbApiClient.getDBMetrics();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/metrics');
+    expectApiFetchCall(global.fetch, '/api/db/metrics');
     expect(res).toEqual(mockMetrics);
   });
 
@@ -54,7 +55,7 @@ describe('dbApiClient', () => {
     });
 
     const res = await dbApiClient.getDBTableData('tenants', 2, 10, 'search-term');
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/tables?table=tenants&page=2&limit=10&search=search-term');
+    expectApiFetchCall(global.fetch, '/api/db/tables?table=tenants&page=2&limit=10&search=search-term');
     expect(res).toEqual(mockTableData);
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -62,7 +63,7 @@ describe('dbApiClient', () => {
       json: async () => ({ success: true, data: mockTableData })
     });
     const resDefault = await dbApiClient.getDBTableData('tenants');
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/tables?table=tenants&page=1&limit=20');
+    expectApiFetchCall(global.fetch, '/api/db/tables?table=tenants&page=1&limit=20');
     expect(resDefault).toEqual(mockTableData);
   });
 
@@ -74,7 +75,7 @@ describe('dbApiClient', () => {
     });
 
     const res = await dbApiClient.testDBConnection();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/test-connection', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/db/test-connection', expect.objectContaining({
       method: 'POST'
     }));
     expect(res).toEqual(mockResponse);

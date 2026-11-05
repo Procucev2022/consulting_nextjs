@@ -39,14 +39,24 @@ export interface QueryMetricsData {
   }>;
 }
 
+export interface GraphQLPageInfo {
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+export interface GraphQLConnection<T> {
+  items: T[];
+  pageInfo: GraphQLPageInfo;
+}
+
 export interface DashboardOverviewData {
   tenant: TenantMaster;
   categories: SpendCategorySummary[];
   opportunities: SavingsOpportunity[];
   funnelStages: ConversionFunnelPhase[];
-  ingestionQueue: RawDocumentIngestion[];
-  validationRecords: ValidationPreCheckRecord[];
-  queryMetrics: QueryMetricsData;
+  ingestionQueue: GraphQLConnection<RawDocumentIngestion>;
+  validationRecords: GraphQLConnection<ValidationPreCheckRecord>;
+  queryMetrics: QueryMetricsData | null;
 }
 
 export interface GraphQLClientOptions {

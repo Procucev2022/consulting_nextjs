@@ -90,16 +90,52 @@ describe('Frontend Logger Suite', () => {
       expect(listener).toHaveBeenCalledTimes(1);
     });
 
-    it('recovers gracefully if a listener throws', () => {
+    it('logs listener exceptions and continues notifying the remaining listeners', () => {
       const logger = new FrontendLogger('test-app', 'debug');
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const faultyListener = vi.fn(() => {
         throw new Error('Listener failed');
       });
+      const healthyListener = vi.fn();
 
       logger.addListener(faultyListener);
+      logger.addListener(healthyListener);
       expect(() => {
         logger.info('Safe event');
       }).not.toThrow();
+
+      expect(healthyListener).toHaveBeenCalledTimes(1);
+      expect(logger.getHistory()).toContainEqual(expect.objectContaining({
+        level: 'error',
+        message: 'Frontend logger listener failed',
+        context: { action: 'logger.listener.notify' },
+        error: expect.objectContaining({ name: 'Error', message: 'Listener failed', stack: expect.any(String) })
+      }));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ERROR] [test-app]: Frontend logger listener failed'),
+        { action: 'logger.listener.notify' },
+        expect.objectContaining({ message: 'Listener failed' })
+      );
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('keeps logger flow alive if the console fallback also throws', () => {
+      const logger = new FrontendLogger('test-app', 'debug');
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+        throw new Error('Console unavailable');
+      });
+      const faultyListener = vi.fn(() => { throw new Error('Listener failed'); });
+      const healthyListener = vi.fn();
+      logger.addListener(faultyListener);
+      logger.addListener(healthyListener);
+
+      expect(() => logger.info('Safe event')).not.toThrow();
+      expect(healthyListener).toHaveBeenCalledTimes(1);
+      expect(logger.getHistory()).toContainEqual(expect.objectContaining({
+        message: 'Frontend logger listener failed',
+        error: expect.objectContaining({ message: 'Listener failed' })
+      }));
+      consoleErrorSpy.mockRestore();
     });
 
     it('manages history buffer and limits entries to maxHistory', () => {

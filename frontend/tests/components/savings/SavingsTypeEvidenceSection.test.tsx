@@ -88,10 +88,11 @@ describe('SavingsTypeEvidenceSection Component (Prompt 306)', () => {
 
     await waitFor(() => expect(clickSpy).toHaveBeenCalled());
     expect(spy).toHaveBeenCalledWith('job-test-101', 'SAVINGS_ENGINE_EVIDENCE');
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/evidence/jobs/job-test-101/workbooks/SAVINGS_ENGINE_EVIDENCE/download',
-      { headers: { Authorization: 'Bearer tok-savings' } }
-    );
+    const [requestedUrl, init] = fetchMock.mock.calls[0];
+    const headers = new Headers(init?.headers);
+    expect(requestedUrl).toBe('/api/evidence/jobs/job-test-101/workbooks/SAVINGS_ENGINE_EVIDENCE/download');
+    expect(headers.get('Authorization')).toBe('Bearer tok-savings');
+    expect(headers.get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it('downloads a savings type workbook through the authenticated savings endpoint', async () => {

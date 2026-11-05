@@ -564,10 +564,6 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <a
             href="/executive-brief"
             data-testid="module4-open-brief-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              if (typeof window !== 'undefined') window.location.href = '/executive-brief';
-            }}
             className="flex items-center justify-center space-x-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
             <span>{UI_STRINGS.module4.btnOpenExecutiveBrief}</span>

@@ -2,6 +2,26 @@
  * PCBI (Procucev Benchmark Intelligence) Domain Types
  */
 
+import type { PcbiAdminImportInput } from './validation';
+
+export interface PCBIHistoricalObservationRecord {
+  pcbi_id: string;
+  observation_date: string;
+  value_inr: number;
+  original_value: number;
+  original_currency: string;
+  fx_rate: number;
+  unit: string;
+  source: string;
+  status: string;
+  observation_frequency: 'MONTHLY';
+}
+
+export interface PCBIPublishedPayloadCacheEntry {
+  expiresAt: number;
+  payload: PcbiAdminImportInput | null;
+}
+
 export type PCBISector =
   | 'Cement'
   | 'Steel'

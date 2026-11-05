@@ -21,9 +21,9 @@
   },
   "env": {
     "dev": {
-      "name": "consulting-frontend",
+      "name": "consulting-frontend-dev",
       "vars": {
-        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend-dev.anshul-goel.workers.dev"
       }
     },
     "prod": {

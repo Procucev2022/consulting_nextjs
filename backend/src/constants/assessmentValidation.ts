@@ -7,6 +7,7 @@ import {
 import { ASSESSMENT_REVIEW_GATE_KEYS, ASSESSMENT_REVIEW_GATE_STATUSES } from './assessmentD1';
 
 export const createCustomerSchema = z.object({
+  customerId: z.string().trim().min(1).optional(),
   customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
   industry: z.string().min(2, 'Industry is required'),
   businessUnit: z.string().optional(),
@@ -32,6 +33,7 @@ export const updateCustomerSchema = z.object({
 });
 
 export const createAssessmentSchema = z.object({
+  assessmentId: z.string().trim().min(1).optional(),
   customerId: z.string().optional(),
   customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
   industry: z.string().min(2, 'Industry is required'),
@@ -92,6 +94,10 @@ export const updateAssessmentStatusSchema = z.object({
   reason: z.string().optional()
 });
 
+export const ASSESSMENT_DATA_VERSION_MAX_BYTES = 100 * 1024 * 1024;
+export const ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH = Math.ceil(ASSESSMENT_DATA_VERSION_MAX_BYTES / 3) * 4;
+export const ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES = ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH + 64 * 1024;
+
 export const uploadDataVersionSchema = z.object({
   fileName: z.string().min(1, 'File name is required'),
   fileSize: z.number().positive('File size must be positive'),
@@ -100,7 +106,7 @@ export const uploadDataVersionSchema = z.object({
   recordCount: z.number().int().nonnegative().optional().default(0),
   filePath: z.string().optional().default(''),
   notes: z.string().optional(),
-  fileBase64: z.string().optional(),
+  fileBase64: z.string().max(ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH).optional(),
   runAnalysisImmediately: z.boolean().optional().default(false)
 });
 
@@ -108,8 +114,6 @@ export const validateAssessmentDatasetSchema = z.object({
   dataVersionId: z.string().min(1).optional()
 });
 
-export const ASSESSMENT_DATA_VERSION_MAX_BYTES = 100 * 1024 * 1024;
-export const ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH = Math.ceil(ASSESSMENT_DATA_VERSION_MAX_BYTES / 3) * 4;
 export const ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'] as const;
 
 export const analystApprovalSchema = z.object({

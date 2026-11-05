@@ -119,10 +119,11 @@ describe('EvidenceWorkbooksPanel Component Tests', () => {
     fireEvent.click(screen.getByTestId('btn-download-evidence-package'));
 
     await waitFor(() => expect(clickSpy).toHaveBeenCalled());
-    expect(fetchMock).toHaveBeenCalledWith(
-      `/api/evidence/jobs/${JOB_ID}/package/download`,
-      { headers: { Authorization: 'Bearer tok-panel' } }
-    );
+    const [requestedUrl, init] = fetchMock.mock.calls[0];
+    const headers = new Headers(init?.headers);
+    expect(requestedUrl).toBe(`/api/evidence/jobs/${JOB_ID}/package/download`);
+    expect(headers.get('Authorization')).toBe('Bearer tok-panel');
+    expect(headers.get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(buildPackageFilename(JOB_ID)).toBe(`Complete_Analysis_Evidence_Package_${JOB_ID}.zip`);
   });

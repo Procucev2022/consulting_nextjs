@@ -4,5 +4,5 @@
 export const API_BASE = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/+$/, '');
 
 export function getApiBaseUrl(): string {
-  return API_BASE;
+  return (process.env.NEXT_PUBLIC_BACKEND_URL || API_BASE).replace(/\/+$/, '');
 }

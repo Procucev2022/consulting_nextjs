@@ -36,8 +36,12 @@ export const toText = (value: unknown): string => toNullableText(value) ?? '';
 
 const toFlag = (value: unknown): boolean => toNumber(value) === 1;
 
-export const loadTenantId = async (db: CloudflareD1Database, requestId: string): Promise<string | null> => {
-  const rows = await queryD1Rows(db, EVIDENCE_SQL.tenant, [], requestId);
+export const loadTenantId = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  requestId: string
+): Promise<string | null> => {
+  const rows = await queryD1Rows(db, EVIDENCE_SQL.tenant, [tenantId], requestId);
   return rows.length > 0 ? toNullableText(rows[0].tenant_id) : null;
 };
 
@@ -51,6 +55,7 @@ export const loadUserRecord = async (
   const [row] = rows;
   return {
     userId: toText(row.id),
+    tenantId: toNullableText(row.tenant_id),
     name: toText(row.name),
     email: toText(row.email).trim().toLowerCase(),
     role: toText(row.role),
@@ -61,13 +66,15 @@ export const loadUserRecord = async (
 export const loadJobAccessRecord = async (
   db: CloudflareD1Database,
   jobId: string,
+  tenantId: string,
   requestId: string
 ): Promise<EvidenceJobAccessRecord | null> => {
-  const rows = await queryD1Rows(db, EVIDENCE_SQL.jobAccess, [jobId], requestId);
+  const rows = await queryD1Rows(db, EVIDENCE_SQL.jobAccess, [jobId, tenantId], requestId);
   if (rows.length === 0) return null;
   const [row] = rows;
   return {
     assessmentId: toText(row.assessment_id),
+    tenantId: toText(row.tenant_id),
     customerName: toText(row.customer_name),
     status: toText(row.status),
     totalSpendCr: toNullableNumber(row.total_spend_cr),

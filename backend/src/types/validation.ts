@@ -6,16 +6,22 @@
 
 import type { z } from 'zod';
 import type {
+  clientErrorReportSchema,
+  pcbiHistoricalObservationsQuerySchema,
   pcbiReferenceQuerySchema,
   pcbiAdminImportSchema,
   pcbiAdminPublishSchema,
   assignPcbiResearchSchema,
   d1DatasetScopeSchema,
+  ingestionDataQuerySchema,
+  graphqlIngestionPageArgsSchema,
+  graphqlIngestionCursorSchema,
   alternateSourcingQuerySchema,
   vendorConsolidationQuerySchema,
   requestHeadersSchema,
   tenantUpdateSchema,
   addIngestionFileSchema,
+  uploadIngestionFileSchema,
   updateValidationRecordSchema,
   mergeVendorSchema,
   deployOpportunitySchema,
@@ -45,19 +51,29 @@ import type {
   upgradeCodeLoginSchema,
   subscriptionProvisionSchema,
   subscriptionStatusSchema,
-  adminProvisionSchema
+  adminProvisionSchema,
+  adminAssignUserTenantSchema,
+  adminUpdateUserStatusSchema,
+  adminUpdateUserTierSchema,
+  tenantScopeSelectionSchema
 } from '../constants/validation';
 
+export type ClientErrorReportInput = z.infer<typeof clientErrorReportSchema>;
+export type PCBIHistoricalObservationsQueryInput = z.infer<typeof pcbiHistoricalObservationsQuerySchema>;
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
 export type PcbiReferenceQueryInput = z.infer<typeof pcbiReferenceQuerySchema>;
 export type PcbiAdminImportInput = z.infer<typeof pcbiAdminImportSchema>;
 export type PcbiAdminPublishInput = z.infer<typeof pcbiAdminPublishSchema>;
 export type AssignPcbiResearchInput = z.infer<typeof assignPcbiResearchSchema>;
 export type D1DatasetScopeInput = z.infer<typeof d1DatasetScopeSchema>;
+export type IngestionDataQueryInput = z.infer<typeof ingestionDataQuerySchema>;
+export type GraphQLIngestionPageArgsInput = z.infer<typeof graphqlIngestionPageArgsSchema>;
+export type GraphQLIngestionCursorInput = z.infer<typeof graphqlIngestionCursorSchema>;
 export type AlternateSourcingQueryInput = z.infer<typeof alternateSourcingQuerySchema>;
 export type VendorConsolidationQueryInput = z.infer<typeof vendorConsolidationQuerySchema>;
 export type TenantUpdateInput = z.infer<typeof tenantUpdateSchema>;
 export type AddIngestionFileInput = z.infer<typeof addIngestionFileSchema>;
+export type UploadIngestionFileInput = z.infer<typeof uploadIngestionFileSchema>;
 export type UpdateValidationRecordInput = z.infer<typeof updateValidationRecordSchema>;
 export type MergeVendorInput = z.infer<typeof mergeVendorSchema>;
 export type DeployOpportunityInput = z.infer<typeof deployOpportunitySchema>;
@@ -88,6 +104,10 @@ export type UpgradeCodeLoginInput = z.infer<typeof upgradeCodeLoginSchema>;
 export type SubscriptionProvisionInput = z.infer<typeof subscriptionProvisionSchema>;
 export type SubscriptionStatusInput = z.infer<typeof subscriptionStatusSchema>;
 export type AdminProvisionInput = z.infer<typeof adminProvisionSchema>;
+export type AdminAssignUserTenantInput = z.infer<typeof adminAssignUserTenantSchema>;
+export type AdminUpdateUserStatusInput = z.infer<typeof adminUpdateUserStatusSchema>;
+export type AdminUpdateUserTierInput = z.infer<typeof adminUpdateUserTierSchema>;
+export type TenantScopeSelectionInput = z.infer<typeof tenantScopeSelectionSchema>;
 
 export interface ValidationErrorDetail {
   path: string;

@@ -61,7 +61,7 @@ describe('Module2LeverOverview coverage', () => {
 
   it('toggles the diagnostics of each lever independently', () => {
     render(<Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={vi.fn()} />);
-    const [first, second] = SHIPPED_LEVERS;
+    const [first, second] = strings.levers;
 
     fireEvent.click(screen.getByTestId('lever-accordion-btn-1'));
     fireEvent.click(screen.getByTestId('lever-accordion-btn-2'));
@@ -77,13 +77,13 @@ describe('Module2LeverOverview coverage', () => {
     const { rerender } = render(
       <Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={vi.fn()} directPriceOppCr={5.5} />
     );
-    expect(screen.getByText('₹5.50 Cr')).toBeInTheDocument();
+    expect(screen.getByText(strings.formatOpportunity(5.5))).toBeInTheDocument();
 
     rerender(<Module2LeverOverview assessmentId="AIC-2026-0009" onSelectLever={vi.fn()} />);
 
-    expect(screen.queryByText('₹5.50 Cr')).not.toBeInTheDocument();
-    expect(screen.queryByText('₹17.12 Cr')).not.toBeInTheDocument();
-    expect(screen.getAllByText('₹0.00 Cr').length).toBeGreaterThan(0);
+    expect(screen.queryByText(strings.formatOpportunity(5.5))).not.toBeInTheDocument();
+    expect(screen.queryByText(strings.formatOpportunity(17.1155))).not.toBeInTheDocument();
+    expect(screen.getAllByText(strings.zeroValidatedSavings).length).toBeGreaterThan(0);
   });
 
   it('uses the implemented status text when an implemented lever has no status label', () => {
@@ -100,7 +100,7 @@ describe('Module2LeverOverview coverage', () => {
         ...SHIPPED_LEVERS[0],
         id: 11,
         code: 'LEV-11',
-        name: 'Planned Lever',
+        name: strings.levers[9].name,
         implementationStatus: 'NOT_IMPLEMENTED',
         statusLabel: ''
       }

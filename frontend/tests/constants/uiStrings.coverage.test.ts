@@ -290,7 +290,6 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['databaseData.conversionLoadFailed', () => UI_STRINGS.databaseData.conversionLoadFailed(503), ['503']],
   ['header.docRef', () => UI_STRINGS.header.docRef('TEST-REF-123'), ['TEST-REF-123']],
   ['header.authorFormatted', () => UI_STRINGS.header.authorFormatted('Alice', 'Lead Partner'), ['Alice', 'Lead Partner']],
-  ['header.slaQuery', () => UI_STRINGS.header.slaQuery(500), ['500']],
   ['header.currencyTitle', () => UI_STRINGS.header.currencyTitle('USD'), ['USD']],
   ['pipeline.lockedStepRequired', () => UI_STRINGS.pipeline.lockedStepRequired(1, 2), ['1', '2']],
   ['pipeline.currentStage', () => UI_STRINGS.pipeline.currentStage(2, 'Taxonomy'), ['2', 'Taxonomy']],

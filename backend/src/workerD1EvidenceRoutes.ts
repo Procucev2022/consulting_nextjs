@@ -21,7 +21,7 @@ import {
   authorizeEvidenceJobAccess,
   requireEvidenceDatabase
 } from './services/evidenceAccessService';
-import { loadJobAccessRecord } from './services/evidenceD1Repository';
+import { loadJobAccessRecord, loadTenantId } from './services/evidenceD1Repository';
 import { EvidenceRequestError } from './services/evidenceRequestError';
 import {
   buildEvidenceInventory,
@@ -92,9 +92,24 @@ const prepareEvidenceRequest = async <T extends { jobId: string }>(
 ): Promise<PreparedEvidenceRequest<T>> => {
   const database = requireEvidenceDatabase(input.environment);
   const user = await authenticateEvidenceUser(input.request, input.environment, database, input.requestId);
+  const tenantId = input.environment.REQUEST_TENANT_ID;
+  if (!tenantId) {
+    throw new EvidenceRequestError(
+      EVIDENCE_HTTP_STATUS.FORBIDDEN,
+      EVIDENCE_ERROR_CATEGORIES.AUTH,
+      EVIDENCE_MESSAGES.tenantAssignmentRequired
+    );
+  }
+  if (!(await loadTenantId(database, tenantId, input.requestId))) {
+    throw new EvidenceRequestError(
+      EVIDENCE_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      EVIDENCE_ERROR_CATEGORIES.SERVER,
+      EVIDENCE_MESSAGES.tenantMissing
+    );
+  }
   const params = parse(input);
-  const job = await loadJobAccessRecord(database, params.jobId, input.requestId);
-  const authorizedJob = authorizeEvidenceJobAccess(user, job, params.jobId);
+  const job = await loadJobAccessRecord(database, params.jobId, tenantId, input.requestId);
+  const authorizedJob = authorizeEvidenceJobAccess(user, job, params.jobId, tenantId);
   const snapshot = await loadEvidenceSnapshot(database, authorizedJob, { requestId: input.requestId });
   return { params, user, snapshot, database };
 };

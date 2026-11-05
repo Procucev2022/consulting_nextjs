@@ -34,7 +34,7 @@ import {
 import { authApiClient } from '../../utils/authApi';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
-import type { UserProfile, TenantMaster, RawDocumentIngestion } from '../../types';
+import type { UserProfile, TenantMaster, RawDocumentIngestion, IngestionQueuePageCursor } from '../../types';
 import { AICEV_LOGO_SRC, UI_STRINGS } from '../../constants';
 
 export default function ProfilePage(): React.ReactElement {
@@ -42,6 +42,10 @@ export default function ProfilePage(): React.ReactElement {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tenant, setTenant] = useState<TenantMaster | null>(null);
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
+  const [queueCursor, setQueueCursor] = useState<IngestionQueuePageCursor | null>(null);
+  const [hasMoreIngestionDocuments, setHasMoreIngestionDocuments] = useState(false);
+  const [isLoadingMoreIngestionDocuments, setIsLoadingMoreIngestionDocuments] = useState(false);
+  const [totalIngestionDocuments, setTotalIngestionDocuments] = useState(0);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(false);
 
@@ -139,10 +143,24 @@ export default function ProfilePage(): React.ReactElement {
         setUser(activeUser);
         if (meRes?.user && storedToken) authApiClient.setStoredSession(storedToken, meRes.user);
 
-        const activeBuyerId = activeUser.id;
+        const activeTenantId = activeUser.tenant_id || undefined;
+        if (!activeTenantId) {
+          frontendLogger.warn('Profile data loading skipped because the verified user has no assigned tenant', {
+            action: 'profile.tenant_assignment',
+            userId: activeUser.id,
+            role: activeUser.role
+          });
+          setTenant(null);
+          setIngestionQueue([]);
+          setQueueCursor(null);
+          setHasMoreIngestionDocuments(false);
+          setTotalIngestionDocuments(0);
+          return;
+        }
+
         const [tRes, ingRes] = await Promise.all([
-          apiClient.getTenant().catch(() => null),
-          apiClient.getIngestionData(activeBuyerId).catch(() => null)
+          apiClient.getTenant(activeTenantId).catch(() => null),
+          apiClient.getIngestionData(activeTenantId).catch(() => null)
         ]);
 
         if (!isMounted) return;
@@ -151,14 +169,12 @@ export default function ProfilePage(): React.ReactElement {
           setTenant(tRes);
         }
 
-        if (ingRes?.queue) {
-          const buyerDocs = activeBuyerId
-            ? ingRes.queue.filter(
-                (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === activeUser.email
-              )
-            : ingRes.queue;
-          setIngestionQueue(buyerDocs);
+        if (ingRes?.queue) setIngestionQueue(ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId));
+        if (ingRes?.pagination?.queue) {
+          setQueueCursor(ingRes.pagination.queue.nextCursor);
+          setHasMoreIngestionDocuments(ingRes.pagination.queue.hasMore);
         }
+        if (ingRes?.summary) setTotalIngestionDocuments(ingRes.summary.totalFiles);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -172,6 +188,29 @@ export default function ProfilePage(): React.ReactElement {
       isMounted = false;
     };
   }, [router]);
+
+  const handleLoadMoreIngestionDocuments = async (): Promise<void> => {
+    if (!queueCursor || !hasMoreIngestionDocuments || isLoadingMoreIngestionDocuments || !user?.tenant_id) return;
+    setIsLoadingMoreIngestionDocuments(true);
+    try {
+      const nextPage = await apiClient.getIngestionData(user.tenant_id, { queueCursor });
+      setIngestionQueue((current) => {
+        const documentsById = new Map(current.map((document) => [document.doc_id, document]));
+        nextPage.queue.forEach((document) => documentsById.set(document.doc_id, document));
+        return [...documentsById.values()];
+      });
+      setQueueCursor(nextPage.pagination.queue.nextCursor);
+      setHasMoreIngestionDocuments(nextPage.pagination.queue.hasMore);
+      if (nextPage.summary) setTotalIngestionDocuments(nextPage.summary.totalFiles);
+    } catch (error: unknown) {
+      frontendLogger.warn('Could not load the next D1 ingestion-document page', {
+        action: 'profile.ingestion.loadMore', tenantId: user.tenant_id, cursor: queueCursor
+      }, error);
+      setDocActionMessage(error instanceof Error ? error.message : UI_STRINGS.module1.loadMoreIngestionDocumentsFailed);
+    } finally {
+      setIsLoadingMoreIngestionDocuments(false);
+    }
+  };
 
   const handleCopyBuyerId = () => {
     if (!user?.id) return;
@@ -223,11 +262,13 @@ export default function ProfilePage(): React.ReactElement {
     setDeletingDocId(docId);
     setDocActionMessage(null);
     try {
-      const activeBuyerId = user?.id || authApiClient.getStoredUser()?.id;
-      const updatedQueue = await apiClient.deleteIngestionDocument(docId, activeBuyerId);
-      const buyerDocs = (updatedQueue || []).filter(
-        (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === user?.email
-      );
+      const activeTenantId = user?.tenant_id || authApiClient.getStoredUser()?.tenant_id || undefined;
+      if (!activeTenantId) {
+        setDocActionMessage(UI_STRINGS.auth.tenantAssignmentRequired);
+        return;
+      }
+      const updatedQueue = await apiClient.deleteIngestionDocument(docId, activeTenantId);
+      const buyerDocs = (updatedQueue || []).filter((doc) => doc.tenant_id === activeTenantId);
       setIngestionQueue(buyerDocs);
       setDocActionMessage('Document successfully removed from repository.');
       setTimeout(() => setDocActionMessage(null), 3000);
@@ -692,6 +733,9 @@ export default function ProfilePage(): React.ReactElement {
             </div>
           ) : (
             <div className="space-y-3">
+              <p className="text-xs text-slate-500" aria-live="polite">
+                {UI_STRINGS.module1.showingIngestionDocuments(ingestionQueue.length, totalIngestionDocuments)}
+              </p>
               {ingestionQueue.map((item) => (
                 <div
                   key={item.doc_id || item.file_name}
@@ -756,6 +800,20 @@ export default function ProfilePage(): React.ReactElement {
                   </div>
                 </div>
               ))}
+              {hasMoreIngestionDocuments && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreIngestionDocuments}
+                    disabled={isLoadingMoreIngestionDocuments}
+                    className="px-4 py-2 text-xs font-semibold text-cyan-800 bg-cyan-50 hover:bg-cyan-100 disabled:opacity-60 rounded-lg border border-cyan-200 transition-colors"
+                  >
+                    {isLoadingMoreIngestionDocuments
+                      ? UI_STRINGS.module1.loadingMoreIngestionDocuments
+                      : UI_STRINGS.module1.loadMoreIngestionDocuments}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

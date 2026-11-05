@@ -83,8 +83,12 @@ export const authenticateEvidenceUser = async (
 export const authorizeEvidenceJobAccess = (
   user: EvidenceUserRecord,
   job: EvidenceJobAccessRecord | null,
-  jobId: string
+  jobId: string,
+  tenantId: string
 ): EvidenceJobAccessRecord => {
+  if (user.role !== AUTH_ROLES.ADMIN && user.tenantId !== tenantId) {
+    throw forbidden(EVIDENCE_MESSAGES.tenantAssignmentRequired);
+  }
   if (user.role === AUTH_ROLES.ADMIN) {
     if (job === null) {
       throw new EvidenceRequestError(
@@ -93,6 +97,7 @@ export const authorizeEvidenceJobAccess = (
         EVIDENCE_MESSAGES.jobNotFound(jobId)
       );
     }
+    if (job.tenantId !== tenantId) throw forbidden(EVIDENCE_MESSAGES.tenantAssignmentRequired);
     return job;
   }
   if (job === null || !isLinkedToCustomer(user, job)) throw forbidden(EVIDENCE_MESSAGES.accessDenied(jobId));

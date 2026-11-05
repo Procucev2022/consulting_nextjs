@@ -1,5 +1,4 @@
 import { D1_ROUTE_MESSAGES, D1_TABLES } from '../constants/d1';
-import { DEFAULT_CACHE_TTL_MS } from '../constants/db';
 import { d1DatasetScopeSchema } from '../constants/validation';
 import {
   MODULE2_D1_PROJECTION, MODULE2_D1_SCOPED_MESSAGES, MODULE2_D1_VALID_TRANSACTION_FILTER,
@@ -9,7 +8,7 @@ import type { CloudflareD1Database } from '../types/cloudflare';
 import type { D1Record, WorkerD1Result } from '../types/d1';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import type {
-  ScopedModule2Analysis, ScopedModule2CacheEntry, ScopedModule2Supplier
+  ScopedModule2Analysis, ScopedModule2Supplier
 } from '../types/module2D1Scoped';
 import type { ScopedCategoryProfile } from '../types/module2D1Scoped';
 import type { ProcurementTransactionScope } from '../types/procurementTransactionD1';
@@ -26,16 +25,15 @@ import { buildDirectPriceResult } from './workerD1DirectPrice';
 import type { DirectPriceD1BuildOptions } from '../types/module2DirectPriceImprovementD1';
 import { validateScopedModule2Filters } from './workerD1Module2FilterValidation';
 import type {
-  ScopedModule2RouteLoaders, ScopedModule2ScopeResult
+  ScopedModule2RouteLoaders, ScopedModule2ScopeResult, ScopedModule2TrustedScopeResult
 } from '../types/module2D1ScopedRoutes';
 import { buildModule2D1AuditDossier } from './workerD1SourcingAuditDossier';
 import { buildCategorySpecialisationFromD1 } from './workerD1CategorySpecialisation';
 import { buildSpecificationRationalisationFromD1 } from './workerD1SpecificationRationalisation';
 import { handleScopedSpecialRoute } from './workerD1Module2ScopedSpecialRoutes';
+import { getOrLoadScopedModule2Analysis } from './workerD1Module2Cache';
 
-let caches = new WeakMap<CloudflareD1Database, Map<string, ScopedModule2CacheEntry>>();
-
-export const clearScopedModule2Cache = (): void => { caches = new WeakMap(); };
+export { clearScopedModule2Cache } from './workerD1Module2Cache';
 
 const toTransaction = (value: D1Record): StrategicInputTransaction => {
   const row = module2D1TransactionSchema.parse(value);
@@ -51,12 +49,7 @@ const toTransaction = (value: D1Record): StrategicInputTransaction => {
 
 const loadAnalysis = async (
   db: CloudflareD1Database, scope: ProcurementTransactionScope, refresh: boolean, requestId: string
-): Promise<ScopedModule2Analysis> => {
-  const key = JSON.stringify([scope.tenantId, scope.assessmentId]);
-  const cache = caches.get(db) || new Map<string, ScopedModule2CacheEntry>();
-  const cached = cache.get(key);
-  if (!refresh && cached && cached.expiresAt > Date.now()) return cached.value;
-  const value = (async (): Promise<ScopedModule2Analysis> => {
+): Promise<ScopedModule2Analysis> => getOrLoadScopedModule2Analysis(db, scope, refresh, requestId, async () => {
     const startedAt = Date.now();
     const filters = [scope.assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
     const params: string[] = scope.assessmentId ? [scope.assessmentId] : [];
@@ -77,15 +70,7 @@ const loadAnalysis = async (
       ...scope, requestId, transactionCount: transactions.length, durationMs: Date.now() - startedAt
     });
     return { transactions, analysis };
-  })();
-  cache.set(key, { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, value });
-  caches.set(db, cache);
-  try { return await value; } catch (error) {
-    cache.delete(key);
-    logger.error('Could not calculate assessment-scoped sourcing results', { ...scope, requestId }, error);
-    throw error;
-  }
-};
+  });
 
 const suppliersFromAnalysis = (result: ScopedModule2Analysis): ScopedModule2Supplier[] => {
   const suppliers = new Map<string, ScopedModule2Supplier>();
@@ -148,7 +133,8 @@ const isCustomerScopedPath = (path: string): boolean =>
 const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResult => {
   const assessmentId = url.searchParams.get('assessmentId') ??
     request.headers.get('x-assessment-id') ?? undefined;
-  const tenantId = url.searchParams.get('tenantId') ?? request.headers.get('x-tenant-id') ?? undefined;
+  const tenantId = url.searchParams.get('tenantId') ?? request.headers.get('x-tenant-id') ??
+    request.headers.get('x-resolved-tenant-id') ?? undefined;
   if (assessmentId === undefined && tenantId === undefined) return { kind: 'none' };
   const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId });
   if (!parsed.success) return { kind: 'invalid', error: { status: 400, data: {
@@ -157,17 +143,42 @@ const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResu
   return { kind: 'valid', scope: parsed.data };
 };
 
+const resolveTrustedDatasetScope = async (
+  db: CloudflareD1Database,
+  request: Request,
+  requestedScope: ProcurementTransactionScope,
+  requestId: string
+): Promise<ScopedModule2TrustedScopeResult> => {
+  const trustedTenantId = request.headers.get('x-resolved-tenant-id');
+  if (!trustedTenantId) return { error: { status: 403, data: {
+    success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired
+  } } };
+  if (requestedScope.tenantId && requestedScope.tenantId !== trustedTenantId) {
+    return { error: { status: 403, data: {
+      success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch
+    } } };
+  }
+  const scope = { ...requestedScope, tenantId: trustedTenantId };
+  if (scope.assessmentId) {
+    const rows = await queryD1Rows<{ assessment_id: string; customer_name?: string | null }>(db,
+      `SELECT assessment_id, customer_name FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ? LIMIT 1`,
+      [scope.assessmentId, trustedTenantId], requestId);
+    if (!rows.length) return { error: { status: 404, data: {
+      success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound
+    } } };
+    return { scope, customerName: String(rows[0].customer_name || scope.assessmentId) };
+  }
+  return { scope, customerName: '' };
+};
+
 const isHandledByScopedProjection = (path: string): boolean =>
   path.startsWith('/line-items') || path.startsWith('/canonical-input');
 
 const loadCustomerName = async (
-  db: CloudflareD1Database, scope: ProcurementTransactionScope, path: string, requestId: string
+  scope: ProcurementTransactionScope, path: string, resolvedCustomerName: string
 ): Promise<string> => {
   if (!isCustomerScopedPath(path) || !scope.assessmentId) return scope.assessmentId || '';
-  const rows = await queryD1Rows(db,
-    `SELECT customer_name FROM ${D1_TABLES.assessments} WHERE assessment_id = ? LIMIT 1`,
-    [scope.assessmentId], requestId);
-  return String(rows[0]?.customer_name || scope.assessmentId);
+  return resolvedCustomerName || scope.assessmentId;
 };
 
 const categoryDetails = (result: ScopedModule2Analysis, path: string): WorkerD1Result | null => {
@@ -238,7 +249,7 @@ const analysisDetails = (
   if (categoryResult) return categoryResult;
   const analysisResult = canonicalAnalysisDetails(result, path);
   if (analysisResult) return analysisResult;
-  return { status: 501, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unavailable } };
+  return { status: 404, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unknownRoute } };
 };
 
 export const handleScopedModule2Route = async (
@@ -252,23 +263,22 @@ export const handleScopedModule2Route = async (
   const filterOptions = validateScopedModule2Filters(path, url);
   if (filterOptions.error) return filterOptions.error;
   const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
-  const { scope } = scopeResult;
-  const loaders: ScopedModule2RouteLoaders = { loadAnalysis, loadCustomerName };
+  const authorizedScope = await resolveTrustedDatasetScope(db, request, scopeResult.scope, requestId);
+  if (authorizedScope.error) return authorizedScope.error;
+  const { scope, customerName: resolvedCustomerName } = authorizedScope;
+  const loaders: ScopedModule2RouteLoaders = {
+    loadAnalysis,
+    loadCustomerName: (_db, customerScope, customerPath) =>
+      loadCustomerName(customerScope, customerPath, resolvedCustomerName)
+  };
   const specialRoute = await handleScopedSpecialRoute(
     db, path, scope, url, requestId, filterOptions, loaders
   );
   if (specialRoute) return specialRoute;
   const result = await loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
-  const customerName = await loadCustomerName(db, scope, path, requestId);
-  let tenantId = scope.tenantId;
-  if (path === '/category-specialisation' && !tenantId && scope.assessmentId) {
-    const assessmentRows = await queryD1Rows(db,
-      `SELECT tenant_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ? LIMIT 1`,
-      [scope.assessmentId], requestId);
-    tenantId = String(assessmentRows[0]?.tenant_id || '');
-  }
+  const customerName = await loadCustomerName(scope, path, resolvedCustomerName);
   return analysisCollections(result, path) ?? analysisDetails(
     result, path, scope.assessmentId, filterOptions.eauctionOptions,
-    filterOptions.directPriceOptions, customerName, tenantId
+    filterOptions.directPriceOptions, customerName, scope.tenantId
   );
 };

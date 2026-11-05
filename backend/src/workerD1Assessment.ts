@@ -1,11 +1,15 @@
 import { D1_TABLES } from './constants/d1';
+import { ASSESSMENT_STATUSES, DATA_STATUSES } from './constants/assessment';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import {
   ASSESSMENT_D1_ACTION_METHODS, ASSESSMENT_D1_DEFAULT_ACTORS, ASSESSMENT_D1_LIFECYCLE_ACTIONS,
   ASSESSMENT_D1_MESSAGES, ASSESSMENT_REVIEW_GATE_KEYS, ASSESSMENT_REVIEW_GATE_STATUSES
 } from './constants/assessmentD1';
-import { assessmentReviewGateUpdateSchema } from './constants/assessmentValidation';
+import {
+  ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES,
+  assessmentReviewGateUpdateSchema, createAssessmentSchema, createCustomerSchema, updateCustomerSchema
+} from './constants/assessmentValidation';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { uploadAssessmentDataVersion, validateAssessmentDataVersion } from './services/assessmentDataVersionD1';
 import { handleAssessmentLifecycleAction } from './services/assessmentLifecycleD1';
@@ -31,6 +35,13 @@ const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, v
   const statement = db.prepare(sql);
   const bound = values.length > 0 ? statement.bind(...values) : statement;
   return bound.first<T>();
+};
+
+const loadScopedSnapshots = async (
+  db: CloudflareD1Database, entryType: 'customer' | 'assessment', ids: string[]
+): Promise<Map<string, D1Record>> => {
+  const snapshots = await Promise.all(ids.map((id) => loadAssessmentSnapshots(db, entryType, id)));
+  return new Map(snapshots.flatMap((snapshot) => [...snapshot.entries()]));
 };
 
 const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): Promise<D1Record[]> => {
@@ -130,38 +141,42 @@ const getOperatingModeData = (): Record<string, unknown> => ({
 const handleCustomerRoute = async (
   db: CloudflareD1Database,
   subPath: string,
-  request: Request
+  request: Request,
+  tenantId: string
 ): Promise<WorkerD1Result> => {
   const custSub = subPath.slice('/customers'.length);
   if (!custSub || custSub === '/') {
     if (request.method === 'POST') {
-      const body = await request.json() as D1Record;
-      const customerId = (typeof body.customerId === 'string' && body.customerId) || `CUST-2026-${Date.now().toString().slice(-4)}`;
+      const parsed = createCustomerSchema.safeParse(await readJson(request));
+      if (!parsed.success) return { status: 400, data: { success: false, message: ASSESSMENT_D1_MESSAGES.customerValidation, errors: parsed.error.issues } };
+      const body = parsed.data;
+      const customerId = body.customerId || `CUST-${globalThis.crypto.randomUUID()}`;
       await db.prepare(`
         INSERT INTO ${D1_TABLES.customers} (
-          customer_id, customer_name, industry, business_unit, region, base_currency,
+          customer_id, tenant_id, customer_name, industry, business_unit, region, base_currency,
           company_website, contact_email, contact_person, status, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        customerId, String(body.customerName || 'New Client'), String(body.industry || 'General'),
-        String(body.businessUnit || 'Default BU'), String(body.region || 'APAC'),
-        String(body.baseCurrency || 'INR'), body.companyWebsite ?? null,
+        customerId, tenantId, body.customerName, body.industry,
+        body.businessUnit || 'Default BU', body.region || 'APAC',
+        body.baseCurrency || 'INR', body.companyWebsite || null,
         body.contactEmail ?? null, body.contactPerson ?? null,
-        String(body.status || 'ACTIVE'), body.notes ?? null
+        'ACTIVE', body.notes ?? null
       ).run();
-      const created = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ?`, [customerId]);
+      const created = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`, [customerId, tenantId]);
       return { data: created ? mapD1Customer(created) : null, status: 201 };
     }
-    const [customers, snapshots] = await Promise.all([
-      queryAll(db, `SELECT * FROM ${D1_TABLES.customers} ORDER BY customer_name ASC`),
-      loadAssessmentSnapshots(db, 'customer')
-    ]);
+    const customers = await queryAll(db,
+      `SELECT * FROM ${D1_TABLES.customers} WHERE tenant_id = ? ORDER BY customer_name ASC`, [tenantId]);
+    const snapshots = await loadScopedSnapshots(db, 'customer', customers.map((row) => String(row.customer_id)));
     return { data: customers.map((row) => mapD1Customer(row, snapshots.get(String(row.customer_id)))) };
   }
 
   const customerId = decodeURIComponent(custSub.replace(/^\//, ''));
   if (request.method === 'PATCH' || request.method === 'PUT') {
-    const body = await request.json() as D1Record;
+    const parsed = updateCustomerSchema.safeParse(await readJson(request));
+    if (!parsed.success) return { status: 400, data: { success: false, message: ASSESSMENT_D1_MESSAGES.customerUpdateValidation, errors: parsed.error.issues } };
+    const body = parsed.data;
     await db.prepare(`
       UPDATE ${D1_TABLES.customers}
       SET customer_name = COALESCE(?, customer_name), industry = COALESCE(?, industry),
@@ -169,23 +184,26 @@ const handleCustomerRoute = async (
           base_currency = COALESCE(?, base_currency), company_website = COALESCE(?, company_website),
           contact_email = COALESCE(?, contact_email), contact_person = COALESCE(?, contact_person),
           status = COALESCE(?, status), notes = COALESCE(?, notes), updated_at = CURRENT_TIMESTAMP
-      WHERE customer_id = ?
+      WHERE customer_id = ? AND tenant_id = ?
     `).bind(
       body.customerName ?? null, body.industry ?? null, body.businessUnit ?? null,
       body.region ?? null, body.baseCurrency ?? null, body.companyWebsite ?? null,
       body.contactEmail ?? null, body.contactPerson ?? null, body.status ?? null,
-      body.notes ?? null, customerId
+      body.notes ?? null, customerId, tenantId
     ).run();
-    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ?`, [customerId]);
-    const snapshots = await loadAssessmentSnapshots(db, 'customer');
+    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`, [customerId, tenantId]);
+    const snapshots = await loadAssessmentSnapshots(db, 'customer', customerId);
     return { data: updated ? mapD1Customer(updated, snapshots.get(customerId)) : null };
   }
 
-  const customer = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ?`, [customerId]);
-  if (!customer) return { data: { success: false, message: `Customer ${customerId} not found` }, status: 404 };
-  const [assessments, customerSnapshots, assessmentSnapshots] = await Promise.all([
-    queryAll(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE customer_id = ? ORDER BY created_at DESC`, [customerId]),
-    loadAssessmentSnapshots(db, 'customer'), loadAssessmentSnapshots(db, 'assessment')
+  const customer = await queryFirst(db,
+    `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`, [customerId, tenantId]);
+  if (!customer) return { data: { success: false, message: ASSESSMENT_D1_MESSAGES.customerNotFound(customerId) }, status: 404 };
+  const assessments = await queryAll(db,
+    `SELECT * FROM ${D1_TABLES.assessments} WHERE customer_id = ? AND tenant_id = ? ORDER BY created_at DESC`, [customerId, tenantId]);
+  const [customerSnapshots, assessmentSnapshots] = await Promise.all([
+    loadAssessmentSnapshots(db, 'customer', customerId),
+    loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)))
   ]);
   return { data: {
     customer: mapD1Customer(customer, customerSnapshots.get(customerId)),
@@ -199,6 +217,7 @@ const handleAssessmentAction = async (
   action: string,
   request: Request,
   environment: CloudflareEnvironment,
+  tenantId: string,
   artifactId?: string
 ): Promise<WorkerD1Result> => {
   const allowedMethods = ASSESSMENT_D1_ACTION_METHODS[action];
@@ -206,6 +225,9 @@ const handleAssessmentAction = async (
   if (!allowedMethods.includes(request.method)) return {
     status: 405, data: { success: false, message: ASSESSMENT_D1_MESSAGES.unsupportedMethod }
   };
+  const ownedAssessment = await queryFirst<D1Record>(db,
+    `SELECT assessment_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
+  if (!ownedAssessment) return { status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.missingRecord(assessmentId) } };
   if (action === 'run-module1' || action === 'run-analysis') {
     return runAssessmentAnalysisFromD1({
       db, environment, assessmentId, body: await readJson(request),
@@ -214,7 +236,9 @@ const handleAssessmentAction = async (
   }
   if (action === 'review-gates') return handleReviewGates(db, assessmentId, request, environment);
   if (action === 'upload' || action === 'validate') {
-    const body: unknown = await request.json();
+    const body: unknown = action === 'upload'
+      ? await readJson(request, ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES)
+      : await readJson(request);
     const context = {
       db,
       environment,
@@ -239,7 +263,7 @@ const handleAssessmentAction = async (
       };
       return handleAssessmentLifecycleAction(artifactContext, decodeURIComponent(artifactId));
     }
-    const body: unknown = request.method === 'GET' ? {} : await request.json();
+    const body: unknown = request.method === 'GET' ? {} : await readJson(request);
     const defaultActor = action === 'accept'
       ? { email: ASSESSMENT_D1_DEFAULT_ACTORS.customerEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.customerRole }
       : action === 'approve'
@@ -258,19 +282,19 @@ const handleAssessmentAction = async (
     return handleAssessmentLifecycleAction(context);
   }
   if (action === 'nda' && (request.method === 'PATCH' || request.method === 'POST')) {
-    const body = await request.json() as D1Record;
+    const body = await readJson(request) as D1Record;
     const ndaStatus = typeof body.ndaStatus === 'string' ? body.ndaStatus : 'SIGNED';
-    await db.prepare(`UPDATE ${D1_TABLES.assessments} SET nda_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ?`).bind(ndaStatus, assessmentId).run();
-    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
+    await db.prepare(`UPDATE ${D1_TABLES.assessments} SET nda_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ? AND tenant_id = ?`).bind(ndaStatus, assessmentId, tenantId).run();
+    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
     const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId);
     return { data: updated ? mapD1Assessment(updated, snapshots.get(assessmentId)) : null };
   }
 
   if (action === 'data-status' && (request.method === 'PATCH' || request.method === 'POST')) {
-    const body = await request.json() as D1Record;
+    const body = await readJson(request) as D1Record;
     const dataStatus = typeof body.dataStatus === 'string' ? body.dataStatus : 'VALIDATED';
-    await db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ?`).bind(dataStatus, assessmentId).run();
-    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
+    await db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ? AND tenant_id = ?`).bind(dataStatus, assessmentId, tenantId).run();
+    const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
     const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId);
     return { data: updated ? mapD1Assessment(updated, snapshots.get(assessmentId)) : null };
   }
@@ -282,7 +306,7 @@ const handleAssessmentAction = async (
   }
 
   const [assessment, versions, runs, auditLogs, snapshots, versionSnapshots, runSnapshots, auditSnapshots] = await Promise.all([
-    queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]),
+    queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]),
     queryAll(db, `SELECT * FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ?`, [assessmentId]),
     queryAll(db, `SELECT * FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ?`, [assessmentId]),
     queryAll(db, `SELECT * FROM ${D1_TABLES.auditLogs} WHERE assessment_id = ? ORDER BY timestamp DESC`, [assessmentId]),
@@ -308,40 +332,99 @@ export const handleAssessmentRoute = async (
   environment: CloudflareEnvironment = {}
 ): Promise<WorkerD1Result> => {
   if (!db) throw new Error('Cloudflare D1 binding DB is not configured');
-  await db.prepare('SELECT 1 AS ok').first();
 
   if (subPath === '/mode' || subPath.startsWith('/mode/')) return { data: getOperatingModeData() };
-  if (subPath === '/system-info') return { data: { appVersion: '2.4.0', buildNumber: 'PROCUCEV-BUILD-2026.10', runtime: 'Cloudflare Workers (Edge)', d1Connected: true } };
+  if (subPath === '/system-info') {
+    await db.prepare('SELECT 1 AS ok').first();
+    return { data: { appVersion: '2.4.0', buildNumber: 'PROCUCEV-BUILD-2026.10', runtime: 'Cloudflare Workers (Edge)', d1Connected: true } };
+  }
 
-  if (subPath.startsWith('/customers')) return handleCustomerRoute(db, subPath, request);
+  const tenantId = environment.REQUEST_TENANT_ID;
+  if (!tenantId) {
+    logger.warn('Assessment request rejected because tenant scope is unavailable', {
+      requestId: request.headers.get('x-request-id') || undefined,
+      path: new URL(request.url).pathname
+    });
+    return { status: 403, data: { success: false, message: ASSESSMENT_D1_MESSAGES.tenantScopeRequired } };
+  }
+
+  if (subPath.startsWith('/customers')) return handleCustomerRoute(db, subPath, request, tenantId);
 
   if (subPath === '' || subPath === '/' || subPath.startsWith('/list')) {
     if (request.method === 'POST') {
-      const body = await request.json() as D1Record;
-      const id = (typeof body.assessmentId === 'string' && body.assessmentId) || `AIC-2026-${Date.now().toString().slice(-4)}`;
-      await db.prepare(`
+      const parsed = createAssessmentSchema.safeParse(await readJson(request));
+      if (!parsed.success) return { status: 400, data: { success: false, message: ASSESSMENT_D1_MESSAGES.assessmentValidation, errors: parsed.error.issues } };
+      const body = parsed.data;
+      const id = body.assessmentId || `AIC-${globalThis.crypto.randomUUID()}`;
+      let customerId = body.customerId;
+      let createdCustomerId: string | undefined;
+      if (customerId) {
+        const existingCustomer = await queryFirst<D1Record>(db,
+          `SELECT customer_id, customer_name, industry, business_unit, company_website
+            FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ? AND status = 'ACTIVE'`, [customerId, tenantId]);
+        if (!existingCustomer) return { status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.customerNotFound(customerId) } };
+        body.customerName = String(existingCustomer.customer_name);
+        body.industry = String(existingCustomer.industry);
+        body.businessUnit = String(existingCustomer.business_unit || body.businessUnit || 'Default BU');
+        body.companyWebsite = String(existingCustomer.company_website || body.companyWebsite || '');
+      } else {
+        customerId = `CUST-${globalThis.crypto.randomUUID()}`;
+        createdCustomerId = customerId;
+      }
+      const assessmentInsert = db.prepare(`
         INSERT INTO ${D1_TABLES.assessments} (
-          assessment_id, customer_id, customer_name, industry, business_unit, company_website,
-          assessment_owner, currency, assessment_period_start, assessment_period_end, assigned_analyst, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          assessment_id, tenant_id, customer_id, customer_name, industry, business_unit, company_website,
+          assessment_owner, currency, assessment_period_start, assessment_period_end, data_received_at,
+          nda_status, data_status, assigned_analyst, status, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        id, String(body.customerId || 'CUST-001'), String(body.customerName || 'Enterprise Client'),
-        String(body.industry || 'Manufacturing'), String(body.businessUnit || 'Default BU'),
-        body.companyWebsite ?? null, String(body.assessmentOwner || 'admin@procucev.com'),
-        String(body.currency || 'INR'), String(body.assessmentPeriodStart || '2023-04-01'),
-        String(body.assessmentPeriodEnd || '2026-03-31'), String(body.assignedAnalyst || 'admin@procucev.com'),
-        body.notes ?? null
-      ).run();
-      const created = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [id]);
+        id, tenantId, customerId, body.customerName, body.industry, body.businessUnit || 'Default BU',
+        body.companyWebsite || null, body.assessmentOwner || body.assignedAnalyst, body.currency,
+        body.assessmentPeriodStart, body.assessmentPeriodEnd, body.dataReceivedDate || null,
+        body.ndaStatus, DATA_STATUSES.NOT_RECEIVED, body.assignedAnalyst, ASSESSMENT_STATUSES.CREATED,
+        body.notes ?? body.initialNotes ?? null
+      );
+      const customerInsert = createdCustomerId ? db.prepare(`
+        INSERT INTO ${D1_TABLES.customers} (
+          customer_id, tenant_id, customer_name, industry, business_unit, company_website, status
+        ) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')
+      `).bind(createdCustomerId, tenantId, body.customerName, body.industry,
+        body.businessUnit || 'Default BU', body.companyWebsite || null) : null;
+      try {
+        if (customerInsert && db.batch) await db.batch([customerInsert, assessmentInsert]);
+        else {
+          if (customerInsert) await customerInsert.run();
+          await assessmentInsert.run();
+        }
+      } catch (error) {
+        if (createdCustomerId && !db.batch) {
+          try {
+            await db.prepare(`DELETE FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`)
+              .bind(createdCustomerId, tenantId).run();
+          } catch (rollbackError) {
+            logger.error('Failed to roll back an unlinked customer created with an assessment', {
+              requestId: request.headers.get('x-request-id') || undefined, customerId: createdCustomerId
+            }, rollbackError);
+          }
+        }
+        logger.error('Failed to create tenant-scoped assessment', {
+          requestId: request.headers.get('x-request-id') || undefined, assessmentId: id, tenantId
+        }, error);
+        throw error;
+      }
+      const created = await queryFirst(db,
+        `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [id, tenantId]);
+      logger.info('Tenant-scoped assessment created', {
+        requestId: request.headers.get('x-request-id') || undefined, assessmentId: id, customerId, tenantId
+      });
       return { data: created ? mapD1Assessment(created) : null, status: 201 };
     }
-    const [assessments, snapshots] = await Promise.all([
-      queryAll(db, `SELECT * FROM ${D1_TABLES.assessments} ORDER BY created_at DESC`),
-      loadAssessmentSnapshots(db, 'assessment')
-    ]);
+    const assessments = await queryAll(db,
+      `SELECT * FROM ${D1_TABLES.assessments} WHERE tenant_id = ? ORDER BY created_at DESC`, [tenantId]);
+    const snapshots = await loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)));
     return { data: assessments.map((row) => mapD1Assessment(row, snapshots.get(String(row.assessment_id)))) };
   }
 
   const parts = subPath.replace(/^\//, '').split('/');
-  return handleAssessmentAction(db, parts[0] || '', parts[1] || '', request, environment, parts[2]);
+  return handleAssessmentAction(db, parts[0] || '', parts[1] || '', request, environment, tenantId, parts[2]);
 };

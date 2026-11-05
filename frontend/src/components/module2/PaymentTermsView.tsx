@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { PaymentTermsResult } from '../../types/module2PaymentTerms';
@@ -7,6 +8,7 @@ import { PaymentTermsCoverageTab } from './PaymentTermsCoverageTab';
 import { PaymentTermsOpportunitiesTab } from './PaymentTermsOpportunitiesTab';
 import { PaymentTermsSupplierTab } from './PaymentTermsSupplierTab';
 import { PaymentTermsKpiHeader } from './PaymentTermsKpiHeader';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 interface PaymentTermsViewProps {
   assessmentId: string;
@@ -21,31 +23,37 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'coverage' | 'opportunities' | 'suppliers'>('coverage');
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
+    const requestId = beginRequest();
     setLoading(true);
     setError(null);
+    setData(null);
     try {
-      const res = await fetch(`/api/module2/sourcing/payment-terms?assessmentId=${encodeURIComponent(assessmentId)}`);
+      const res = await apiFetch(`/api/module2/sourcing/payment-terms?assessmentId=${encodeURIComponent(assessmentId)}`);
       if (!res.ok) {
         throw new Error(`Failed to fetch Lever 5 Payment Terms analysis (HTTP ${res.status})`);
       }
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (!json.success || !json.data) {
         throw new Error(json.message || 'Invalid API response payload');
       }
       setData(json.data);
     } catch (err: unknown) {
+      if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void fetchData();
+    return invalidateRequests;
+  }, [fetchData, invalidateRequests]);
 
   if (loading) {
     return (

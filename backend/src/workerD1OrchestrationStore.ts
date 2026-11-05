@@ -61,29 +61,30 @@ const allRows = async <TRow>(statement: CloudflareD1PreparedStatement): Promise<
   return result.results;
 };
 
-/** Job rows for every assessment, or only those owned by one customer. */
-export const listJobRows = (db: OrchestrationDatabase, customerId: string | null): Promise<AssessmentJobRow[]> =>
+/** Job rows for one selected tenant, optionally limited to one customer account. */
+export const listJobRows = (db: OrchestrationDatabase, tenantId: string, customerId: string | null): Promise<AssessmentJobRow[]> =>
   customerId === null
-    ? allRows<AssessmentJobRow>(db.prepare(SQL_JOBS_ALL))
-    : allRows<AssessmentJobRow>(db.prepare(SQL_JOBS_FOR_CUSTOMER).bind(customerId));
+    ? allRows<AssessmentJobRow>(db.prepare(SQL_JOBS_ALL).bind(tenantId))
+    : allRows<AssessmentJobRow>(db.prepare(SQL_JOBS_FOR_CUSTOMER).bind(tenantId, customerId));
 
-export const findJobRow = (db: OrchestrationDatabase, assessmentId: string): Promise<AssessmentJobRow | null> =>
-  db.prepare(SQL_JOB_BY_ID).bind(assessmentId).first<AssessmentJobRow>();
+export const findJobRow = (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<AssessmentJobRow | null> =>
+  db.prepare(SQL_JOB_BY_ID).bind(assessmentId, tenantId).first<AssessmentJobRow>();
 
-export const listVersionRows = (db: OrchestrationDatabase, assessmentId: string): Promise<DataVersionRow[]> =>
-  allRows<DataVersionRow>(db.prepare(SQL_VERSIONS_FOR_JOB).bind(assessmentId));
+export const listVersionRows = (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<DataVersionRow[]> =>
+  allRows<DataVersionRow>(db.prepare(SQL_VERSIONS_FOR_JOB).bind(assessmentId, tenantId));
 
-export const listProcurementStats = (db: OrchestrationDatabase, assessmentId: string): Promise<ProcurementStatsRow[]> =>
-  allRows<ProcurementStatsRow>(db.prepare(SQL_PROCUREMENT_STATS_FOR_JOB).bind(assessmentId));
+export const listProcurementStats = (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<ProcurementStatsRow[]> =>
+  allRows<ProcurementStatsRow>(db.prepare(SQL_PROCUREMENT_STATS_FOR_JOB).bind(assessmentId, tenantId));
 
 export const listPcbiGapRows = (
   db: OrchestrationDatabase,
   assessmentId: string,
-  dataVersionId: string | null
+  dataVersionId: string | null,
+  tenantId: string
 ): Promise<PCBIGapSourceRow[]> => dataVersionId === null
   ? Promise.resolve([])
   : allRows<PCBIGapSourceRow>(db.prepare(SQL_PCBI_GAPS_FOR_JOB)
-    .bind(assessmentId, dataVersionId, `${assessmentId}:${dataVersionId}`));
+    .bind(assessmentId, dataVersionId, `${assessmentId}:${dataVersionId}`, tenantId));
 
 export const findActivePcbiSeries = (db: OrchestrationDatabase, seriesId: string): Promise<PCBISeriesRow | null> =>
   db.prepare(SQL_ACTIVE_PCBI_SERIES).bind(seriesId).first<PCBISeriesRow>();
@@ -93,11 +94,11 @@ export const upsertPcbiGapResolutionStatement = (
   values: readonly [string, string, string, string, string | null, string | null, string | null, string | null, string, string]
 ): CloudflareD1PreparedStatement => db.prepare(SQL_UPSERT_PCBI_GAP_RESOLUTION).bind(...values);
 
-export const listReportRows = (db: OrchestrationDatabase, assessmentId: string): Promise<ReportRow[]> =>
-  allRows<ReportRow>(db.prepare(SQL_REPORTS_FOR_JOB).bind(assessmentId));
+export const listReportRows = (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<ReportRow[]> =>
+  allRows<ReportRow>(db.prepare(SQL_REPORTS_FOR_JOB).bind(assessmentId, tenantId));
 
-export const findReportRow = (db: OrchestrationDatabase, reportVersionId: string): Promise<ReportRow | null> =>
-  db.prepare(SQL_REPORT_BY_ID).bind(reportVersionId).first<ReportRow>();
+export const findReportRow = (db: OrchestrationDatabase, reportVersionId: string, tenantId: string): Promise<ReportRow | null> =>
+  db.prepare(SQL_REPORT_BY_ID).bind(reportVersionId, tenantId).first<ReportRow>();
 
 export const findLatestChecklistRow = (
   db: OrchestrationDatabase,
@@ -111,29 +112,29 @@ export const findAcknowledgementRow = (
 ): Promise<AcknowledgementRow | null> =>
   db.prepare(SQL_ACKNOWLEDGEMENT_FOR_REPORT).bind(reportVersionId).first<AcknowledgementRow>();
 
-export const listCorrectionRows = (db: OrchestrationDatabase, assessmentId: string): Promise<CorrectionRow[]> =>
-  allRows<CorrectionRow>(db.prepare(SQL_CORRECTIONS_FOR_JOB).bind(assessmentId));
+export const listCorrectionRows = (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<CorrectionRow[]> =>
+  allRows<CorrectionRow>(db.prepare(SQL_CORRECTIONS_FOR_JOB).bind(assessmentId, tenantId));
 
 /** Open correction requests for one job, or across all jobs when assessmentId is null. */
-export const countOpenCorrections = async (db: OrchestrationDatabase, assessmentId: string | null): Promise<number> => {
+export const countOpenCorrections = async (db: OrchestrationDatabase, assessmentId: string | null, tenantId: string): Promise<number> => {
   const statement = assessmentId === null
-    ? db.prepare(SQL_OPEN_CORRECTIONS_ALL)
-    : db.prepare(SQL_OPEN_CORRECTIONS_FOR_JOB).bind(assessmentId);
+    ? db.prepare(SQL_OPEN_CORRECTIONS_ALL).bind(tenantId)
+    : db.prepare(SQL_OPEN_CORRECTIONS_FOR_JOB).bind(assessmentId, tenantId);
   const row = await statement.first<CountRow>();
   return row?.open_count ?? 0;
 };
 
-export const listRecentNotificationRows = (db: OrchestrationDatabase, limit: number): Promise<NotificationRow[]> =>
-  allRows<NotificationRow>(db.prepare(SQL_RECENT_NOTIFICATIONS).bind(limit));
+export const listRecentNotificationRows = (db: OrchestrationDatabase, tenantId: string, limit: number): Promise<NotificationRow[]> =>
+  allRows<NotificationRow>(db.prepare(SQL_RECENT_NOTIFICATIONS).bind(tenantId, limit));
 
-export const listRecentAuditRows = (db: OrchestrationDatabase, limit: number): Promise<AuditRow[]> =>
-  allRows<AuditRow>(db.prepare(SQL_RECENT_AUDIT_EVENTS).bind(limit));
+export const listRecentAuditRows = (db: OrchestrationDatabase, tenantId: string, limit: number): Promise<AuditRow[]> =>
+  allRows<AuditRow>(db.prepare(SQL_RECENT_AUDIT_EVENTS).bind(tenantId, limit));
 
 export const findUserRow = (db: OrchestrationDatabase, userId: string): Promise<UserRow | null> =>
   db.prepare(SQL_USER_BY_ID).bind(userId).first<UserRow>();
 
-export const nextReportSequence = async (db: OrchestrationDatabase, assessmentId: string): Promise<number> => {
-  const row = await db.prepare(SQL_NEXT_REPORT_SEQUENCE).bind(assessmentId).first<SequenceRow>();
+export const nextReportSequence = async (db: OrchestrationDatabase, assessmentId: string, tenantId: string): Promise<number> => {
+  const row = await db.prepare(SQL_NEXT_REPORT_SEQUENCE).bind(assessmentId, tenantId).first<SequenceRow>();
   return row?.next_sequence ?? 1;
 };
 

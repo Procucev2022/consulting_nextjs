@@ -104,8 +104,9 @@ describe('ProCPXModal', () => {
     expect(launchButton()).toBeDisabled();
   });
 
-  it('changes the sourcing mechanism and the target baseline', () => {
+  it('changes the sourcing mechanism and the target baseline', async () => {
     renderModal();
+    await flushSupplierLoad();
 
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Reverse Auction' } });
     fireEvent.change(baselineInput(), { target: { value: '20' } });
@@ -150,8 +151,9 @@ describe('ProCPXModal', () => {
     expect(screen.queryByText(proCPX.deployedSuccess)).not.toBeInTheDocument();
   });
 
-  it('uses the D1 opportunity current spend and displays zero when savings are absent', () => {
+  it('uses the D1 opportunity current spend and displays zero when savings are absent', async () => {
     renderModal({ ...sampleOpportunity, est_savings_inr_cr: undefined, est_savings: undefined });
+    await flushSupplierLoad();
 
     expect(baselineInput()).toHaveValue(5);
     expect(screen.getByText(UI_STRINGS.common.croreAmount('0.00'))).toBeInTheDocument();
@@ -177,8 +179,9 @@ describe('ProCPXModal', () => {
     expect(frontendLogger.warn).toHaveBeenCalled();
   });
 
-  it('closes without launching', () => {
+  it('closes without launching', async () => {
     renderModal();
+    await flushSupplierLoad();
 
     fireEvent.click(screen.getByRole('button', { name: proCPX.cancel }));
 

@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Download, ArrowLeft, AlertTriangle, Search } from 'lucide-react';
@@ -13,6 +14,7 @@ import { ProcurementComplianceReviewModal } from './ProcurementComplianceReviewM
 import { ProcurementComplianceTable } from './ProcurementComplianceTable';
 import { logger } from '../../utils/logger';
 import { authApiClient } from '../../utils/authApi';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps> = ({
   assessmentId = '',
@@ -28,8 +30,17 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
   const [downloadBlobUrl, setDownloadBlobUrl] = useState<string | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
+  const {
+    beginRequest: beginReviewRequest,
+    isCurrentRequest: isCurrentReviewRequest,
+    invalidateRequests: invalidateReviewRequests
+  } = useLatestRequestSequence();
+  const activeAssessmentIdRef = useRef(assessmentId);
+  activeAssessmentIdRef.current = assessmentId;
 
   const loadData = useCallback(async (): Promise<void> => {
+    const requestId = beginRequest();
     if (!assessmentId) {
       setData(null);
       setIsLoading(false);
@@ -37,32 +48,43 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
     }
     setIsLoading(true);
     setError(null);
+    setData(null);
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`/api/module2/sourcing/procurement-compliance?assessmentId=${encodeURIComponent(assessmentId)}`, { headers });
+      const res = await apiFetch(`/api/module2/sourcing/procurement-compliance?assessmentId=${encodeURIComponent(assessmentId)}`, { headers });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       setData(json?.data ?? json);
     } catch (err) {
+      if (!isCurrentRequest(requestId)) return;
       logger.error('Failed to load Lever 9 Procurement Compliance data', { assessmentId }, err);
       setError('Unable to load procurement compliance data. Please retry or contact support.');
     } finally {
-      setIsLoading(false);
+      if (isCurrentRequest(requestId)) setIsLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    setSelectedException(null);
+    setIsReviewModalOpen(false);
+    setIsSubmittingReview(false);
+    setSearchTerm('');
+    setActiveTab('ALL');
+    void loadData();
+    return invalidateRequests;
+  }, [loadData, invalidateRequests]);
 
   const handleReviewSubmit = async (payload: ProcurementComplianceReviewPayload): Promise<void> => {
+    const requestId = beginReviewRequest();
+    const submittedAssessmentId = assessmentId;
     setIsSubmittingReview(true);
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch('/api/module2/sourcing/procurement-compliance/review', {
+      const res = await apiFetch('/api/module2/sourcing/procurement-compliance/review', {
         method: 'POST',
         headers,
         body: JSON.stringify({ ...payload, assessmentId })
@@ -71,23 +93,33 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
         const errorJson = (await res.json().catch(() => null)) as { message?: string } | null;
         throw new Error(errorJson?.message || `HTTP error ${res.status}`);
       }
+      if (!isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId) return;
       setIsReviewModalOpen(false);
       await loadData();
     } catch (err) {
-      logger.error('Failed to submit compliance review', { payload }, err);
+      logger.error('Failed to submit compliance review', {
+        assessmentId: submittedAssessmentId,
+        payload,
+        staleRequest: !isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId
+      }, err);
+      if (!isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId) return;
       setError('Failed to record review decision.');
       throw err;
     } finally {
-      setIsSubmittingReview(false);
+      if (isCurrentReviewRequest(requestId) && activeAssessmentIdRef.current === submittedAssessmentId) {
+        setIsSubmittingReview(false);
+      }
     }
   };
+
+  useEffect(() => invalidateReviewRequests, [assessmentId, invalidateReviewRequests]);
 
   const handleExportExcel = async (): Promise<void> => {
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/module2/sourcing/procurement-compliance/export-excel?assessmentId=${encodeURIComponent(assessmentId)}`,
         { headers }
       );

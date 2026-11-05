@@ -11,7 +11,9 @@ import {
   CUSTOMER_A_ID,
   CUSTOMER_B_ID,
   GUEST_ID,
+  OTHER_TEST_TENANT_ID,
   SUSPENDED_ID,
+  TEST_TENANT_ID,
   createHarness,
   mintToken,
   seedStandardFixtures,
@@ -189,6 +191,14 @@ describe('authentication and routing', () => {
     expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.databaseNotConfigured);
   });
 
+  it('requires the authenticated user to have an explicit tenant assignment', async () => {
+    harness.sqlite.exec('DROP TRIGGER trg_user_requires_tenant_on_active_update');
+    harness.sqlite.prepare('UPDATE User SET tenant_id = NULL WHERE id = ?').run(CUSTOMER_A_ID);
+    const result = await customerCall({ path: '/jobs' });
+    expect(result.status).toBe(403);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.tenantAssignmentRequired);
+  });
+
   it('returns 404 for paths that match no endpoint', async () => {
     const result = await adminCall({ path: '/unknown/path' });
     expect(result.status).toBe(404);
@@ -249,6 +259,52 @@ describe('listing jobs', () => {
     expect(jobIds(await customerCall({ path: '/jobs', query: '?status=ALL' })).length).toBe(6);
   });
 
+  it('filters assessment lists and direct reads by the resolved tenant', async () => {
+    harness.sqlite.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+      .run(OTHER_TEST_TENANT_ID, 'Other Test Tenant');
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, tenant_id, customer_name, industry, contact_email) VALUES (?, ?, ?, ?, ?)'
+    ).run('CUST-OTHER', OTHER_TEST_TENANT_ID, 'Other Enterprise', 'Industrial', 'other@example.test');
+    harness.sqlite.prepare(
+      'INSERT INTO AssessmentRecord (assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run('AIC-OTHER', OTHER_TEST_TENANT_ID, 'CUST-OTHER', 'Other Enterprise', 'Industrial', 'analyst@example.test');
+    harness.sqlite.prepare(
+      'INSERT INTO OrchestrationNotification (notification_id, recipient_type, tenant_id, assessment_id, title, message, severity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run('NOTIF-OTHER', 'ADMIN', OTHER_TEST_TENANT_ID, 'AIC-OTHER', 'Other tenant notice', 'Private message', 'INFO', '2026-01-01T00:00:00.000Z');
+    harness.sqlite.prepare(
+      'INSERT INTO OrchestrationAuditEvent (event_id, tenant_id, assessment_id, actor_id, actor_role, event_type, entity_type, entity_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run('AUDIT-OTHER', OTHER_TEST_TENANT_ID, 'AIC-OTHER', ADMIN_ID, 'ADMIN', 'TEST_EVENT', 'TestEntity', 'AIC-OTHER', '2026-01-01T00:00:00.000Z');
+
+    const selectedTenant = await adminCall({ path: '/jobs', tenantId: OTHER_TEST_TENANT_ID });
+    expect(jobIds(selectedTenant)).toEqual(['AIC-OTHER']);
+    expect((await adminCall({ path: '/jobs' })).body.data).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ analysisJobId: 'AIC-OTHER' })
+    ]));
+    expect((await adminCall({ path: '/jobs/AIC-OTHER' })).status).toBe(404);
+    const ownNotifications = await adminCall({ path: '/notifications' });
+    expect(ownNotifications.body.data).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ notificationId: 'NOTIF-OTHER' })
+    ]));
+    const otherNotifications = await adminCall({ path: '/notifications', tenantId: OTHER_TEST_TENANT_ID });
+    expect(otherNotifications.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ notificationId: 'NOTIF-OTHER', tenantId: OTHER_TEST_TENANT_ID })
+    ]));
+    const ownAudit = await adminCall({ path: '/audit-trail' });
+    expect(ownAudit.body.data).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ eventId: 'AUDIT-OTHER' })
+    ]));
+    const otherAudit = await adminCall({ path: '/audit-trail', tenantId: OTHER_TEST_TENANT_ID });
+    expect(otherAudit.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ eventId: 'AUDIT-OTHER', tenantId: OTHER_TEST_TENANT_ID })
+    ]));
+  });
+
+  it('requires an explicit tenant scope for orchestration reads', async () => {
+    const result = await adminCall({ path: '/jobs', tenantId: null });
+    expect(result.status).toBe(403);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.tenantAssignmentRequired);
+  });
+
   it('shows customer B only the assessment linked to their account', async () => {
     expect(jobIds(await send(harness, { path: '/jobs', token: customerBToken }))).toEqual(['AIC-B1']);
   });
@@ -289,7 +345,7 @@ describe('job detail and readiness', () => {
     const data = result.body.data;
     expect(data.job).toMatchObject({
       analysisJobId: 'AIC-A1',
-      tenantId: CUSTOMER_A_ID,
+      tenantId: TEST_TENANT_ID,
       customerName: 'Alpha Textile',
       uploadedBy: 'analyst@procucev.com',
       originalUploadId: 'DV-A1',
@@ -657,8 +713,8 @@ describe('approval and submission', () => {
     const generated = await generateReport();
     await confirmChecklist();
     harness.sqlite.prepare(
-      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
-    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+      'UPDATE CustomerRecord SET contact_email = ?1 WHERE customer_id = ?2 AND tenant_id = ?3'
+    ).run('finance@example.test', CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
@@ -871,7 +927,7 @@ describe('correction requests', () => {
     expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.correctionRequested);
     expect(result.body.request).toMatchObject({
       analysisJobId: 'AIC-A1',
-      tenantId: CUSTOMER_A_ID,
+      tenantId: TEST_TENANT_ID,
       userId: CUSTOMER_A_ID,
       category: 'INCORRECT_SUPPLIER_MAPPING',
       status: 'OPEN'
@@ -1023,8 +1079,8 @@ describe('resending notifications', () => {
   it('sends the report email and persists the SENT status when provider credentials and customer email exist', async () => {
     const reportId = await submitReport();
     harness.sqlite.prepare(
-      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
-    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+      'UPDATE CustomerRecord SET contact_email = ?1 WHERE customer_id = ?2 AND tenant_id = ?3'
+    ).run('finance@example.test', CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -1053,8 +1109,8 @@ describe('resending notifications', () => {
   it('records a failed provider response and returns actionable resend guidance', async () => {
     const reportId = await submitReport();
     harness.sqlite.prepare(
-      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
-    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+      'UPDATE CustomerRecord SET contact_email = ?1 WHERE customer_id = ?2 AND tenant_id = ?3'
+    ).run('finance@example.test', CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -1079,8 +1135,8 @@ describe('resending notifications', () => {
   it('records a provider network exception as FAILED and allows a later retry', async () => {
     const reportId = await submitReport();
     harness.sqlite.prepare(
-      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
-    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+      'UPDATE CustomerRecord SET contact_email = ?1 WHERE customer_id = ?2 AND tenant_id = ?3'
+    ).run('finance@example.test', CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network unavailable'));
@@ -1099,8 +1155,8 @@ describe('resending notifications', () => {
   it('returns a server error if the email delivery result cannot be persisted', async () => {
     const reportId = await submitReport();
     harness.sqlite.prepare(
-      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
-    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+      'UPDATE CustomerRecord SET contact_email = ?1 WHERE customer_id = ?2 AND tenant_id = ?3'
+    ).run('finance@example.test', CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
@@ -1121,6 +1177,8 @@ describe('resending notifications', () => {
 
   it('does not call the provider when the customer record has no contact email', async () => {
     const reportId = await submitReport();
+    harness.sqlite.prepare('UPDATE CustomerRecord SET contact_email = NULL WHERE customer_id = ? AND tenant_id = ?')
+      .run(CUSTOMER_A_ID, TEST_TENANT_ID);
     harness.environment.RESEND_API_KEY = 'resend-test-token';
     harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
     const fetch = vi.spyOn(globalThis, 'fetch');
@@ -1345,7 +1403,7 @@ describe('PCBI gap resolution and corrected dataset workflows', () => {
       .mockResolvedValueOnce({ data: { success: true } } as never);
     const findJobRow = orchestrationStore.findJobRow;
     vi.spyOn(orchestrationStore, 'findJobRow')
-      .mockImplementationOnce((database, assessmentId) => findJobRow(database, assessmentId))
+      .mockImplementationOnce((database, assessmentId, tenantId) => findJobRow(database, assessmentId, tenantId))
       .mockResolvedValueOnce(null);
 
     const result = await adminCall({

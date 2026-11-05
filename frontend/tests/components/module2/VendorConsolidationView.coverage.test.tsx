@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { VendorConsolidationView } from '../../../src/components/module2/VendorConsolidationView';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
@@ -15,6 +15,16 @@ import {
 
 const strings = UI_STRINGS.module2VendorConsolidation;
 const ASSESSMENT_ID = 'TEST-ASSESSMENT-001';
+
+function createDeferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason: unknown) => void = () => undefined;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 const mockConsolidationLoad = (result: VendorConsolidationResult | null = buildVendorConsolidationResult()) =>
   vi.spyOn(Module2StrategicSourcingApi, 'getVendorConsolidation').mockResolvedValue(result);
@@ -66,6 +76,47 @@ describe('VendorConsolidationView loading and header', () => {
 
     fireEvent.click(screen.getByText(strings.btnBackToOverview));
     expect(onBackToOverview).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides a previous assessment result and ignores its slow response after switching assessments', async () => {
+    const olderRequest = createDeferred<VendorConsolidationResult | null>();
+    const currentResult = buildVendorConsolidationResult({
+      categories: [buildCategoryProfile({ spendCategory: 'Current Assessment Category' })]
+    });
+    vi.spyOn(Module2StrategicSourcingApi, 'getVendorConsolidation').mockImplementation((assessmentId) =>
+      assessmentId === ASSESSMENT_ID ? olderRequest.promise : Promise.resolve(currentResult)
+    );
+    const view = render(<VendorConsolidationView assessmentId={ASSESSMENT_ID} />);
+
+    view.rerender(<VendorConsolidationView assessmentId="CURRENT-ASSESSMENT-002" />);
+    expect(await screen.findByText('Current Assessment Category')).toBeDefined();
+
+    await act(async () => {
+      olderRequest.resolve(buildVendorConsolidationResult({
+        categories: [buildCategoryProfile({ spendCategory: 'Stale Assessment Category' })]
+      }));
+    });
+
+    expect(screen.getByText('Current Assessment Category')).toBeDefined();
+    expect(screen.queryByText('Stale Assessment Category')).toBeNull();
+  });
+
+  it('ignores a late failure from the previous assessment after the current request succeeds', async () => {
+    const olderRequest = createDeferred<VendorConsolidationResult | null>();
+    const errorSpy = vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
+    vi.spyOn(Module2StrategicSourcingApi, 'getVendorConsolidation').mockImplementation((assessmentId) =>
+      assessmentId === ASSESSMENT_ID ? olderRequest.promise : Promise.resolve(buildVendorConsolidationResult())
+    );
+    const view = render(<VendorConsolidationView assessmentId={ASSESSMENT_ID} />);
+
+    view.rerender(<VendorConsolidationView assessmentId="CURRENT-ASSESSMENT-002" />);
+    await screen.findByText(strings.dimensionUnspsc);
+    await act(async () => {
+      olderRequest.reject(new Error('Old assessment service failure'));
+    });
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText('Old assessment service failure')).toBeNull();
   });
 });
 

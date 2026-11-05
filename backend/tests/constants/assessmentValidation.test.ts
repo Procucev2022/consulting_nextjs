@@ -11,6 +11,8 @@ import {
   validateAssessmentDatasetSchema,
   ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS,
   ASSESSMENT_DATA_VERSION_MAX_BYTES,
+  ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH,
+  ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES,
   analystApprovalSchema,
   deliverPackageSchema,
   assessmentDeliverySchema,
@@ -187,6 +189,8 @@ describe('Assessment Validation Schemas (constants/assessmentValidation.ts)', ()
       expect(validateAssessmentDatasetSchema.parse({ dataVersionId: 'DV-1' })).toEqual({ dataVersionId: 'DV-1' });
       expect(validateAssessmentDatasetSchema.safeParse({ dataVersionId: '' }).success).toBe(false);
       expect(ASSESSMENT_DATA_VERSION_MAX_BYTES).toBe(100 * 1024 * 1024);
+      expect(ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH).toBe(Math.ceil(ASSESSMENT_DATA_VERSION_MAX_BYTES / 3) * 4);
+      expect(ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES).toBeGreaterThan(ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH);
       expect(ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS).toEqual(['.xlsx', '.xls', '.csv']);
     });
   });

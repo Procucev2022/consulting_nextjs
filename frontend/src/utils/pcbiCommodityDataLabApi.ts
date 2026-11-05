@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Frontend PCBI Commodity Data Lab API Client
  */
@@ -33,7 +34,7 @@ export class PCBICommodityDataLabApiClient {
   public async getDashboard(): Promise<{ success: boolean; metrics: PCBIResearchDashboardMetrics }> {
     try {
       frontendLogger.info('Calling API: getCommodityDataLabDashboard');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/dashboard`, { headers: this.getHeaders() });
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/dashboard`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch Data Lab dashboard: HTTP ${res.status}`);
       }
@@ -49,7 +50,7 @@ export class PCBICommodityDataLabApiClient {
   public async getQueue(): Promise<{ success: boolean; total: number; queue: CommodityResearchQueueRow[] }> {
     try {
       frontendLogger.info('Calling API: getCommodityResearchQueue');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/queue`, { headers: this.getHeaders() });
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/queue`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch Commodity Research Queue: HTTP ${res.status}`);
       }
@@ -63,7 +64,7 @@ export class PCBICommodityDataLabApiClient {
   }
 
   public async assignResearcher(pcbiId: string, update: PCBIResearchWorkflowUpdate): Promise<{ success: boolean }> {
-    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/assignment`, {
+    const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/assignment`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ pcbiId, ...update })
@@ -76,7 +77,7 @@ export class PCBICommodityDataLabApiClient {
   }
 
   public async getSources(): Promise<{ success: boolean; total: number; sources: CommoditySourceEvidenceObject[] }> {
-    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/sources`, { headers: this.getHeaders() });
+    const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/sources`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error(`Failed to fetch PCBI evidence sources: HTTP ${res.status}`);
     return await res.json();
   }
@@ -86,7 +87,7 @@ export class PCBICommodityDataLabApiClient {
     total: number;
     versions: PCBICommodityPromotionHistory[];
   }> {
-    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/version-history`, { headers: this.getHeaders() });
+    const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/version-history`, { headers: this.getHeaders() });
     if (!res.ok) {
       throw new Error(`Failed to fetch PCBI catalog promotion history: HTTP ${res.status}`);
     }
@@ -99,7 +100,7 @@ export class PCBICommodityDataLabApiClient {
   ): Promise<{ success: boolean; workspace: CommodityWorkspaceDetail }> {
     try {
       frontendLogger.info('Calling API: getCommodityWorkspaceDetail', { pcbiId, tab });
-      const res = await fetch(
+      const res = await apiFetch(
         `${this.baseUrl}/api/admin/pcbi/data-lab/commodity/${encodeURIComponent(pcbiId)}?tab=${tab}`,
         { headers: this.getHeaders() }
       );
@@ -123,7 +124,7 @@ export class PCBICommodityDataLabApiClient {
   ): Promise<{ success: boolean; detection: PCBIDomainValidationResult }> {
     try {
       frontendLogger.info('Calling API: detectUploadDomain', { fileName, targetArea });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/detect-domain`, {
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/detect-domain`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({ fileName, fileContentSnippet, targetArea })
@@ -171,7 +172,7 @@ export class PCBICommodityDataLabApiClient {
         pcbiId: payload.pcbiId,
         documentName: payload.documentName
       });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/upload-source`, {
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/upload-source`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(payload)
@@ -211,7 +212,7 @@ export class PCBICommodityDataLabApiClient {
         commodityId: payload.commodityId,
         pcbiId: payload.pcbiId
       });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/approve`, {
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/data-lab/approve`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(payload)

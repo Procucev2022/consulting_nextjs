@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import type { UNSPSCCommodityRecord, TaxonomyLoadState, UNSPSCLookupDetails } from '../types';
 import {
   TAXONOMY_API_PATH,
@@ -43,7 +44,7 @@ export const loadUNSPSCTaxonomy = (): Promise<void> => {
       for (let offset = 0; ; offset += TAXONOMY_PAGE_SIZE) {
         const params = taxonomyPageRequestSchema.parse({ limit: TAXONOMY_PAGE_SIZE, offset });
         const query = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
-        const response = await fetch((process.env.NEXT_PUBLIC_BACKEND_URL || '') + TAXONOMY_API_PATH + '?' + query.toString());
+        const response = await apiFetch((process.env.NEXT_PUBLIC_BACKEND_URL || '') + TAXONOMY_API_PATH + '?' + query.toString());
         requestId = response.headers.get('x-request-id') || requestId;
         if (!response.ok) throw new Error(UI_STRINGS.taxonomyData.httpFailure(response.status));
         const result = taxonomyPageResponseSchema.safeParse(await response.json());

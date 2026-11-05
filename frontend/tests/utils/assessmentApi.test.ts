@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { assessmentApi, assessmentApiClient } from '../../src/utils/assessmentApi';
 import { authApiClient } from '../../src/utils/authApi';
@@ -27,6 +28,32 @@ describe('assessmentApi', () => {
     const res = await assessmentApi.getOperatingMode();
     expect(res.mode).toBe('INTERNAL_ASSESSMENT');
     expect(res.isInternalAssessment).toBe(true);
+  });
+
+  it('handles filtered and unfiltered customer lists and omits non-array responses', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: [{ customerId: 'C-1' }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { customerId: 'not-an-array' } }) });
+    global.fetch = fetchMock;
+
+    await expect(assessmentApiClient.getCustomers('ACTIVE')).resolves.toEqual([{ customerId: 'C-1' }]);
+    await expect(assessmentApiClient.getCustomers()).resolves.toEqual([]);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/api/assessment/customers?status=ACTIVE');
+    expect(fetchMock.mock.calls[1]?.[0]).toMatch(/\/api\/assessment\/customers$/u);
+  });
+
+  it('accepts an assessment with the default empty payload', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { assessmentId: 'AIC-1', status: 'ACCEPTED' } })
+    });
+    global.fetch = fetchMock;
+
+    await expect(assessmentApiClient.acceptAssessment('AIC-1')).resolves.toMatchObject({ status: 'ACCEPTED' });
+    expectApiFetchCall(fetchMock, expect.stringContaining('/api/assessment/AIC-1/accept'), expect.objectContaining({
+      method: 'POST', body: '{}'
+    }));
   });
 
   it('throws error when getOperatingMode fetch fails', async () => {
@@ -556,7 +583,7 @@ describe('assessmentApi', () => {
     };
 
     await expect(assessmentApi.saveReviewGate('AIC-2026-0001', payload)).resolves.toEqual(gates);
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/AIC-2026-0001/review-gates'), expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/AIC-2026-0001/review-gates'), expect.objectContaining({
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -577,7 +604,7 @@ describe('assessmentApi', () => {
       gateKey: 'M1_INPUT_ROW_RECONCILIATION',
       status: 'PENDING'
     });
-    expect(global.fetch).toHaveBeenCalledWith(
+    expectApiFetchCall(global.fetch,
       expect.stringContaining('/AIC-2026-0001/review-gates'),
       expect.objectContaining({ headers: { 'Content-Type': 'application/json' } })
     );

@@ -1,6 +1,13 @@
-export const D1_SCHEMA_VERSION = '2026-10-31-004';
+export const D1_SCHEMA_VERSION = '2026-11-05-006';
+export const D1_DEMO_TENANT_ID = 'TNT-GLOBAL-8902';
+export const TENANT_DATA_CLASSIFICATION = {
+  customer: 'CUSTOMER_DATA',
+  demo: 'DEMO_ONLY',
+  mixed: 'MIXED'
+} as const;
 export const PCBI_DATA_LAB_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 export const PCBI_DATA_LAB_UPLOAD_MAX_BASE64_LENGTH = Math.ceil(PCBI_DATA_LAB_UPLOAD_MAX_BYTES / 3) * 4;
+export const PCBI_DATA_LAB_UPLOAD_JSON_MAX_BYTES = PCBI_DATA_LAB_UPLOAD_MAX_BASE64_LENGTH + 64 * 1024;
 export const PCBI_DATA_LAB_DATE_HEADER_PATTERNS = [/date/i, /week(?:_start)?/i, /period/i, /month/i] as const;
 export const PCBI_DATA_LAB_VALUE_HEADER_PATTERNS = [/index[_ ]?value/i, /benchmark[_ ]?value/i, /price/i, /rate/i, /value/i] as const;
 export const PCBI_DATA_LAB_UNIT_HEADERS = /^(unit|uom|benchmark[_ ]unit)$/i;
@@ -116,6 +123,14 @@ export const D1_LEVERS = {
 } as const;
 
 export const D1_ROUTE_MESSAGES = {
+  tenantScopeRequired: 'An authenticated tenant assignment is required to access this dataset.',
+  tenantScopeMismatch: 'The requested tenant does not match the authenticated tenant assignment.',
+  tenantUnavailable: (tenantId: string): string => `Assigned tenant ${tenantId} is unavailable. Ask an administrator to review the tenant assignment.`,
+  validationFailed: 'Validation failed',
+  invalidJsonBody: 'Request body must be a JSON object. Correct its syntax and retry.',
+  requestBodyTooLarge: (maxBytes: number): string => `Request body exceeds the ${maxBytes}-byte limit. Reduce the payload size and retry.`,
+  ingestionUploadFileTooLarge: 'Uploaded procurement files must be no larger than 10 MiB. Choose a smaller file and retry.',
+  ingestionUploadBase64Invalid: 'Uploaded file content is not valid Base64. Choose the original file and retry.',
   missingBinding: 'Cloudflare D1 binding DB is not configured',
   module2LogisticsMethod: 'Module 2 logistics and packaging data supports GET requests only.',
   module2LogisticsInvalid: 'Module 2 logistics query is invalid. Select an assessment ID and retry.',
@@ -159,7 +174,29 @@ export const D1_ROUTE_MESSAGES = {
   currencyRateUnavailable: (currency: string, date: string): string => `No D1 exchange rate for ${currency} is available on or before ${date}.`
 } as const;
 
+export const D1_LOG_MESSAGES = {
+  invalidStoredCurrencyMetadata: 'Stored ingestion currency metadata could not be parsed; an empty currency list was used.'
+} as const;
+
 export const D1_TAXONOMY_DEFAULT_LIMIT = 50;
 export const D1_TAXONOMY_MAX_LIMIT = 1000;
-export const D1_SCHEMA_TABLES_QUERY = "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' ORDER BY name";
-export const D1_SCHEMA_COLUMNS_QUERY = 'SELECT name FROM pragma_table_info(?) ORDER BY cid';
+export const D1_INGESTION_PAGE_SIZE = 100;
+export const D1_INGESTION_PAGE_QUERY_LIMIT = D1_INGESTION_PAGE_SIZE + 1;
+export const D1_INGESTION_CURSOR_ID_MAX_LENGTH = 200;
+export const D1_INGESTION_CURSOR_TIMESTAMP_MAX_LENGTH = 80;
+export const D1_GRAPHQL_CURSOR_VERSION = 1;
+export const D1_GRAPHQL_CURSOR_MAX_LENGTH = 2048;
+export const D1_GRAPHQL_PAGE_OVERFETCH_ROWS = 1;
+export const D1_GRAPHQL_CURSOR_KINDS = ['ingestionQueue', 'validationRecords'] as const;
+export const D1_GRAPHQL_BASE64_BLOCK_LENGTH = 4;
+export const D1_GRAPHQL_BASE64_PADDING = '=';
+export const D1_SCHEMA_QUERY = `
+  SELECT schema.name AS table_name, schema.sql AS table_sql, columns.name AS column_name, columns.cid AS column_cid
+  FROM sqlite_master AS schema
+  JOIN pragma_table_info(schema.name) AS columns
+  WHERE schema.type = 'table'
+    AND schema.name NOT LIKE 'sqlite_%'
+    AND schema.name NOT LIKE '_cf_%'
+    AND schema.name NOT LIKE 'd1_%'
+  ORDER BY schema.name, columns.cid
+`;

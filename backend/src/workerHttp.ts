@@ -4,6 +4,52 @@ import {
   CLOUDFLARE_EXPOSED_HEADERS,
   CLOUDFLARE_MAX_AGE_SECONDS
 } from './constants/cloudflare';
+import { D1_ROUTE_MESSAGES } from './constants/d1';
+import { WORKER_JSON_BODY_MAX_BYTES } from './constants/validation';
+import type { WorkerD1Result } from './types/d1';
+import logger from './utils/logger';
+
+export class RequestJsonParseError extends Error {
+  public readonly underlyingError: unknown;
+
+  constructor(cause: unknown) {
+    super(D1_ROUTE_MESSAGES.invalidJsonBody);
+    this.name = 'RequestJsonParseError';
+    this.underlyingError = cause;
+  }
+}
+
+export class RequestBodyTooLargeError extends Error {
+  public readonly maxBytes: number;
+
+  constructor(maxBytes: number) {
+    super(D1_ROUTE_MESSAGES.requestBodyTooLarge(maxBytes));
+    this.name = 'RequestBodyTooLargeError';
+    this.maxBytes = maxBytes;
+  }
+}
+
+export const requestJsonFailureResult = (request: Request, error: unknown): WorkerD1Result | null => {
+  const tooLarge = error instanceof RequestBodyTooLargeError;
+  if (!(error instanceof RequestJsonParseError) && !tooLarge) return null;
+  const status = tooLarge ? 413 : 400;
+  const message = tooLarge ? error.message : D1_ROUTE_MESSAGES.invalidJsonBody;
+  logger.warn(tooLarge ? 'Rejected oversized JSON request body' : 'Rejected malformed JSON request body', {
+    requestId: request.headers.get('x-request-id') || undefined,
+    method: request.method,
+    path: new URL(request.url).pathname,
+    statusCode: status,
+    maxBytes: tooLarge ? error.maxBytes : undefined
+  }, error instanceof RequestJsonParseError ? error.underlyingError : error);
+  return {
+    status,
+    data: {
+      success: false,
+      message: tooLarge ? message : D1_ROUTE_MESSAGES.validationFailed,
+      errors: [{ path: 'body', message }]
+    }
+  };
+};
 
 const getCorsHeaders = (request: Request): Headers => {
   const origin = request.headers.get('Origin') || '*';
@@ -40,13 +86,50 @@ export const jsonResponse = (body: Record<string, unknown>, status: number, requ
   );
 };
 
-export const readJson = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const body: unknown = await request.json();
-    return body && typeof body === 'object' ? body as Record<string, unknown> : {};
-  } catch {
-    return {};
+export const readJson = async (
+  request: Request,
+  maxBytes = WORKER_JSON_BODY_MAX_BYTES
+): Promise<Record<string, unknown>> => {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new RangeError('JSON body byte limit must be a positive safe integer');
+  const contentLength = Number(request.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    throw new RequestBodyTooLargeError(maxBytes);
   }
+
+  let rawBody = '';
+  if (request.body) {
+    const reader = request.body.getReader();
+    const decoder = new TextDecoder();
+    let bytesRead = 0;
+    try {
+      let chunk = await reader.read();
+      while (!chunk.done) {
+        bytesRead += chunk.value.byteLength;
+        if (bytesRead > maxBytes) {
+          void reader.cancel().catch(() => undefined);
+          throw new RequestBodyTooLargeError(maxBytes);
+        }
+        rawBody += decoder.decode(chunk.value, { stream: true });
+        chunk = await reader.read();
+      }
+      rawBody += decoder.decode();
+    } catch (error: unknown) {
+      if (error instanceof RequestBodyTooLargeError) throw error;
+      throw new RequestJsonParseError(error);
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  if (!rawBody.trim()) return {};
+  let body: unknown;
+  try { body = JSON.parse(rawBody); } catch (error: unknown) {
+    throw new RequestJsonParseError(error);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    const error = new TypeError(D1_ROUTE_MESSAGES.invalidJsonBody);
+    throw new RequestJsonParseError(error);
+  }
+  return body as Record<string, unknown>;
 };
 
 export const apiData = (data: unknown, request: Request, extra: Record<string, unknown> = {}): Response => {

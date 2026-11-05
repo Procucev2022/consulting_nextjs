@@ -46,6 +46,7 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
       activeCount: 1,
       companiesCount: 1
     });
+    vi.spyOn(apiClient, 'getAdminTenants').mockResolvedValue({ success: true, tenants: [] });
   });
 
   it('renders the central admin console successfully', async () => {

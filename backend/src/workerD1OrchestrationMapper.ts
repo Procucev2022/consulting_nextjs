@@ -79,7 +79,7 @@ export const mapAnalysisJob = (
   includeReport: boolean
 ): AnalysisJob => ({
   analysisJobId: row.assessment_id,
-  tenantId: row.customer_id,
+  tenantId: row.tenant_id,
   customerName: row.customer_name,
   uploadedBy: row.current_uploaded_by ?? row.assessment_owner,
   originalUploadId: row.original_version_id ?? '',

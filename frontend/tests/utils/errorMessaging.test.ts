@@ -48,9 +48,9 @@ describe('Descriptive UI Error Messaging Utilities (utils/errorMessaging.ts)', (
     expect(errorSpy).toHaveBeenCalledWith(
       `[${ERROR_CATEGORIES.SERVER_ERROR}] Failed to process transaction`,
       expect.objectContaining({
-        category: ERROR_CATEGORIES.SERVER_ERROR
-      }),
-      result.requestId
+        category: ERROR_CATEGORIES.SERVER_ERROR,
+        requestId: result.requestId
+      })
     );
   });
 
@@ -79,9 +79,9 @@ describe('Descriptive UI Error Messaging Utilities (utils/errorMessaging.ts)', (
       `[${ERROR_CATEGORIES.VALIDATION_ERROR}] Invalid email address`,
       expect.objectContaining({
         field: 'email',
-        statusCode: 400
-      }),
-      'custom-req-123'
+        statusCode: 400,
+        requestId: 'custom-req-123'
+      })
     );
   });
 

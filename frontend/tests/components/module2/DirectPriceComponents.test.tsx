@@ -388,9 +388,7 @@ describe('DirectPriceImprovementView Component', () => {
     fireEvent.change(customerSelect, { target: { value: 'AIC-2026-0003' } });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('assessmentId=AIC-2026-0003')
-      );
+      expect(mockFetch.mock.calls.some(([url]) => String(url).includes('assessmentId=AIC-2026-0003'))).toBe(true);
     });
 
     // Test 2-level drilldown: Category -> Material items -> Transaction Modal
@@ -740,12 +738,16 @@ describe('DirectPriceImprovementView data flow and error handling', () => {
     expect(screen.getByText(resolveHumanReadableCategory('Packaging Films'))).toBeInTheDocument();
   });
 
-  it('skips the request and shows no dataset when no assessment is selected', () => {
+  it('skips the request and shows no dataset when no assessment is selected', async () => {
     const getSpy = vi
       .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
       .mockResolvedValue(mockResult);
 
     render(<DirectPriceImprovementView assessmentId={undefined} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     expect(getSpy).not.toHaveBeenCalled();
     expect(screen.queryByText(UI_STRINGS.module2DirectPrice.certificationNotice)).not.toBeInTheDocument();

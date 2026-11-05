@@ -9,14 +9,15 @@ INSERT OR IGNORE INTO TenantMaster (
 );
 
 -- 2. Seed Users
-INSERT OR IGNORE INTO User (
-  id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+INSERT INTO User (
+  id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
 ) VALUES 
-('usr-admin-001', 'System Administrator', '+91 98765 43210', 'admin@procucev.com', 'aiCEV Procucev Enterprise Inc.', 'Floor 14, Brigade Gateway, Bengaluru, Karnataka 560055, India', 'HeejL8HZRGPzqKpuYXOlUA:5h1jS0LkE1GbrA46SRDuDf5W2RwFvNRZAR5dvV-wWg1kigb_bPFZH1c2lz6KhRxKQNFTaSoYLnUTcSCM8Fx6rA', 'ADMIN', 'ACTIVE', 'GOLD'),
-('usr-sriman-001', 'Sriman Executive', '+91 98800 11223', 'sriman@procucev.com', 'Procucev Enterprise Solutions Pvt Ltd', 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India', '_qpmGCEqvBhJf-GfqwBIDQ:gm06c4DRas2m7iRGVQEO4PekgOlkQYm6hwdtfUtT4Z6s8GSaU5Ap4d2nbHA42ioE76zLxeG1gxQOx2DGLPL-1A;cNJbOnG3oArTRf5qMnNy1Q:dMgyA2eJJhP9ziKSNvtFWZPMNb6VpWKa9qDls_6Dt4y4lEbjcIQHd-jhqcMDdboEzVMKUFajiJzyYyVW9934Zw', 'ADMIN', 'ACTIVE', 'GOLD'),
-('usr-simran-001', 'Simran Executive', '+91 98800 11223', 'simran@procucev.com', 'Procucev Enterprise Solutions Pvt Ltd', 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India', '_qpmGCEqvBhJf-GfqwBIDQ:gm06c4DRas2m7iRGVQEO4PekgOlkQYm6hwdtfUtT4Z6s8GSaU5Ap4d2nbHA42ioE76zLxeG1gxQOx2DGLPL-1A;cNJbOnG3oArTRf5qMnNy1Q:dMgyA2eJJhP9ziKSNvtFWZPMNb6VpWKa9qDls_6Dt4y4lEbjcIQHd-jhqcMDdboEzVMKUFajiJzyYyVW9934Zw', 'ADMIN', 'ACTIVE', 'GOLD'),
-('usr-user-001', 'Buyer User', '+91 98450 12345', 'buyer@procucev.com', 'Apex Industrial Dynamics Ltd.', 'Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India', '2IJRSyNrGBV6M_IWNwrL_g:Dd5sbyDetVfztKnipwUZr-weIJwXPqnt9T2styyNJmRDEgl5PpUmtKX4qoda0fhVEWYp5XATrjK8jL1fC_zcWw', 'USER', 'ACTIVE', 'BRONZE'),
-('usr-user-002', 'Priya Sharma', '+91 97123 45678', 'priya.sharma@tatasupply.com', 'Tata Strategic Procurement Corp', 'Bombay House, 24 Homi Mody Street, Fort, Mumbai 400001, Maharashtra, India', 'cLSMxXQyc_2epRAAmx6lVw:bchlMQmASILTidIN4-pH8BUaPmJd6BTJc16uJtFAJ-DV9eOS346A0I_sm6bVMEp-UeB7GxOsusBMPPcqDjkHmQ', 'USER', 'ACTIVE', 'SILVER');
+('usr-admin-001', 'System Administrator', '+91 98765 43210', 'admin@procucev.com', 'aiCEV Procucev Enterprise Inc.', 'Floor 14, Brigade Gateway, Bengaluru, Karnataka 560055, India', 'HeejL8HZRGPzqKpuYXOlUA:5h1jS0LkE1GbrA46SRDuDf5W2RwFvNRZAR5dvV-wWg1kigb_bPFZH1c2lz6KhRxKQNFTaSoYLnUTcSCM8Fx6rA', 'ADMIN', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902'),
+('usr-sriman-001', 'Sriman Executive', '+91 98800 11223', 'sriman@procucev.com', 'Procucev Enterprise Solutions Pvt Ltd', 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India', '_qpmGCEqvBhJf-GfqwBIDQ:gm06c4DRas2m7iRGVQEO4PekgOlkQYm6hwdtfUtT4Z6s8GSaU5Ap4d2nbHA42ioE76zLxeG1gxQOx2DGLPL-1A;cNJbOnG3oArTRf5qMnNy1Q:dMgyA2eJJhP9ziKSNvtFWZPMNb6VpWKa9qDls_6Dt4y4lEbjcIQHd-jhqcMDdboEzVMKUFajiJzyYyVW9934Zw', 'ADMIN', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902'),
+('usr-simran-001', 'Simran Executive', '+91 98800 11223', 'simran@procucev.com', 'Procucev Enterprise Solutions Pvt Ltd', 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India', '_qpmGCEqvBhJf-GfqwBIDQ:gm06c4DRas2m7iRGVQEO4PekgOlkQYm6hwdtfUtT4Z6s8GSaU5Ap4d2nbHA42ioE76zLxeG1gxQOx2DGLPL-1A;cNJbOnG3oArTRf5qMnNy1Q:dMgyA2eJJhP9ziKSNvtFWZPMNb6VpWKa9qDls_6Dt4y4lEbjcIQHd-jhqcMDdboEzVMKUFajiJzyYyVW9934Zw', 'ADMIN', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902'),
+('usr-user-001', 'Buyer User', '+91 98450 12345', 'buyer@procucev.com', 'Apex Industrial Dynamics Ltd.', 'Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India', '2IJRSyNrGBV6M_IWNwrL_g:Dd5sbyDetVfztKnipwUZr-weIJwXPqnt9T2styyNJmRDEgl5PpUmtKX4qoda0fhVEWYp5XATrjK8jL1fC_zcWw', 'USER', 'ACTIVE', 'BRONZE', 'TNT-GLOBAL-8902'),
+('usr-user-002', 'Priya Sharma', '+91 97123 45678', 'priya.sharma@tatasupply.com', 'Tata Strategic Procurement Corp', 'Bombay House, 24 Homi Mody Street, Fort, Mumbai 400001, Maharashtra, India', 'cLSMxXQyc_2epRAAmx6lVw:bchlMQmASILTidIN4-pH8BUaPmJd6BTJc16uJtFAJ-DV9eOS346A0I_sm6bVMEp-UeB7GxOsusBMPPcqDjkHmQ', 'USER', 'ACTIVE', 'SILVER', 'TNT-GLOBAL-8902')
+ON CONFLICT(id) DO UPDATE SET tenant_id = excluded.tenant_id;
 
 -- 3. Ingestion Document Record
 INSERT OR IGNORE INTO RawDocumentIngestion (

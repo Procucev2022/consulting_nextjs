@@ -283,7 +283,7 @@ describe('Prompt 370: Top Ribbon & Summary Strip Data Integrity (14 Verification
       />
     );
     expect(screen.getByText('12 Billing Months')).toBeInTheDocument();
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.realTimeProcessing.value)).toBeInTheDocument();
     expect(screen.getByText('₹2.00 Cr')).toBeInTheDocument();
     expect(screen.getByText('99.0%')).toBeInTheDocument();
     expect(screen.queryByText(/605\.84/)).not.toBeInTheDocument();

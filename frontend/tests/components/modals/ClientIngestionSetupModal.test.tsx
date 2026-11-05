@@ -1,7 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ClientIngestionSetupModal } from '../../../src/components/modals/ClientIngestionSetupModal';
+import { loadIndustryCatalog } from '../../../src/utils/industryApi';
 import { mockTenant } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
@@ -84,7 +85,7 @@ describe('ClientIngestionSetupModal Component', () => {
     );
   });
 
-  it('handles cancel button', () => {
+  it('handles cancel button', async () => {
     const onClose = vi.fn();
     render(
       <ClientIngestionSetupModal
@@ -95,12 +96,13 @@ describe('ClientIngestionSetupModal Component', () => {
       />
     );
 
+    await screen.findByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel);
     const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('handles empty clientName submission, preset name pills, period selection, currency buttons, and empty tenant fallback', () => {
+  it('handles empty clientName submission, preset name pills, period selection, currency buttons, and empty tenant fallback', async () => {
     const onConfirmAndUpload = vi.fn();
     const onClose = vi.fn();
 
@@ -120,6 +122,8 @@ describe('ClientIngestionSetupModal Component', () => {
         onConfirmAndUpload={onConfirmAndUpload}
       />
     );
+
+    await screen.findByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel);
 
     // Enter client name
     const nameInput = screen.getByPlaceholderText(UI_STRINGS.modals.clientSetup.clientPlaceholder);
@@ -184,6 +188,76 @@ describe('ClientIngestionSetupModal Component', () => {
         minorSector: 'Precision Engineering & Tooling'
       })
     );
+  });
+
+  it('shows the unavailable profile state and rejects submission when no matching profile is loaded', async () => {
+    vi.mocked(loadIndustryCatalog).mockResolvedValueOnce({ success: true, profiles: [], presets: [] } as any);
+    const onConfirmAndUpload = vi.fn();
+    const tenantWithoutProfile = {
+      ...mockTenant,
+      major_sector: 'Unconfigured sector',
+      minor_sector: 'Unconfigured category'
+    };
+    const view = render(
+      <ClientIngestionSetupModal
+        isOpen
+        onClose={vi.fn()}
+        currentTenant={tenantWithoutProfile}
+        onConfirmAndUpload={onConfirmAndUpload}
+      />
+    );
+
+    expect(await screen.findByRole('status')).toHaveTextContent(UI_STRINGS.module2.industryContext.profileUnavailable);
+    expect(screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn })).toBeDisabled();
+    fireEvent.submit(view.container.querySelector('form')!);
+    expect(onConfirmAndUpload).not.toHaveBeenCalled();
+  });
+
+  it('keeps profile state unchanged when an in-flight catalog request settles after unmount', async () => {
+    let resolveCatalog: ((catalog: unknown) => void) | undefined;
+    let rejectCatalog: ((error: Error) => void) | undefined;
+    vi.mocked(loadIndustryCatalog)
+      .mockReturnValueOnce(new Promise((resolve) => { resolveCatalog = resolve; }) as ReturnType<typeof loadIndustryCatalog>)
+      .mockReturnValueOnce(new Promise((_resolve, reject) => { rejectCatalog = reject; }) as ReturnType<typeof loadIndustryCatalog>);
+
+    const first = render(
+      <ClientIngestionSetupModal isOpen onClose={vi.fn()} currentTenant={mockTenant} onConfirmAndUpload={vi.fn()} />
+    );
+    first.unmount();
+    await act(async () => {
+      resolveCatalog?.({ success: true, profiles: [], presets: [] });
+      await Promise.resolve();
+    });
+
+    const second = render(
+      <ClientIngestionSetupModal isOpen onClose={vi.fn()} currentTenant={mockTenant} onConfirmAndUpload={vi.fn()} />
+    );
+    second.unmount();
+    await act(async () => {
+      rejectCatalog?.(new Error('catalog unavailable'));
+      await Promise.resolve();
+    });
+  });
+
+  it('applies only matching client-name presets on blur', async () => {
+    render(
+      <ClientIngestionSetupModal
+        isOpen
+        onClose={vi.fn()}
+        currentTenant={mockTenant}
+        onConfirmAndUpload={vi.fn()}
+      />
+    );
+    const clientName = await screen.findByDisplayValue(mockTenant.enterprise_name);
+    fireEvent.change(clientName, { target: { value: 'No matching preset' } });
+    fireEvent.blur(clientName);
+    fireEvent.change(clientName, { target: { value: 'Vanguard Eurocorp AG' } });
+    fireEvent.blur(clientName);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel)).toHaveValue('Manufacturing & Industrial');
+      expect(screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel)).toHaveValue('Precision Engineering & Tooling');
+    });
   });
 });
 

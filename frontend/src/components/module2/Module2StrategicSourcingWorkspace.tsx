@@ -4,7 +4,9 @@ import { Gavel, RefreshCw } from 'lucide-react';
 import type {
   CategoryStrategicSourcingProfile,
   Module2StrategicSourcingDashboardSummary,
-  Module2StrategicSourcingWorkspaceProps
+  Module2StrategicSourcingWorkspaceProps,
+  Module2ApiRequestError,
+  Module2StrategicSourcingLoadFailure
 } from '../../types';
 import { UI_STRINGS } from '../../constants';
 import { Module2StrategicSourcingApi } from '../../utils/module2StrategicSourcingApi';
@@ -57,12 +59,15 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const [activeFilterCard, setActiveFilterCard] = useState<string>('ALL');
   const [downloadPayload, setDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
   const [handoffSuccessMsg, setHandoffSuccessMsg] = useState<string | null>(null);
+  const [loadFailure, setLoadFailure] = useState<Module2StrategicSourcingLoadFailure | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
   const isMountedRef = useRef<boolean>(true);
+  const latestLoadRequestRef = useRef<number>(0);
 
   const effectiveAssessmentId =
     assessmentId ||
     (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || undefined : undefined);
+  const loadedAssessmentRef = useRef(effectiveAssessmentId);
   const activeAssessmentRef = useRef(effectiveAssessmentId);
   activeAssessmentRef.current = effectiveAssessmentId;
   const selectedCategoryRef = useRef<string | null>(null);
@@ -75,6 +80,16 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   }, []);
 
   const loadData = useCallback(async (refresh = false) => {
+    const loadRequestId = latestLoadRequestRef.current + 1;
+    latestLoadRequestRef.current = loadRequestId;
+    const isLatestRequest = (): boolean => loadRequestId === latestLoadRequestRef.current;
+    setLoadFailure(null);
+    if (loadedAssessmentRef.current !== effectiveAssessmentId) {
+      loadedAssessmentRef.current = effectiveAssessmentId;
+      setSummary(null);
+      setProfiles([]);
+      setDirectPriceOppCr(undefined);
+    }
     if (!effectiveAssessmentId) {
       setSummary(null);
       setProfiles([]);
@@ -83,27 +98,45 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       return;
     }
     setIsLoading(true);
-    try {
-      const [sumRes, profRes, directPriceRes] = await Promise.all([
+    const [summaryResult, profilesResult, directPriceResult] = await Promise.allSettled([
         Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
         Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId),
         Module2StrategicSourcingApi.getDirectPriceImprovement(effectiveAssessmentId)
-      ]);
-      if (isMountedRef.current) {
-        if (sumRes) setSummary(sumRes);
-        if (profRes) setProfiles(profRes);
-        setDirectPriceOppCr(directPriceRes?.historicalLostOpportunityCr);
+    ]);
+    if (isMountedRef.current && isLatestRequest()) {
+      const failures = [summaryResult, profilesResult]
+        .filter((result) => result.status === 'rejected')
+        .map((result) => (result as PromiseRejectedResult).reason);
+      setSummary(summaryResult.status === 'fulfilled' ? summaryResult.value : null);
+      setProfiles(profilesResult.status === 'fulfilled' ? profilesResult.value || [] : []);
+      setDirectPriceOppCr(directPriceResult.status === 'fulfilled'
+        ? directPriceResult.value?.historicalLostOpportunityCr
+        : undefined);
+      if (failures.length > 0) {
+        const error = failures[0] instanceof Error ? failures[0] as Module2ApiRequestError : undefined;
+        const statusCode = error?.statusCode;
+        const isNetworkFailure = failures[0] instanceof TypeError ||
+          (failures[0] instanceof Error && /network|fetch/i.test(failures[0].message));
+        setLoadFailure({
+          message: statusCode !== undefined
+            ? strings.loadFailureHttp(statusCode)
+            : isNetworkFailure ? strings.loadFailureNetwork : strings.loadFailureUnexpected,
+          nextStep: strings.loadFailureNextStep,
+          requestId: error?.requestId
+        });
+        failures.forEach((failure) => {
+          const apiError = failure instanceof Error ? failure as Module2ApiRequestError : undefined;
+          logger.error('Failed to load Module 2 Strategic Sourcing data', {
+            assessmentId: effectiveAssessmentId,
+            feature: apiError?.feature,
+            statusCode: apiError?.statusCode,
+            requestId: apiError?.requestId
+          }, failure);
+        });
       }
-    } catch (err) {
-      if (isMountedRef.current) {
-        logger.error('Failed to load Module 2 Strategic Sourcing data', {}, err);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-  }, [effectiveAssessmentId]);
+  }, [effectiveAssessmentId, strings]);
 
   useEffect(() => {
     setSelectedProfile(null);
@@ -255,6 +288,14 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {!effectiveAssessmentId && (
         <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           {strings.assessmentRequiredMessage}
+        </div>
+      )}
+
+      {loadFailure && (
+        <div role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900">
+          <p>{loadFailure.message}</p>
+          <p>{loadFailure.nextStep}</p>
+          {loadFailure.requestId && <p>{strings.loadFailureRequestId(loadFailure.requestId)}</p>}
         </div>
       )}
 

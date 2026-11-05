@@ -3,8 +3,10 @@ import { D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../src/types/cloudflare';
 import type { D1Record } from '../src/types/d1';
 import type { PcbiAdminImportInput } from '../src/types/validation';
+import { clearD1ReferenceDataCache } from '../src/services/d1ReferenceDataCache';
 import { createWorkerAuthToken, handleAdminRoute } from '../src/workerAuth';
-import { getPublishedPcbiPayload, handlePcbiAdminRoute, mapPcbiImportRow } from '../src/workerD1PcbiAdmin';
+import { handlePcbiRoute } from '../src/workerD1Pcbi';
+import { clearPublishedPcbiPayloadCache, getPublishedPcbiPayload, handlePcbiAdminRoute, mapPcbiImportRow } from '../src/workerD1PcbiAdmin';
 
 vi.mock('../src/utils/logger', () => ({ default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -15,6 +17,11 @@ class TestStatement implements CloudflareD1PreparedStatement {
   constructor(private readonly db: TestDatabase, private readonly sql: string) {}
   bind(...values: unknown[]): CloudflareD1PreparedStatement { this.values = values; return this; }
   async first<T>(): Promise<T | null> {
+    if (this.sql.includes('FROM User')) {
+      return this.values[0] === 'admin-1'
+        ? ({ id: 'admin-1', name: 'Admin User', email: 'admin@example.com', role: 'ADMIN', status: 'ACTIVE' } as T)
+        : null;
+    }
     const versions = this.db.versions;
     if (this.sql.includes('SELECT id FROM PCBIMasterVersion')) {
       return (versions.find((row) => row.version === this.values[0]) as T | undefined) || null;
@@ -30,6 +37,11 @@ class TestStatement implements CloudflareD1PreparedStatement {
     return null;
   }
   async all<T>(): Promise<{ results: T[] }> {
+    if (this.sql.includes("status = 'PUBLISHED'")) {
+      const row = this.db.versions.filter((version) => version.status === 'PUBLISHED')
+        .sort((a, b) => String(b.published_at || '').localeCompare(String(a.published_at || '')))[0];
+      return { results: row ? ([{ payload_json: row.payload_json }] as T[]) : [] };
+    }
     return { results: [...this.db.versions].sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at)) as T[] };
   }
   async run(): Promise<unknown> {
@@ -115,7 +127,11 @@ const call = (
 };
 
 describe('D1 PCBI master administration', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    clearPublishedPcbiPayloadCache();
+    clearD1ReferenceDataCache();
+    vi.restoreAllMocks();
+  });
 
   it('persists a validated import and returns version metrics', async () => {
     const db = new TestDatabase();
@@ -204,7 +220,51 @@ describe('D1 PCBI master administration', () => {
     expect((await call(db, '/versions')).data).toMatchObject({ active_version: 'V4.0' });
     expect(await getPublishedPcbiPayload(db)).toMatchObject({ version: 'V4.0' });
     db.versions[1].payload_json = '{invalid-json';
+    clearPublishedPcbiPayloadCache(db);
     expect(await getPublishedPcbiPayload(db)).toBeNull();
+  });
+
+  it('invalidates cached PCBI benchmarks after publishing a new version', async () => {
+    const db = new TestDatabase();
+    const url = new URL('https://edge.example/api/pcbi/benchmarks');
+    await handlePcbiRoute(db, '/benchmarks', new Request(url), url);
+    const firstReadCount = db.prepared.length;
+
+    await call(db, '/import', 'POST', importPayload());
+    await call(db, '/publish/V3.0', 'POST', { published_by: 'Admin User' });
+    const refreshed = await handlePcbiRoute(db, '/benchmarks', new Request(url), url);
+
+    expect(refreshed.data).toHaveLength(1);
+    expect(db.prepared.length).toBeGreaterThan(firstReadCount);
+  });
+
+  it('does not let a pre-invalidation PCBI read repopulate the cache', async () => {
+    const db = new TestDatabase();
+    const originalPrepare = db.prepare.bind(db);
+    let releaseRead!: () => void;
+    const readGate = new Promise<void>((resolve) => { releaseRead = resolve; });
+    let publishedPayloadReads = 0;
+    vi.spyOn(db, 'prepare').mockImplementation((sql) => {
+      const statement = originalPrepare(sql);
+      if (!sql.includes("status = 'PUBLISHED'")) return statement;
+      publishedPayloadReads += 1;
+      if (publishedPayloadReads !== 1) return statement;
+      const delayedStatement: CloudflareD1PreparedStatement = {
+        bind(...values) { statement.bind(...values); return this; },
+        async all<T>() { await readGate; return { results: [] as T[] }; },
+        async first<T>() { return null as T | null; },
+        async run() { return {}; }
+      };
+      return delayedStatement;
+    });
+
+    const staleRead = getPublishedPcbiPayload(db);
+    clearPublishedPcbiPayloadCache(db);
+    releaseRead();
+    await staleRead;
+    await getPublishedPcbiPayload(db);
+
+    expect(publishedPayloadReads).toBe(2);
   });
 
   it('publishes through D1 batch and returns a null active version when none are published', async () => {
@@ -241,7 +301,7 @@ describe('D1 PCBI master administration', () => {
   it('keeps PCBI administration behind the administrator authorization gate', async () => {
     const db = new TestDatabase();
     const url = new URL('https://edge.example/api/admin/pcbi/versions');
-    expect(await handleAdminRoute(new Request(url), { DB: db, AUTH_SECRET: 'test-secret' }, url)).toMatchObject({ status: 403 });
+    expect(await handleAdminRoute(new Request(url), { DB: db, AUTH_SECRET: 'test-secret' }, url)).toMatchObject({ status: 401 });
     const token = await createWorkerAuthToken({ id: 'admin-1', email: 'admin@example.com', role: 'ADMIN', subscription_tier: 'GOLD' }, 'test-secret');
     const response = await handleAdminRoute(new Request(url, { headers: { Authorization: `Bearer ${token}` } }), { DB: db, AUTH_SECRET: 'test-secret' }, url);
     expect(response).toMatchObject({ status: 200, body: { success: true, total: 0, active_version: null } });

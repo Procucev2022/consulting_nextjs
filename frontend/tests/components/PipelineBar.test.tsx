@@ -88,6 +88,7 @@ describe('PipelineBar Component', () => {
 
     expect(screen.getByText('10 Billing Months')).toBeInTheDocument();
     expect(screen.getByText(/Apr 2024 – Jan 2025/)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.realTimeProcessing.value)).toBeInTheDocument();
     expect(screen.getByText('₹153.50 Cr')).toBeInTheDocument();
     expect(screen.getByText('98.7%')).toBeInTheDocument();
     expect(screen.getByText(/252 Excluded · 12 Quarantined/)).toBeInTheDocument();

@@ -1,10 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
-import { AUTH_MESSAGES, AUTH_ROLES, AUTH_TOKEN_EXPIRY_SECONDS } from '../src/constants/auth';
+import { AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
+import { RequestJsonParseError } from '../src/workerHttp';
+import logger from '../src/utils/logger';
 import {
   authenticateWorkerUser, createWorkerAuthToken, handleAdminRoute, handleAuthRoute, verifyToken
 } from '../src/workerAuth';
-import type { AuthRouteResult, CloudflareEnvironment } from '../src/types/cloudflare';
+import type { AuthRouteResult, CloudflareD1Database, CloudflareEnvironment } from '../src/types/cloudflare';
 import { issueEvidenceToken } from './helpers/evidenceSqlite';
 import {
   createWorkerDatabase,
@@ -31,10 +33,12 @@ let fixture: WorkerDatabaseFixture;
 
 beforeEach(() => {
   fixture = createWorkerDatabase();
+  fixture.db.prepare("INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, status) VALUES ('TNT-GLOBAL-8902', 'Demo tenant', 'ACTIVE')").run();
 });
 
 afterEach(() => {
   fixture.close();
+  vi.restoreAllMocks();
 });
 
 const environmentWith = (overrides: CloudflareEnvironment = {}): CloudflareEnvironment => ({
@@ -73,8 +77,19 @@ const bearer = (token: string): Record<string, string> => ({ Authorization: `Bea
 const tokenFor = (userId: string, claims: Record<string, unknown> = {}): Promise<string> =>
   issueEvidenceToken({ userId, ...claims }, WORKER_CORE_SECRET);
 
-const register = (overrides: Record<string, unknown> = {}): Promise<AuthRouteResult> =>
+const registerPending = (overrides: Record<string, unknown> = {}): Promise<AuthRouteResult> =>
   authCall('POST', '/register', { body: { ...REGISTRATION, ...overrides } });
+
+const register = async (overrides: Record<string, unknown> = {}): Promise<AuthRouteResult> => {
+  const result = await registerPending(overrides);
+  if (result.status === 201) {
+    const id = registeredId(result);
+    fixture.db.prepare("UPDATE User SET status = 'ACTIVE', tenant_id = 'TNT-GLOBAL-8902' WHERE id = ?").run(id);
+    const user = await userRow(id);
+    result.body.token = await createWorkerAuthToken(user || {}, WORKER_CORE_SECRET);
+  }
+  return result;
+};
 
 const registeredId = (result: AuthRouteResult): string => String((result.body.user as Record<string, unknown>).id);
 
@@ -87,12 +102,12 @@ const countUsers = async (): Promise<number> => {
 };
 
 const seedRegistry = (): void => {
-  insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-    ['usr-admin', 'Admin', '+910000000001', 'admin@procucev.com', 'Procucev', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'],
-    ['usr-asha', 'Asha Rao', '+910000000002', 'asha@alpha.example', 'Alpha Textile', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z'],
-    ['usr-ravi', 'Ravi Alpha', '+910000000003', 'ravi@example.com', ' alpha textile ', 'Delhi', 'hash', 'USER', 'SUSPENDED', 'SILVER', '2026-01-03T00:00:00Z', '2026-01-03T00:00:00Z'],
-    ['usr-meera', 'Meera Iyer', '+910000000004', 'meera@beta.example', 'Beta Cement', 'Chennai', 'hash', 'USER', 'ACTIVE', 'BRONZE', '2026-01-04T00:00:00Z', '2026-01-04T00:00:00Z'],
-    ['usr-guest', 'Guest', '+910000000005', 'guest@example.com', 'Guest Co', 'Mumbai', 'hash', 'GUEST', 'ACTIVE', 'BRONZE', '2026-01-05T00:00:00Z', '2026-01-05T00:00:00Z']
+  insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+    ['usr-admin', 'Admin', '+910000000001', 'admin@procucev.com', 'Procucev', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'],
+    ['usr-asha', 'Asha Rao', '+910000000002', 'asha@alpha.example', 'Alpha Textile', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE', 'TNT-GLOBAL-8902', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z'],
+    ['usr-ravi', 'Ravi Alpha', '+910000000003', 'ravi@example.com', ' alpha textile ', 'Delhi', 'hash', 'USER', 'SUSPENDED', 'SILVER', 'TNT-GLOBAL-8902', '2026-01-03T00:00:00Z', '2026-01-03T00:00:00Z'],
+    ['usr-meera', 'Meera Iyer', '+910000000004', 'meera@beta.example', 'Beta Cement', 'Chennai', 'hash', 'USER', 'ACTIVE', 'BRONZE', 'TNT-GLOBAL-8902', '2026-01-04T00:00:00Z', '2026-01-04T00:00:00Z'],
+    ['usr-guest', 'Guest', '+910000000005', 'guest@example.com', 'Guest Co', 'Mumbai', 'hash', 'GUEST', 'ACTIVE', 'BRONZE', null, '2026-01-05T00:00:00Z', '2026-01-05T00:00:00Z']
   ]);
 };
 
@@ -100,9 +115,10 @@ describe('workerAuth route guards', () => {
   it('authenticates existing Express password hashes without resetting or replacing the stored password', async () => {
     const salt = '00112233445566778899aabbccddeeff';
     const storedHash = `${salt}:${pbkdf2Sync(REGISTRATION.password, salt, 100000, 64, 'sha512').toString('hex')}`;
-    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+    fixture.db.prepare("INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES ('tenant-migrated', 'Migrated Tenant', 'ACTIVE')").run();
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
       'usr-migrated', REGISTRATION.name, REGISTRATION.mobile_number, NORMALIZED_EMAIL,
-      REGISTRATION.company_name, REGISTRATION.company_address, storedHash, 'USER', 'ACTIVE', 'GOLD'
+      REGISTRATION.company_name, REGISTRATION.company_address, storedHash, 'USER', 'ACTIVE', 'GOLD', 'tenant-migrated'
     ]]);
     const result = await authCall('POST', '/login', { body: { email: NORMALIZED_EMAIL, password: REGISTRATION.password } });
     expect(result.status).toBe(200);
@@ -187,50 +203,127 @@ describe('workerAuth register', () => {
     expect(await countUsers()).toBe(0);
   });
 
-  it('treats a non-JSON body as an empty payload and rejects it with 400', async () => {
-    const result = await authCall('POST', '/register', { rawBody: 'not-json' });
-
-    expect(result.status).toBe(400);
-    expect(result.body).toMatchObject({ success: false, message: 'Validation failed' });
+  it('rejects a non-JSON registration body before schema validation or D1 writes', async () => {
+    await expect(authCall('POST', '/register', { rawBody: 'not-json' }))
+      .rejects.toBeInstanceOf(RequestJsonParseError);
+    expect(await countUsers()).toBe(0);
   });
 
   it('rejects a duplicate organization email with 409 and keeps a single account', async () => {
-    await register();
-    const duplicate = await register({ email: 'ASHA.RAO@EXAMPLE.COM' });
+    await registerPending();
+    const duplicate = await registerPending({ email: 'ASHA.RAO@EXAMPLE.COM' });
 
     expect(duplicate).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.EMAIL_EXISTS } });
     expect(await countUsers()).toBe(1);
   });
 
-  it('creates an account with a salted hash and returns a token that verifies', async () => {
-    const result = await register();
+  it('handles a case-insensitive duplicate created between the registration check and insert', async () => {
+    const warning = vi.spyOn(logger, 'warn');
+    let raceInjected = false;
+    const racingDatabase: CloudflareD1Database = {
+      prepare: (sql) => {
+        const statement = fixture.d1.prepare(sql);
+        return {
+          bind: (...values) => {
+            const bound = statement.bind(...values);
+            return {
+              first: async <T = Record<string, unknown>>() => {
+                return bound.first<T>();
+              },
+              all: async <T = Record<string, unknown>>() => bound.all<T>(),
+              run: async () => {
+                if (sql.includes('ON CONFLICT DO NOTHING') && !raceInjected) {
+                  raceInjected = true;
+                  insertRows(fixture.db, `INSERT INTO User (
+                    id, name, mobile_number, email, company_name, company_address, password_hash,
+                    role, status, subscription_tier, tenant_id
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [[
+                    'usr-concurrent', 'Concurrent', '+910000000010', String(values[3]),
+                    'Concurrent Co', 'Pune', 'hash', 'USER', 'PENDING', 'BRONZE', null
+                  ]]);
+                }
+                return bound.run();
+              }
+            };
+          }
+        };
+      }
+    };
+
+    const result = await authCall('POST', '/register', {
+      headers: { 'x-request-id': 'req-registration-race' },
+      environment: environmentWith({ DB: racingDatabase }),
+      body: REGISTRATION
+    });
+
+    expect(result).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.EMAIL_EXISTS } });
+    expect(await countUsers()).toBe(1);
+    expect(warning).toHaveBeenCalledWith('Registration rejected after a concurrent normalized-email conflict', {
+      userId: 'usr-concurrent', requestId: 'req-registration-race', fallback: 'http-409'
+    });
+  });
+
+  it('logs and propagates an unconfirmed insert result rather than reporting a false duplicate', async () => {
+    const errorLog = vi.spyOn(logger, 'error');
+    const unavailableInsertDatabase: CloudflareD1Database = {
+      prepare: (sql) => {
+        const statement = fixture.d1.prepare(sql);
+        return {
+          bind: (...values) => {
+            const bound = statement.bind(...values);
+            return {
+              first: async <T = Record<string, unknown>>() => bound.first<T>(),
+              all: async <T = Record<string, unknown>>() => bound.all<T>(),
+              run: async () => sql.includes('ON CONFLICT DO NOTHING') ? { meta: { changes: 0 } } : bound.run()
+            };
+          }
+        };
+      }
+    };
+
+    await expect(authCall('POST', '/register', {
+      headers: { 'x-request-id': 'req-registration-unknown' },
+      environment: environmentWith({ DB: unavailableInsertDatabase }),
+      body: REGISTRATION
+    })).rejects.toThrow('Registration insert changed no rows and no normalized email conflict was found.');
+
+    expect(await countUsers()).toBe(0);
+    expect(errorLog).toHaveBeenCalledWith(
+      'Registration insert outcome could not be reconciled with the user registry',
+      expect.objectContaining({ requestId: 'req-registration-unknown' }),
+      expect.any(Error)
+    );
+  });
+
+  it('creates a pending account without an assigned tenant or login token', async () => {
+    const result = await registerPending();
     const user = result.body.user as Record<string, unknown>;
 
     expect(result.status).toBe(201);
     expect(result.body).toMatchObject({
       success: true,
-      message: AUTH_MESSAGES.REGISTER_SUCCESS,
-      expires_in_seconds: AUTH_TOKEN_EXPIRY_SECONDS
+      message: AUTH_MESSAGES.REGISTER_PENDING
     });
     expect(user).toMatchObject({
       email: NORMALIZED_EMAIL,
       name: 'Asha Rao',
       role: AUTH_ROLES.USER,
-      status: 'ACTIVE',
+      status: 'PENDING',
+      tenant_id: null,
       subscription_tier: 'BRONZE'
     });
     expect(user).not.toHaveProperty('password_hash');
-
-    const claims = await verifyToken(String(result.body.token), WORKER_CORE_SECRET);
-    expect(claims).toMatchObject({ userId: user.id, email: NORMALIZED_EMAIL, role: AUTH_ROLES.USER, tier: 'BRONZE' });
+    expect(result.body).not.toHaveProperty('token');
 
     const stored = await userRow(String(user.id));
+    expect(stored?.tenant_id).toBeNull();
+    expect(stored?.status).toBe('PENDING');
     expect(stored?.password_hash).toMatch(/^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$/u);
     expect(String(stored?.password_hash)).not.toContain(REGISTRATION.password);
   });
 
   it('never echoes the submitted password back in the response', async () => {
-    const result = await register();
+    const result = await registerPending();
     const user = result.body.user as Record<string, unknown>;
 
     expect(user).not.toHaveProperty('password');
@@ -238,7 +331,7 @@ describe('workerAuth register', () => {
   });
 
   it('honours an explicit subscription tier', async () => {
-    const result = await register({ subscription_tier: 'GOLD' });
+    const result = await registerPending({ subscription_tier: 'GOLD' });
 
     expect((result.body.user as Record<string, unknown>).subscription_tier).toBe('GOLD');
   });
@@ -260,6 +353,150 @@ describe('workerAuth login', () => {
 
     expect(unknown).toEqual({ status: 401, body: { success: false, message: AUTH_MESSAGES.INVALID_CREDENTIALS } });
     expect(wrong).toEqual(unknown);
+  });
+
+  it('keeps a new account out of the session until an administrator assigns its tenant', async () => {
+    await registerPending();
+
+    const result = await authCall('POST', '/login', { body: { email: NORMALIZED_EMAIL, password: REGISTRATION.password } });
+
+    expect(result).toEqual({
+      status: 403,
+      body: { success: false, message: AUTH_MESSAGES.TENANT_ASSIGNMENT_PENDING }
+    });
+  });
+
+  it('blocks sign-in and logs when an assigned tenant becomes inactive', async () => {
+    const pending = await registerPending();
+    const userId = registeredId(pending);
+    const requestId = 'req-login-inactive-tenant';
+    const warning = vi.spyOn(logger, 'warn');
+    insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)', [
+      ['tenant-paused', 'Paused Industries', 'SUSPENDED']
+    ]);
+    fixture.db.prepare('UPDATE User SET tenant_id = ?, status = ? WHERE id = ?')
+      .run('tenant-paused', 'ACTIVE', userId);
+
+    const result = await authCall('POST', '/login', {
+      headers: { 'x-request-id': requestId },
+      body: { email: NORMALIZED_EMAIL, password: REGISTRATION.password }
+    });
+
+    expect(result).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.TENANT_UNAVAILABLE } });
+    expect(result.body).not.toHaveProperty('token');
+    expect(warning).toHaveBeenCalledWith('Sign-in blocked because the assigned tenant is not active', {
+      userId,
+      tenantId: 'tenant-paused',
+      tenantStatus: 'SUSPENDED',
+      requestId
+    });
+  });
+
+  it('allows only an administrator to assign a real tenant and then activates login access', async () => {
+    const pending = await registerPending();
+    const userId = registeredId(pending);
+    insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)', [['tenant-alpha', 'Alpha Industries']]);
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-admin', 'Admin', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'
+    ]]);
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+
+    const assigned = await adminCall(`/users/${encodeURIComponent(userId)}/tenant`, {
+      method: 'PATCH', headers: bearer(adminToken), body: { tenant_id: 'tenant-alpha' }
+    });
+    const loginResult = await authCall('POST', '/login', { body: { email: NORMALIZED_EMAIL, password: REGISTRATION.password } });
+
+    expect(assigned).toMatchObject({ status: 200, body: {
+      success: true, message: AUTH_MESSAGES.TENANT_ASSIGNMENT_COMPLETE,
+      user: { id: userId, status: 'ACTIVE', tenant_id: 'tenant-alpha' }
+    } });
+    expect(loginResult.status).toBe(200);
+    await expect(verifyToken(String(loginResult.body.token), WORKER_CORE_SECRET))
+      .resolves.toMatchObject({ userId, tenantId: 'tenant-alpha' });
+  });
+
+  it('allows an unassigned administrator to assign a tenant to its own account', async () => {
+    insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)', [['tenant-alpha', 'Alpha Industries']]);
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-admin', 'Admin', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'
+    ]]);
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+
+    const assigned = await adminCall('/users/usr-admin/tenant', {
+      method: 'PATCH', headers: bearer(adminToken), body: { tenant_id: 'tenant-alpha' }
+    });
+
+    expect(assigned).toMatchObject({ status: 200, body: {
+      success: true,
+      message: AUTH_MESSAGES.TENANT_ASSIGNMENT_COMPLETE,
+      user: { id: 'usr-admin', role: 'ADMIN', status: 'ACTIVE', tenant_id: 'tenant-alpha' }
+    } });
+    expect(await userRow('usr-admin')).toMatchObject({ tenant_id: 'tenant-alpha' });
+  });
+
+  it('does not assign unsupported account roles to a tenant', async () => {
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-guest', 'Guest', '+910000000009', 'guest@example.test', 'Guest', 'Delhi', 'hash', 'GUEST', 'ACTIVE', 'BRONZE'
+    ]]);
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-admin', 'Admin', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'
+    ]]);
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+
+    const assigned = await adminCall('/users/usr-guest/tenant', {
+      method: 'PATCH', headers: bearer(adminToken), body: { tenant_id: 'TNT-GLOBAL-8902' }
+    });
+
+    expect(assigned).toEqual({
+      status: 409,
+      body: { success: false, message: AUTH_MESSAGES.TENANT_ASSIGNMENT_ACCOUNT_ONLY }
+    });
+  });
+
+  it('does not activate an account when an administrator selects an inactive tenant', async () => {
+    const pending = await registerPending();
+    const userId = registeredId(pending);
+    insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)', [
+      ['tenant-paused', 'Paused Industries', 'SUSPENDED']
+    ]);
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-admin', 'Admin', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'
+    ]]);
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+
+    const assigned = await adminCall(`/users/${encodeURIComponent(userId)}/tenant`, {
+      method: 'PATCH', headers: bearer(adminToken), body: { tenant_id: 'tenant-paused' }
+    });
+
+    expect(assigned).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.TENANT_UNAVAILABLE } });
+    expect(await userRow(userId)).toMatchObject({ tenant_id: null, status: 'PENDING' });
+  });
+
+  it('rejects activating a customer user until one tenant is assigned', async () => {
+    const pending = await registerPending();
+    const userId = registeredId(pending);
+    insertRows(fixture.db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [[
+      'usr-admin', 'Admin', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'
+    ]]);
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+
+    const response = await adminCall(`/users/${encodeURIComponent(userId)}/status`, {
+      method: 'PATCH', headers: bearer(adminToken), body: { status: 'ACTIVE' }
+    });
+
+    expect(response).toEqual({
+      status: 409,
+      body: { success: false, message: AUTH_MESSAGES.TENANT_REQUIRED_FOR_ACTIVATION }
+    });
+    expect(await userRow(userId)).toMatchObject({ status: 'PENDING', tenant_id: null });
+  });
+
+  it('enforces the tenant assignment invariant in D1 for active customer users', async () => {
+    const pending = await registerPending();
+    const userId = registeredId(pending);
+
+    expect(() => fixture.db.prepare("UPDATE User SET status = 'ACTIVE' WHERE id = ?").run(userId))
+      .toThrow('active user must have one tenant assignment');
   });
 
   it('rejects a stored hash that has no salt and hash separator', async () => {
@@ -392,6 +629,23 @@ describe('workerAuth authenticated routes', () => {
     expect((result.body.user as Record<string, unknown>)).not.toHaveProperty('password_hash');
   });
 
+  it('blocks profile and password changes after the account is suspended', async () => {
+    const registration = await register();
+    const id = registeredId(registration);
+    const token = String(registration.body.token);
+    const originalHash = (await userRow(id))?.password_hash;
+    await fixture.d1.prepare('UPDATE User SET status = ? WHERE id = ?').bind('SUSPENDED', id).run();
+
+    const profile = await authCall('GET', '/me', { headers: bearer(token) });
+    const password = await authCall('POST', '/change-password', {
+      body: { currentPassword: 'Secret123', newPassword: 'NewSecret456' }, headers: bearer(token)
+    });
+
+    expect(profile.status).toBe(401);
+    expect(password.status).toBe(401);
+    expect((await userRow(id))?.password_hash).toBe(originalHash);
+  });
+
   it('accepts a raw token without the Bearer prefix', async () => {
     const id = registeredId(await register());
 
@@ -501,23 +755,55 @@ describe('workerAuth admin routes', () => {
   });
 
   it.each([
-    ['no token is supplied', undefined, undefined],
-    ['the caller is a regular user', 'usr-asha', AUTH_ROLES.USER],
-    ['the caller holds an unknown role', 'usr-guest', 'GUEST']
-  ])('returns 403 when %s', async (_label, userId, role) => {
+    ['no token is supplied', undefined, undefined, 401],
+    ['the caller is a regular user', 'usr-asha', AUTH_ROLES.USER, 403],
+    ['the caller holds an unknown role', 'usr-guest', 'GUEST', 403]
+  ])('checks the current account before authorizing when %s', async (_label, userId, role, expectedStatus) => {
+    seedRegistry();
     const headers = userId && role ? bearer(await tokenFor(userId, { role })) : undefined;
 
     const result = await adminCall('/users', { headers });
 
-    expect(result).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY } });
+    expect(result.status).toBe(expectedStatus);
+    expect(result.body.success).toBe(false);
+    if (expectedStatus === 403) expect(result.body.message).toBe(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
   });
 
-  it('returns 403 for an admin claim signed with a different secret', async () => {
+  it('returns 401 for an admin claim signed with a different secret', async () => {
+    seedRegistry();
     const forged = await issueEvidenceToken({ userId: 'usr-admin', role: AUTH_ROLES.ADMIN }, 'other-secret');
 
     const result = await adminCall('/users', { headers: bearer(forged) });
 
-    expect(result.status).toBe(403);
+    expect(result.status).toBe(401);
+  });
+
+  it('rejects stale administrator claims after the database role or status changes', async () => {
+    seedRegistry();
+    const token = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+    await fixture.d1.prepare('UPDATE User SET role = ? WHERE id = ?').bind(AUTH_ROLES.USER, 'usr-admin').run();
+
+    const demoted = await adminCall('/users', { headers: bearer(token) });
+
+    await fixture.d1.prepare('UPDATE User SET role = ?, status = ? WHERE id = ?')
+      .bind(AUTH_ROLES.ADMIN, 'SUSPENDED', 'usr-admin').run();
+    const suspended = await adminCall('/users', { headers: bearer(token) });
+
+    expect(demoted).toEqual({
+      status: 403,
+      body: { success: false, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY }
+    });
+    expect(suspended.status).toBe(401);
+  });
+
+  it('rejects an administrator token after its account is deleted', async () => {
+    seedRegistry();
+    const token = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+    await fixture.d1.prepare('DELETE FROM User WHERE id = ?').bind('usr-admin').run();
+
+    const result = await adminCall('/users', { headers: bearer(token) });
+
+    expect(result.status).toBe(401);
   });
 
   it('accepts an administrator token supplied in the x-auth-token header', async () => {
@@ -552,6 +838,23 @@ describe('workerAuth admin routes', () => {
     expect((byName.body.users as Array<Record<string, unknown>>).map((user) => user.id)).toEqual(['usr-ravi', 'usr-asha']);
     expect(byName.body).toMatchObject({ total: 2, companiesCount: 1 });
     expect((byEmail.body.users as Array<Record<string, unknown>>).map((user) => user.id)).toEqual(['usr-meera']);
+  });
+
+  it('handles blank registry search fields without throwing or exposing unrelated users', async () => {
+    seedRegistry();
+    fixture.db.prepare('UPDATE User SET name = ?, email = ?, company_name = ? WHERE id = ?')
+      .run('', '', '', 'usr-guest');
+    const result = await adminCall('/users?search=not-present', {
+      headers: bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }))
+    });
+    const registry = await adminCall('/users', {
+      headers: bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }))
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body.users).toEqual([]);
+    expect(result.body.total).toBe(0);
+    expect(registry.body).toMatchObject({ total: 5, companiesCount: 4 });
   });
 
   it('filters by role, status and tier while treating ALL as no filter', async () => {
@@ -591,13 +894,11 @@ describe('workerAuth admin routes', () => {
   it('rejects status values other than ACTIVE or SUSPENDED, including unreadable bodies', async () => {
     seedRegistry();
     const headers = bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }));
-    const message = 'Invalid status. Must be ACTIVE or SUSPENDED.';
-
     const unknownStatus = await adminCall('/users/usr-meera/status', { method: 'PATCH', body: { status: 'DELETED' }, headers });
-    const unreadable = await adminCall('/users/usr-meera/status', { method: 'PATCH', rawBody: '{oops', headers });
+    const unreadable = adminCall('/users/usr-meera/status', { method: 'PATCH', rawBody: '{oops', headers });
 
-    expect(unknownStatus).toEqual({ status: 400, body: { success: false, message } });
-    expect(unreadable).toEqual({ status: 400, body: { success: false, message } });
+    expect(unknownStatus).toMatchObject({ status: 400, body: { success: false, message: 'Validation failed' } });
+    await expect(unreadable).rejects.toBeInstanceOf(RequestJsonParseError);
   });
 
   it('returns 404 when the status target does not exist', async () => {
@@ -640,6 +941,32 @@ describe('workerAuth admin routes', () => {
     expect((await userRow('usr-asha'))?.subscription_tier).toBe('GOLD');
     expect(invalid.status).toBe(400);
     expect(missing.status).toBe(400);
+  });
+
+  it('reports account-update conflicts when a user disappears after the admin lookup', async () => {
+    seedRegistry();
+    const headers = bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }));
+    const originalPrepare = fixture.d1.prepare.bind(fixture.d1);
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(fixture.d1, 'prepare').mockImplementation((sql) => {
+      if (sql.startsWith('UPDATE User SET status')) fixture.db.prepare('DELETE FROM User WHERE id = ?').run('usr-meera');
+      if (sql.startsWith('UPDATE User SET subscription_tier')) fixture.db.prepare('DELETE FROM User WHERE id = ?').run('usr-asha');
+      return originalPrepare(sql);
+    });
+
+    const status = await adminCall('/users/usr-meera/status', {
+      method: 'PATCH', body: { status: 'SUSPENDED' }, headers
+    });
+    const tier = await adminCall('/users/usr-asha/tier', {
+      method: 'PATCH', body: { tier: 'GOLD' }, headers
+    });
+
+    expect(status).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.USER_UPDATE_CONFLICT } });
+    expect(tier).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.USER_UPDATE_CONFLICT } });
+    expect(warning).toHaveBeenCalledWith('Administrator status update did not affect the expected account row',
+      expect.objectContaining({ actorId: 'usr-admin', userId: 'usr-meera', affectedRows: 0 }));
+    expect(warning).toHaveBeenCalledWith('Administrator subscription-tier update did not affect the expected account row',
+      expect.objectContaining({ actorId: 'usr-admin', userId: 'usr-asha', affectedRows: 0 }));
   });
 
   it('returns 404 when the tier target does not exist', async () => {

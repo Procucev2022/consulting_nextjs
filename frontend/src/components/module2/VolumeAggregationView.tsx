@@ -1,3 +1,4 @@
+import { apiFetch } from '../../utils/apiFetch';
 /**
  * Module 2 — Lever 4: Volume Aggregation Primary View Component
  * Compliant with Rule 7, 8, 9, 11, 15, max 300 lines, cyclomatic complexity <= 10
@@ -11,6 +12,7 @@ import { VolumeAggregationPlantTab } from './VolumeAggregationPlantTab';
 import { VolumeAggregationMaterialTab } from './VolumeAggregationMaterialTab';
 import { VolumeAggregationTransactionTab } from './VolumeAggregationTransactionTab';
 import { VolumeAggregationPoConsolidationTab } from './VolumeAggregationPoConsolidationTab';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 interface VolumeAggregationViewProps {
   assessmentId: string;
@@ -27,32 +29,38 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   const [activeTab, setActiveTab] = useState<
     'overview' | 'plants' | 'materials' | 'transactions' | 'poConsolidation'
   >('overview');
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
+    const requestId = beginRequest();
     setLoading(true);
     setError(null);
+    setData(null);
     try {
-      const res = await fetch(`/api/module2/sourcing/volume-aggregation?assessmentId=${assessmentId}`);
+      const res = await apiFetch(`/api/module2/sourcing/volume-aggregation?assessmentId=${assessmentId}`);
       if (!res.ok) {
         throw new Error(`Failed to load Volume Aggregation analysis (HTTP ${res.status})`);
       }
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (json.success && json.data) {
         setData(json.data);
       } else {
         throw new Error(json.message || 'Invalid server response structure');
       }
     } catch (err: unknown) {
+      if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void fetchData();
+    return invalidateRequests;
+  }, [fetchData, invalidateRequests]);
 
   if (loading) {
     return (

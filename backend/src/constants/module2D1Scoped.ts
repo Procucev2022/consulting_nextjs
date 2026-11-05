@@ -25,6 +25,7 @@ export const module2D1TransactionSchema = z.object({
 
 export const MODULE2_D1_SCOPED_MESSAGES = {
   unavailable: 'This detailed sourcing endpoint has no persisted assessment result in D1. Use the assessment dashboard, category profiles, suppliers, opportunities, or handoff results.',
+  unknownRoute: 'This assessment-scoped sourcing endpoint does not exist. Refresh the sourcing workspace and select a supported action.',
   missingCategory: 'The selected category is absent from this assessment. Refresh its category list and select a category from that assessment.',
   scopeRequired: 'Select an assessment before requesting this analysis. No unscoped or cross-assessment data was returned.',
   invalidEAuctionFilter: 'E-auction filters are invalid. Choose a valid financial year, category, material code, and suitability.',

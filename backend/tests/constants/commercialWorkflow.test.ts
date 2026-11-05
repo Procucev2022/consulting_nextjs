@@ -21,5 +21,9 @@ describe('commercial workflow limits and states', () => {
     expect(COMMERCIAL_WORKFLOW.subscriptionStatus.ACTIVE).toBe('ACTIVE');
     expect(COMMERCIAL_WORKFLOW.commercialStatus.RECEIVED).toBe('PAYMENT_RECEIVED');
     expect(Object.values(COMMERCIAL_WORKFLOW.otpPurpose)).toEqual(['UPGRADE_APPROVAL', 'SUBSCRIPTION_PROVISION']);
+    expect(COMMERCIAL_WORKFLOW.upgradeMessages.atomicBatchUnavailable).toContain('atomic database writes');
+    expect(Object.values(COMMERCIAL_WORKFLOW.upgradeRedemption)).toEqual([
+      'REDEEMED', 'CONFLICT', 'UNAVAILABLE', 'INVARIANT_FAILURE'
+    ]);
   });
 });

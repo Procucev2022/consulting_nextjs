@@ -26,20 +26,21 @@ import type { CloudflareEnvironment } from './types/cloudflare';
 import { authenticateWorkerUser } from './workerAuth';
 import { sendCommercialEmail } from './services/workerCommercialShared';
 import { authorizeExecutiveBriefAdmin } from './workerD1ExecutiveBriefAuth';
+import { readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 const encoder = new TextEncoder();
 
 const failureForMissingData = (
   request: Request,
   requestId: string,
-  reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions'
+  reason: 'tenant-scope-required' | 'no-tenant' | 'no-transactions'
 ): Response => {
-  const status = reason === 'ambiguous-tenant'
-    ? EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT
+  const status = reason === 'tenant-scope-required'
+    ? EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN
     : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
   const messages = {
+    'tenant-scope-required': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantScopeRequired,
     'no-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTenant,
-    'ambiguous-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.ambiguousTenant,
     'no-transactions': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTransactions
   };
   return executiveBriefErrorResponse(request, requestId, status, messages[reason], { reason });
@@ -86,7 +87,7 @@ const loadReport = async (
     };
   }
   try {
-    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB, environment.REQUEST_TENANT_ID ?? '');
     if (!loaded.ok) {
       return { ok: false, response: failureForMissingData(request, requestId, loaded.reason) };
     }
@@ -185,8 +186,25 @@ export const handleExecutiveBriefEmail = async (
   const startedAt = Date.now();
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    body = await readJson(request);
+  } catch (error: unknown) {
+    if (error instanceof RequestBodyTooLargeError) {
+      logger.warn('Rejected oversized executive brief email request', {
+        requestId,
+        action: 'executiveBrief.email',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.PAYLOAD_TOO_LARGE,
+        maxBytes: error.maxBytes
+      }, error);
+      return executiveBriefErrorResponse(
+        request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.PAYLOAD_TOO_LARGE, error.message
+      );
+    }
+    if (!(error instanceof RequestJsonParseError)) throw error;
+    logger.warn('Rejected malformed executive brief email JSON', {
+      requestId,
+      action: 'executiveBrief.email',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST
+    }, error.underlyingError);
     return executiveBriefValidationResponse(request, requestId, [{
       path: 'body',
       message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.invalidEmailRequest

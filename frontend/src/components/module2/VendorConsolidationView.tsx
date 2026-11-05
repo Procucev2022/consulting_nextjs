@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RotateCw, AlertCircle, Download, ArrowLeft, Users, ShieldAlert,
   Layers, Package, Factory, Clock
@@ -36,32 +36,57 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
   const [drillDownLevel, setDrillDownLevel] = useState<VendorConsolidationDrillDownLevel>('CATEGORIES');
   const [selectedCategory, setSelectedCategory] = useState<CategoryConsolidationProfile | null>(null);
   const [selectedMaterialOpp, setSelectedMaterialOpp] = useState<SameMaterialOpportunity | null>(null);
+  const latestRequestRef = useRef(0);
+  const [resultAssessmentId, setResultAssessmentId] = useState<string | null>(null);
+  const [errorAssessmentId, setErrorAssessmentId] = useState<string | null>(null);
 
   const fetchData = useCallback(async (): Promise<void> => {
+    const requestId = latestRequestRef.current + 1;
+    latestRequestRef.current = requestId;
+    const isCurrentRequest = (): boolean => requestId === latestRequestRef.current;
     setIsLoading(true);
     setErrorCause(null);
+    setErrorAssessmentId(null);
+    setResult(null);
+    setResultAssessmentId(null);
+    if (!assessmentId) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const data = await Module2StrategicSourcingApi.getVendorConsolidation(assessmentId);
+      if (!isCurrentRequest()) return;
       if (data) {
         setResult(data);
+        setResultAssessmentId(assessmentId);
       } else {
         logger.warn('Vendor consolidation view received no data for the assessment', {
           assessmentId,
           userMessage: strings.loadFailedNoPayloadCause
         });
         setErrorCause(strings.loadFailedNoPayloadCause);
+        setErrorAssessmentId(assessmentId);
       }
     } catch (err: unknown) {
+      if (!isCurrentRequest()) return;
       const cause = err instanceof Error ? err.message : strings.loadFailedUnknownCause;
       logger.error('Vendor consolidation view failed to load', { assessmentId, userMessage: cause }, err);
       setErrorCause(cause);
+      setErrorAssessmentId(assessmentId);
     } finally {
-      setIsLoading(false);
+      if (isCurrentRequest()) setIsLoading(false);
     }
   }, [assessmentId, strings]);
 
   useEffect(() => {
+    setActiveDimension('UNSPSC');
+    setDrillDownLevel('CATEGORIES');
+    setSelectedCategory(null);
+    setSelectedMaterialOpp(null);
     fetchData();
+    return () => {
+      latestRequestRef.current += 1;
+    };
   }, [fetchData]);
 
   const handleSelectCategory = (category: CategoryConsolidationProfile): void => {
@@ -152,7 +177,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
         </div>
       )}
 
-      {errorCause && !isLoading && (
+      {errorCause && !isLoading && errorAssessmentId === assessmentId && (
         <div
           role="alert"
           className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl flex items-start gap-2 text-xs text-red-800 dark:text-red-300"
@@ -168,7 +193,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
         </div>
       )}
 
-      {result && !isLoading && (
+      {result && !isLoading && resultAssessmentId === assessmentId && (
         <>
           {/* KPI Summary Cards & Coverage Waterfall */}
           <VendorConsolidationKpiCards result={result} />

@@ -539,6 +539,49 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockRejectedValueOnce('Failed workspace load');
     fireEvent.click(screen.getByText('1. Overview'));
   });
+
+  it('uses the domain-specific fallback guidance when preflight detection omits its messages', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValueOnce({
+      success: true,
+      detection: {
+        detectedDomain: 'CUSTOMER_PURCHASE_HISTORY',
+        isAllowedInTarget: false,
+        targetArea: 'COMMODITY_DATA_LAB',
+        matchedSignatures: []
+      }
+    } as any);
+    render(<CommodityWorkspaceModal isOpen pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
+
+    await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
+    fireEvent.click(screen.getByText('3. Upload Data'));
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['rows'], 'purchases.csv', { type: 'text/csv' })] } });
+
+    expect(await screen.findByText('CUSTOMER DATA DETECTED')).toBeInTheDocument();
+    expect(screen.getByText('Customer purchase history must be uploaded through Module 1.')).toBeInTheDocument();
+  });
+
+  it('keeps the current workspace when D1 returns an unsuccessful payload and ignores rejected approval payloads', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockResolvedValueOnce({ success: false } as any);
+    vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData').mockResolvedValueOnce({ success: false } as any);
+    const failedWorkspaceView = render(<CommodityWorkspaceModal isOpen pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
+
+    await waitFor(() => expect(pcbiCommodityDataLabApi.getCommodityWorkspace).toHaveBeenCalled());
+    expect(screen.queryByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i })).not.toBeInTheDocument();
+    failedWorkspaceView.unmount();
+
+    // Restore the normal workspace for the approval interaction.
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValue({
+      success: true,
+      workspace: mockWorkspace as any
+    });
+    const approvalView = render(<CommodityWorkspaceModal isOpen pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
+    await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
+    fireEvent.click(screen.getByText('10. Approval'));
+    fireEvent.click(screen.getByRole('button', { name: /ADMIN APPROVAL — PROMOTE TO PCBI CATALOG/i }));
+    await waitFor(() => expect(pcbiCommodityDataLabApi.approveCommodityData).toHaveBeenCalled());
+    approvalView.unmount();
+  });
 });
 
 

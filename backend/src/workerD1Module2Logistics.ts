@@ -31,12 +31,27 @@ export const handleModule2LogisticsPackagingRoute = async (
       data: { success: false, message: authentication.message || D1_ROUTE_MESSAGES.module2LogisticsAuthFailed }
     };
   }
+  const tenantId = environment.REQUEST_TENANT_ID;
+  if (!tenantId) {
+    return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
+  }
+  if (authentication.user.role !== AUTH_ROLES.ADMIN && authentication.user.tenantId !== tenantId) {
+    logger.warn('Rejected Module 2 logistics request with a tenant assignment mismatch', {
+      requestId,
+      userId: authentication.user.id,
+      assignedTenantId: authentication.user.tenantId,
+      requestedTenantId: tenantId,
+      assessmentId: parsed.data.assessmentId
+    });
+    return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAccessDenied } };
+  }
   const assessment = await database.prepare(`
-    SELECT AssessmentRecord.customer_id, CustomerRecord.contact_email
+    SELECT AssessmentRecord.customer_id, AssessmentRecord.tenant_id, CustomerRecord.contact_email
     FROM AssessmentRecord
     LEFT JOIN CustomerRecord ON CustomerRecord.customer_id = AssessmentRecord.customer_id
-    WHERE AssessmentRecord.assessment_id = ?
-  `).bind(parsed.data.assessmentId).first<{ customer_id: string; contact_email: string | null }>();
+      AND CustomerRecord.tenant_id = AssessmentRecord.tenant_id
+    WHERE AssessmentRecord.assessment_id = ? AND AssessmentRecord.tenant_id = ?
+  `).bind(parsed.data.assessmentId, tenantId).first<{ customer_id: string; tenant_id: string; contact_email: string | null }>();
   if (!assessment) {
     return { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound } };
   }
@@ -56,9 +71,13 @@ export const handleModule2LogisticsPackagingRoute = async (
       packaging_spec AS packagingSpec, container_fill_pct AS containerFillPct,
       evidence_status AS evidenceStatus, is_demo AS isDemo, updated_at AS updatedAt
     FROM ${D1_TABLES.module2LogisticsCandidates}
-    WHERE assessment_id = ?
+    WHERE assessment_id = ? AND EXISTS (
+      SELECT 1 FROM AssessmentRecord AS assessment
+      WHERE assessment.assessment_id = ${D1_TABLES.module2LogisticsCandidates}.assessment_id
+        AND assessment.tenant_id = ?
+    )
     ORDER BY current_freight_inr DESC, candidate_id ASC
-  `, [parsed.data.assessmentId], requestId);
+  `, [parsed.data.assessmentId, tenantId], requestId);
   const candidates = rows.map((row) => ({ ...row, isDemo: Number(row.isDemo) === 1 }));
   logger.info('Loaded D1 logistics and packaging candidates', {
     requestId, assessmentId: parsed.data.assessmentId, rowCount: candidates.length,

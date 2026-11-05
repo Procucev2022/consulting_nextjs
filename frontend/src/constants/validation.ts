@@ -8,6 +8,33 @@
 import { z } from 'zod';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from './module2VendorConsolidation';
 import { TAXONOMY_PAGE_SIZE } from './taxonomy';
+import {
+  CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_STACK_LENGTH
+} from './errors';
+export * from './subscriptionValidation';
+
+export const INGESTION_UPLOAD_MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+export const clientErrorReportSchema = z.object({
+  level: z.enum(['warn', 'error']),
+  source: z.enum(['logger', 'window', 'unhandledrejection', 'react-boundary']),
+  errorName: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH),
+  message: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH),
+  stack: z.string().max(CLIENT_ERROR_REPORT_MAX_STACK_LENGTH).optional(),
+  route: z.string().regex(/^\/(?!\/)[^?#]*$/).max(CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH),
+  occurredAt: z.string().datetime(),
+  clientRequestId: z.string().min(1).max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH).optional()
+}).strict();
+
+export const apiRequestIdSchema = z.string()
+  .min(1)
+  .max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH)
+  .regex(/^[A-Za-z0-9._-]+$/u);
+
 export const module2LogisticsPackagingQuerySchema = z.object({
   assessmentId: z.string().trim().min(1).max(120)
 });
@@ -107,6 +134,8 @@ export const pcbiWeeklyIndexResponseSchema = z.array(z.object({
   unit: z.string().optional(),
   currency: z.string().optional()
 }).passthrough());
+
+export { pcbiHistoricalObservationsQuerySchema, pcbiHistoricalObservationsResponseSchema } from './pcbiHistoricalValidation';
 
 // Header Selection Schemas
 export const headerTenantSchema = z.object({

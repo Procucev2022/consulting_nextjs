@@ -42,20 +42,40 @@ CREATE TABLE IF NOT EXISTS User (
   id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   mobile_number TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
   company_name TEXT NOT NULL,
   company_address TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'USER',
   status TEXT NOT NULL DEFAULT 'ACTIVE',
   subscription_tier TEXT NOT NULL DEFAULT 'BRONZE',
+  tenant_id TEXT REFERENCES TenantMaster(tenant_id) ON DELETE RESTRICT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_email ON User(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_normalized ON User(lower(email));
 CREATE INDEX IF NOT EXISTS idx_user_role ON User(role);
 CREATE INDEX IF NOT EXISTS idx_user_tier ON User(subscription_tier);
+CREATE INDEX IF NOT EXISTS idx_user_tenant ON User(tenant_id);
+
+-- Customer users have one persisted tenant assignment before they can become active.
+-- Pending signups remain unassigned until an administrator provisions them.
+CREATE TRIGGER IF NOT EXISTS trg_user_requires_tenant_on_active_insert
+BEFORE INSERT ON User
+FOR EACH ROW
+WHEN NEW.role = 'USER' AND NEW.status = 'ACTIVE' AND NEW.tenant_id IS NULL
+BEGIN
+  SELECT RAISE(ABORT, 'active user must have one tenant assignment');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_user_requires_tenant_on_active_update
+BEFORE UPDATE OF role, status, tenant_id ON User
+FOR EACH ROW
+WHEN NEW.role = 'USER' AND NEW.status = 'ACTIVE' AND NEW.tenant_id IS NULL
+BEGIN
+  SELECT RAISE(ABORT, 'active user must have one tenant assignment');
+END;
 
 CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
   doc_id TEXT PRIMARY KEY NOT NULL,
@@ -77,9 +97,11 @@ CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
 
 CREATE INDEX IF NOT EXISTS idx_raw_doc_tenant ON RawDocumentIngestion(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_raw_doc_uploaded ON RawDocumentIngestion(uploaded_at);
+CREATE INDEX IF NOT EXISTS idx_raw_doc_tenant_uploaded ON RawDocumentIngestion(tenant_id, uploaded_at DESC, doc_id DESC);
 
 CREATE TABLE IF NOT EXISTS ValidationPreCheckRecord (
   record_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   po_number TEXT NOT NULL,
   vendor_name TEXT NOT NULL,
   raw_desc TEXT NOT NULL,
@@ -104,9 +126,11 @@ CREATE TABLE IF NOT EXISTS ValidationPreCheckRecord (
 
 CREATE INDEX IF NOT EXISTS idx_val_record_vendor ON ValidationPreCheckRecord(vendor_name);
 CREATE INDEX IF NOT EXISTS idx_val_record_status ON ValidationPreCheckRecord(action_status);
+CREATE INDEX IF NOT EXISTS idx_val_record_tenant_created ON ValidationPreCheckRecord(tenant_id, created_at DESC, record_id DESC);
 
 CREATE TABLE IF NOT EXISTS SpendCategorySummary (
   id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   name TEXT NOT NULL,
   category TEXT,
   spend REAL NOT NULL DEFAULT 0,
@@ -129,9 +153,11 @@ CREATE TABLE IF NOT EXISTS SpendCategorySummary (
   item_count INTEGER DEFAULT 0,
   share_pct REAL DEFAULT 0
 );
+CREATE INDEX IF NOT EXISTS idx_category_summary_tenant_spend ON SpendCategorySummary(tenant_id, spend_inr_crores DESC);
 
 CREATE TABLE IF NOT EXISTS CategoryYearDetail (
   id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   rank INTEGER,
   category TEXT NOT NULL,
   core_bucket TEXT,
@@ -153,9 +179,11 @@ CREATE TABLE IF NOT EXISTS CategoryYearDetail (
   color TEXT DEFAULT '#38bdf8',
   is_balance_category INTEGER DEFAULT 0
 );
+CREATE INDEX IF NOT EXISTS idx_category_year_tenant_rank ON CategoryYearDetail(tenant_id, rank);
 
 CREATE TABLE IF NOT EXISTS VendorYearDetail (
   id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   rank INTEGER,
   vendor_name TEXT NOT NULL,
   master_vendor_id TEXT NOT NULL,
@@ -175,9 +203,11 @@ CREATE TABLE IF NOT EXISTS VendorYearDetail (
 );
 
 CREATE INDEX IF NOT EXISTS idx_vendor_detail_name ON VendorYearDetail(vendor_name);
+CREATE INDEX IF NOT EXISTS idx_vendor_detail_tenant_spend ON VendorYearDetail(tenant_id, total_3yr_spend_inr_cr DESC);
 
 CREATE TABLE IF NOT EXISTS LineItemMapping (
   mapping_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   line_item_id TEXT NOT NULL,
   material_code TEXT,
   material_desc TEXT,
@@ -208,10 +238,12 @@ CREATE TABLE IF NOT EXISTS LineItemMapping (
 
 CREATE INDEX IF NOT EXISTS idx_line_mapping_code ON LineItemMapping(unspsc_code);
 CREATE INDEX IF NOT EXISTS idx_line_mapping_vendor ON LineItemMapping(vendor_identified);
+CREATE INDEX IF NOT EXISTS idx_line_mapping_tenant_id ON LineItemMapping(tenant_id, mapping_id);
 
 CREATE TABLE IF NOT EXISTS VendorPriceRank (
   vendor_name TEXT NOT NULL,
-  master_id TEXT PRIMARY KEY NOT NULL,
+  master_id TEXT NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   category TEXT NOT NULL,
   price_creep_pct REAL DEFAULT 0,
   total_spend REAL NOT NULL DEFAULT 0,
@@ -220,8 +252,10 @@ CREATE TABLE IF NOT EXISTS VendorPriceRank (
   variance_leakage_usd REAL DEFAULT 0,
   variance_leakage_inr_cr REAL,
   benchmark_index TEXT DEFAULT 'LME',
-  last_36mo_trend TEXT DEFAULT '[]'
+  last_36mo_trend TEXT DEFAULT '[]',
+  PRIMARY KEY (tenant_id, master_id)
 );
+CREATE INDEX IF NOT EXISTS idx_vendor_price_rank_tenant_spend ON VendorPriceRank(tenant_id, total_spend_inr_cr DESC);
 
 CREATE TABLE IF NOT EXISTS SavingsOpportunity (
   opp_id TEXT PRIMARY KEY NOT NULL,
@@ -257,7 +291,8 @@ CREATE TABLE IF NOT EXISTS SavingsOpportunityTenantScope (
 CREATE INDEX IF NOT EXISTS idx_savings_opportunity_tenant ON SavingsOpportunityTenantScope(tenant_id, opp_id);
 
 CREATE TABLE IF NOT EXISTS ConversionFunnelPhase (
-  phase_num INTEGER PRIMARY KEY NOT NULL,
+  phase_num INTEGER NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   phase_name TEXT NOT NULL,
   platform_actionable_focus TEXT NOT NULL,
   value_outcome_delivered TEXT NOT NULL,
@@ -266,11 +301,13 @@ CREATE TABLE IF NOT EXISTS ConversionFunnelPhase (
   status TEXT NOT NULL DEFAULT 'Upcoming',
   spend_evaluated_cr REAL,
   count_elements INTEGER,
-  percentage_leakage_identified REAL
+  percentage_leakage_identified REAL,
+  PRIMARY KEY (tenant_id, phase_num)
 );
 
 CREATE TABLE IF NOT EXISTS AssessmentRecord (
   assessment_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   customer_id TEXT NOT NULL,
   customer_name TEXT NOT NULL,
   industry TEXT NOT NULL,
@@ -308,9 +345,11 @@ CREATE TABLE IF NOT EXISTS AssessmentRecord (
 
 CREATE INDEX IF NOT EXISTS idx_assessment_customer ON AssessmentRecord(customer_id);
 CREATE INDEX IF NOT EXISTS idx_assessment_status ON AssessmentRecord(status);
+CREATE INDEX IF NOT EXISTS idx_assessment_tenant_created ON AssessmentRecord(tenant_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS CustomerRecord (
   customer_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
   customer_name TEXT NOT NULL,
   industry TEXT NOT NULL,
   business_unit TEXT DEFAULT 'Default BU',
@@ -327,6 +366,7 @@ CREATE TABLE IF NOT EXISTS CustomerRecord (
 );
 
 CREATE INDEX IF NOT EXISTS idx_customer_status ON CustomerRecord(status);
+CREATE INDEX IF NOT EXISTS idx_customer_tenant_status ON CustomerRecord(tenant_id, status);
 
 CREATE TABLE IF NOT EXISTS AssessmentDataVersion (
   data_version_id TEXT PRIMARY KEY NOT NULL,
@@ -530,25 +570,30 @@ CREATE TABLE IF NOT EXISTS ActionPlanItemDetails (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Versioned D1 reference and normalized source-data schema.
--- Keep this block synchronized with backend/d1-reference-schema.sql.
+-- Reference and normalized source-data tables are part of this canonical schema.
 
 CREATE TABLE IF NOT EXISTS DatasetMetricSummary (
-  metric_key TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
+  metric_key TEXT NOT NULL,
   metric_value REAL,
   metric_text TEXT,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (tenant_id, metric_key)
 );
 
 CREATE TABLE IF NOT EXISTS Module1MonthlySpend (
-  month_key TEXT PRIMARY KEY NOT NULL,
-  spend_inr_cr REAL NOT NULL
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
+  month_key TEXT NOT NULL,
+  spend_inr_cr REAL NOT NULL,
+  PRIMARY KEY (tenant_id, month_key)
 );
 
 CREATE TABLE IF NOT EXISTS Module1CurrencyBreakdown (
-  currency TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
+  currency TEXT NOT NULL,
   spend_inr_cr REAL NOT NULL,
-  percentage REAL NOT NULL
+  percentage REAL NOT NULL,
+  PRIMARY KEY (tenant_id, currency)
 );
 
 CREATE TABLE IF NOT EXISTS UNSPSCCommodity (
@@ -657,6 +702,9 @@ CREATE INDEX IF NOT EXISTS idx_procurement_tx_material ON ProcurementTransaction
 CREATE INDEX IF NOT EXISTS idx_procurement_tx_po ON ProcurementTransaction(tenant_id, po_number);
 CREATE INDEX IF NOT EXISTS idx_procurement_tx_assessment_version_category
   ON ProcurementTransaction(assessment_id, source_document_id, material_group);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_procurement_tx_source_row_unique
+  ON ProcurementTransaction(tenant_id, assessment_id, source_document_id, source_row_number)
+  WHERE assessment_id IS NOT NULL AND source_document_id IS NOT NULL AND source_row_number IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS AlternateVendorIndex (
   category_key TEXT PRIMARY KEY NOT NULL,
@@ -974,6 +1022,12 @@ CREATE TABLE IF NOT EXISTS D1SeedPayloadChunk (
   PRIMARY KEY (entry_type, assessment_id, entry_id, source_checksum, chunk_index)
 );
 
+CREATE TABLE IF NOT EXISTS D1SeedFileLedger (
+  seed_file TEXT PRIMARY KEY,
+  source_checksum TEXT NOT NULL,
+  applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Analysis orchestration (Worker API): report workflow, quality gate, customer
 -- acknowledgements, correction requests, notifications and audit events.
 -- At most one non-superseded report exists per assessment (partial unique index).
@@ -1062,6 +1116,8 @@ CREATE TABLE IF NOT EXISTS OrchestrationNotification (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orch_notification_created ON OrchestrationNotification(created_at);
+CREATE INDEX IF NOT EXISTS idx_orch_notification_tenant_created
+  ON OrchestrationNotification(tenant_id, created_at DESC, notification_id DESC);
 
 CREATE TABLE IF NOT EXISTS OrchestrationAuditEvent (
   event_id TEXT PRIMARY KEY NOT NULL,
@@ -1079,6 +1135,8 @@ CREATE TABLE IF NOT EXISTS OrchestrationAuditEvent (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orch_audit_created ON OrchestrationAuditEvent(created_at);
+CREATE INDEX IF NOT EXISTS idx_orch_audit_tenant_created
+  ON OrchestrationAuditEvent(tenant_id, created_at DESC, event_id DESC);
 
 CREATE TABLE IF NOT EXISTS UpgradeRequest (
   id TEXT PRIMARY KEY NOT NULL,
@@ -1142,6 +1200,36 @@ CREATE TABLE IF NOT EXISTS SubscriptionRecord (
   updated_at TEXT NOT NULL
 );
 
+CREATE TRIGGER IF NOT EXISTS trg_subscription_customer_tenant_match
+BEFORE INSERT ON SubscriptionRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM User
+  WHERE User.id = NEW.customer_id
+    AND lower(User.email) = lower(NEW.customer_email)
+    AND User.role = 'USER'
+    AND User.status = 'ACTIVE'
+    AND User.tenant_id = NEW.tenant_id
+    AND User.subscription_tier = NEW.tier
+)
+BEGIN
+  SELECT RAISE(ABORT, 'SUBSCRIPTION_CUSTOMER_TENANT_MISMATCH');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_subscription_update_customer_tenant_match
+BEFORE UPDATE OF customer_id, customer_email, tenant_id, tier ON SubscriptionRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM User
+  WHERE User.id = NEW.customer_id
+    AND lower(User.email) = lower(NEW.customer_email)
+    AND User.role = 'USER'
+    AND User.status = 'ACTIVE'
+    AND User.tenant_id = NEW.tenant_id
+    AND User.subscription_tier = NEW.tier
+)
+BEGIN
+  SELECT RAISE(ABORT, 'SUBSCRIPTION_CUSTOMER_TENANT_MISMATCH');
+END;
+
 CREATE INDEX IF NOT EXISTS idx_subscription_status_updated ON SubscriptionRecord(status, updated_at);
 CREATE INDEX IF NOT EXISTS idx_subscription_customer_email ON SubscriptionRecord(lower(customer_email));
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscription_one_paid_active_customer
@@ -1161,3 +1249,396 @@ CREATE TABLE IF NOT EXISTS SubscriptionAuditEvent (
 
 CREATE INDEX IF NOT EXISTS idx_subscription_audit_subscription_time ON SubscriptionAuditEvent(subscription_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_subscription_audit_time ON SubscriptionAuditEvent(timestamp);
+
+
+-- Enforce tenant ownership for tables without a native TenantMaster foreign key.
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_assessment_record_insert
+BEFORE INSERT ON AssessmentRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_assessment_record_update
+BEFORE UPDATE OF tenant_id ON AssessmentRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_category_year_detail_insert
+BEFORE INSERT ON CategoryYearDetail
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_category_year_detail_update
+BEFORE UPDATE OF tenant_id ON CategoryYearDetail
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_conversion_funnel_phase_insert
+BEFORE INSERT ON ConversionFunnelPhase
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_conversion_funnel_phase_update
+BEFORE UPDATE OF tenant_id ON ConversionFunnelPhase
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_customer_record_insert
+BEFORE INSERT ON CustomerRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_customer_record_update
+BEFORE UPDATE OF tenant_id ON CustomerRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_dataset_metric_summary_insert
+BEFORE INSERT ON DatasetMetricSummary
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_dataset_metric_summary_update
+BEFORE UPDATE OF tenant_id ON DatasetMetricSummary
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_line_item_mapping_insert
+BEFORE INSERT ON LineItemMapping
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_line_item_mapping_update
+BEFORE UPDATE OF tenant_id ON LineItemMapping
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_module1_currency_breakdown_insert
+BEFORE INSERT ON Module1CurrencyBreakdown
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_module1_currency_breakdown_update
+BEFORE UPDATE OF tenant_id ON Module1CurrencyBreakdown
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_module1_monthly_spend_insert
+BEFORE INSERT ON Module1MonthlySpend
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_module1_monthly_spend_update
+BEFORE UPDATE OF tenant_id ON Module1MonthlySpend
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_object_metadata_insert
+BEFORE INSERT ON ObjectMetadata
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_object_metadata_update
+BEFORE UPDATE OF tenant_id ON ObjectMetadata
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_acknowledgement_insert
+BEFORE INSERT ON OrchestrationAcknowledgement
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_acknowledgement_update
+BEFORE UPDATE OF tenant_id ON OrchestrationAcknowledgement
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_audit_event_insert
+BEFORE INSERT ON OrchestrationAuditEvent
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_audit_event_update
+BEFORE UPDATE OF tenant_id ON OrchestrationAuditEvent
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_correction_request_insert
+BEFORE INSERT ON OrchestrationCorrectionRequest
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_correction_request_update
+BEFORE UPDATE OF tenant_id ON OrchestrationCorrectionRequest
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_notification_insert
+BEFORE INSERT ON OrchestrationNotification
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_orchestration_notification_update
+BEFORE UPDATE OF tenant_id ON OrchestrationNotification
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_procurement_transaction_insert
+BEFORE INSERT ON ProcurementTransaction
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_procurement_transaction_update
+BEFORE UPDATE OF tenant_id ON ProcurementTransaction
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_raw_document_ingestion_insert
+BEFORE INSERT ON RawDocumentIngestion
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_raw_document_ingestion_update
+BEFORE UPDATE OF tenant_id ON RawDocumentIngestion
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_spend_category_summary_insert
+BEFORE INSERT ON SpendCategorySummary
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_spend_category_summary_update
+BEFORE UPDATE OF tenant_id ON SpendCategorySummary
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_subscription_audit_event_insert
+BEFORE INSERT ON SubscriptionAuditEvent
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_subscription_audit_event_update
+BEFORE UPDATE OF tenant_id ON SubscriptionAuditEvent
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_subscription_record_insert
+BEFORE INSERT ON SubscriptionRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_subscription_record_update
+BEFORE UPDATE OF tenant_id ON SubscriptionRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_validation_pre_check_record_insert
+BEFORE INSERT ON ValidationPreCheckRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_validation_pre_check_record_update
+BEFORE UPDATE OF tenant_id ON ValidationPreCheckRecord
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_vendor_price_rank_insert
+BEFORE INSERT ON VendorPriceRank
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_vendor_price_rank_update
+BEFORE UPDATE OF tenant_id ON VendorPriceRank
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_vendor_year_detail_insert
+BEFORE INSERT ON VendorYearDetail
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_vendor_year_detail_update
+BEFORE UPDATE OF tenant_id ON VendorYearDetail
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_master_identity_immutable
+BEFORE UPDATE OF tenant_id ON TenantMaster
+WHEN NEW.tenant_id <> OLD.tenant_id
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_IMMUTABLE');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_master_soft_delete_only
+BEFORE DELETE ON TenantMaster
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_MASTER_SOFT_DELETE_ONLY');
+END;

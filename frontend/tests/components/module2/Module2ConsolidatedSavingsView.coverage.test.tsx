@@ -151,7 +151,7 @@ describe('Module2ConsolidatedSavingsView coverage', () => {
     render(<Module2ConsolidatedSavingsView assessmentId={ASSESSMENT_ID} />);
 
     expect(await screen.findByText(strings.title)).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledWith(API_URL);
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(API_URL);
     expect(screen.getByText(strings.leverBreakdownTitle)).toBeInTheDocument();
     expect(screen.getAllByText('₹0.4500 Cr').length).toBeGreaterThan(0);
   });

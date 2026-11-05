@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 /**
  * Commercial Enquiry / Upgrade Request Modal (Prompt 288 §13)
@@ -37,7 +38,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/upgrade/request`, {
+      const res = await apiFetch(`${getApiBaseUrl()}/api/upgrade/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

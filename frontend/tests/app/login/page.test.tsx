@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from '../../../src/app/login/page';
 import { apiClient } from '../../../src/utils/api';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { AUTH_STORAGE_KEYS } from '../../../src/constants/auth';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -131,11 +132,10 @@ describe('Login & Registration Page Component', () => {
     expect(screen.getByText(UI_STRINGS.auth.passwordMismatchError)).toBeDefined();
   });
 
-  it('should handle successful registration and redirect to dashboard', async () => {
+  it('should confirm registration is pending tenant assignment without starting a session', async () => {
     vi.spyOn(apiClient, 'register').mockResolvedValue({
       success: true,
-      message: 'Registered successfully',
-      token: 'jwt-reg',
+      message: UI_STRINGS.auth.registrationPending,
       user: {
         id: 'usr-3',
         name: 'New User',
@@ -144,7 +144,8 @@ describe('Login & Registration Page Component', () => {
         company_name: 'Company Ltd',
         company_address: 'Tech Park, Hyderabad',
         role: 'USER',
-        status: 'ACTIVE',
+        status: 'PENDING',
+        tenant_id: null,
         created_at: '2026-01-01',
         updated_at: '2026-01-01'
       }
@@ -163,8 +164,9 @@ describe('Login & Registration Page Component', () => {
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountPrimaryCta }));
 
-    await waitFor(() => expect(screen.getByText(UI_STRINGS.auth.registrationSuccess)).toBeDefined());
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'), { timeout: 1500 });
+    await waitFor(() => expect(screen.getByText(UI_STRINGS.auth.registrationPending)).toBeDefined());
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(localStorage.getItem(AUTH_STORAGE_KEYS.AUTH_TOKEN)).toBeNull();
   });
 
   it('should render the customer conversion showcase and product journey', () => {

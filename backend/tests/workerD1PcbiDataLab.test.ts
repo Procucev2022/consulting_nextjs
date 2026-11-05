@@ -10,6 +10,7 @@ import type {
   PCBICommoditySourceRow,
   PCBICommoditySpendByUnspscRow
 } from '../src/types/pcbiDataLabStorage';
+import logger from '../src/utils/logger';
 import { handlePcbiRoute } from '../src/workerD1Pcbi';
 import { handlePcbiDataLabRoute } from '../src/workerD1PcbiDataLab';
 
@@ -48,6 +49,13 @@ class LabStatement implements CloudflareD1PreparedStatement {
     return null;
   }
   async all<T>(): Promise<{ results: T[] }> {
+    if (this.sql.includes('PCBIMasterVersion') && this.sql.includes("status = 'PUBLISHED'")) {
+      return {
+        results: this.database.publishedPayload
+          ? ([{ payload_json: JSON.stringify(this.database.publishedPayload) }] as T[])
+          : []
+      };
+    }
     if (this.sql.includes('FROM ProcurementTransaction tx')) return { results: [...this.database.spendRows] as T[] };
     if (this.sql.includes('PCBIUNSPSCMapping')) return { results: [...this.database.unspscMappings] as T[] };
     if (this.sql.includes('PCBIBenchmarkMaster')) return { results: [this.database.benchmark as T] };
@@ -462,10 +470,20 @@ describe('D1 Commodity Data Lab', () => {
     const db = new LabDatabase(false);
     const env = environment(db);
     expect(await route(env, '/upload-source', 'POST', validUpload({ pcbiId: 'UNKNOWN-PCBI' }))).toMatchObject({ status: 404 });
+    vi.mocked(logger.warn).mockClear();
     const malformedJson = await route(env, '/upload-source', 'POST', validUpload({
       fileType: 'JSON', fileBase64: Buffer.from('{ invalid').toString('base64')
     }));
-    expect(malformedJson.data).toMatchObject({ source: { extractionStatus: 'FAILED', validationStatus: 'ISSUES_DETECTED' } });
+    expect(malformedJson.data).toMatchObject({
+      source: { extractionStatus: 'FAILED', validationStatus: 'ISSUES_DETECTED' },
+      banner: 'SOURCE_STAGED_WITH_ISSUES',
+      message: D1_ROUTE_MESSAGES.pcbiDataLabFileInvalid
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'PCBI structured research source could not be parsed; source will be staged for review',
+      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id, fileType: 'JSON' }),
+      expect.objectContaining({ name: 'SyntaxError' })
+    );
 
     const failedR2 = environment(new LabDatabase());
     failedR2.OBJECTS = { put: vi.fn().mockRejectedValue(new Error('R2 offline')), get: vi.fn(), delete: vi.fn() };
@@ -582,7 +600,7 @@ describe('D1 Commodity Data Lab', () => {
     expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: ' ' }))).toMatchObject({ status: 400 });
     expect(await route({ DB: env.DB }, '/upload-source', 'POST', validUpload())).toMatchObject({ status: 503 });
     expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: '💥' }))).toMatchObject({ status: 400 });
-    expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: 'A'.repeat(15_000_000) }))).toMatchObject({ status: 400 });
+    expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: 'A'.repeat(15_000_000) }))).toMatchObject({ status: 413 });
     expect(await route(env, '/unknown')).toMatchObject({ status: 404 });
     expect(await route(env, '/queue', 'POST')).toMatchObject({ status: 405 });
     expect(await route(env, '/approve', 'GET')).toMatchObject({ status: 405 });

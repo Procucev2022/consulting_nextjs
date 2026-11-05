@@ -4,6 +4,7 @@
 
 export interface QueryAuditLog {
   queryId: string;
+  requestId: string;
   operation: string;
   model: string;
   durationMs: number;
@@ -24,4 +25,19 @@ export interface QueryMetrics {
 export interface CacheEntry<T> {
   data: T;
   expiresAt: number;
+}
+
+export type D1ReferenceCacheStatus = 'hit' | 'miss' | 'coalesced';
+
+export interface D1ReferenceCacheResult<T> {
+  value: T;
+  cacheStatus: D1ReferenceCacheStatus;
+}
+
+export type D1ReferenceCacheEntries = Map<string, CacheEntry<unknown>>;
+export type D1ReferenceCacheLoads = Map<string, Promise<unknown>>;
+
+export interface D1ReferenceCacheState {
+  entries: D1ReferenceCacheEntries;
+  loads: D1ReferenceCacheLoads;
 }

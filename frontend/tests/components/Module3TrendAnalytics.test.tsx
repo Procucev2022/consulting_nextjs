@@ -129,7 +129,7 @@ describe('Module3TrendAnalytics Component', () => {
 
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'PCBI-OTHER' } });
     await waitFor(() => expect(apiClient.getPCBIWeeklyIndices).toHaveBeenCalledWith('PCBI-OTHER', MODULE3_PCBI_INDEX_HISTORY_LIMIT));
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+    expect(await screen.findByTestId('mock-line-chart')).toBeInTheDocument();
   });
 
   it('shows the empty state when D1 has no reference benchmarks', async () => {

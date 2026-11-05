@@ -96,14 +96,15 @@ export const createDescriptiveError = (
     category: errorObj.category,
     field: errorObj.field,
     statusCode: errorObj.statusCode,
+    requestId: errorObj.requestId,
     failureDetail: errorObj.failureDetail,
     actionableAdvice: errorObj.actionableAdvice
   };
 
   if (severity === ERROR_SEVERITIES.WARNING || severity === ERROR_SEVERITIES.INFO) {
-    frontendLogger.warn(`[${category}] ${message}`, logContext, requestId);
+    frontendLogger.warn(`[${category}] ${message}`, logContext);
   } else {
-    frontendLogger.error(`[${category}] ${message}`, logContext, requestId);
+    frontendLogger.error(`[${category}] ${message}`, logContext);
   }
 
   return errorObj;

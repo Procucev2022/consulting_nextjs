@@ -31,6 +31,8 @@ const { DatabaseSync } = createRequire(path.join(__dirname, 'orchestrationTestHa
 const SCHEMA_PATH = path.resolve(__dirname, '../../d1-schema.sql');
 
 export const TEST_AUTH_SECRET = 'orchestration-test-secret-0123456789';
+export const TEST_TENANT_ID = 'TNT-TEST';
+export const OTHER_TEST_TENANT_ID = 'TNT-OTHER';
 
 export const ADMIN_ID = 'usr-admin-001';
 export const CUSTOMER_A_ID = 'cust-user-a';
@@ -64,6 +66,7 @@ export interface CallOptions {
   body?: unknown;
   rawBody?: string;
   query?: string;
+  tenantId?: string | null;
   requestId?: string;
   origin?: string;
 }
@@ -150,6 +153,7 @@ export const createHarness = (options: HarnessOptions = {}): OrchestrationHarnes
   const environment: CloudflareEnvironment = {
     DB: database,
     AUTH_SECRET: TEST_AUTH_SECRET,
+    REQUEST_TENANT_ID: TEST_TENANT_ID,
     ...options.environment
   };
   return { sqlite, database, environment, runtime: createTestRuntime(), close: () => sqlite.close() };
@@ -209,7 +213,10 @@ export const send = async (harness: OrchestrationHarness, options: CallOptions):
     headers,
     body: carriesBody ? (bodyText ?? '') : undefined
   });
-  const response = await handleOrchestrationRequest(request, harness.environment, url, harness.runtime);
+  const environment = options.tenantId === undefined
+    ? harness.environment
+    : { ...harness.environment, REQUEST_TENANT_ID: options.tenantId ?? undefined };
+  const response = await handleOrchestrationRequest(request, environment, url, harness.runtime);
   const contentType = response.headers.get('Content-Type') ?? '';
   const body = contentType.includes('application/json')
     ? (await response.clone().json()) as Record<string, any>
@@ -225,10 +232,10 @@ export const seedUser = (
 ): void => {
   sqlite.prepare(
     'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, '
-      + 'subscription_tier) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)'
+      + 'subscription_tier, tenant_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)'
   ).run(
     user.id, user.name, '+910000000000', `${user.id}@example.test`, 'Test Company', 'Test Address',
-    'hash', user.role, user.status, 'BRONZE'
+    'hash', user.role, user.status, 'BRONZE', TEST_TENANT_ID
   );
 };
 
@@ -237,11 +244,14 @@ export const seedAssessment = (
   assessment: { id: string; customerId: string; customerName: string; createdAt?: string; totalSpendCr?: number }
 ): void => {
   sqlite.prepare(
-    'INSERT INTO AssessmentRecord (assessment_id, customer_id, customer_name, industry, assessment_owner, '
+    'INSERT OR IGNORE INTO CustomerRecord (customer_id, tenant_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4, ?5)'
+  ).run(assessment.customerId, TEST_TENANT_ID, assessment.customerName, 'Textile', `${assessment.customerId}@example.test`);
+  sqlite.prepare(
+    'INSERT INTO AssessmentRecord (assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, '
       + 'assessment_period_start, assessment_period_end, total_spend_cr, created_at, updated_at) '
-      + 'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)'
+      + 'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)'
   ).run(
-    assessment.id, assessment.customerId, assessment.customerName, 'Textile', 'analyst@procucev.com',
+    assessment.id, TEST_TENANT_ID, assessment.customerId, assessment.customerName, 'Textile', 'analyst@procucev.com',
     'Jan 2023', 'Dec 2023', assessment.totalSpendCr ?? 100, assessment.createdAt ?? '2026-02-01T00:00:00.000Z'
   );
 };
@@ -324,6 +334,8 @@ export const seedTransaction = (
  * - AIC-F1 has a run that failed its gates and is not approved. AIC-G1 has spend coverage below 85%.
  */
 export const seedStandardFixtures = (sqlite: SqliteDatabaseLike): void => {
+  sqlite.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+    .run(TEST_TENANT_ID, 'Orchestration Test Tenant');
   seedUser(sqlite, { id: ADMIN_ID, name: 'System Administrator', role: 'ADMIN', status: 'ACTIVE' });
   seedUser(sqlite, { id: CUSTOMER_A_ID, name: 'Asha Customer', role: 'USER', status: 'ACTIVE' });
   seedUser(sqlite, { id: CUSTOMER_B_ID, name: 'Ben Customer', role: 'USER', status: 'ACTIVE' });

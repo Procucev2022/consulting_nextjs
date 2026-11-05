@@ -4,6 +4,9 @@
  * Centralized GraphQL SDL schema definition, field types, queries, and mutations.
  */
 
+import { D1_INGESTION_PAGE_SIZE } from './d1';
+import { GRAPHQL_INGESTION_TYPES_SDL } from './graphqlIngestion';
+
 export const GRAPHQL_SCHEMA_SDL = `
   type TenantMaster {
     tenant_id: String!
@@ -222,6 +225,7 @@ export const GRAPHQL_SCHEMA_SDL = `
 
   type QueryAuditItem {
     queryId: String!
+    requestId: String!
     operation: String!
     model: String!
     durationMs: Float!
@@ -238,6 +242,8 @@ export const GRAPHQL_SCHEMA_SDL = `
     recentAudits: [QueryAuditItem!]!
   }
 
+  ${GRAPHQL_INGESTION_TYPES_SDL}
+
   type MergeVendorResult {
     success: Boolean!
     affected: Int!
@@ -248,9 +254,9 @@ export const GRAPHQL_SCHEMA_SDL = `
     categories: [SpendCategorySummary!]!
     opportunities: [SavingsOpportunity!]!
     funnelStages: [ConversionFunnelPhase!]!
-    ingestionQueue: [RawDocumentIngestion!]!
-    validationRecords: [ValidationPreCheckRecord!]!
-    queryMetrics: QueryMetrics!
+    ingestionQueue: IngestionQueuePage!
+    validationRecords: ValidationRecordsPage!
+    queryMetrics: QueryMetrics
   }
 
   input UpdateTenantInput {
@@ -283,8 +289,8 @@ export const GRAPHQL_SCHEMA_SDL = `
 
   type Query {
     tenant: TenantMaster
-    ingestionQueue: [RawDocumentIngestion!]!
-    validationRecords: [ValidationPreCheckRecord!]!
+    ingestionQueue(first: Int = ${D1_INGESTION_PAGE_SIZE}, after: String): IngestionQueuePage!
+    validationRecords(first: Int = ${D1_INGESTION_PAGE_SIZE}, after: String): ValidationRecordsPage!
     categories: [SpendCategorySummary!]!
     categoryDetails(id: String): [CategoryYearDetail!]!
     vendorDetails: [VendorYearDetail!]!
@@ -292,7 +298,7 @@ export const GRAPHQL_SCHEMA_SDL = `
     lineItems: [LineItemMapping!]!
     opportunities: [SavingsOpportunity!]!
     funnelStages: [ConversionFunnelPhase!]!
-    queryMetrics: QueryMetrics!
+    queryMetrics: QueryMetrics
     dashboardOverview: DashboardOverview!
   }
 
@@ -307,6 +313,18 @@ export const GRAPHQL_SCHEMA_SDL = `
 
 export const GRAPHQL_ERRORS = {
   INVALID_QUERY: 'Invalid GraphQL query string provided',
+  INVALID_INGESTION_CURSOR: 'Ingestion pagination cursor is invalid or expired; restart from the first page.',
+  INVALID_INGESTION_PAGE_ARGS: 'Ingestion page size must be between 1 and the configured maximum.',
   EXECUTION_FAILED: 'GraphQL execution encountered errors',
-  MISSING_OPERATION: 'GraphQL request requires query or mutation string'
+  MISSING_OPERATION: 'GraphQL request requires query or mutation string',
+  QUERY_REQUIRED: 'GraphQL query is required',
+  MISSING_BINDING: 'Cloudflare D1 binding DB is not configured.'
+} as const;
+
+export const GRAPHQL_LOG_MESSAGES = {
+  invalidPagination: 'GraphQL ingestion pagination input was rejected',
+  operationRejected: 'GraphQL operation was rejected',
+  executionFailed: 'GraphQL field execution failed',
+  invalidJsonBody: 'GraphQL rejected an invalid JSON request body',
+  requestFailed: 'GraphQL request failed'
 } as const;

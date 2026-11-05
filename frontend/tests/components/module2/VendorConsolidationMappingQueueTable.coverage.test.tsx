@@ -119,7 +119,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
       reviewStatus: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_STATUS,
       auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
     });
-    expect(requestInit.headers).toMatchObject({ Authorization: 'Bearer stored-session-token' });
+    expect(new Headers(requestInit.headers).get('Authorization')).toBe('Bearer stored-session-token');
     await waitFor(() => {
       expect(screen.getByRole('button', { name: strings.btnApproveMapping })).toBeDefined();
     });

@@ -8,6 +8,7 @@ import {
   PCBI_DATA_LAB_DATE_HEADER_PATTERNS,
   PCBI_DATA_LAB_GEOGRAPHY_HEADERS,
   PCBI_DATA_LAB_STRUCTURED_FILE_TYPES,
+  PCBI_DATA_LAB_UPLOAD_JSON_MAX_BYTES,
   PCBI_DATA_LAB_UPLOAD_MAX_BYTES,
   PCBI_DATA_LAB_UNIT_HEADERS,
   PCBI_DATA_LAB_VALUE_HEADER_PATTERNS
@@ -29,6 +30,7 @@ import type {
   CommodityResearchQueueRow,
   PCBIResearchDashboardMetrics
 } from './types/pcbiCommodityDataLab';
+import { readJson, requestJsonFailureResult } from './workerHttp';
 import type {
   PCBICommodityBenchmarkRow,
   PCBICommodityObservationRow,
@@ -178,7 +180,13 @@ const mapSource = (row: PCBICommoditySourceRow): CommoditySourceEvidenceObject =
 
 const dateValue = (value: unknown): string | null => {
   let date: Date;
-  if (value instanceof Date) date = value;
+  if (value instanceof Date) {
+    if (!Number.isFinite(value.getTime())) return null;
+    const year = String(value.getFullYear()).padStart(4, '0');
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
   else if (typeof value === 'number' && value > 20000 && value < 80000) {
     date = new Date(Date.UTC(1899, 11, 30) + value * 86400000);
   } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(value.trim())) {
@@ -257,8 +265,7 @@ const uploadSource = async (
   requestId: string
 ): Promise<WorkerD1Result> => {
   const db = requireWorkerDb(environment.DB);
-  let body: unknown;
-  try { body = await request.json(); } catch { body = null; }
+  const body: unknown = await readJson(request, PCBI_DATA_LAB_UPLOAD_JSON_MAX_BYTES);
   const parsed = uploadCommoditySourceSchema.safeParse(body);
   if (!parsed.success) return { status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabInvalid, errors: parsed.error.issues } };
   const input: UploadCommoditySourceInput = parsed.data;
@@ -271,8 +278,20 @@ const uploadSource = async (
   if (bytes.length === 0) return { status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabFileRequired } };
   if (bytes.length > PCBI_DATA_LAB_UPLOAD_MAX_BYTES) return { status: 413, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabUploadTooLarge } };
   let parsedRows: Record<string, unknown>[] = [];
+  let structuredParseFailed = false;
   if (PCBI_DATA_LAB_STRUCTURED_FILE_TYPES.has(input.fileType)) {
-    try { parsedRows = await parseStructuredRows(bytes, input.fileType); } catch { parsedRows = []; }
+    try {
+      parsedRows = await parseStructuredRows(bytes, input.fileType);
+    } catch (error: unknown) {
+      structuredParseFailed = true;
+      parsedRows = [];
+      logger.warn('PCBI structured research source could not be parsed; source will be staged for review', {
+        requestId,
+        pcbiId: input.pcbiId,
+        fileType: input.fileType,
+        fileSizeBytes: bytes.length
+      }, error);
+    }
   }
   const headerText = parsedRows.length > 0 ? Object.keys(parsedRows[0]).join(' ') : '';
   const domainResponse = await detectDomain(new Request(request.url, {
@@ -363,7 +382,8 @@ const uploadSource = async (
       const duplicates = new Set(observations.map((item) => item.observationDate)).size !== observations.length;
       const fullyValid = observations.length > 0 && invalidRows === 0 && unitsMatch && currencyMatches && geographyMatches && rowSpecificationsMatch && !duplicates;
       validationStatus = fullyValid ? 'VALIDATED' : 'ISSUES_DETECTED';
-      if (!unitsMatch || !currencyMatches || !geographyMatches || !rowSpecificationsMatch) sourceIssue = 'Source unit, currency, or geography does not match the D1 PCBI definition.';
+      if (structuredParseFailed) sourceIssue = D1_ROUTE_MESSAGES.pcbiDataLabFileInvalid;
+      else if (!unitsMatch || !currencyMatches || !geographyMatches || !rowSpecificationsMatch) sourceIssue = 'Source unit, currency, or geography does not match the D1 PCBI definition.';
       else if (invalidRows > 0 || duplicates) sourceIssue = 'Some source rows have invalid values, dates, or duplicate dates.';
       else if (!fullyValid) sourceIssue = D1_ROUTE_MESSAGES.pcbiDataLabPdfExtractionFailed;
     } catch (error) {
@@ -420,8 +440,7 @@ const uploadSource = async (
 };
 
 const detectDomain = async (request: Request): Promise<WorkerD1Result> => {
-  let body: unknown;
-  try { body = await request.json(); } catch { body = null; }
+  const body: unknown = await readJson(request);
   const parsed = detectUploadDomainSchema.safeParse(body);
   if (!parsed.success) return { status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabInvalid, errors: parsed.error.issues } };
   const text = `${parsed.data.fileName} ${parsed.data.fileContentSnippet || ''}`.toLowerCase().replace(/[_-]+/gu, ' ');
@@ -565,8 +584,7 @@ const buildQueue = async (
 const assignResearcher = async (
   db: NonNullable<CloudflareEnvironment['DB']>, request: Request, actorName: string, requestId: string
 ): Promise<WorkerD1Result> => {
-  let body: unknown;
-  try { body = await request.json(); } catch { body = null; }
+  const body: unknown = await readJson(request);
   const parsed = assignPcbiResearchSchema.safeParse(body);
   if (!parsed.success) {
     logger.warn('PCBI research assignment rejected by validation', { requestId, issues: parsed.error.issues });
@@ -751,8 +769,7 @@ const approve = async (
   environment: CloudflareEnvironment, request: Request, actorName: string, requestId: string
 ): Promise<WorkerD1Result> => {
   const db = requireWorkerDb(environment.DB);
-  let body: unknown;
-  try { body = await request.json(); } catch { body = null; }
+  const body: unknown = await readJson(request);
   const parsed = approveCommodityDataSchema.safeParse(body);
   if (!parsed.success) return { status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabInvalid, errors: parsed.error.issues } };
   const input = parsed.data;
@@ -803,10 +820,11 @@ export const handlePcbiDataLabRoute = async (
   const root = '/api/admin/pcbi/data-lab';
   const path = url.pathname.slice(root.length) || '/';
   const db = requireWorkerDb(environment.DB);
-  if (path === '/detect-domain' && request.method === 'POST') return detectDomain(request);
-  if (path === '/upload-source' && request.method === 'POST') return uploadSource(environment, request, actorName, requestId);
-  if (path === '/approve' && request.method === 'POST') return approve(environment, request, actorName, requestId);
-  if (path === '/assignment' && request.method === 'POST') return assignResearcher(db, request, actorName, requestId);
+  try {
+  if (path === '/detect-domain' && request.method === 'POST') return await detectDomain(request);
+  if (path === '/upload-source' && request.method === 'POST') return await uploadSource(environment, request, actorName, requestId);
+  if (path === '/approve' && request.method === 'POST') return await approve(environment, request, actorName, requestId);
+  if (path === '/assignment' && request.method === 'POST') return await assignResearcher(db, request, actorName, requestId);
   if (path === '/dashboard' && request.method === 'GET') return dashboard(db, requestId);
   if (path === '/queue' && request.method === 'GET') {
     const queue = await buildQueue(db, requestId);
@@ -830,6 +848,11 @@ export const handlePcbiDataLabRoute = async (
     status: allowedPath ? 405 : 404,
     data: { success: false, message: allowedPath ? D1_ROUTE_MESSAGES.pcbiDataLabMethod : D1_ROUTE_MESSAGES.unknownPcbi }
   };
+  } catch (error: unknown) {
+    const failure = requestJsonFailureResult(request, error);
+    if (failure) return failure;
+    throw error;
+  }
 };
 
 

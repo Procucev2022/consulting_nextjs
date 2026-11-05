@@ -6,6 +6,7 @@ import {
   readCommercialBody, secureEquals, sendCommercialEmail, sha256Hex, toPublicSubscription, verifyCommercialOtp
 } from '../../src/services/workerCommercialShared';
 import type { CloudflareEnvironment } from '../../src/types/cloudflare';
+import { RequestJsonParseError } from '../../src/workerHttp';
 import {
   createWorkerDatabase, insertRows, WORKER_CORE_SECRET, type WorkerDatabaseFixture
 } from '../helpers/workerCoreFixtures';
@@ -30,10 +31,10 @@ const jsonRequest = (body: string): Request => new Request('https://edge.example
 });
 
 describe('commercial workflow shared helpers', () => {
-  it('normalizes JSON body shapes and returns typed responses', async () => {
+  it('accepts JSON objects and rejects malformed or non-object request bodies', async () => {
     expect(await readCommercialBody(jsonRequest('{"ok":true}'))).toEqual({ ok: true });
-    expect(await readCommercialBody(jsonRequest('[1,2]'))).toEqual({});
-    expect(await readCommercialBody(jsonRequest('{bad')).catch(() => ({}))).toEqual({});
+    await expect(readCommercialBody(jsonRequest('[1,2]'))).rejects.toBeInstanceOf(RequestJsonParseError);
+    await expect(readCommercialBody(jsonRequest('{bad'))).rejects.toBeInstanceOf(RequestJsonParseError);
     expect(commercialResult({ success: true }, 201)).toEqual({ body: { success: true }, status: 201 });
   });
 
@@ -51,10 +52,12 @@ describe('commercial workflow shared helpers', () => {
 
   it('authorizes only an active D1 administrator', async () => {
     fixture = createWorkerDatabase();
+    fixture.db.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+      .run('tenant-one', 'Tenant One');
     insertRows(fixture.db, `INSERT INTO User (id, name, mobile_number, email, company_name, company_address,
-      password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-      ['admin-1', 'Admin', '+910000000000', 'admin@example.test', 'Example', 'India', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'],
-      ['user-1', 'User', '+910000000001', 'user@example.test', 'Example', 'India', 'hash', 'USER', 'ACTIVE', 'BRONZE']
+      password_hash, role, status, subscription_tier, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+      ['admin-1', 'Admin', '+910000000000', 'admin@example.test', 'Example', 'India', 'hash', 'ADMIN', 'ACTIVE', 'GOLD', null],
+      ['user-1', 'User', '+910000000001', 'user@example.test', 'Example', 'India', 'hash', 'USER', 'ACTIVE', 'BRONZE', 'tenant-one']
     ]);
     const noBinding = await authorizeCommercialAdmin(new Request('https://edge.example.test'), { AUTH_SECRET: WORKER_CORE_SECRET });
     const noToken = await authorizeCommercialAdmin(new Request('https://edge.example.test'), environment());
@@ -128,6 +131,10 @@ describe('commercial workflow shared helpers', () => {
     expect(toPublicSubscription({ id: 's-3', payment_confirmed: true }).payment_confirmed).toBe(true);
     expect(d1ChangedRows({ meta: { changes: 2 } })).toBe(2);
     expect(d1ChangedRows({ changes: 1 })).toBe(1);
+    expect(d1ChangedRows({ changes: 1n })).toBe(1);
+    expect(d1ChangedRows({ meta: { changes: 0 }, changes: 2 })).toBe(0);
+    expect(d1ChangedRows({ changes: 9007199254740992n })).toBeNull();
+    expect(d1ChangedRows({ changes: Number.NaN })).toBeNull();
     expect(d1ChangedRows({})).toBeNull();
     expect(d1ChangedRows(null)).toBeNull();
     expect(d1ChangedRows(3)).toBeNull();

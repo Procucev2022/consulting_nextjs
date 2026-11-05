@@ -73,18 +73,16 @@ const opportunityMetrics = async (
 
 export const loadExecutiveOpportunityBriefFromD1 = async (
   db: CloudflareD1Database,
+  tenantId: string,
   generatedAt: Date = new Date()
 ): Promise<ExecutiveOpportunityBriefLoadResult> => {
-  const tenants = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants).all<ExecutiveOpportunityBriefTenantRow>();
-  const tenantRows = tenants.results ?? [];
-  if (tenantRows.length === 0) {
+  if (!tenantId) return { ok: false, reason: 'tenant-scope-required' };
+  const tenant = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant)
+    .bind(tenantId)
+    .first<ExecutiveOpportunityBriefTenantRow>();
+  if (!tenant) {
     return { ok: false, reason: 'no-tenant' };
   }
-  if (tenantRows.length > 1) {
-    return { ok: false, reason: 'ambiguous-tenant' };
-  }
-
-  const tenant = tenantRows[0];
   const [
     transactionRow,
     opportunityRow,

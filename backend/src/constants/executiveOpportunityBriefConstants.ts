@@ -1,6 +1,6 @@
 /** SQL and operational constants for the D1-backed Opportunity Brief. */
 export const EXECUTIVE_OPPORTUNITY_BRIEF_SQL = {
-  tenants: 'SELECT tenant_id, enterprise_name FROM TenantMaster ORDER BY tenant_id LIMIT 2',
+  tenant: 'SELECT tenant_id, enterprise_name FROM TenantMaster WHERE tenant_id = ? LIMIT 1',
   tenantProvenance: 'SELECT classification FROM TenantDataProvenance WHERE tenant_id = ? LIMIT 1',
   transactionMetrics: `SELECT COUNT(*) AS transaction_count,
     COALESCE(SUM(total_in_cr_raw), 0) AS total_spend_cr,
@@ -126,7 +126,7 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT = {
 export const EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES = {
   d1Unavailable: 'The D1 database is not configured for the Opportunity Brief.',
   noTenant: 'No tenant is configured in D1 for this Opportunity Brief.',
-  ambiguousTenant: 'The Opportunity Brief needs an explicit tenant selection. Add tenant selection before requesting a report in a multi-tenant database.',
+  tenantScopeRequired: 'The Opportunity Brief needs a selected tenant. Choose an active tenant in the admin workspace and retry.',
   noTransactions: 'No eligible baseline procurement transactions were found for this tenant.',
   demoScope: 'This report uses D1 demo seed data for illustration. The figures are not validated customer results or realized savings.',
   mixedScope: 'This report contains both demo seed data and customer records. Separate the demo rows before using the figures for decisions.',

@@ -11,6 +11,7 @@ import type {
   CloudflareD1PreparedStatement,
   CloudflareEnvironment
 } from '../../src/types/cloudflare';
+import { seedTestTenantRegistry } from './tenantFixtures';
 
 export const EVIDENCE_TEST_SECRET = 'evidence-test-secret-2026';
 export const EVIDENCE_TEST_TENANT = 'TNT-TEST';
@@ -38,25 +39,25 @@ const insertRows = (db: DatabaseSync, sql: string, rows: SQLInputValue[][]): voi
 };
 
 const seedUsers = (db: DatabaseSync): void => {
-  insertRows(db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-    ['usr-admin', 'Admin', '+910000000001', 'admin@procucev.com', 'Procucev', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'],
-    ['usr-buyer', 'Buyer', '+910000000002', 'buyer@example.com', 'Alpha Textile', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE'],
-    ['usr-other', 'Other', '+910000000003', 'other@example.com', 'Other Co', 'Delhi', 'hash', 'USER', 'ACTIVE', 'BRONZE'],
-    ['usr-suspended', 'Suspended', '+910000000004', 'suspended@example.com', 'Susp Co', 'Mumbai', 'hash', 'USER', 'SUSPENDED', 'BRONZE'],
-    ['usr-guest', 'Guest', '+910000000005', 'guest@example.com', 'Guest Co', 'Chennai', 'hash', 'GUEST', 'ACTIVE', 'BRONZE']
+  insertRows(db, 'INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+    ['usr-admin', 'Admin', '+910000000001', 'admin@procucev.com', 'Procucev', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD', EVIDENCE_TEST_TENANT],
+    ['usr-buyer', 'Buyer', '+910000000002', 'buyer@example.com', 'Alpha Textile', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE', EVIDENCE_TEST_TENANT],
+    ['usr-other', 'Other', '+910000000003', 'other@example.com', 'Other Co', 'Delhi', 'hash', 'USER', 'ACTIVE', 'BRONZE', EVIDENCE_TEST_TENANT],
+    ['usr-suspended', 'Suspended', '+910000000004', 'suspended@example.com', 'Susp Co', 'Mumbai', 'hash', 'USER', 'SUSPENDED', 'BRONZE', EVIDENCE_TEST_TENANT],
+    ['usr-guest', 'Guest', '+910000000005', 'guest@example.com', 'Guest Co', 'Chennai', 'hash', 'GUEST', 'ACTIVE', 'BRONZE', EVIDENCE_TEST_TENANT]
   ]);
 };
 
 const seedAssessments = (db: DatabaseSync): void => {
-  insertRows(db, 'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email, status) VALUES (?, ?, ?, ?, ?)', [
-    ['CUST-A', 'Alpha Textile', 'Textile', 'Buyer@Example.com', 'ACTIVE'],
-    ['CUST-B', 'Beta Cement', 'Cement', null, 'ACTIVE']
+  insertRows(db, 'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email, status, tenant_id) VALUES (?, ?, ?, ?, ?, ?)', [
+    ['CUST-A', 'Alpha Textile', 'Textile', 'Buyer@Example.com', 'ACTIVE', EVIDENCE_TEST_TENANT],
+    ['CUST-B', 'Beta Cement', 'Cement', null, 'ACTIVE', EVIDENCE_TEST_TENANT]
   ]);
-  insertRows(db, 'INSERT INTO AssessmentRecord (assessment_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr, gross_opportunity_cr, overlap_deductions_cr, net_defensible_opportunity_cr, potential_savings_cr, savings_pct, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-    ['AIC-A', 'CUST-A', 'Alpha Textile', 'Textile', 'analyst@procucev.com', 7.5, 7.5, 3, 1, 2, 2, 26.6667, 'APPROVED'],
-    ['AIC-B', 'CUST-B', 'Beta Cement', 'Cement', 'analyst@procucev.com', 6.5, 6.5, 3, 1, 2, 2, 30.7692, 'APPROVED'],
-    ['AIC-C', 'CUST-A', 'Alpha Textile', 'Textile', 'analyst@procucev.com', 0, 0, null, null, null, null, null, 'DRAFT'],
-    ['AIC-D', 'CUST-B', 'Beta Cement', 'Cement', 'analyst@procucev.com', 2, 2, null, null, null, null, null, 'DRAFT']
+  insertRows(db, 'INSERT INTO AssessmentRecord (assessment_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr, gross_opportunity_cr, overlap_deductions_cr, net_defensible_opportunity_cr, potential_savings_cr, savings_pct, status, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+    ['AIC-A', 'CUST-A', 'Alpha Textile', 'Textile', 'analyst@procucev.com', 7.5, 7.5, 3, 1, 2, 2, 26.6667, 'APPROVED', EVIDENCE_TEST_TENANT],
+    ['AIC-B', 'CUST-B', 'Beta Cement', 'Cement', 'analyst@procucev.com', 6.5, 6.5, 3, 1, 2, 2, 30.7692, 'APPROVED', EVIDENCE_TEST_TENANT],
+    ['AIC-C', 'CUST-A', 'Alpha Textile', 'Textile', 'analyst@procucev.com', 0, 0, null, null, null, null, null, 'DRAFT', EVIDENCE_TEST_TENANT],
+    ['AIC-D', 'CUST-B', 'Beta Cement', 'Cement', 'analyst@procucev.com', 2, 2, null, null, null, null, null, 'DRAFT', EVIDENCE_TEST_TENANT]
   ]);
 };
 
@@ -99,8 +100,9 @@ export const createEvidenceDatabase = (): EvidenceDatabaseFixture => {
   const db = new DatabaseSync(':memory:');
   db.exec(fs.readFileSync(path.join(BACKEND_ROOT, 'd1-schema.sql'), 'utf8'));
   db.exec(
-    `INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES ('${EVIDENCE_TEST_TENANT}', 'Test Enterprise');`
+    `INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES ('${EVIDENCE_TEST_TENANT}', 'Test Enterprise');`
   );
+  seedTestTenantRegistry(db);
   seedUsers(db);
   seedAssessments(db);
   seedVersionsAndRuns(db);
@@ -124,5 +126,6 @@ export const tokenFor = (userId: string, role = 'USER'): Promise<string> => issu
 
 export const testEnvironment = (d1: CloudflareD1Database | undefined): CloudflareEnvironment => ({
   DB: d1,
-  AUTH_SECRET: EVIDENCE_TEST_SECRET
+  AUTH_SECRET: EVIDENCE_TEST_SECRET,
+  REQUEST_TENANT_ID: EVIDENCE_TEST_TENANT
 });

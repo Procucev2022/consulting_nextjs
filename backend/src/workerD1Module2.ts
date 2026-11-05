@@ -40,10 +40,11 @@ import {
   loadEAuctionPlanningAssumptions, saveEAuctionPlanningAssumption
 } from './services/workerD1EAuctionPlanningAssumptions';
 import { loadAssessmentMaterialMappings } from './services/workerD1MaterialMappings';
+import { readJson, requestJsonFailureResult } from './workerHttp';
 
 const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T | null> => {
   const statement = db.prepare(sql);
-  const bound = values.length > 0 ? statement.bind(...values) : statement;
+  const bound = statement.bind(...values);
   return bound.first<T>();
 };
 
@@ -125,7 +126,7 @@ const buildDashboardData = (
 };
 
 const readRequestBody = async (request: Request): Promise<unknown> => {
-  try { return await request.json(); } catch { return null; }
+  return readJson(request);
 };
 
 const withAssessmentScope = (url: URL, assessmentId: string): URL => {
@@ -360,9 +361,10 @@ export const handleModule2Route = async (
   authSecret?: string
 ): Promise<WorkerD1Result> => {
   if (!db) throw new Error('Cloudflare D1 binding DB is not configured');
-  await db.prepare('SELECT 1 AS ok').first();
 
+  try {
   const normalized = subPath.replace(/^\/(sourcing|levers)/, '') || '/';
+  const tenantId = request.headers.get('x-resolved-tenant-id') || '';
   if (normalized === '/e-auction/planning-assumptions') {
     if (request.method === 'GET') return { data: await loadEAuctionPlanningAssumptions(db) };
     if (request.method !== 'PUT') return { status: 405, data: {
@@ -398,26 +400,26 @@ export const handleModule2Route = async (
     if (request.method !== 'POST') return {
       status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
     };
-    return handleSpecificationReview(db, request, url, authSecret);
+    return await handleSpecificationReview(db, request, url, authSecret);
   }
   if (normalized === '/vendor-consolidation/mappings/update') {
     if (request.method !== 'POST') return {
       status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
     };
-    return handleMaterialMappingUpdate(db, request, url, authSecret);
+    return await handleMaterialMappingUpdate(db, request, url, authSecret);
   }
   if (normalized === '/vendor-consolidation/mappings/bulk-update') {
     if (request.method !== 'POST') return {
       status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
     };
-    return handleBulkMaterialMappingUpdate(db, request, url, authSecret);
+    return await handleBulkMaterialMappingUpdate(db, request, url, authSecret);
   }
   if (normalized.startsWith('/procurement-compliance')) {
     if (normalized === '/procurement-compliance/review') {
       if (request.method !== 'POST') return { status: 405, data: {
         success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired
       } };
-      return handleProcurementComplianceReview(db, request, url, authSecret);
+      return await handleProcurementComplianceReview(db, request, url, authSecret);
     }
     if (normalized !== '/procurement-compliance' && normalized !== '/procurement-compliance/export-excel') {
       return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
@@ -499,7 +501,7 @@ export const handleModule2Route = async (
       success: false, message: MODULE2_D1_SCOPED_MESSAGES.scopeRequired
     } };
     return await handleScopedModule2Route(db, normalized, request, url) ?? {
-      status: 501, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unavailable }
+      status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown }
     };
   }
   if (normalized.startsWith('/volume-aggregation')) {
@@ -630,45 +632,54 @@ export const handleModule2Route = async (
 
   if (normalized.startsWith('/overview') || normalized.startsWith('/dashboard')) {
     const [categories, opportunities, topVendors, tenant, assessment] = await Promise.all([
-      queryAll(db, `SELECT * FROM ${D1_TABLES.categories} ORDER BY spend_inr_crores DESC`),
-      queryAll(db, `SELECT * FROM ${D1_TABLES.opportunities} ORDER BY est_savings_inr_cr DESC`),
-      queryAll(db, `SELECT * FROM ${D1_TABLES.vendors} ORDER BY total_3yr_spend_inr_cr DESC LIMIT 10`),
-      queryFirst(db, `SELECT * FROM ${D1_TABLES.tenant} ORDER BY created_at ASC LIMIT 1`),
-      queryFirst(db, `SELECT overlap_deductions_cr, net_defensible_opportunity_cr FROM ${D1_TABLES.assessments} ORDER BY created_at ASC LIMIT 1`)
+      queryAll(db, `SELECT * FROM ${D1_TABLES.categories} WHERE tenant_id = ? ORDER BY spend_inr_crores DESC`, [tenantId]),
+      queryAll(db, `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
+        `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
+        'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC', [tenantId]),
+      queryAll(db, `SELECT * FROM ${D1_TABLES.vendors} WHERE tenant_id = ? ORDER BY total_3yr_spend_inr_cr DESC LIMIT 10`, [tenantId]),
+      queryFirst(db, `SELECT * FROM ${D1_TABLES.tenant} WHERE tenant_id = ?`, [tenantId]),
+      queryFirst(db, `SELECT overlap_deductions_cr, net_defensible_opportunity_cr FROM ${D1_TABLES.assessments} WHERE tenant_id = ? ORDER BY created_at ASC LIMIT 1`, [tenantId])
     ]);
     const tenantSpend = numberValue(tenant?.total_spend_evaluated_inr);
     return { data: buildDashboardData(categories, opportunities, topVendors, tenantSpend, assessment) };
   }
 
   if (normalized.startsWith('/categories') || normalized.startsWith('/profiles')) {
-    const profiles = await queryAll(db, `SELECT * FROM ${D1_TABLES.categories} ORDER BY spend_inr_crores DESC`);
+    const profiles = await queryAll(db, `SELECT * FROM ${D1_TABLES.categories} WHERE tenant_id = ? ORDER BY spend_inr_crores DESC`, [tenantId]);
     return { data: { profiles, count: profiles.length } };
   }
 
   if (normalized.startsWith('/category/')) {
     const catId = decodeURIComponent(normalized.slice('/category/'.length));
-    const profile = await queryFirst(db, `SELECT * FROM ${D1_TABLES.categories} WHERE id = ? OR name = ?`, [catId, catId]);
+    const profile = await queryFirst(db, `SELECT * FROM ${D1_TABLES.categories} WHERE tenant_id = ? AND (id = ? OR name = ?)`, [tenantId, catId, catId]);
     return { data: profile };
   }
 
   if (normalized.startsWith('/suppliers') || normalized.startsWith('/top-50-vendors') || normalized.startsWith('/top50-vendors')) {
-    const suppliers = await queryAll(db, `SELECT * FROM ${D1_TABLES.vendors} ORDER BY total_3yr_spend_inr_cr DESC LIMIT 50`);
+    const suppliers = await queryAll(db, `SELECT * FROM ${D1_TABLES.vendors} WHERE tenant_id = ? ORDER BY total_3yr_spend_inr_cr DESC LIMIT 50`, [tenantId]);
     return { data: { suppliers, count: suppliers.length } };
   }
 
   if (normalized.startsWith('/opportunities') || normalized.startsWith('/opportunity-ledger')) {
-    const opportunities = await queryAll(db, `SELECT * FROM ${D1_TABLES.opportunities} ORDER BY est_savings_inr_cr DESC`);
+    const opportunities = await queryAll(db,
+      `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
+      `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
+      'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC', [tenantId]);
     return { data: opportunities };
   }
 
   if (normalized.startsWith('/waterfall') || normalized.startsWith('/bridge')) {
-    return { data: await queryAll(db, `SELECT * FROM ${D1_TABLES.funnel} ORDER BY phase_num ASC`) };
+    return { data: await queryAll(db, `SELECT * FROM ${D1_TABLES.funnel} WHERE tenant_id = ? ORDER BY phase_num ASC`, [tenantId]) };
   }
 
   if (normalized.startsWith('/canonical-input') || normalized.startsWith('/line-items')) {
+    const requestedTenantId = url.searchParams.get('tenantId') ?? request.headers.get('x-tenant-id') ?? undefined;
+    if (requestedTenantId && requestedTenantId !== tenantId) return { status: 403, data: {
+      success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch
+    } };
     const scope = d1DatasetScopeSchema.safeParse({
       assessmentId: url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined,
-      tenantId: url.searchParams.get('tenantId') ?? request.headers.get('x-tenant-id') ?? undefined,
+      tenantId: requestedTenantId,
       limit: url.searchParams.get('limit') ?? undefined
     });
     if (!scope.success) {
@@ -679,10 +690,16 @@ export const handleModule2Route = async (
         success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: scope.error.issues
       } };
     }
-    const { assessmentId, tenantId, limit } = scope.data;
+    const { assessmentId, limit } = scope.data;
+    if (!tenantId) return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
+    if (assessmentId) {
+      const owner = await queryFirst(db,
+        `SELECT assessment_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
+      if (!owner) return { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound } };
+    }
     const filters = [assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
     const values: unknown[] = assessmentId ? [assessmentId] : [];
-    if (tenantId) { filters.push('tenant_id = ?'); values.push(tenantId); }
+    filters.push('tenant_id = ?'); values.push(tenantId);
     values.push(limit);
     const items = await queryAll(db,
       `SELECT transaction_id, po_number, supplier_code, supplier_name, material_code, short_text, total_inr_raw, ` +
@@ -702,9 +719,17 @@ export const handleModule2Route = async (
   }
 
   if (normalized.startsWith('/consolidated-savings')) {
-    const opportunities = await queryAll(db, `SELECT * FROM ${D1_TABLES.opportunities} ORDER BY est_savings_inr_cr DESC`);
+    const opportunities = await queryAll(db,
+      `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
+      `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
+      'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC', [tenantId]);
     return { data: { success: true, opportunities, count: opportunities.length } };
   }
 
   return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
+  } catch (error: unknown) {
+    const failure = requestJsonFailureResult(request, error);
+    if (failure) return failure;
+    throw error;
+  }
 };

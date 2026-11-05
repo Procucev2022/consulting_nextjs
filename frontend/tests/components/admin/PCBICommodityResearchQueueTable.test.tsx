@@ -262,4 +262,32 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       UI_STRINGS.pcbiCommodityDataLab.assignmentFailed(mockQueue[0].pcbiId)
     ));
   });
+
+  it('uses safe defaults when a sparse queue row has no saved assignment fields', async () => {
+    const onAssignResearcher = vi.fn().mockResolvedValue(undefined);
+    const sparseRow = {
+      ...mockQueue[0],
+      pcbiId: 'PCBI-SPARSE',
+      assignedTo: undefined,
+      workflowStatus: undefined,
+      workflowDueDate: undefined,
+      workflowNotes: undefined
+    } as CommodityResearchQueueRow;
+    render(<PCBICommodityResearchQueueTable queue={[sparseRow]} onOpenWorkspace={vi.fn()} onAssignResearcher={onAssignResearcher} />);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.unassignResearcherButton }));
+    await waitFor(() => expect(onAssignResearcher).toHaveBeenLastCalledWith('PCBI-SPARSE', {
+      assignee: null,
+      status: 'QUEUED',
+      dueDate: null,
+      notes: ''
+    }));
+
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowStatusInputLabel(sparseRow.commodity)), { target: { value: 'BLOCKED' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowDueDateInputLabel(sparseRow.commodity)), { target: { value: '2026-11-08' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowNotesInputLabel(sparseRow.commodity)), { target: { value: 'Waiting for evidence' } });
+
+    expect(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowStatusInputLabel(sparseRow.commodity))).toHaveValue('BLOCKED');
+    expect(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowDueDateInputLabel(sparseRow.commodity))).toHaveValue('2026-11-08');
+  });
 });

@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminAuthApiClient } from '../../src/utils/adminAuthApi';
 import { authApiClient } from '../../src/utils/authApi';
@@ -67,15 +68,12 @@ describe('Admin Auth API Client (Frontend)', () => {
 
     expect(res.success).toBe(true);
     expect(res.user.email).toBe('custom@procucev.com');
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/admin/create-admin'),
-      expect.objectContaining({
+    expectApiFetchCall(mockFetch, expect.stringContaining('/api/admin/create-admin'), expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer explicit-token-456'
         })
-      })
-    );
+      }));
   });
 
   it('rejects failed administrator provisioning instead of inventing a local database user', async () => {

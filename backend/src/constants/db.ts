@@ -4,7 +4,29 @@
 
 export const SLOW_QUERY_THRESHOLD_MS = 100;
 
+// Warn when a dataset read scans more than this many rows, even if it is fast.
+export const SLOW_QUERY_ROWS_READ_THRESHOLD = 10000;
+
+export const D1_QUERY_LOG_MESSAGES = {
+  completed: 'D1 statement completed',
+  slow: 'Slow D1 statement',
+  failed: 'D1 statement failed',
+  requestSummary: 'D1 request query summary'
+} as const;
+
+export const D1_SINGLE_ROW_CHANGE_COUNT = 1;
+
 export const DEFAULT_CACHE_TTL_MS = 60000; // 60 seconds
+export const D1_REFERENCE_CACHE_MAX_ENTRIES = 128;
+export const D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES = 8;
+export const D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS = 30000;
+export const D1_RUNTIME_RECENT_AUDIT_LIMIT = 100;
+
+export const D1_REFERENCE_CACHE_KEYS = {
+  CURRENCY_RATES: 'reference:currency-rates',
+  INDUSTRY_CATALOG: 'reference:industry-catalog',
+  PCBI_BENCHMARKS: 'reference:pcbi-benchmarks'
+} as const;
 
 export const CACHE_KEYS = {
   TENANT: 'tenant:master',

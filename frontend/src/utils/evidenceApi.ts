@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Evidence API Client (Prompt 305)
  * Communicates with backend /api/evidence endpoints.
@@ -24,7 +25,8 @@ export class EvidenceApiClient {
     if (user?.id) headers['x-user-id'] = user.id;
     if (user?.name) headers['x-user-name'] = user.name;
     if (user?.company_name) headers['x-company-name'] = user.company_name;
-    headers['x-tenant-id'] = user?.id || 'DEFAULT_TENANT';
+    const assignedTenantId = (user as { tenant_id?: string } | null)?.tenant_id;
+    if (assignedTenantId) headers['x-tenant-id'] = assignedTenantId;
     return headers;
   }
 
@@ -32,7 +34,7 @@ export class EvidenceApiClient {
    * Retrieves list of available evidence workbooks for an analysis job
    */
   public async getInventory(jobId: string): Promise<EvidenceInventoryResponse> {
-    const res = await fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/inventory`, {
+    const res = await apiFetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/inventory`, {
       headers: this.getHeaders()
     });
     return res.json();
@@ -46,7 +48,7 @@ export class EvidenceApiClient {
     workbookType?: EvidenceWorkbookType
   ): Promise<EvidenceParityResponse> {
     const query = workbookType ? `?workbookType=${encodeURIComponent(workbookType)}` : '';
-    const res = await fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/parity${query}`, {
+    const res = await apiFetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/parity${query}`, {
       headers: this.getHeaders()
     });
     return res.json();
@@ -76,7 +78,7 @@ export class EvidenceApiClient {
     const path = savingsType
       ? `${API_BASE}/jobs/${encodeURIComponent(jobId)}/savings/${encodeURIComponent(savingsType)}/inventory`
       : `${API_BASE}/jobs/${encodeURIComponent(jobId)}/savings/inventory`;
-    const res = await fetch(path, {
+    const res = await apiFetch(path, {
       headers: this.getHeaders()
     });
     return res.json();

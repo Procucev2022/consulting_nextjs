@@ -15,6 +15,7 @@ export const SNAPSHOT_GENERATED_AT = '2026-10-01T10:00:00.000Z';
 
 export const makeAssessment = (overrides: Partial<EvidenceJobAccessRecord> = {}): EvidenceJobAccessRecord => ({
   assessmentId: SNAPSHOT_JOB_ID,
+  tenantId: 'TNT-TEST',
   customerName: 'Alpha Textile',
   status: 'APPROVED',
   totalSpendCr: 7.5,

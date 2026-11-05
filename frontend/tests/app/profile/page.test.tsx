@@ -29,13 +29,14 @@ const mockUser = {
   role: 'USER' as const,
   status: 'ACTIVE' as const,
   subscription_tier: 'ENTERPRISE_PRO',
+  tenant_id: 'TNT-GLOBAL-8902',
   created_at: new Date('2025-01-15').toISOString()
 };
 
 const mockDocuments = [
   {
     doc_id: 'DOC-1001',
-    tenant_id: 'BUYER-NAVIN-89',
+    tenant_id: 'TNT-GLOBAL-8902',
     file_name: 'FY25_Purchase_Data.xlsx',
     file_type: 'xlsx',
     file_size_mb: 2.4,
@@ -265,7 +266,7 @@ describe('Enterprise Profile Page Component', () => {
     });
 
     await waitFor(() => {
-      expect(deleteSpy).toHaveBeenCalledWith('DOC-1001', 'BUYER-NAVIN-89');
+      expect(deleteSpy).toHaveBeenCalledWith('DOC-1001', 'TNT-GLOBAL-8902');
     });
 
     await waitFor(() => {

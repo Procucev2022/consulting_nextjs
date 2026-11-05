@@ -42,13 +42,14 @@ export interface UserProfileResponse {
   role: string;
   status: string;
   subscription_tier: string;
+  tenant_id?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface AuthSessionResponse {
   user: UserProfileResponse;
-  token: string;
+  token?: string;
   expires_in_seconds: number;
 }
 
@@ -57,6 +58,8 @@ export interface WorkerAuthIdentity {
   name: string;
   email: string;
   role: UserRole;
+  tenantId: string | null;
+  tenantActive: boolean | null;
 }
 
 export interface WorkerAuthCheckResult {

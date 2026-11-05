@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UI_STRINGS } from '../../src/constants';
 import { authApiClient } from '../../src/utils/authApi';
@@ -11,7 +12,7 @@ describe('loadModule2LogisticsCandidates', () => {
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('session-token');
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => payload } as Response);
     await expect(loadModule2LogisticsCandidates(' AIC-2026-0001 ')).resolves.toEqual(payload.data);
-    expect(globalThis.fetch).toHaveBeenCalledWith(
+    expectApiFetchCall(globalThis.fetch,
       expect.stringContaining('assessmentId=AIC-2026-0001'),
       { headers: { Authorization: 'Bearer ' + 'session-token' } }
     );

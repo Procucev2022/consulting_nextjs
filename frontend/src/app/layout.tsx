@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ClientErrorBoundary } from '../components/errors/ClientErrorBoundary';
+import { ClientErrorMonitor } from '../components/errors/ClientErrorMonitor';
 
 export const metadata: Metadata = {
   title: 'PROCUCEV Platform Engine | AI Procurement Advisory & Analytics',
@@ -19,7 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <body className="bg-[#EEF7FF] text-[#0B1B33] antialiased selection:bg-sky-500/20 selection:text-sky-900 min-h-screen" style={{fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"}}>
-        {children}
+        <ClientErrorBoundary>
+          <ClientErrorMonitor />
+          {children}
+        </ClientErrorBoundary>
       </body>
     </html>
   );

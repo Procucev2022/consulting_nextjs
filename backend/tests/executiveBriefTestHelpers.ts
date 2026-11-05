@@ -63,15 +63,19 @@ const d1TestDatabase: NonNullable<CloudflareEnvironment['DB']> = {
     const statement = {
       bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
       first: async <T>() => {
-        if (query.includes('FROM User WHERE id = ?')) {
+        if (query.includes('FROM User')) {
           const userId = String(values[0]);
           return {
             id: userId,
             name: 'D1 Test User',
             email: userId === 'usr-standard-test' ? 'user@procucev.test' : 'admin@procucev.test',
             role: userId === 'usr-standard-test' ? 'USER' : 'ADMIN',
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            tenant_id: 'TEN-1'
           } as T;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant) {
+          return { tenant_id: values[0], enterprise_name: 'D1 Enterprise' } as T;
         }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return {
@@ -94,9 +98,6 @@ const d1TestDatabase: NonNullable<CloudflareEnvironment['DB']> = {
         return null;
       },
       all: async <T>() => {
-        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants) {
-          return { results: [{ tenant_id: 'TEN-1', enterprise_name: 'D1 Enterprise' }] as T[] };
-        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) {
           return { results: [{
             opp_id: 'OPP-1', category: 'Packaging', title: 'Packaging sourcing', current_spend_cr: 50,
@@ -114,6 +115,7 @@ const d1TestDatabase: NonNullable<CloudflareEnvironment['DB']> = {
 
 export const testEnvironment = (overrides: Partial<CloudflareEnvironment> = {}): CloudflareEnvironment => ({
   AUTH_SECRET: TEST_AUTH_SECRET,
+  REQUEST_TENANT_ID: 'TEN-1',
   OBJECTS: bucketDouble(),
   DB: d1TestDatabase,
   ...overrides

@@ -27,6 +27,7 @@ export * from './auth';
 export * from './ai';
 export * from './savingsInitiatives';
 export * from './pcbiAdmin';
+export * from './pcbiHistorical';
 export * from './module3';
 export * from './pcbiDynamicE2E';
 export * from './pcbiControlledValidation';

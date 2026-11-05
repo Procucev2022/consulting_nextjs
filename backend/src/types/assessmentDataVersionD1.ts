@@ -6,6 +6,7 @@ import type { D1Record } from './d1';
 
 export interface AssessmentRow extends D1Record {
   assessment_id: string;
+  tenant_id: string;
   customer_id: string;
   assessment_owner?: string;
   data_status?: string;

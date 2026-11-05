@@ -35,7 +35,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   isDataRefreshed,
   onNavigateToCategorization,
   periodMetadata,
-  canonicalViewModel
+  canonicalViewModel,
+  summarySectionRef
 }) => {
   const [activeDimension, setActiveDimension] = useState<DocumentSummaryDimension>('MATERIAL_GROUP');
   const [spendCurrency, setSpendCurrency] = useState<DocumentSpendCurrency>('INR');
@@ -204,6 +205,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
   return (
     <div
+      ref={summarySectionRef}
       id="document-summary-section"
       className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-6"
     >

@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { apiClient } from '../../src/utils/api';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
@@ -12,7 +13,7 @@ describe('apiClient', () => {
     const data = conversionFunnelStages;
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data })));
     await expect(apiClient.getConversionStages()).resolves.toEqual(data);
-    expect(fetch).toHaveBeenCalledWith('/api/conversion');
+    expectApiFetchCall(fetch, '/api/conversion');
     vi.mocked(fetch).mockResolvedValueOnce(new Response('{}', { status: 503 }));
     await expect(apiClient.getConversionStages()).rejects.toThrow(UI_STRINGS.databaseData.conversionLoadFailed(503));
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: [{ phase_num: -1 }] })));
@@ -34,7 +35,7 @@ describe('apiClient', () => {
     const responseData = { mappings: { P11: 'Packing' }, categories: ['Packing'] };
     global.fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: responseData })));
     await expect(apiClient.getProcurementCategoryMappings()).resolves.toEqual(responseData);
-    expect(global.fetch).toHaveBeenCalledWith('/api/procurement/category-mappings');
+    expectApiFetchCall(global.fetch, '/api/procurement/category-mappings');
     expect(resolveHumanReadableCategory('P11')).toBe('Packing');
   });
 
@@ -48,11 +49,13 @@ describe('apiClient', () => {
   it('getTenant should perform GET /api/tenant and return data', async () => {
     const mockData = { tenant_id: 'TNT-123', enterprise_name: 'Test Enterprise' };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
     const res = await apiClient.getTenant();
-    expect(global.fetch).toHaveBeenCalledWith('/api/tenant');
+    expectApiFetchCall(global.fetch, '/api/tenant');
     expect(res).toEqual(mockData);
   });
 
@@ -63,25 +66,24 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.updateTenant({ region: 'EU' });
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/tenant',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/tenant', expect.objectContaining({
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ region: 'EU' })
-      })
-    );
+      }));
     expect(res).toEqual(mockData);
   });
 
   it('getIngestionData should perform GET /api/ingestion and return data', async () => {
     const mockData = { queue: [], validationRecords: [] };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
     const res = await apiClient.getIngestionData();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion');
+    expectApiFetchCall(global.fetch, '/api/ingestion');
     expect(res).toEqual(mockData);
   });
 
@@ -94,14 +96,11 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.addIngestionFile(mockFile);
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mockFile)
-      })
-    );
+      }));
     expect(res).toEqual([mockFile]);
   });
 
@@ -114,14 +113,11 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.updateValidationRecord('REC-1', { po_number: 'PO-UPDATED' });
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion', expect.objectContaining({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ record_id: 'REC-1', po_number: 'PO-UPDATED' })
-      })
-    );
+      }));
     expect(res).toEqual(updated);
   });
 
@@ -134,10 +130,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.applyBlanketRemediation();
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion/remediate',
-      expect.objectContaining({ method: 'POST' })
-    );
+    expectApiFetchCall(global.fetch, '/api/ingestion/remediate', expect.objectContaining({ method: 'POST' }));
     expect(res).toEqual(mockRes);
   });
 
@@ -149,10 +142,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.resetValidationRecords();
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion/validation-records',
-      expect.objectContaining({ method: 'DELETE' })
-    );
+    expectApiFetchCall(global.fetch, '/api/ingestion/validation-records', expect.objectContaining({ method: 'DELETE' }));
     expect(res).toEqual([]);
   });
 
@@ -163,7 +153,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getCategories();
-    expect(global.fetch).toHaveBeenCalledWith('/api/categories');
+    expectApiFetchCall(global.fetch, '/api/categories');
     expect(res).toEqual(mockData);
   });
 
@@ -174,7 +164,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getVendors();
-    expect(global.fetch).toHaveBeenCalledWith('/api/vendors');
+    expectApiFetchCall(global.fetch, '/api/vendors');
     expect(res).toEqual(mockData);
   });
 
@@ -185,14 +175,11 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.mergeVendor('target', 'MST-1', 'Target Corp');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/vendors',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/vendors', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetName: 'target', masterId: 'MST-1', canonicalName: 'Target Corp' })
-      })
-    );
+      }));
     expect(res).toEqual(mockResp);
   });
 
@@ -203,7 +190,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getSavingsOpportunities();
-    expect(global.fetch).toHaveBeenCalledWith('/api/savings');
+    expectApiFetchCall(global.fetch, '/api/savings');
     expect(res).toEqual(mockData);
   });
 
@@ -215,14 +202,11 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.deployOpportunity('OPP-1', 'proCPX');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/savings',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/savings', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opp_id: 'OPP-1', targetModule: 'proCPX' })
-      })
-    );
+      }));
     expect(res).toEqual(mockOpp);
   });
 
@@ -233,14 +217,11 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.calculateCommercialSaaS(500, 10, 1);
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/conversion',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/conversion', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ annualSpendCr: 500, savingsRate: 10, saasFeeRate: 1 })
-      })
-    );
+      }));
     expect(res).toEqual(mockData);
   });
 
@@ -251,7 +232,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getExecutiveReport();
-    expect(global.fetch).toHaveBeenCalledWith('/api/report');
+    expectApiFetchCall(global.fetch, '/api/report');
     expect(res).toEqual(mockData);
   });
 
@@ -261,8 +242,8 @@ describe('apiClient', () => {
       categories: [],
       opportunities: [],
       funnelStages: [],
-      ingestionQueue: [],
-      validationRecords: [],
+      ingestionQueue: { items: [], pageInfo: { hasNextPage: false, endCursor: null } },
+      validationRecords: { items: [], pageInfo: { hasNextPage: false, endCursor: null } },
       queryMetrics: {
         totalQueries: 5,
         slowQueries: 0,
@@ -279,13 +260,10 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getDashboardOverviewGraphQL();
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/graphql'),
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/graphql'), expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ 'Content-Type': 'application/json' })
-      })
-    );
+      }));
     expect(res).toEqual(mockOverview);
   });
 
@@ -296,19 +274,8 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getPCBIDashboard();
-    expect(global.fetch).toHaveBeenCalledWith('/api/pcbi/dashboard');
+    expectApiFetchCall(global.fetch, '/api/pcbi/dashboard');
     expect(res).toEqual(mockDash);
-  });
-
-  it('getPCBIExplainabilityAudit should perform GET /api/pcbi/opportunity/:id', async () => {
-    const mockAudit = { transaction_id: 'TX-01', material_code: 'MAT-01' };
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ audit: mockAudit })
-    });
-
-    const res = await apiClient.getPCBIExplainabilityAudit('TX-01');
-    expect(global.fetch).toHaveBeenCalledWith('/api/pcbi/opportunity/TX-01');
-    expect(res).toEqual(mockAudit);
   });
 
   it('getConsolidatedSavings should perform GET /api/savings/consolidated', async () => {
@@ -316,7 +283,7 @@ describe('apiClient', () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockData })));
 
     const res = await apiClient.getConsolidatedSavings();
-    expect(global.fetch).toHaveBeenCalledWith('/api/savings/consolidated');
+    expectApiFetchCall(global.fetch, '/api/savings/consolidated');
     expect(res).toEqual(mockData);
   });
 
@@ -325,14 +292,11 @@ describe('apiClient', () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockPlan })));
 
     const res = await apiClient.updateActionPlan('ACT-01', { status: 'In Progress', owner: 'Procurement' });
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/savings/action-plan/update',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/savings/action-plan/update', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actionId: 'ACT-01', status: 'In Progress', owner: 'Procurement' })
-      })
-    );
+      }));
     expect(res).toEqual(mockPlan);
   });
 
@@ -341,14 +305,11 @@ describe('apiClient', () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockOpp })));
 
     const res = await apiClient.updateSavingsOpportunityStatus('OPP-01', 'APPROVED');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/savings/opportunity/status',
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/savings/opportunity/status', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opp_id: 'OPP-01', status: 'APPROVED' })
-      })
-    );
+      }));
     expect(res).toEqual(mockOpp);
   });
 
@@ -359,7 +320,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getDBMetrics();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/metrics');
+    expectApiFetchCall(global.fetch, '/api/db/metrics');
     expect(res).toEqual(mockMetrics);
   });
 
@@ -370,9 +331,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getDBTableData('tenants', 1, 20, 'Acme');
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/db/tables?table=tenants&page=1&limit=20&search=Acme')
-    );
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/db/tables?table=tenants&page=1&limit=20&search=Acme'));
     expect(res).toEqual(mockData);
   });
 
@@ -383,7 +342,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.testDBConnection();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/test-connection', { method: 'POST' });
+    expectApiFetchCall(global.fetch, '/api/db/test-connection', { method: 'POST' });
     expect(res).toEqual(mockData);
   });
 
@@ -394,7 +353,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getVendorDetails();
-    expect(global.fetch).toHaveBeenCalledWith('/api/vendors?details=true');
+    expectApiFetchCall(global.fetch, '/api/vendors?details=true');
     expect(res).toEqual(mockDetails);
   });
 
@@ -405,7 +364,7 @@ describe('apiClient', () => {
       json: async () => ({ success: true, data: catalog })
     });
     await expect(apiClient.getCurrencyRates()).resolves.toEqual(catalog);
-    expect(global.fetch).toHaveBeenCalledWith('/api/currency');
+    expectApiFetchCall(global.fetch, '/api/currency');
   });
 
   it('rejects failed and malformed D1 currency catalog responses', async () => {
@@ -420,12 +379,12 @@ describe('apiClient', () => {
     (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: mockData }) });
 
     const res1 = await apiClient.getCurrencyConversion('USD', 100, 2024);
-    expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100&date=2024');
+    expectApiFetchCall(global.fetch, '/api/currency?from=USD&amount=100&date=2024');
     expect(res1).toEqual(mockData);
 
     (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: mockData }) });
     const res2 = await apiClient.getCurrencyConversion('USD', 100);
-    expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100');
+    expectApiFetchCall(global.fetch, '/api/currency?from=USD&amount=100');
     expect(res2).toEqual(mockData);
 
     (global.fetch as any).mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ message: 'No rate for date' }) });
@@ -441,7 +400,7 @@ describe('apiClient', () => {
     });
 
     const res = await apiClient.getDBStatus();
-    expect(global.fetch).toHaveBeenCalledWith('/api/db/status');
+    expectApiFetchCall(global.fetch, '/api/db/status');
     expect(res).toEqual(mockHealth);
   });
 
@@ -452,14 +411,14 @@ describe('apiClient', () => {
     });
 
     const res1 = await apiClient.getModule2OpportunityLedger('ASS-1');
-    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger?assessmentId=ASS-1');
+    expectApiFetchCall(global.fetch, '/api/module2/sourcing/opportunity-ledger?assessmentId=ASS-1');
     expect(res1).toEqual(mockLedger);
 
     (global.fetch as any).mockResolvedValueOnce({
       json: async () => ({ success: true, data: mockLedger })
     });
     const res2 = await apiClient.getModule2OpportunityLedger();
-    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger');
+    expectApiFetchCall(global.fetch, '/api/module2/sourcing/opportunity-ledger');
     expect(res2).toEqual(mockLedger);
   });
 
@@ -470,14 +429,14 @@ describe('apiClient', () => {
     });
 
     const res1 = await apiClient.getModule2MathematicalBridge('ASS-1');
-    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge?assessmentId=ASS-1');
+    expectApiFetchCall(global.fetch, '/api/module2/sourcing/bridge?assessmentId=ASS-1');
     expect(res1).toEqual(mockBridge);
 
     (global.fetch as any).mockResolvedValueOnce({
       json: async () => ({ success: true, data: mockBridge })
     });
     const res2 = await apiClient.getModule2MathematicalBridge();
-    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge');
+    expectApiFetchCall(global.fetch, '/api/module2/sourcing/bridge');
     expect(res2).toEqual(mockBridge);
   });
 

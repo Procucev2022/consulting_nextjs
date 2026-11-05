@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -15,6 +16,7 @@ import { UI_STRINGS } from '../../constants';
 import { Module2ConsolidatedOpportunityTable } from './Module2ConsolidatedOpportunityTable';
 import { Module2Lever5Callout } from './Module2Lever5Callout';
 import logger from '../../utils/logger';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavingsViewProps> = ({
   assessmentId = '',
@@ -24,8 +26,10 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
   const [data, setData] = useState<Module2ConsolidatedSavingsSummary | null>(initialData);
   const [loading, setLoading] = useState<boolean>(!initialData && !!assessmentId);
   const [error, setError] = useState<string | null>(null);
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
+    const requestId = beginRequest();
     if (!assessmentId) {
       setData(null);
       setLoading(false);
@@ -33,31 +37,35 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
     }
     setLoading(true);
     setError(null);
+    setData(null);
     try {
-      const res = await fetch(`/api/module2/sourcing/consolidated-savings?assessmentId=${encodeURIComponent(assessmentId)}`);
+      const res = await apiFetch(`/api/module2/sourcing/consolidated-savings?assessmentId=${encodeURIComponent(assessmentId)}`);
       if (!res.ok) {
         throw new Error(`Failed to load consolidated savings: HTTP ${res.status}`);
       }
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (json.success && json.data) {
         setData(json.data);
       } else {
         throw new Error(json.message || 'Unknown response format');
       }
     } catch (err: unknown) {
+      if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : String(err);
       logger.error('Error fetching consolidated savings', { assessmentId }, err);
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
     if (!initialData) {
-      fetchData();
+      void fetchData();
     }
-  }, [fetchData, initialData]);
+    return invalidateRequests;
+  }, [fetchData, initialData, invalidateRequests]);
 
   if (loading) {
     return (

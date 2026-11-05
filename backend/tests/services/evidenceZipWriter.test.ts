@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { ZIP_MAX_ENTRIES } from '../../src/constants/evidenceZip';
-import { buildStoredZip, computeCrc32 } from '../../src/services/evidenceZipWriter';
+import { assertZipOffsetWithinLimit, buildStoredZip, computeCrc32 } from '../../src/services/evidenceZipWriter';
 import { crcMatches, readStoredZip } from '../helpers/storedZip';
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
@@ -62,5 +62,12 @@ describe('buildStoredZip', () => {
   it('refuses more entries than the ZIP format can index', () => {
     const entries = Array.from({ length: ZIP_MAX_ENTRIES + 1 }, (_value, index) => ({ name: `f${index}`, bytes: new Uint8Array() }));
     expect(() => buildStoredZip(entries, modifiedAt)).toThrow(RangeError);
+  });
+});
+
+describe('assertZipOffsetWithinLimit', () => {
+  it('accepts in-range offsets and rejects offsets beyond the ZIP32 limit', () => {
+    expect(() => assertZipOffsetWithinLimit(0)).not.toThrow();
+    expect(() => assertZipOffsetWithinLimit(Number.MAX_SAFE_INTEGER)).toThrow(RangeError);
   });
 });

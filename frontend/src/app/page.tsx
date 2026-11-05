@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../utils/apiFetch';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -63,6 +64,7 @@ import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolve
 import { EMPTY_TENANT } from '@/constants/app';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
+import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '@/constants/validation';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -122,6 +124,8 @@ import type {
   SubscriptionTier,
   AnalysisJob,
   Module1CanonicalViewModel,
+  IngestionDataResponse,
+  ValidationRecordPageCursor,
   ParetoHierarchyParent,
   ConversionFunnelPhase,
   ReportVersion
@@ -189,6 +193,7 @@ export default function Home() {
   const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
   const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
   const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
+  const summarySectionRef = useRef<HTMLDivElement>(null);
 
   // Clicks the declarative download link once a verified brief is loaded, and releases its object URL afterwards.
   useEffect(() => {
@@ -207,7 +212,7 @@ export default function Home() {
     const formatLabel = format.toUpperCase();
     try {
       const token = authApiClient.getStoredToken();
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         headers: token ? { Authorization: 'Bearer ' + token } : {}
       });
       if (!response.ok) {
@@ -394,6 +399,9 @@ export default function Home() {
     setCanonicalModule1(null);
     setIngestionQueue([]);
     setValidationRecords([]);
+    setValidationDataSummary(undefined);
+    setValidationCursor(null);
+    setHasMoreValidationRecords(false);
     setUploadedMaterialGroups(undefined);
     setUploadedPlants(undefined);
     setUploadedMonths(undefined);
@@ -441,6 +449,10 @@ export default function Home() {
   }, [activeCustomer]);
 
   const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
+  const [validationDataSummary, setValidationDataSummary] = useState<IngestionDataResponse['summary']>();
+  const [validationCursor, setValidationCursor] = useState<ValidationRecordPageCursor | null>(null);
+  const [hasMoreValidationRecords, setHasMoreValidationRecords] = useState(false);
+  const [isLoadingMoreValidationRecords, setIsLoadingMoreValidationRecords] = useState(false);
   const [analystConfirmedBaseCurrency, setAnalystConfirmedBaseCurrency] = useState<string | null>(null);
   const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
@@ -533,11 +545,6 @@ export default function Home() {
       : (completedSteps.step4 && isStep3Complete)
   );
 
-  const isTabAccessible = (_tab: PipelineActiveTab): boolean => {
-    // Keep all modules completely unlocked and accessible during development
-    return true;
-  };
-
   const getLockedTabMessage = (tab: PipelineActiveTab): string => {
     if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
     if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
@@ -547,10 +554,6 @@ export default function Home() {
   };
 
   const handleSelectTab = (tab: PipelineActiveTab) => {
-    if (!isTabAccessible(tab)) {
-      showToast(getLockedTabMessage(tab));
-      return;
-    }
     setActiveTab(tab);
     if (typeof window !== 'undefined') {
       window.location.hash = tab;
@@ -558,10 +561,6 @@ export default function Home() {
   };
 
   const handleNavigateToSection = (targetModule: PipelineActiveTab, targetSectionId: string) => {
-    if (!isTabAccessible(targetModule)) {
-      showToast(getLockedTabMessage(targetModule));
-      return;
-    }
     setActiveTab(targetModule);
     setTargetSection(targetSectionId);
     showToast(UI_STRINGS.toasts.navigatingToInitiativeSection(targetSectionId));
@@ -710,6 +709,9 @@ export default function Home() {
           }));
           setIngestionQueue([]);
           setValidationRecords([]);
+          setValidationDataSummary(undefined);
+          setValidationCursor(null);
+          setHasMoreValidationRecords(false);
           setUploadedMaterialGroups(undefined);
           setUploadedPlants(undefined);
           setUploadedMonths(undefined);
@@ -755,12 +757,30 @@ export default function Home() {
         } else {
           const storedUser = authApiClient.getStoredUser();
           const buyerUser = storedUser?.role !== 'ADMIN' ? storedUser : null;
+          const canReadTenantData = Boolean(storedUser?.tenant_id);
+          if (storedUser && !storedUser.tenant_id) {
+            frontendLogger.warn('Tenant dashboard reads skipped because the signed-in user has no assigned tenant', {
+              action: 'dashboard.tenant_assignment',
+              userId: storedUser.id,
+              role: storedUser.role
+            });
+          }
+          const tenantDataRequest = canReadTenantData
+            ? apiClient.getTenant(buyerUser?.tenant_id || undefined)
+            : Promise.resolve(null);
+          const ingestionDataRequest = canReadTenantData
+            ? apiClient.getIngestionData(buyerUser?.tenant_id || undefined, {
+              queueDocumentId: typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('documentId') || undefined
+                : undefined
+            })
+            : Promise.resolve({ queue: [], validationRecords: [] });
           const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-            apiClient.getTenant(buyerUser?.id),
-            apiClient.getIngestionData(buyerUser?.id),
-            apiClient.getCategories(),
-            apiClient.getVendors(),
-            apiClient.getSavingsOpportunities()
+            tenantDataRequest,
+            ingestionDataRequest,
+            canReadTenantData ? apiClient.getCategories() : Promise.resolve(null),
+            canReadTenantData ? apiClient.getVendors() : Promise.resolve(null),
+            canReadTenantData ? apiClient.getSavingsOpportunities() : Promise.resolve(null)
           ]);
 
           if (tenantData.status === 'fulfilled' && tenantData.value) {
@@ -781,15 +801,20 @@ export default function Home() {
 
           if (ingestionData.status === 'fulfilled' && ingestionData.value) {
             const backendQueue = ingestionData.value.queue || [];
-            const queueToHydrate = buyerUser?.id
-              ? backendQueue.filter(
-                  (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
-                )
+            // Keep the browser's cached view aligned to the explicit one-user/one-tenant assignment.
+            // User IDs and emails are identities, not tenant ownership keys.
+            const queueToHydrate = buyerUser
+              ? buyerUser.tenant_id
+                ? backendQueue.filter((document: RawDocumentIngestion) => document.tenant_id === buyerUser.tenant_id)
+                : []
               : backendQueue;
 
             if (queueToHydrate.length === 0) {
               setIngestionQueue([]);
               setValidationRecords([]);
+              setValidationDataSummary(undefined);
+              setValidationCursor(null);
+              setHasMoreValidationRecords(false);
               setUploadedMaterialGroups(undefined);
               setUploadedPlants(undefined);
               setUploadedMonths(undefined);
@@ -826,6 +851,9 @@ export default function Home() {
               setIngestionQueue(documentsInRequestedOrder.slice(0, 1));
               if (ingestionData.value.validationRecords) {
                 setValidationRecords(ingestionData.value.validationRecords);
+                setValidationDataSummary(ingestionData.value.summary);
+                setValidationCursor(ingestionData.value.pagination?.validationRecords?.nextCursor ?? null);
+                setHasMoreValidationRecords(Boolean(ingestionData.value.pagination?.validationRecords?.hasMore));
               }
               if (categoryData.status === 'fulfilled' && categoryData.value) {
                 setCategories(categoryData.value.categories || []);
@@ -840,15 +868,25 @@ export default function Home() {
           }
         }
 
-        // Fetch authenticated customer's analysis state from the backend
-        try {
-          const jobs = await orchestrationApi.getJobs();
-          if (jobs.length > 0) {
-            setActiveAnalysisJob(jobs[0]);
-          } else {
+        // Fetch analysis state only when the session carries an explicit tenant assignment.
+        const orchestrationUser = authApiClient.getStoredUser();
+        if (orchestrationUser?.tenant_id) {
+          try {
+            const jobs = await orchestrationApi.getJobs();
+            if (jobs.length > 0) {
+              setActiveAnalysisJob(jobs[0]);
+            } else {
+              setActiveAnalysisJob(null);
+            }
+          } catch (error: unknown) {
+            frontendLogger.error('Dashboard orchestration state could not be loaded', {
+              action: 'dashboard.orchestration.load',
+              userId: orchestrationUser.id,
+              tenantId: orchestrationUser.tenant_id
+            }, error);
             setActiveAnalysisJob(null);
           }
-        } catch {
+        } else {
           setActiveAnalysisJob(null);
         }
 
@@ -874,6 +912,9 @@ export default function Home() {
         setCanonicalModule1(null);
         setIngestionQueue([]);
         setValidationRecords([]);
+        setValidationDataSummary(undefined);
+        setValidationCursor(null);
+        setHasMoreValidationRecords(false);
         setUploadedMaterialGroups(undefined);
         setUploadedPlants(undefined);
         setUploadedMonths(undefined);
@@ -976,6 +1017,34 @@ export default function Home() {
     toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
     }, 3500);
+  };
+
+  const handleLoadMoreValidationRecords = async (): Promise<void> => {
+    if (!hasMoreValidationRecords || !validationCursor || isLoadingMoreValidationRecords) return;
+    const assignedTenantId = (currentUser || authApiClient.getStoredUser())?.tenant_id;
+    if (!assignedTenantId) {
+      showToast(UI_STRINGS.auth.tenantAssignmentRequired);
+      return;
+    }
+    setIsLoadingMoreValidationRecords(true);
+    try {
+      const nextPage = await apiClient.getIngestionData(assignedTenantId, { validationCursor });
+      setValidationRecords((current) => {
+        const recordsById = new Map(current.map((record) => [record.record_id, record]));
+        nextPage.validationRecords.forEach((record) => recordsById.set(record.record_id, record));
+        return [...recordsById.values()];
+      });
+      setValidationCursor(nextPage.pagination.validationRecords.nextCursor);
+      setHasMoreValidationRecords(nextPage.pagination.validationRecords.hasMore);
+      if (nextPage.summary) setValidationDataSummary(nextPage.summary);
+    } catch (error: unknown) {
+      frontendLogger.warn('Could not load the next D1 validation-record page', {
+        action: 'ingestion.validation.loadMore', tenantId: assignedTenantId, cursor: validationCursor
+      }, error);
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module1.loadMoreValidationRecordsFailed);
+    } finally {
+      setIsLoadingMoreValidationRecords(false);
+    }
   };
 
   const handleLogout = () => {
@@ -1219,13 +1288,8 @@ export default function Home() {
       return prev;
     });
 
-    // Scroll smoothly to Document Summary View to display final numbers
-    if (typeof document !== 'undefined') {
-      const docSummaryEl = document.getElementById('document-summary-section');
-      if (docSummaryEl) {
-        docSummaryEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+    // Scroll smoothly to Document Summary View to display final numbers.
+    summarySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     const currentRecordsCount = uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0);
 
@@ -1260,21 +1324,49 @@ export default function Home() {
     }
 
     setValidationRecords([]);
+    setValidationDataSummary(undefined);
+    setValidationCursor(null);
+    setHasMoreValidationRecords(false);
     setIsDataRefreshed(false);
     showToast(UI_STRINGS.toasts.validationReset);
   };
 
   const handleDeleteDocument = async (docId?: string) => {
     let remainingDocuments: RawDocumentIngestion[];
+    const loggedUser = currentUser || authApiClient.getStoredUser();
+    const assignedTenantId = loggedUser?.tenant_id || undefined;
+    if (!docId) {
+      frontendLogger.warn('Document deletion skipped because the document identifier is missing', {
+        action: 'ingestion.document.delete',
+        userId: loggedUser?.id
+      });
+      return;
+    }
+    if (!assignedTenantId) {
+      frontendLogger.warn('Document deletion skipped because the user has no assigned tenant', {
+        action: 'ingestion.document.delete',
+        userId: loggedUser?.id,
+        documentId: docId
+      });
+      showToast(UI_STRINGS.auth.tenantAssignmentRequired);
+      return;
+    }
     try {
-      remainingDocuments = await apiClient.deleteIngestionDocument(docId);
+      remainingDocuments = await apiClient.deleteIngestionDocument(docId, assignedTenantId);
     } catch (error: unknown) {
-      frontendLogger.warn('Document deletion was not persisted', { docId, error });
+      frontendLogger.warn('Document deletion was not persisted', {
+        action: 'ingestion.document.delete',
+        documentId: docId,
+        tenantId: assignedTenantId
+      }, error);
       showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
       return;
     }
-    setIngestionQueue(remainingDocuments);
+    setIngestionQueue(remainingDocuments.filter((document) => document.tenant_id === assignedTenantId));
     setValidationRecords([]);
+    setValidationDataSummary(undefined);
+    setValidationCursor(null);
+    setHasMoreValidationRecords(false);
     setUploadedMaterialGroups(undefined);
     setUploadedPlants(undefined);
     setUploadedMonths(undefined);
@@ -1299,10 +1391,28 @@ export default function Home() {
   };
 
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
+    if (file.size > INGESTION_UPLOAD_MAX_FILE_BYTES) {
+      const maxSizeMb = INGESTION_UPLOAD_MAX_FILE_BYTES / (1024 * 1024);
+      frontendLogger.warn('Procurement upload rejected by the browser size limit', {
+        fileSizeBytes: file.size,
+        maxFileSizeBytes: INGESTION_UPLOAD_MAX_FILE_BYTES
+      });
+      showToast(UI_STRINGS.module1.fileTooLarge(file.size / (1024 * 1024), maxSizeMb));
+      return;
+    }
     const loggedUser = currentUser || authApiClient.getStoredUser();
     if (!loggedUser) {
       showToast('Please sign in to upload datasets');
       router.push('/login');
+      return;
+    }
+    const assignedTenantId = loggedUser.tenant_id;
+    if (!assignedTenantId) {
+      frontendLogger.warn('Dataset upload blocked because the signed-in account has no tenant assignment', {
+        userId: loggedUser.id,
+        role: loggedUser.role
+      });
+      showToast(UI_STRINGS.auth.tenantAssignmentRequired);
       return;
     }
 
@@ -1907,7 +2017,7 @@ export default function Home() {
 
     const newDoc: RawDocumentIngestion = {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-      tenant_id: loggedUser.id || tenant.tenant_id,
+      tenant_id: assignedTenantId,
       file_name: file.name,
       file_type: file.name.endsWith('.pdf')
         ? 'PDF'
@@ -1960,14 +2070,17 @@ export default function Home() {
         convertedInrCrores: totalSpendInrCr,
         detectedCurrencies: dynamicDetectedCurrencies,
         datasetType: _datasetType,
-        buyer_id: loggedUser.id,
-        tenant_id: loggedUser.id || tenant.tenant_id,
+        buyer_id: assignedTenantId,
+        tenant_id: assignedTenantId,
         assessment_id: activeAssessment?.assessmentId
       });
       if (typeof uploadRes?.data?.docId === 'string') {
-        const persistedIngestion = await apiClient.getIngestionData(loggedUser.id || tenant.tenant_id);
+        const persistedIngestion = await apiClient.getIngestionData(assignedTenantId);
         setIngestionQueue(persistedIngestion.queue);
         setValidationRecords(persistedIngestion.validationRecords);
+        setValidationDataSummary(persistedIngestion.summary);
+        setValidationCursor(persistedIngestion.pagination?.validationRecords?.nextCursor ?? null);
+        setHasMoreValidationRecords(Boolean(persistedIngestion.pagination?.validationRecords?.hasMore));
       }
       if (Number.isFinite(Number(uploadRes?.data?.totalInrCrores)) && uploadRes?.data?.importedCount > 0) {
         const d1SpendCrores = Number(uploadRes.data.totalInrCrores);
@@ -2339,6 +2452,10 @@ export default function Home() {
             onUpdateTenant={handleUpdateTenant}
             ingestionQueue={ingestionQueue}
             validationRecords={validationRecords}
+            validationDataSummary={validationDataSummary}
+            hasMoreValidationRecords={hasMoreValidationRecords}
+            isLoadingMoreValidationRecords={isLoadingMoreValidationRecords}
+            onLoadMoreValidationRecords={handleLoadMoreValidationRecords}
             onFixCurrency={handleFixCurrency}
             onMergeVendor={handleMergeVendor}
             onApplyBlanketFixes={handleApplyBlanketFixes}
@@ -2367,6 +2484,7 @@ export default function Home() {
             onUpgrade={handleUpgradeTier}
             canonicalViewModel={canonicalModule1}
             onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
+            summarySectionRef={summarySectionRef}
           />
           </>
         )}
@@ -2451,10 +2569,10 @@ export default function Home() {
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
             <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-              AES-256-GCM ENCRYPTED
+              {UI_STRINGS.common.dataProtectionBadge}
             </span>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
-            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit</span>
+            <span className="hidden sm:inline">{UI_STRINGS.common.dataProtectionNotice}</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 font-mono">
             <span>Procucev / aiCEV v2.0</span>

@@ -3,6 +3,7 @@
  */
 
 import type { ERROR_CATEGORIES, ERROR_SEVERITIES } from '../constants/errors';
+import type { ReactNode } from 'react';
 
 export type ErrorCategory = (typeof ERROR_CATEGORIES)[keyof typeof ERROR_CATEGORIES];
 
@@ -32,4 +33,26 @@ export interface CreateDescriptiveErrorOptions {
   statusCode?: number;
   requestId?: string;
   severity?: ErrorSeverity;
+}
+
+export interface ClientErrorBoundaryProps {
+  children: ReactNode;
+}
+
+export interface ClientErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  requestId: string;
+}
+
+export interface Module2ApiRequestError extends Error {
+  feature: string;
+  statusCode?: number;
+  requestId?: string;
+}
+
+export interface Module2StrategicSourcingLoadFailure {
+  message: string;
+  nextStep: string;
+  requestId?: string;
 }

@@ -226,6 +226,37 @@ describe('ValidationPreCheckSection Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.dataRefreshedBanner)).toBeInTheDocument();
   });
 
+  it('shows server-wide record metrics and loads another validation page on request', () => {
+    const onLoadMoreValidationRecords = vi.fn();
+    render(<ValidationPreCheckSection
+      {...defaultProps}
+      validationDataSummary={{
+        totalFiles: 2, totalRecords: 150, cleanCount: 120, anomaliesCount: 30,
+        allResolvedCount: 120, pendingActionsCount: 30, conversionCount: 10,
+        vendorDuplicationCount: 10, itemDuplicationCount: 10, totalSpendCr: 8.5, pendingSpendCr: 1.25
+      }}
+      hasMoreValidationRecords
+      onLoadMoreValidationRecords={onLoadMoreValidationRecords}
+    />);
+
+    expect(screen.getByText(UI_STRINGS.module1.showingValidationRecords(sampleRecords.length, 150))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UI_STRINGS.module1.loadMoreValidationRecords })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module1.loadMoreValidationRecords }));
+    expect(onLoadMoreValidationRecords).toHaveBeenCalledOnce();
+    expect(screen.getByText('₹8.50 Cr')).toBeInTheDocument();
+  });
+
+  it('disables the next-page action while validation records are loading', () => {
+    render(<ValidationPreCheckSection
+      {...defaultProps}
+      hasMoreValidationRecords
+      isLoadingMoreValidationRecords
+      onLoadMoreValidationRecords={vi.fn()}
+    />);
+
+    expect(screen.getByRole('button', { name: UI_STRINGS.module1.loadingMoreValidationRecords })).toBeDisabled();
+  });
+
   it('does not render Refresh with Fixes buttons (hidden as requested)', () => {
     const onRefreshWithFixes = vi.fn();
     render(<ValidationPreCheckSection {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);

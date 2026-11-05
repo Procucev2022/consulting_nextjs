@@ -291,6 +291,51 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
     });
   });
 
+  it('ignores malformed dashboard catalogs and renders returned promotion history', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'getDashboard').mockResolvedValueOnce({ success: false } as any);
+    vi.spyOn(pcbiCommodityDataLabApi, 'getQueue').mockResolvedValueOnce({ success: true, queue: {} } as any);
+    vi.spyOn(pcbiCommodityDataLabApi, 'getSources').mockResolvedValueOnce({ success: true, sources: null } as any);
+    vi.spyOn(pcbiCommodityDataLabApi, 'getVersionHistory').mockResolvedValueOnce({
+      success: true,
+      total: 1,
+      versions: [{
+        promotion_id: 'PROMO-1', pcbi_id: 'PCBI-FEMO-65-001', catalog_version_id: 'V2',
+        approver_name: 'Research Admin', observation_count: 18, promoted_at: '2026-11-01T00:00:00.000Z'
+      }]
+    } as any);
+
+    render(<PCBICommodityDataLabView />);
+    await waitFor(() => expect(pcbiCommodityDataLabApi.getVersionHistory).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Version History' }));
+
+    expect(screen.getByText('V2')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.promotedObservationDescription('Research Admin', 18))).toBeInTheDocument();
+  });
+
+  it('saves researcher assignments, reloads a malformed queue safely, and reports write failures', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'getQueue')
+      .mockResolvedValueOnce({ success: true, total: 2, queue: mockQueue as any })
+      .mockResolvedValueOnce({ success: true, queue: null } as any);
+    vi.spyOn(pcbiCommodityDataLabApi, 'assignResearcher')
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('Research owner write failed'));
+
+    render(<PCBICommodityDataLabView />);
+    const assignee = await screen.findByLabelText(UI_STRINGS.pcbiCommodityDataLab.assignResearcherInputLabel(mockQueue[0].commodity));
+    fireEvent.change(assignee, { target: { value: 'owner@example.test' } });
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton })[0]);
+    await waitFor(() => expect(pcbiCommodityDataLabApi.getQueue).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('status')).toHaveTextContent(
+      UI_STRINGS.pcbiCommodityDataLab.assignmentSaved(mockQueue[0].pcbiId, 'owner@example.test')
+    );
+
+    fireEvent.change(assignee, { target: { value: 'owner2@example.test' } });
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton })[0]);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(
+      UI_STRINGS.pcbiCommodityDataLab.assignmentFailed(mockQueue[0].pcbiId)
+    ));
+  });
+
   it('switches between all 9 Part C sub-tabs smoothly', async () => {
     render(<PCBICommodityDataLabView />);
 

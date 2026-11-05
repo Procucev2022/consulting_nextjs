@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { OrchestrationApiClient } from '../../src/utils/orchestrationApi';
 import { apiClient } from '../../src/utils/api';
@@ -40,15 +41,12 @@ describe('OrchestrationApiClient Unit Tests', () => {
     const jobs = await client.getJobs({ status: 'ACTION_REQUIRED', search: 'Acme' });
 
     expect(jobs.length).toBe(1);
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/orchestration/jobs?status=ACTION_REQUIRED&search=Acme'),
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/orchestration/jobs?status=ACTION_REQUIRED&search=Acme'), expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer mock-jwt-token',
           'x-user-role': 'ADMIN'
         })
-      })
-    );
+      }));
   });
 
   it('should get job details and readiness', async () => {
@@ -80,10 +78,7 @@ describe('OrchestrationApiClient Unit Tests', () => {
       global.fetch = vi.fn().mockResolvedValue({ ok: true, blob: vi.fn().mockResolvedValue(workbook) });
 
       await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx')).resolves.toBe(workbook);
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/orchestration/jobs/job-1/download-dataset/v1',
-        expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer mock-jwt-token' }) })
-      );
+      expectApiFetchCall(global.fetch, '/api/orchestration/jobs/job-1/download-dataset/v1', expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer mock-jwt-token' }) }));
     });
 
     it('reports connection failures with actionable context and logs the failure', async () => {
@@ -213,6 +208,7 @@ describe('OrchestrationApiClient Unit Tests', () => {
   });
 
   it('should return null or empty array when readiness, kpis, notifications, and audit trail responses are not successful', async () => {
+    vi.spyOn(frontendLogger, 'warn').mockImplementation(() => ({}) as never);
     mockFetchResponse({ success: false });
     const readiness = await client.getReadiness('job-failing');
     expect(readiness).toBeNull();
@@ -228,9 +224,71 @@ describe('OrchestrationApiClient Unit Tests', () => {
     mockFetchResponse({ success: false });
     const trail = await client.getAuditTrail();
     expect(trail).toEqual([]);
+    expect(frontendLogger.warn).toHaveBeenCalledTimes(4);
   });
 
-  it('should handle headers when user is admin without explicit tenantId', async () => {
+  it('logs server failures with HTTP status and request correlation before using empty read fallbacks', async () => {
+    vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: new Headers({ 'x-request-id': 'req-orchestration-503' }),
+      json: vi.fn().mockResolvedValue({ success: false, message: 'D1 unavailable' })
+    });
+
+    await expect(client.getJobs()).resolves.toEqual([]);
+    expect(frontendLogger.error).toHaveBeenCalledWith(
+      'Orchestration API returned a server failure',
+      expect.objectContaining({
+        operation: UI_STRINGS.orchestration.apiOperations.listJobs,
+        statusCode: 503,
+        requestId: 'req-orchestration-503',
+        detail: 'D1 unavailable'
+      })
+    );
+  });
+
+  it('logs network failures and returns actionable retry guidance', async () => {
+    const networkError = new Error('offline');
+    global.fetch = vi.fn().mockRejectedValue(networkError);
+    vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+
+    await expect(client.getJobs()).rejects.toThrow(
+      UI_STRINGS.orchestration.apiNetworkFailure(UI_STRINGS.orchestration.apiOperations.listJobs, 'offline')
+    );
+    expect(frontendLogger.error).toHaveBeenCalledWith(
+      'Orchestration API request failed before a response was received',
+      expect.objectContaining({ operation: UI_STRINGS.orchestration.apiOperations.listJobs, method: 'GET' }),
+      networkError
+    );
+  });
+
+  it('logs unreadable and non-object API responses before returning actionable guidance', async () => {
+    vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'x-request-id': 'req-json-1' }),
+        json: vi.fn().mockRejectedValue(new Error('invalid JSON'))
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue([])
+      });
+
+    await expect(client.getJobs()).rejects.toThrow(
+      UI_STRINGS.orchestration.apiInvalidResponse(UI_STRINGS.orchestration.apiOperations.listJobs, 'req-json-1')
+    );
+    await expect(client.getJobs()).rejects.toThrow(
+      UI_STRINGS.orchestration.apiInvalidResponse(UI_STRINGS.orchestration.apiOperations.listJobs, UI_STRINGS.common.notAvailable)
+    );
+    expect(frontendLogger.error).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not synthesize a tenant header for an admin without an assignment', async () => {
     vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
       role: 'ADMIN',
       name: 'System Admin'
@@ -239,15 +297,39 @@ describe('OrchestrationApiClient Unit Tests', () => {
     mockFetchResponse({ success: true, data: [] });
     await client.getJobs();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/orchestration/jobs'),
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/orchestration/jobs'), expect.objectContaining({
         headers: expect.objectContaining({
-          'x-user-role': 'ADMIN',
-          'x-tenant-id': 'DEFAULT_TENANT'
+          'x-user-role': 'ADMIN'
         })
-      })
-    );
+      }));
+    const [, options] = vi.mocked(global.fetch).mock.calls[0];
+    expect((options as RequestInit).headers).not.toHaveProperty('x-tenant-id');
+  });
+
+  it('uses the assigned tenant instead of the user id in orchestration headers', async () => {
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      id: 'user-101',
+      role: 'USER',
+      tenant_id: 'tenant-202'
+    } as any);
+    mockFetchResponse({ success: true, data: [] });
+
+    await client.getJobs();
+
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/orchestration/jobs'), expect.objectContaining({ headers: expect.objectContaining({ 'x-tenant-id': 'tenant-202' }) }));
+  });
+
+  it('does not use a user id as a tenant header when assignment is missing', async () => {
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      id: 'user-101',
+      role: 'USER'
+    } as any);
+    mockFetchResponse({ success: true, data: [] });
+
+    await client.getJobs();
+
+    const [, options] = vi.mocked(global.fetch).mock.calls[0];
+    expect((options as RequestInit).headers).not.toHaveProperty('x-tenant-id');
   });
 
   it('should handle headers when user is null', async () => {
@@ -257,14 +339,11 @@ describe('OrchestrationApiClient Unit Tests', () => {
     mockFetchResponse({ success: true, data: [] });
     await client.getJobs();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/orchestration/jobs'),
-      expect.objectContaining({
+    expectApiFetchCall(global.fetch, expect.stringContaining('/api/orchestration/jobs'), expect.objectContaining({
         headers: {
           'Content-Type': 'application/json'
         }
-      })
-    );
+      }));
   });
 });
 

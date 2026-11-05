@@ -19,6 +19,7 @@ export interface UserProfile {
   status: UserStatus | string;
   subscription_tier?: SubscriptionTier | string;
   tier?: SubscriptionTier | string;
+  tenant_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -27,7 +28,7 @@ export interface AuthSessionResponse {
   success: boolean;
   message: string;
   user: UserProfile;
-  token: string;
+  token?: string;
   expires_in_seconds?: number;
 }
 
@@ -62,6 +63,17 @@ export interface AdminUsersResponse {
   adminCount: number;
   companiesCount: number;
   tierCounts?: Record<SubscriptionTier, number>;
+}
+
+export interface AdminTenant {
+  tenant_id: string;
+  enterprise_name: string;
+  status: string;
+}
+
+export interface AdminTenantsResponse {
+  success: boolean;
+  tenants: AdminTenant[];
 }
 
 export interface AdminUpdateStatusPayload {

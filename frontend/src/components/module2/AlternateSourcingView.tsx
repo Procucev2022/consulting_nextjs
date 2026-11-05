@@ -1,3 +1,4 @@
+import { apiFetch } from '../../utils/apiFetch';
 /**
  * Module 2 — Lever 10: New-Vendor Development & Alternate Sourcing View
  * Compliant with Rule 4, 7, 8, 9, max 300 lines, line length <= 120 chars, complexity <= 10
@@ -25,6 +26,7 @@ import { AlternateSourcingOpportunityCard } from './AlternateSourcingOpportunity
 import { AlternateSourcingKpiCards } from './AlternateSourcingKpiCards';
 import { authApiClient } from '../../utils/api';
 import logger from '../../utils/logger';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ assessmentId }) => {
   const strings = ALTERNATE_SOURCING_UI_STRINGS;
@@ -38,8 +40,10 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedMatchType, setSelectedMatchType] = useState<AlternateVendorMatchType | 'ALL'>('ALL');
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async (forceRefresh = false) => {
+    const requestId = beginRequest();
     if (!assessmentId?.trim()) {
       setData(null);
       setError(strings.ASSESSMENT_REQUIRED);
@@ -48,6 +52,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
     }
     setLoading(true);
     setError(null);
+    setData(null);
     try {
       const params = new URLSearchParams({
         assessmentId,
@@ -62,29 +67,32 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
 
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`/api/module2/sourcing/alternate-sourcing?${params.toString()}`, { headers });
+      const res = await apiFetch(`/api/module2/sourcing/alternate-sourcing?${params.toString()}`, { headers });
       if (!res.ok) {
         throw new Error(`Failed to load alternate sourcing data: HTTP ${res.status}`);
       }
 
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (json.success && json.data) {
         setData(json.data);
       } else {
         throw new Error(json.message || 'Unknown server error');
       }
     } catch (err) {
+      if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : 'Error fetching alternate sourcing data';
       setError(msg);
       logger.error('Alternate Sourcing fetch failure', { assessmentId, error: msg });
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId, geoPreference, selectedState, selectedCity, selectedMatchType, strings.ASSESSMENT_REQUIRED]);
+  }, [assessmentId, geoPreference, selectedState, selectedCity, selectedMatchType, strings.ASSESSMENT_REQUIRED, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void fetchData();
+    return invalidateRequests;
+  }, [fetchData, invalidateRequests]);
 
   const opportunities = data?.opportunities || [];
   const filteredOpportunities = opportunities.filter((o) => {

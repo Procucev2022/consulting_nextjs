@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Module2StrategicSourcingApi } from '@/utils/module2StrategicSourcingApi';
 
@@ -22,25 +23,34 @@ describe('Module2StrategicSourcingApi', () => {
 
       const result = await Module2StrategicSourcingApi.getDashboardSummary(true);
       expect(result).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/module2/sourcing/dashboard?refresh=true'));
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/module2/sourcing/dashboard?refresh=true'));
     });
 
-    it('returns null and logs debug when fetch fails', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    it('preserves network failures for the workspace error state', async () => {
+      const networkError = new Error('Network error');
+      global.fetch = vi.fn().mockRejectedValue(networkError);
 
-      const result = await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(result).toBeNull();
+      await expect(Module2StrategicSourcingApi.getDashboardSummary()).rejects.toMatchObject({
+        feature: 'dashboard',
+        statusCode: undefined,
+        requestId: undefined
+      });
+      await expect(Module2StrategicSourcingApi.getDashboardSummary()).rejects.toBe(networkError);
     });
 
-    it('returns null when response status is not ok', async () => {
+    it('preserves the server status and request ID when the dashboard request fails', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        statusText: 'Internal Server Error'
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'x-request-id': 'req-dashboard-500' })
       });
 
-      const result = await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(result).toBeNull();
+      await expect(Module2StrategicSourcingApi.getDashboardSummary()).rejects.toMatchObject({
+        feature: 'dashboard',
+        statusCode: 500,
+        requestId: 'req-dashboard-500'
+      });
     });
   });
 
@@ -54,7 +64,7 @@ describe('Module2StrategicSourcingApi', () => {
 
       const result = await Module2StrategicSourcingApi.getCategoryProfiles(true);
       expect(result).toEqual(mockProfiles);
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/module2/sourcing/categories?refresh=true'));
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/module2/sourcing/categories?refresh=true'));
     });
 
     it('returns empty array when response has no data or no profiles property', async () => {
@@ -67,22 +77,29 @@ describe('Module2StrategicSourcingApi', () => {
       expect(result).toEqual([]);
     });
 
-    it('returns empty array when response status is not ok', async () => {
+    it('preserves failed HTTP status and request ID instead of returning an empty dataset', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
-        status: 400,
-        statusText: 'Bad Request'
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: new Headers({ 'x-request-id': 'req-categories-503' })
       });
 
-      const result = await Module2StrategicSourcingApi.getCategoryProfiles();
-      expect(result).toEqual([]);
+      await expect(Module2StrategicSourcingApi.getCategoryProfiles()).rejects.toMatchObject({
+        feature: 'category-profiles',
+        statusCode: 503,
+        requestId: 'req-categories-503'
+      });
     });
 
-    it('returns empty array on network failure', async () => {
+    it('preserves network failure instead of returning an empty dataset', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
 
-      const result = await Module2StrategicSourcingApi.getCategoryProfiles();
-      expect(result).toEqual([]);
+      await expect(Module2StrategicSourcingApi.getCategoryProfiles()).rejects.toMatchObject({
+        feature: 'category-profiles',
+        statusCode: undefined,
+        requestId: undefined
+      });
     });
   });
 
@@ -96,7 +113,7 @@ describe('Module2StrategicSourcingApi', () => {
 
       const result = await Module2StrategicSourcingApi.getCategoryProfileById('cat-special/1');
       expect(result).toEqual(mockProfile);
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining(encodeURIComponent('cat-special/1')));
+      expectApiFetchCall(global.fetch, expect.stringContaining(encodeURIComponent('cat-special/1')));
     });
 
     it('returns null on failure', async () => {
@@ -341,7 +358,7 @@ describe('Module2StrategicSourcingApi', () => {
       });
 
       await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(global.fetch).toHaveBeenCalledWith('http://backend.example.com/api/module2/sourcing/dashboard');
+      expectApiFetchCall(global.fetch, 'http://backend.example.com/api/module2/sourcing/dashboard');
 
       process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;
     });
@@ -356,7 +373,7 @@ describe('Module2StrategicSourcingApi', () => {
       });
 
       await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('http://localhost:3000/api/module2/sourcing/dashboard'));
+      expectApiFetchCall(global.fetch, expect.stringContaining('http://localhost:3000/api/module2/sourcing/dashboard'));
 
       process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;
     });
@@ -373,7 +390,7 @@ describe('Module2StrategicSourcingApi', () => {
       });
 
       await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/dashboard');
+      expectApiFetchCall(global.fetch, '/api/module2/sourcing/dashboard');
 
       global.window = originalWindow;
       process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;

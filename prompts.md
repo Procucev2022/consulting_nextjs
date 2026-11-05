@@ -114063,3 +114063,26 @@ Still PR checks are failing, please check & fix.&#x20;
 ## Prompt 602
 
 resume
+
+## Prompt 603
+
+1. 1\. Analyse the code, there are a Lot of Architectural issues:
+   1. **Analyse the database**, lot of database tables or data not in sync, duplicate data etc. please analyse database issues.
+   2. **Too many Cloudflare D1 database utilisation issues**, please check.
+   3. **No proper logs or error capturing:** Errors are not getting detected, very less errors in production logs, please check & add detailed logs as much as you can even if we have some backup or work around for the exception or issue.
+   4. **Sometimes one feature is working & tested**, next time it's not working, please check the issue.
+   5. Please do a detailed analysis, what all features are pending or missing, & then continue adding the remaining missing features & functionalities & tell apart from these what else is pending. Also don't forget to seed mock data in the database for this.
+
+Currently the customers are not using the system. So we are free to do any changes
+
+## Prompt 604
+
+Keep solving the issues as well.
+
+## Prompt 605
+
+Keep solving the architectural issues as well. Do a detailed analysis, do not stop till all architectural issues are resolved.
+
+## Prompt 606
+
+One tenant per user, stored as an explicit User.tenant_id (Recommended)

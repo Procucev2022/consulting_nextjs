@@ -21,6 +21,7 @@ export const ORCHESTRATION_MESSAGES = {
     'Authentication required: send your session token as "Authorization: Bearer <token>". ' +
     'Sign in again if your session has expired.',
   accountInactive: 'This account is not active, so analysis access is denied. Ask an administrator to reactivate it.',
+  tenantAssignmentRequired: 'This request needs an active tenant assignment. Ask an administrator to assign one tenant to the account and retry.',
   unknownRole: 'This account has no valid role for analysis access. Ask an administrator to check the account role.',
   adminRequired: 'This action needs an administrator account. Sign in as an administrator and retry.',
   customerRequired:

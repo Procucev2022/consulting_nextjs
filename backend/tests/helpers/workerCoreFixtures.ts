@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { createSqliteD1 } from './evidenceSqlite';
+import { seedTestTenantRegistry } from './tenantFixtures';
 import type { CloudflareD1Database, CloudflareEnvironment } from '../../src/types/cloudflare';
 
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
@@ -24,6 +25,7 @@ export interface WorkerDatabaseFixture {
 export const createWorkerDatabase = (): WorkerDatabaseFixture => {
   const db = new DatabaseSync(':memory:');
   db.exec(fs.readFileSync(path.join(BACKEND_ROOT, 'd1-schema.sql'), 'utf8'));
+  seedTestTenantRegistry(db);
   return { db, d1: createSqliteD1(db), close: () => db.close() };
 };
 

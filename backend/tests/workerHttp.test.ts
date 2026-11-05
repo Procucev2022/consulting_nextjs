@@ -1,11 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CLOUDFLARE_ALLOWED_HEADERS,
   CLOUDFLARE_ALLOWED_METHODS,
   CLOUDFLARE_EXPOSED_HEADERS,
   CLOUDFLARE_MAX_AGE_SECONDS
 } from '../src/constants/cloudflare';
-import { apiData, jsonResponse, notFoundResponse, readJson, withCors } from '../src/workerHttp';
+import {
+  apiData, jsonResponse, notFoundResponse, readJson, requestJsonFailureResult,
+  RequestBodyTooLargeError, RequestJsonParseError, withCors
+} from '../src/workerHttp';
+import { D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import logger from '../src/utils/logger';
 
 const ORIGIN = 'https://app.example.com';
 
@@ -73,11 +78,16 @@ describe('workerHttp readJson', () => {
     expect(parsed).toEqual({ fileName: 'ledger.xlsx' });
   });
 
-  it.each([
-    ['malformed JSON', '{"fileName": '],
-    ['an empty body', '']
-  ])('returns an empty object for %s instead of throwing', async (_label, body) => {
-    await expect(readJson(request({ method: 'POST', body }))).resolves.toEqual({});
+  it('allows an empty body so endpoint schemas can reject missing required fields', async () => {
+    await expect(readJson(request({ method: 'POST', body: '' }))).resolves.toEqual({});
+  });
+
+  it('rejects malformed JSON without allowing the caller to continue with fallback data', async () => {
+    const responseRequest = request({ method: 'POST', headers: { 'x-request-id': 'req-json-1' }, body: '{broken' });
+
+    await expect(readJson(responseRequest)).rejects.toMatchObject({
+      name: 'RequestJsonParseError', message: D1_ROUTE_MESSAGES.invalidJsonBody, underlyingError: expect.any(SyntaxError)
+    });
   });
 
   it.each([
@@ -85,8 +95,75 @@ describe('workerHttp readJson', () => {
     ['a string', '"text"'],
     ['null', 'null'],
     ['a boolean', 'true']
-  ])('returns an empty object when the JSON value is %s', async (_label, body) => {
-    await expect(readJson(request({ method: 'POST', body }))).resolves.toEqual({});
+  ])('rejects a non-object JSON value when the JSON value is %s', async (_label, body) => {
+    await expect(readJson(request({ method: 'POST', body }))).rejects.toBeInstanceOf(RequestJsonParseError);
+  });
+
+  it('accepts a body exactly at the configured UTF-8 byte limit', async () => {
+    const body = JSON.stringify({ value: 'é' });
+    const byteLength = new TextEncoder().encode(body).byteLength;
+    await expect(readJson(request({ method: 'POST', body }), byteLength)).resolves.toEqual({ value: 'é' });
+  });
+
+  it('rejects an oversized body from content-length before reading it', async () => {
+    const body = JSON.stringify({ value: 'oversized' });
+    const response = request({
+      method: 'POST',
+      body,
+      headers: { 'content-length': String(new TextEncoder().encode(body).byteLength) }
+    });
+
+    await expect(readJson(response, 4)).rejects.toMatchObject({
+      name: 'RequestBodyTooLargeError', maxBytes: 4, message: D1_ROUTE_MESSAGES.requestBodyTooLarge(4)
+    });
+  });
+
+  it('rejects streamed bodies that exceed the byte limit', async () => {
+    const encoded = new TextEncoder().encode(JSON.stringify({ value: 'large' }));
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoded.slice(0, 5));
+        controller.enqueue(encoded.slice(5));
+        controller.close();
+      }
+    });
+    const streamedRequest = new Request('https://edge.example.com/api/example', {
+      method: 'POST', body, duplex: 'half'
+    } as RequestInit);
+
+    await expect(readJson(streamedRequest, 7)).rejects.toBeInstanceOf(RequestBodyTooLargeError);
+  });
+
+  it('rejects invalid size limits and wraps request stream failures', async () => {
+    await expect(readJson(request({ method: 'POST', body: '{}' }), 0)).rejects.toThrow(RangeError);
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.error(new Error('stream failed')); }
+    });
+    const failedRequest = new Request('https://edge.example.com/api/example', {
+      method: 'POST', body, duplex: 'half'
+    } as RequestInit);
+    await expect(readJson(failedRequest)).rejects.toBeInstanceOf(RequestJsonParseError);
+  });
+
+  it('returns correlated route failures and logs the underlying parse error', () => {
+    const log = vi.spyOn(logger, 'warn');
+    const malformedRequest = request({ method: 'POST', headers: { 'x-request-id': 'req-bad-json' } });
+    const parseError = new RequestJsonParseError(new SyntaxError('unexpected token'));
+
+    expect(requestJsonFailureResult(malformedRequest, parseError)).toMatchObject({
+      status: 400,
+      data: { success: false, message: D1_ROUTE_MESSAGES.validationFailed, errors: [{ path: 'body', message: D1_ROUTE_MESSAGES.invalidJsonBody }] }
+    });
+    expect(log).toHaveBeenCalledWith('Rejected malformed JSON request body', expect.objectContaining({
+      requestId: 'req-bad-json', method: 'POST', path: '/api/example', statusCode: 400
+    }), parseError.underlyingError);
+
+    expect(requestJsonFailureResult(malformedRequest, new RequestBodyTooLargeError(4))).toMatchObject({
+      status: 413,
+      data: { success: false, message: D1_ROUTE_MESSAGES.requestBodyTooLarge(4) }
+    });
+    expect(requestJsonFailureResult(malformedRequest, new Error('database failed'))).toBeNull();
+    log.mockRestore();
   });
 });
 
