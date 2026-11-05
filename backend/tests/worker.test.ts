@@ -25,6 +25,7 @@ import { handlePcbiRoute } from '../src/workerD1Pcbi';
 import { authorizeTenantRequest } from '../src/services/workerTenantAccess';
 import { readJson } from '../src/workerHttp';
 import { handleIngestionRoute } from '../src/workerD1IngestionRoutes';
+import { handleD1DataRoute } from '../src/workerD1DataRoutes';
 import {
   createWorkerDatabase,
   insertRows,
@@ -1586,9 +1587,22 @@ describe('Cloudflare worker core routes', () => {
       expect(data.tenant).toMatchObject({ tenant_id: 'TNT-1' });
       expect(data.categoryHighlights).toHaveLength(1);
       expect((data.topActionableOpportunities as Array<{ opp_id: string }>).map((row) => row.opp_id)).toEqual(['OPP-2', 'OPP-1']);
-      expect(prepareSpy.mock.calls).toHaveLength(4);
+      expect(prepareSpy.mock.calls).toHaveLength(3);
+      expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('FROM TenantMaster AS tenant'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('SUM(converted_inr_crores'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*) AS count FROM ValidationPreCheckRecord'))).toBe(false);
+    });
+
+    it('rejects a report request without a trusted tenant before querying D1', async () => {
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
+      const request = new Request('https://worker.test/api/report');
+
+      await expect(handleD1DataRoute(
+        request,
+        runtimeEnvironment({ DB: fixture.d1, REQUEST_TENANT_ID: undefined }),
+        new URL(request.url)
+      )).rejects.toThrow(D1_ROUTE_MESSAGES.tenantScopeRequired);
+      expect(prepareSpy).not.toHaveBeenCalled();
     });
 
     it('returns empty cached datasets when D1 omits report result arrays', async () => {

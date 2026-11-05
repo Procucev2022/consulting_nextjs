@@ -9,7 +9,7 @@ import {
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareD1MutationResult, CloudflareEnvironment } from './types/cloudflare';
 import { getTenantD1Data, invalidateTenantD1Data } from './services/d1TenantDataCache';
-import { getCurrencyRatesFromD1, getTenantFromD1, requireD1Binding } from './workerD1';
+import { getCurrencyRatesFromD1, requireD1Binding } from './workerD1';
 import logger from './utils/logger';
 import { apiData, jsonResponse, readJson } from './workerHttp';
 
@@ -186,13 +186,15 @@ const handleReportRoute = async (
 ): Promise<Response | null> => {
   if (url.pathname !== `${CLOUDFLARE_API_PREFIX}/report`) return null;
   const database = requireD1Binding(environment.DB);
-  const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
-  const tenantId = String(tenant.tenant_id);
-  const [reportMetrics, categoryDetails, opportunities] = await Promise.all([
-    database.prepare(`SELECT
+  const tenantId = environment.REQUEST_TENANT_ID;
+  if (!tenantId) throw new Error(D1_ROUTE_MESSAGES.tenantScopeRequired);
+  const [tenantAndMetrics, categoryDetails, opportunities] = await Promise.all([
+    database.prepare(`SELECT tenant.*,
       (SELECT SUM(converted_inr_crores) FROM RawDocumentIngestion WHERE tenant_id = ?) AS totalSpend,
-      (SELECT COUNT(*) FROM ValidationPreCheckRecord WHERE tenant_id = ?) AS totalRecords`)
-      .bind(tenantId, tenantId).first<{ totalSpend: number; totalRecords: number }>(),
+      (SELECT COUNT(*) FROM ValidationPreCheckRecord WHERE tenant_id = ?) AS totalRecords
+      FROM TenantMaster AS tenant WHERE tenant.tenant_id = ?`)
+      .bind(tenantId, tenantId, tenantId)
+      .first<Record<string, unknown> & { totalSpend: number | null; totalRecords: number | null }>(),
     getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.CATEGORY_DETAILS, async () =>
       (await database.prepare('SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC').bind(tenantId).all()).results || []),
     getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES, async () =>
@@ -200,14 +202,16 @@ const handleReportRoute = async (
         INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
         WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC`).bind(tenantId).all()).results || [])
   ]);
-  const totalSpendEvaluatedCr = Number(reportMetrics?.totalSpend || tenant.total_spend_evaluated_inr || 0);
+  if (!tenantAndMetrics) throw new Error(D1_ROUTE_MESSAGES.tenantUnavailable(tenantId));
+  const { totalSpend, totalRecords, ...tenant } = tenantAndMetrics;
+  const totalSpendEvaluatedCr = Number(totalSpend || tenant.total_spend_evaluated_inr || 0);
   const totalIdentifiedSavingsCr = opportunities.reduce((total, row) => total + Number((row as Record<string, unknown>).est_savings_inr_cr || 0), 0);
   return apiData({
     tenant,
     executiveSummary: {
       totalSpendEvaluatedCr: Number(totalSpendEvaluatedCr.toFixed(2)),
       totalIdentifiedSavingsCr: Number(totalIdentifiedSavingsCr.toFixed(2)),
-      totalLineItemsAudited: Number(reportMetrics?.totalRecords || 0)
+      totalLineItemsAudited: Number(totalRecords || 0)
     },
     categoryHighlights: categoryDetails,
     topActionableOpportunities: opportunities
