@@ -978,7 +978,7 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(apiClient.getIngestionData).toHaveBeenCalledTimes(1);
   });
 
-  it('reports when the requested document is absent and tolerates optional D1 analytics failures', async () => {
+  it('reports missing requested documents and optional D1 analytics failures', async () => {
     window.history.replaceState(null, '', '/?documentId=DOC-MISSING');
     vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
       queue: [buildDocument({ doc_id: 'DOC-AVAILABLE' })]
@@ -990,6 +990,19 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     await renderPage();
 
     expect(screen.getByText(UI_STRINGS.documentSummary.selectedDocumentUnavailable)).toBeInTheDocument();
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Dashboard loaded with unavailable datasets',
+      expect.objectContaining({
+        action: 'dashboard.initial_hydration',
+        tenantId: BUYER_USER.tenant_id,
+        failedOperations: [
+          UI_STRINGS.databaseData.apiOperations.categories,
+          UI_STRINGS.databaseData.apiOperations.vendors,
+          UI_STRINGS.databaseData.apiOperations.savings
+        ]
+      }),
+      expect.any(Error)
+    );
     expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toEqual([]);
     await switchTab('module2', 'module2');
     expect(readProp<unknown[]>('module2', 'categories')).toEqual([]);
@@ -997,6 +1010,24 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(readProp<unknown[]>('module3', 'vendorRankings')).toEqual([]);
     await switchTab('module4', 'module4');
     expect(readProp<unknown[]>('module4', 'opportunities')).toEqual([]);
+  });
+
+  it('displays non-Error dashboard failures with actionable recovery guidance', async () => {
+    vi.mocked(apiClient.getCategories).mockRejectedValue('D1 connection refused');
+
+    await renderPage();
+
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Dashboard loaded with unavailable datasets',
+      expect.objectContaining({
+        failedOperations: [UI_STRINGS.databaseData.apiOperations.categories]
+      }),
+      'D1 connection refused'
+    );
+    expect(screen.getByText(UI_STRINGS.databaseData.dashboardPartialLoadFailed(
+      UI_STRINGS.databaseData.apiOperations.categories,
+      'D1 connection refused'
+    ))).toBeInTheDocument();
   });
 
   it('drops ingestion documents that belong to another tenant', async () => {

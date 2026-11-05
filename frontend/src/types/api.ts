@@ -35,3 +35,13 @@ export interface SavingsOpportunitiesApiData {
   opportunities: SavingsOpportunity[];
   totalPotentialSavingsCr: number;
 }
+
+export interface RejectedDashboardRequest {
+  operation: string;
+  result: PromiseRejectedResult;
+}
+
+export interface DashboardRequestResult {
+  operation: string;
+  result: PromiseSettledResult<unknown>;
+}

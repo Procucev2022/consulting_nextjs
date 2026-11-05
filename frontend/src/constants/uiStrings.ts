@@ -22,6 +22,7 @@ export const UI_STRINGS = {
     apiNoDetails: 'The server returned no dashboard data or error detail',
     apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry and contact support with request ${requestId} if the issue continues.`,
     apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed or unexpected data. Retry; if this continues, contact support with request ${requestId}.`,
+    dashboardPartialLoadFailed: (operations: string, detail: string): string => `Some dashboard data could not be loaded (${operations}): ${detail}. Refresh the page to retry; if the issue continues, contact support with the affected data names and any request ID shown in the error details.`,
     conversionLoadFailed: (status: number) => `The conversion stages could not be loaded because the database API returned HTTP ${status}. Refresh the page and ask support to verify the D1 conversion stage seed if the error continues.`,
     schemaLoadFailed: 'The database schema could not be loaded. Check your connection and retry; ask support to verify the D1 database binding if the issue continues.',
     loadingSchema: 'Loading the database schema...',

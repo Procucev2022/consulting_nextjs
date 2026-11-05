@@ -128,7 +128,9 @@ import type {
   ValidationRecordPageCursor,
   ParetoHierarchyParent,
   ConversionFunnelPhase,
-  ReportVersion
+  ReportVersion,
+  DashboardRequestResult,
+  RejectedDashboardRequest
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
@@ -782,6 +784,32 @@ export default function Home() {
             canReadTenantData ? apiClient.getVendors() : Promise.resolve(null),
             canReadTenantData ? apiClient.getSavingsOpportunities() : Promise.resolve(null)
           ]);
+
+          const dashboardRequests: DashboardRequestResult[] = [
+            { operation: UI_STRINGS.module4.apiOperations.tenant, result: tenantData },
+            { operation: UI_STRINGS.module4.apiOperations.ingestion, result: ingestionData },
+            { operation: UI_STRINGS.databaseData.apiOperations.categories, result: categoryData },
+            { operation: UI_STRINGS.databaseData.apiOperations.vendors, result: vendorData },
+            { operation: UI_STRINGS.databaseData.apiOperations.savings, result: savingsData }
+          ];
+          const failedDashboardRequests = dashboardRequests.filter(
+            (request): request is RejectedDashboardRequest => request.result.status === 'rejected'
+          );
+          const [firstFailedDashboardRequest] = failedDashboardRequests;
+          if (firstFailedDashboardRequest) {
+            const failureReason = firstFailedDashboardRequest.result.reason;
+            const failureDetail = failureReason instanceof Error ? failureReason.message : String(failureReason);
+            const failedOperations = failedDashboardRequests.map(({ operation }) => operation);
+            frontendLogger.warn('Dashboard loaded with unavailable datasets', {
+              action: 'dashboard.initial_hydration',
+              userId: storedUser?.id,
+              tenantId: storedUser?.tenant_id,
+              failedOperations
+            }, failureReason);
+            showToast(UI_STRINGS.databaseData.dashboardPartialLoadFailed(
+              failedOperations.join(', '), failureDetail
+            ));
+          }
 
           if (tenantData.status === 'fulfilled' && tenantData.value) {
             if (buyerUser) {
