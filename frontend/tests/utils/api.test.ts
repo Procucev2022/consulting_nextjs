@@ -151,6 +151,9 @@ describe('apiClient', () => {
   it('getCategories should perform GET /api/categories', async () => {
     const mockData = { categories: [], categoryDetails: [] };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
@@ -162,6 +165,9 @@ describe('apiClient', () => {
   it('getVendors should perform GET /api/vendors', async () => {
     const mockData = { vendorRankings: [], vendorDetails: [] };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
@@ -188,6 +194,9 @@ describe('apiClient', () => {
   it('getSavingsOpportunities should perform GET /api/savings', async () => {
     const mockData = { opportunities: [], totalPotentialSavingsCr: 12.5 };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
@@ -351,7 +360,10 @@ describe('apiClient', () => {
   it('getVendorDetails should perform GET /api/vendors?details=true', async () => {
     const mockDetails = [{ vendor_name: 'Vendor A', year: 2024 }];
     (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: { vendorDetails: mockDetails } })
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({ success: true, data: { vendorDetails: mockDetails } })
     });
 
     const res = await apiClient.getVendorDetails();

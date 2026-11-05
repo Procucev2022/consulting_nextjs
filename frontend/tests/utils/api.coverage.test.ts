@@ -170,6 +170,38 @@ describe('apiClient coverage', () => {
       expectApiFetchCall(fetchMock, '/api/vendors?details=true');
     });
 
+    it('logs dashboard HTTP, parse, and envelope failures while preserving request context', async () => {
+      const log = vi.spyOn(frontendLogger, 'error');
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ message: 'D1 read unavailable' }), {
+        status: 503, headers: { 'x-request-id': 'REQ-CATEGORIES-503' }
+      }));
+      await expect(apiClient.getCategories()).rejects.toThrow(UI_STRINGS.databaseData.apiRequestFailed(
+        UI_STRINGS.databaseData.apiOperations.categories, 503, 'D1 read unavailable', 'REQ-CATEGORIES-503'
+      ));
+      expect(log).toHaveBeenCalledWith('Dashboard API request failed', expect.objectContaining({
+        method: 'GET', path: '/api/categories', statusCode: 503, requestId: 'REQ-CATEGORIES-503'
+      }), expect.any(Error));
+
+      fetchMock.mockResolvedValueOnce(new Response('<html>upstream error</html>', {
+        status: 502, headers: { 'x-request-id': 'REQ-VENDORS-502' }
+      }));
+      await expect(apiClient.getVendors()).rejects.toThrow(UI_STRINGS.databaseData.apiInvalidResponse(
+        UI_STRINGS.databaseData.apiOperations.vendors, 502, 'REQ-VENDORS-502'
+      ));
+      expect(log).toHaveBeenCalledWith('Dashboard API response could not be parsed', expect.objectContaining({
+        path: '/api/vendors', statusCode: 502, requestId: 'REQ-VENDORS-502'
+      }), expect.any(SyntaxError));
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: false, data: {} }, 200));
+      await expect(apiClient.getSavingsOpportunities()).rejects.toThrow(UI_STRINGS.databaseData.apiInvalidResponse(
+        UI_STRINGS.databaseData.apiOperations.savings, 200, UI_STRINGS.common.notAvailable
+      ));
+      expect(log).toHaveBeenCalledWith('Dashboard API response envelope was invalid', expect.objectContaining({
+        path: '/api/savings', statusCode: 200, requestId: UI_STRINGS.common.notAvailable
+      }));
+      log.mockRestore();
+    });
+
     it('posts a validated vendor merge and rejects merges without a target name', async () => {
       const body = { success: true, message: 'Merged' };
       fetchMock.mockResolvedValueOnce(jsonResponse(body));

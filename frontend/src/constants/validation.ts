@@ -75,6 +75,11 @@ export const conversionStagesResponseSchema = z.object({
   }))
 });
 
+export const apiDataEnvelopeResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.record(z.string(), z.unknown())
+}).passthrough();
+
 const briefText = z.string().min(1);
 const briefNumber = z.number().finite();
 const briefCount = briefNumber.nonnegative();

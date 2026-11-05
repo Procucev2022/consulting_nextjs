@@ -1,13 +1,14 @@
 import { apiFetch } from './apiFetch';
 import type {
   TenantMaster,
-  TenantApiResponse,
+  CategoryDetailsApiData,
+  CategoriesApiData,
+  SavingsOpportunitiesApiData,
+  VendorsApiData,
+  VendorDetailsApiData,
   ApiUpdateTenantPayload,
-  SpendCategorySummary,
   CategoryYearDetail,
   VendorYearDetail,
-  VendorPriceRank,
-  SavingsOpportunity,
   DashboardOverviewData,
   LineItemMapping,
   ConversionFunnelPhase
@@ -33,30 +34,9 @@ import { setProcurementCategoryMappings } from './procurementCategoryResolver';
 import { fetchDashboardOverview } from './graphqlClient';
 import { UI_STRINGS } from '../constants/uiStrings';
 import { currencyApiClient } from './currencyApi';
+import { readDashboardApiData, readTenantApiResponse } from './apiResponse';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-
-const readTenantApiResponse = async (
-  response: Response,
-  method: string,
-  operation: string,
-  tenantId?: string
-): Promise<TenantApiResponse> => {
-  const requestId = response.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
-  try {
-    return await response.json() as TenantApiResponse;
-  } catch (error: unknown) {
-    frontendLogger.error('Tenant API response could not be parsed', {
-      method,
-      path: '/api/tenant',
-      statusCode: response.status,
-      tenantId,
-      operation,
-      requestId
-    }, error);
-    throw new Error(UI_STRINGS.module4.apiInvalidResponse(operation, response.status, requestId));
-  }
-};
 
 export const apiClient = {
   async getProcurementCategoryMappings() {
@@ -158,26 +138,30 @@ export const apiClient = {
   resetBlanketData: ingestionApiClient.resetBlanketData.bind(ingestionApiClient),
 
   // Categories
-  async getCategories(): Promise<{ categories: SpendCategorySummary[]; categoryDetails: CategoryYearDetail[] }> {
+  async getCategories(): Promise<CategoriesApiData> {
     frontendLogger.debug('Fetching spend categories and year details');
     const res = await apiFetch(`${API_BASE}/api/categories`);
-    const json = await res.json();
-    return json.data;
+    return readDashboardApiData<CategoriesApiData>(
+      res, '/api/categories', UI_STRINGS.databaseData.apiOperations.categories
+    );
   },
 
   async getCategoryDetails(): Promise<CategoryYearDetail[]> {
     frontendLogger.debug('Fetching category year details matrix');
     const res = await apiFetch(`${API_BASE}/api/categories?details=true`);
-    const json = await res.json();
-    return json.data.categoryDetails;
+    const data = await readDashboardApiData<CategoryDetailsApiData>(
+      res, '/api/categories', UI_STRINGS.databaseData.apiOperations.categoryDetails
+    );
+    return data.categoryDetails;
   },
 
   // Vendors
-  async getVendors(): Promise<{ vendorRankings: VendorPriceRank[]; vendorDetails: VendorYearDetail[] }> {
+  async getVendors(): Promise<VendorsApiData> {
     frontendLogger.debug('Fetching vendor price rankings and year details');
     const res = await apiFetch(`${API_BASE}/api/vendors`);
-    const json = await res.json();
-    return json.data;
+    return readDashboardApiData<VendorsApiData>(
+      res, '/api/vendors', UI_STRINGS.databaseData.apiOperations.vendors
+    );
   },
 
   // Module 2 Canonical Data
@@ -218,8 +202,10 @@ export const apiClient = {
   async getVendorDetails(): Promise<VendorYearDetail[]> {
     frontendLogger.debug('Fetching vendor year details');
     const res = await apiFetch(`${API_BASE}/api/vendors?details=true`);
-    const json = await res.json();
-    return json.data.vendorDetails;
+    const data = await readDashboardApiData<VendorDetailsApiData>(
+      res, '/api/vendors', UI_STRINGS.databaseData.apiOperations.vendorDetails
+    );
+    return data.vendorDetails;
   },
 
   async mergeVendor(targetName: string, masterId: string, canonicalName: string): Promise<Record<string, unknown>> {
@@ -238,11 +224,12 @@ export const apiClient = {
   },
 
   // Savings
-  async getSavingsOpportunities(): Promise<{ opportunities: SavingsOpportunity[]; totalPotentialSavingsCr: number }> {
+  async getSavingsOpportunities(): Promise<SavingsOpportunitiesApiData> {
     frontendLogger.debug('Fetching savings engine opportunities');
     const res = await apiFetch(`${API_BASE}/api/savings`);
-    const json = await res.json();
-    return json.data;
+    return readDashboardApiData<SavingsOpportunitiesApiData>(
+      res, '/api/savings', UI_STRINGS.databaseData.apiOperations.savings
+    );
   },
 
   deployOpportunity: savingsApiClient.deployOpportunity.bind(savingsApiClient),

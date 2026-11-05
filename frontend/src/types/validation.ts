@@ -11,6 +11,7 @@ import type {
   taxonomyPageRequestSchema,
   taxonomyPageResponseSchema,
   conversionStagesResponseSchema,
+  apiDataEnvelopeResponseSchema,
   executiveOpportunityBriefResponseSchema,
   executiveBriefEmailRequestSchema,
   provisionSubscriptionDetailsSchema,
@@ -53,6 +54,7 @@ export type ClientErrorReport = z.infer<typeof clientErrorReportSchema>;
 export type ApiRequestId = z.infer<typeof apiRequestIdSchema>;
 export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
 export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
+export type ApiDataEnvelopeResponse = z.infer<typeof apiDataEnvelopeResponseSchema>;
 export type ExecutiveOpportunityBriefResponse = z.infer<typeof executiveOpportunityBriefResponseSchema>;
 export type ExecutiveOpportunityBriefReportData = ExecutiveOpportunityBriefResponse['data'];
 export type ExecutiveBriefEmailRequest = z.infer<typeof executiveBriefEmailRequestSchema>;
