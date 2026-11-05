@@ -1290,12 +1290,48 @@ describe('Cloudflare worker core routes', () => {
         ['REC-1', 'PO-1', 'Acme', 'Item A', 'Duplicate PO', 'Review', 0]
       ]);
       fixture.db.prepare("UPDATE ValidationPreCheckRecord SET tenant_id = 'TNT-1'").run();
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
 
       const escalated = await dataOf(await send('/api/ingestion?tenantId=TNT-1', jsonBody('PATCH', { record_id: 'REC-1', issue_flag: 'Reviewed', action_status: 'Escalated', resolved: true })));
+      expect(prepareSpy.mock.calls).toHaveLength(1);
+      expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       const resolvedOnly = await dataOf(await send('/api/ingestion?tenantId=TNT-1', jsonBody('PATCH', { record_id: 'REC-1', resolved: false })));
+      expect(prepareSpy.mock.calls).toHaveLength(2);
 
       expect(escalated).toMatchObject({ record_id: 'REC-1', issue_flag: 'Reviewed', action_status: 'Escalated', resolved: true });
       expect(resolvedOnly).toMatchObject({ issue_flag: 'Reviewed', action_status: 'Escalated', resolved: false });
+    });
+
+    it('fails closed without tenant scope and accepts the middleware resolved scope for validation edits', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, issue_flag) VALUES (?, ?, ?, ?, ?, ?)', [
+        ['REC-SCOPE', 'TNT-1', 'PO-SCOPE', 'Supplier', 'Scoped item', 'Review']
+      ]);
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
+      const missingScopeRequest = request('/api/ingestion', jsonBody('PATCH', { record_id: 'REC-SCOPE', issue_flag: 'Fixed' }));
+      const missingScope = await handleIngestionRoute(
+        missingScopeRequest,
+        runtimeEnvironment({ DB: fixture.d1, REQUEST_TENANT_ID: undefined }),
+        new URL(missingScopeRequest.url)
+      );
+
+      expect(missingScope.status).toBe(403);
+      await expect(bodyOf(missingScope)).resolves.toMatchObject({ message: D1_ROUTE_MESSAGES.tenantScopeRequired });
+      expect(prepareSpy).not.toHaveBeenCalled();
+
+      const resolvedScopeRequest = request('/api/ingestion', {
+        ...jsonBody('PATCH', { record_id: 'REC-SCOPE', issue_flag: 'Fixed' }),
+        headers: { 'Content-Type': 'application/json', 'x-resolved-tenant-id': 'TNT-1' }
+      });
+      const resolvedScope = await handleIngestionRoute(
+        resolvedScopeRequest,
+        runtimeEnvironment({ DB: fixture.d1, REQUEST_TENANT_ID: undefined }),
+        new URL(resolvedScopeRequest.url)
+      );
+
+      expect(resolvedScope.status).toBe(200);
+      expect(prepareSpy).toHaveBeenCalledOnce();
+      await expect(bodyOf(resolvedScope)).resolves.toMatchObject({ data: { record_id: 'REC-SCOPE', issue_flag: 'Fixed' } });
     });
 
     it('reports a missing identifier, empty update and unknown validation record', async () => {

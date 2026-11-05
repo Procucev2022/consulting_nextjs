@@ -271,10 +271,10 @@ const updateIngestion = async (request: Request, environment: CloudflareEnvironm
   if (!parsed.success) {
     return { data: { success: false, message: 'Validation update is invalid.', errors: parsed.error.issues }, status: 400 };
   }
-  const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined);
-  const tenantId = String(tenant.tenant_id);
+  const tenantId = environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined;
+  if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
   const body = parsed.data;
-  await database.prepare(`
+  const updated = await database.prepare(`
     UPDATE ValidationPreCheckRecord
     SET po_number = COALESCE(?, po_number), vendor_name = COALESCE(?, vendor_name), raw_desc = COALESCE(?, raw_desc),
         order_quantity = COALESCE(?, order_quantity), net_price = COALESCE(?, net_price),
@@ -285,14 +285,16 @@ const updateIngestion = async (request: Request, environment: CloudflareEnvironm
         core_category = COALESCE(?, core_category), issue_flag = COALESCE(?, issue_flag),
         action_status = COALESCE(?, action_status), resolved = COALESCE(?, resolved)
     WHERE record_id = ? AND tenant_id = ?
+      AND EXISTS (SELECT 1 FROM TenantMaster WHERE tenant_id = ?)
+    RETURNING *
   `).bind(
     body.po_number ?? null, body.vendor_name ?? null, body.raw_desc ?? null,
     body.order_quantity ?? null, body.net_price ?? null, body.subtotal_raw ?? null, body.amount ?? null,
     body.raw_currency ?? null, body.amount_inr ?? null, body.inr_crores ?? null, body.fx_rate_applied ?? null,
     body.spend_year ?? null, body.transaction_date ?? null, body.column_l_code ?? null, body.core_category ?? null,
-    body.issue_flag ?? null, body.action_status ?? null, body.resolved === undefined ? null : Number(body.resolved), body.record_id, tenantId
-  ).run();
-  const updated = await database.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ? AND tenant_id = ?').bind(body.record_id, tenantId).first();
+    body.issue_flag ?? null, body.action_status ?? null, body.resolved === undefined ? null : Number(body.resolved),
+    body.record_id, tenantId, tenantId
+  ).first<Record<string, unknown>>();
   return updated ? { data: { ...updated, resolved: Boolean((updated as Record<string, unknown>).resolved) } } : { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
