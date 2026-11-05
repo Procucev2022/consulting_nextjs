@@ -578,6 +578,8 @@ describe('updateTenant', () => {
           enterprise_name: 'Renamed Co',
           region: 'EMEA',
           base_currency: 'USD',
+          total_spend_evaluated: 500,
+          total_spend_evaluated_inr: 450,
           status: 'SUSPENDED',
           major_sector: 'Metals',
           minor_sector: 'Steel'
@@ -590,6 +592,8 @@ describe('updateTenant', () => {
       enterprise_name: 'Renamed Co',
       region: 'EMEA',
       base_currency: 'USD',
+      total_spend_evaluated: 500,
+      total_spend_evaluated_inr: 450,
       status: 'SUSPENDED',
       major_sector: 'Metals',
       minor_sector: 'Steel'
@@ -602,7 +606,7 @@ describe('updateTenant', () => {
     await resolvers.updateTenant({ input: { region: 'EMEA' } }, contextFor(stub.d1, 'TNT-1', 'ADMIN'));
 
     expect(stub.statements[0].sql).toContain('UPDATE TenantMaster SET');
-    expect(stub.statements[0].values).toEqual([null, 'EMEA', null, null, null, null, 'TNT-1']);
+    expect(stub.statements[0].values).toEqual([null, 'EMEA', null, null, null, null, null, null, 'TNT-1']);
   });
 
   it('rejects when no tenant has been seeded', async () => {
@@ -616,13 +620,29 @@ describe('updateTenant', () => {
   it('propagates write failures', async () => {
     const stub = createStubD1({ firstRow: { tenant_id: 'TNT-1' }, runError: new Error('D1 write rejected') });
 
-    await expect(resolvers.updateTenant({ input: {} }, contextFor(stub.d1, 'TNT-1', 'ADMIN'))).rejects.toThrow('D1 write rejected');
+    await expect(resolvers.updateTenant({ input: { region: 'EMEA' } }, contextFor(stub.d1, 'TNT-1', 'ADMIN')))
+      .rejects.toThrow('D1 write rejected');
+  });
+
+  it('rejects unsupported tenant fields before issuing a write', async () => {
+    const stub = createStubD1({ firstRow: { tenant_id: 'TNT-1' } });
+
+    await expect(resolvers.updateTenant(
+      { input: { financial_year: 'FY25-26' } }, contextFor(stub.d1, 'TNT-1', 'ADMIN')
+    )).rejects.toThrow(D1_ROUTE_MESSAGES.validationFailed);
+    expect(stub.statements).toHaveLength(0);
   });
 
   it('rejects tenant administration by non-admin users', async () => {
     await insertTenant(fixture.d1, 'TNT-1', '2026-01-01 00:00:00');
     await expect(resolvers.updateTenant({ input: { status: 'SUSPENDED' } }, contextFor(fixture.d1)))
       .rejects.toThrow(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
+  });
+
+  it('rejects tenant updates when the GraphQL context has no tenant assignment', async () => {
+    await expect(resolvers.updateTenant(
+      { input: { region: 'EMEA' } }, contextFor(fixture.d1, '', 'ADMIN')
+    )).rejects.toThrow('D1 request context does not contain a tenant identifier');
   });
 });
 

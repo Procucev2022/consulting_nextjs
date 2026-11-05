@@ -757,21 +757,81 @@ describe('Cloudflare worker core routes', () => {
       seedTenant();
 
       const read = await send('/api/tenant?tenantId=TNT-1');
-      const updated = await send('/api/tenant?tenantId=TNT-1', jsonBody('PUT', { enterprise_name: 'Beta Holdings' }));
+      const updated = await send('/api/tenant?tenantId=TNT-1', jsonBody('PUT', {
+        enterprise_name: 'Beta Holdings',
+        total_spend_evaluated: 500,
+        total_spend_evaluated_inr: 450
+      }));
 
       await expect(bodyOf(read)).resolves.toMatchObject({ success: true, data: { tenant_id: 'TNT-1', enterprise_name: 'Alpha Enterprises', region: 'APAC' } });
       expect(updated.status).toBe(200);
-      await expect(bodyOf(updated)).resolves.toMatchObject({ data: { enterprise_name: 'Beta Holdings', region: 'APAC', base_currency: 'INR' } });
+      await expect(bodyOf(updated)).resolves.toMatchObject({
+        data: {
+          enterprise_name: 'Beta Holdings', region: 'APAC', base_currency: 'INR',
+          total_spend_evaluated: 500, total_spend_evaluated_inr: 450
+        }
+      });
     });
 
-    it('updates the tenant named in the body rather than the default tenant', async () => {
+    it('rejects body-supplied tenant IDs without changing either tenant', async () => {
       seedTenant('TNT-1', '2026-01-01T00:00:00Z');
       seedTenant('TNT-2', '2026-02-01T00:00:00Z');
 
-      await send('/api/tenant', jsonBody('PUT', { tenant_id: 'TNT-2', status: 'SUSPENDED' }));
+      const response = await send('/api/tenant', jsonBody('PUT', { tenant_id: 'TNT-2', status: 'SUSPENDED' }));
 
-      await expect(fixture.d1.prepare('SELECT status FROM TenantMaster WHERE tenant_id = ?').bind('TNT-2').first()).resolves.toEqual({ status: 'SUSPENDED' });
+      expect(response.status).toBe(400);
+      await expect(fixture.d1.prepare('SELECT status FROM TenantMaster WHERE tenant_id = ?').bind('TNT-2').first()).resolves.toEqual({ status: 'ACTIVE' });
       await expect(fixture.d1.prepare('SELECT status FROM TenantMaster WHERE tenant_id = ?').bind('TNT-1').first()).resolves.toEqual({ status: 'ACTIVE' });
+    });
+
+    it('logs invalid tenant update fields and rejects them before D1 mutation', async () => {
+      seedTenant();
+      const warning = vi.spyOn(logger, 'warn');
+
+      const response = await send('/api/tenant', jsonBody('PUT', {
+        enterprise_name: '  ',
+        base_currency: 'INVALID',
+        financial_year: 'FY25-26'
+      }));
+
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.validationFailed,
+        errors: expect.arrayContaining([
+          expect.objectContaining({ path: ['enterprise_name'] }),
+          expect.objectContaining({ path: ['base_currency'] }),
+          expect.objectContaining({ path: [] })
+        ])
+      });
+      expect(warning).toHaveBeenCalledWith(D1_ROUTE_MESSAGES.validationFailed, expect.objectContaining({
+        requestId: expect.any(String),
+        tenantId: expect.any(String),
+        operation: 'tenant-update',
+        errors: expect.any(Array)
+      }));
+      await expect(fixture.d1.prepare('SELECT enterprise_name, updated_at FROM TenantMaster WHERE tenant_id = ?').bind('TNT-1').first())
+        .resolves.toMatchObject({ enterprise_name: 'Alpha Enterprises', updated_at: '2026-01-01T00:00:00Z' });
+    });
+
+    it('returns a correlated not-found error when the assigned tenant row is missing', async () => {
+      const warning = vi.spyOn(logger, 'warn');
+      const response = await send('/api/tenant', {
+        ...jsonBody('PUT', { enterprise_name: 'Renamed tenant' }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'req-tenant-missing' }
+      }, runtimeEnvironment({ DB: fixture.d1, REQUEST_TENANT_ID: 'TNT-MISSING' }));
+
+      expect(response.status).toBe(404);
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: D1_ROUTE_MESSAGES.tenantUnavailable('TNT-MISSING')
+      });
+      expect(warning).toHaveBeenCalledWith(D1_ROUTE_MESSAGES.tenantUnavailable('TNT-MISSING'), expect.objectContaining({
+        requestId: 'req-tenant-missing',
+        tenantId: 'TNT-MISSING',
+        operation: 'tenant-update',
+        affectedRows: 0
+      }));
     });
 
     it('rejects malformed tenant updates before applying a database mutation', async () => {

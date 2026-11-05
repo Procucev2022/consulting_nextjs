@@ -6,7 +6,7 @@ import {
   D1_ROUTE_MESSAGES
 } from '../constants/d1';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../constants/graphql';
-import { graphqlIngestionPageArgsSchema } from '../constants/validation';
+import { graphqlIngestionPageArgsSchema, tenantUpdateSchema } from '../constants/validation';
 import { getD1RuntimeMetrics } from '../services/d1QueryTelemetry';
 import { decodeGraphQLIngestionCursor, encodeGraphQLIngestionCursor } from '../services/graphqlIngestionCursor';
 import logger from '../utils/logger';
@@ -20,6 +20,7 @@ import type {
   UpdateTenantArgs,
   ValidationRecordArgs
 } from '../types/graphql';
+import type { TenantUpdateInput } from '../types/validation';
 
 interface D1GraphQLContext extends GraphQLContext {
   db: CloudflareD1Database;
@@ -78,6 +79,34 @@ const parseIngestionPageRequest = (
     }, error);
     throw error;
   }
+};
+
+const assertTenantAdministrator = (context: D1GraphQLContext): void => {
+  if (context.role === AUTH_ROLES.ADMIN) return;
+  logger.warn('Rejected GraphQL tenant update by a non-administrator', {
+    requestId: context.requestId, tenantId: context.tenantId, userId: context.userId, role: context.role
+  });
+  throw new Error(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
+};
+
+const requireTenantIdentifier = (context: D1GraphQLContext): string => {
+  if (!context.tenantId) throw new Error('D1 request context does not contain a tenant identifier');
+  return context.tenantId;
+};
+
+const parseTenantUpdate = (input: unknown, context: D1GraphQLContext): TenantUpdateInput => {
+  const validation = tenantUpdateSchema.safeParse(input);
+  if (!validation.success) {
+    logger.warn(D1_ROUTE_MESSAGES.validationFailed, {
+      requestId: context.requestId,
+      tenantId: context.tenantId,
+      userId: context.userId,
+      operation: 'graphql-tenant-update',
+      errors: validation.error.issues
+    });
+    throw new Error(D1_ROUTE_MESSAGES.validationFailed);
+  }
+  return validation.data;
 };
 
 const tenantResolver: D1Resolver = async (_args, context) => context.tenantId
@@ -190,26 +219,30 @@ const dashboardResolver: D1Resolver = async (_args, context) => {
 };
 
 const updateTenantResolver: D1Resolver = async (args, context) => {
-  if (context.role !== AUTH_ROLES.ADMIN) {
-    logger.warn('Rejected GraphQL tenant update by a non-administrator', {
-      requestId: context.requestId, tenantId: context.tenantId, userId: context.userId, role: context.role
-    });
-    throw new Error(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
-  }
+  assertTenantAdministrator(context);
   const input = (args as UpdateTenantArgs).input;
-  const tenantId = context.tenantId;
-  if (!tenantId) throw new Error('D1 request context does not contain a tenant identifier');
+  const tenantId = requireTenantIdentifier(context);
+  const updates = parseTenantUpdate(input, context);
   const updateSql = 'UPDATE TenantMaster SET ' +
     'enterprise_name = COALESCE(?, enterprise_name), ' +
     'region = COALESCE(?, region), ' +
     'base_currency = COALESCE(?, base_currency), ' +
+    'total_spend_evaluated = COALESCE(?, total_spend_evaluated), ' +
+    'total_spend_evaluated_inr = COALESCE(?, total_spend_evaluated_inr), ' +
     'status = COALESCE(?, status), ' +
     'major_sector = COALESCE(?, major_sector), ' +
     'minor_sector = COALESCE(?, minor_sector), ' +
     'updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ?';
   const result = await context.db.prepare(updateSql).bind(
-    input.enterprise_name ?? null, input.region ?? null, input.base_currency ?? null, input.status ?? null,
-    input.major_sector ?? null, input.minor_sector ?? null, tenantId
+    updates.enterprise_name ?? null,
+    updates.region ?? null,
+    updates.base_currency ?? null,
+    updates.total_spend_evaluated ?? null,
+    updates.total_spend_evaluated_inr ?? null,
+    updates.status ?? null,
+    updates.major_sector ?? null,
+    updates.minor_sector ?? null,
+    tenantId
   ).run() as CloudflareD1MutationResult;
   const affectedRows = result.meta?.changes ?? result.changes;
   if (affectedRows !== undefined && Number(affectedRows) === 0) {

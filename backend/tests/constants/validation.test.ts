@@ -102,12 +102,16 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
         enterprise_name: 'Test Corp',
         region: 'APAC',
         base_currency: 'INR',
-        financial_year: 'FY25-26',
+        total_spend_evaluated: 500,
         total_spend_evaluated_inr: 500,
-        target_savings_rate_pct: 10.5
+        major_sector: 'Chemicals',
+        minor_sector: 'Specialty chemicals',
+        status: 'ACTIVE'
       };
       const result = tenantUpdateSchema.safeParse(valid);
       expect(result.success).toBe(true);
+      expect(tenantUpdateSchema.safeParse({ enterprise_name: 'Test Corp', region: null }).success).toBe(true);
+      expect(tenantUpdateSchema.safeParse({ region: null }).success).toBe(false);
     });
 
     it('should reject empty update object', () => {
@@ -117,6 +121,11 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
 
     it('should reject invalid types', () => {
       const result = tenantUpdateSchema.safeParse({ total_spend_evaluated_inr: -10 });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject fields that are not persisted by the tenant table', () => {
+      const result = tenantUpdateSchema.safeParse({ financial_year: 'FY25-26' });
       expect(result.success).toBe(false);
     });
   });

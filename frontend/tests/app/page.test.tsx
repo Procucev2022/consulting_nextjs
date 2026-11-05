@@ -375,6 +375,7 @@ describe('Home Page Component', () => {
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
+    await screen.findByText(sampleDoc.file_name);
 
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);

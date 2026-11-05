@@ -253,17 +253,15 @@ export const executiveBriefEmailRequestSchema = z.object({
 
 // Outgoing API Request Validation Schemas (Frontend API Boundary)
 export const apiUpdateTenantPayloadSchema = z.object({
-  enterprise_name: z.string().min(1).optional(),
-  region: z.string().min(1).optional(),
-  base_currency: z.string().min(1).optional(),
-  financial_year: z.string().min(1).optional(),
+  enterprise_name: z.string().trim().min(1).optional(),
+  region: z.string().trim().min(1).optional(),
+  base_currency: z.string().trim().regex(/^[A-Z]{3}$/u).optional(),
   total_spend_evaluated: z.number().nonnegative().optional(),
   total_spend_evaluated_inr: z.number().nonnegative().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional(),
-  major_sector: z.string().min(1).optional(),
-  minor_sector: z.string().min(1).optional(),
-  status: z.string().optional()
-});
+  major_sector: z.string().trim().min(1).optional(),
+  minor_sector: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional()
+}).strict().refine((data) => Object.values(data).some((value) => value !== undefined));
 
 export const apiAddIngestionFilePayloadSchema = z.object({
   file_name: z.string().min(1, 'File name is required'),

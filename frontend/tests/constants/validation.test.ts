@@ -447,6 +447,9 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
   describe('API Outgoing Schemas', () => {
     it('should validate updateTenant payload', () => {
       expect(apiUpdateTenantPayloadSchema.safeParse({ enterprise_name: 'Corp' }).success).toBe(true);
+      expect(apiUpdateTenantPayloadSchema.safeParse({ financial_year: 'FY25-26' }).success).toBe(false);
+      expect(apiUpdateTenantPayloadSchema.safeParse({ base_currency: 'INVALID' }).success).toBe(false);
+      expect(apiUpdateTenantPayloadSchema.safeParse({}).success).toBe(false);
     });
 
     it('should validate addIngestionFile payload', () => {

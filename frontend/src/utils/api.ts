@@ -1,6 +1,7 @@
 import { apiFetch } from './apiFetch';
 import type {
   TenantMaster,
+  ApiUpdateTenantPayload,
   SpendCategorySummary,
   CategoryYearDetail,
   VendorYearDetail,
@@ -79,9 +80,19 @@ export const apiClient = {
     return json.data;
   },
 
-  async updateTenant(updates: Partial<TenantMaster>): Promise<TenantMaster> {
+  async updateTenant(updates: ApiUpdateTenantPayload): Promise<TenantMaster> {
     frontendLogger.info('Updating tenant configuration', { updates });
-    const validation = validateInput(apiUpdateTenantPayloadSchema, updates);
+    const payload: ApiUpdateTenantPayload = {
+      enterprise_name: updates.enterprise_name,
+      region: updates.region,
+      base_currency: updates.base_currency,
+      total_spend_evaluated: updates.total_spend_evaluated,
+      total_spend_evaluated_inr: updates.total_spend_evaluated_inr,
+      major_sector: updates.major_sector,
+      minor_sector: updates.minor_sector,
+      status: updates.status
+    };
+    const validation = validateInput(apiUpdateTenantPayloadSchema, payload);
     if (!validation.success) {
       throw new Error(`Invalid tenant updates: ${JSON.stringify(validation.errors)}`);
     }
@@ -92,7 +103,15 @@ export const apiClient = {
       body: JSON.stringify(validation.data)
     });
     const json = await res.json();
-    frontendLogger.info('Tenant updated successfully');
+    const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      frontendLogger.error('Tenant update request failed', { status: res.status, requestId, detail });
+      throw new Error(UI_STRINGS.module4.apiRequestFailed(
+        UI_STRINGS.module4.apiOperations.tenant, res.status, detail, requestId
+      ));
+    }
+    frontendLogger.info('Tenant updated successfully', { tenantId: json.data?.tenant_id, requestId });
     return json.data;
   },
 

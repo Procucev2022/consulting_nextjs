@@ -114086,3 +114086,7 @@ Keep solving the architectural issues as well. Do a detailed analysis, do not st
 ## Prompt 606
 
 One tenant per user, stored as an explicit User.tenant_id (Recommended)
+
+## Prompt 607
+
+Keep committing & pushing the changes one by one. as soon as you improve something

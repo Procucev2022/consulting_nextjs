@@ -62,6 +62,8 @@ describe('apiClient', () => {
   it('updateTenant should perform PUT /api/tenant and return data', async () => {
     const mockData = { tenant_id: 'TNT-123', region: 'EU' };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 

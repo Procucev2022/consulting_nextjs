@@ -83,6 +83,24 @@ describe('apiClient coverage', () => {
       await expect(apiClient.updateTenant({ enterprise_name: '' })).rejects.toThrow('Invalid tenant updates');
       expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it('logs and returns the correlated error when tenant updates fail', async () => {
+      const log = vi.spyOn(frontendLogger, 'error');
+      fetchMock.mockResolvedValueOnce(new Response('{}', {
+        status: 400,
+        headers: { 'x-request-id': 'REQ-TENANT-400' }
+      }));
+
+      await expect(apiClient.updateTenant({ region: 'EU' })).rejects.toThrow(UI_STRINGS.module4.apiRequestFailed(
+        UI_STRINGS.module4.apiOperations.tenant, 400, UI_STRINGS.module4.apiNoDetails, 'REQ-TENANT-400'
+      ));
+      expect(log).toHaveBeenCalledWith('Tenant update request failed', expect.objectContaining({
+        status: 400,
+        requestId: 'REQ-TENANT-400',
+        detail: UI_STRINGS.module4.apiNoDetails
+      }));
+      log.mockRestore();
+    });
   });
 
   describe('categories, vendors and merges', () => {

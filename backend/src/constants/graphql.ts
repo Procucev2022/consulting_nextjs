@@ -264,7 +264,8 @@ export const GRAPHQL_SCHEMA_SDL = `
     region: String
     base_currency: String
     status: String
-    total_spend_evaluated_inr: Float
+    total_spend_evaluated: Float, total_spend_evaluated_inr: Float
+    major_sector: String, minor_sector: String
   }
 
   input IngestionInput {

@@ -104,19 +104,15 @@ export const requestHeadersSchema = z.object({
 
 // Tenant Update Body Schema
 export const tenantUpdateSchema = z.object({
-  enterprise_name: z.string().min(1).optional(),
-  region: z.string().min(1).optional(),
-  base_currency: z.string().min(1).optional(),
-  financial_year: z.string().min(1).optional(),
-  total_spend_evaluated: z.number().nonnegative().optional(),
-  total_spend_evaluated_inr: z.number().nonnegative().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional(),
-  erp_source: z.string().optional(),
-  refresh_cycle: z.string().optional(),
-  major_sector: z.string().min(1).optional(),
-  minor_sector: z.string().min(1).optional(),
-  status: z.string().optional()
-}).refine((data) => Object.keys(data).length > 0, {
+  enterprise_name: z.string().trim().min(1).nullable().optional(),
+  region: z.string().trim().min(1).nullable().optional(),
+  base_currency: z.string().trim().regex(/^[A-Z]{3}$/u).nullable().optional(),
+  total_spend_evaluated: z.number().finite().nonnegative().nullable().optional(),
+  total_spend_evaluated_inr: z.number().finite().nonnegative().nullable().optional(),
+  major_sector: z.string().trim().min(1).nullable().optional(),
+  minor_sector: z.string().trim().min(1).nullable().optional(),
+  status: z.string().trim().min(1).nullable().optional()
+}).strict().refine((data) => Object.values(data).some((value) => value !== undefined && value !== null), {
   message: 'At least one field to update must be provided'
 });
 

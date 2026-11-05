@@ -4,7 +4,9 @@ import {
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
-import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
+import type {
+  CloudflareD1MutationResult, CloudflareEnvironment, CloudflareExecutionContext
+} from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
 import { handleUpgradeRoute } from './services/workerCommercialUpgrade';
 import { handleSubscriptionRoute } from './services/workerCommercialSubscriptions';
@@ -20,7 +22,7 @@ import {
   requireD1Binding
 } from './workerD1';
 import {
-  d1DatasetScopeSchema, requestHeadersSchema
+  d1DatasetScopeSchema, requestHeadersSchema, tenantUpdateSchema
 } from './constants/validation';
 import logger from './utils/logger';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
@@ -139,13 +141,55 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
     const body = await readJson(request);
     const tenantId = environment.REQUEST_TENANT_ID;
     if (!tenantId) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, 403, request);
-    await database.prepare(`
+    const validation = tenantUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      const requestId = request.headers.get('x-request-id');
+      logger.warn(D1_ROUTE_MESSAGES.validationFailed, {
+        requestId,
+        method: request.method,
+        path: new URL(request.url).pathname,
+        tenantId,
+        operation: 'tenant-update',
+        errors: validation.error.issues
+      });
+      return jsonResponse({
+        success: false,
+        message: D1_ROUTE_MESSAGES.validationFailed,
+        errors: validation.error.issues
+      }, 400, request);
+    }
+    const updates = validation.data;
+    const result = await database.prepare(`
       UPDATE TenantMaster
       SET enterprise_name = COALESCE(?, enterprise_name), region = COALESCE(?, region), base_currency = COALESCE(?, base_currency),
+          total_spend_evaluated = COALESCE(?, total_spend_evaluated), total_spend_evaluated_inr = COALESCE(?, total_spend_evaluated_inr),
           status = COALESCE(?, status), major_sector = COALESCE(?, major_sector), minor_sector = COALESCE(?, minor_sector),
           updated_at = CURRENT_TIMESTAMP
       WHERE tenant_id = ?
-    `).bind(body.enterprise_name ?? null, body.region ?? null, body.base_currency ?? null, body.status ?? null, body.major_sector ?? null, body.minor_sector ?? null, tenantId).run();
+    `).bind(
+      updates.enterprise_name ?? null,
+      updates.region ?? null,
+      updates.base_currency ?? null,
+      updates.total_spend_evaluated ?? null,
+      updates.total_spend_evaluated_inr ?? null,
+      updates.status ?? null,
+      updates.major_sector ?? null,
+      updates.minor_sector ?? null,
+      tenantId
+    ).run() as CloudflareD1MutationResult;
+    const affectedRows = result.meta?.changes ?? result.changes;
+    if (affectedRows !== undefined && Number(affectedRows) === 0) {
+      const message = D1_ROUTE_MESSAGES.tenantUnavailable(tenantId);
+      logger.warn(message, {
+        requestId: request.headers.get('x-request-id') || undefined,
+        method: request.method,
+        path: new URL(request.url).pathname,
+        tenantId,
+        operation: 'tenant-update',
+        affectedRows: Number(affectedRows)
+      });
+      return jsonResponse({ success: false, message }, 404, request);
+    }
     return apiData(await getTenant(environment), request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
