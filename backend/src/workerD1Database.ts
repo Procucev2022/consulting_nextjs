@@ -1,4 +1,4 @@
-import { D1_SCHEMA_QUERY } from './constants/d1';
+import { D1_DATABASE_STATUS_QUERY, D1_SCHEMA_QUERY } from './constants/d1';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import type { D1SchemaQueryRow, D1SchemaTable } from './types/d1';
 import { getD1ReferenceDataCacheSize } from './services/d1ReferenceDataCache';
@@ -47,22 +47,14 @@ export const handleDatabaseRoute = async (
     const database = environment.DB;
     if (!database) return jsonResponse({ success: false, message: 'Cloudflare D1 binding DB is not configured.' }, 503, request);
     requireD1Binding(database);
-    const tables = await database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all<{ name: string }>();
-    const recordCount = await database.prepare(`SELECT
-      (SELECT COUNT(*) FROM TenantMaster) +
-      (SELECT COUNT(*) FROM RawDocumentIngestion) +
-      (SELECT COUNT(*) FROM ValidationPreCheckRecord) +
-      (SELECT COUNT(*) FROM SpendCategorySummary) +
-      (SELECT COUNT(*) FROM VendorYearDetail) +
-      (SELECT COUNT(*) FROM AssessmentRecord) +
-      (SELECT COUNT(*) FROM ProcurementTransaction) AS totalRecords`).first<{ totalRecords: number }>();
+    const statusRows = await database.prepare(D1_DATABASE_STATUS_QUERY).all<{ name: string; totalRecords: number }>();
     return apiData({
       isConnected: true,
       provider: 'Cloudflare D1',
       databaseName: environment.D1_DATABASE_NAME || null,
       serverTime: new Date().toISOString(),
-      tablesCount: tables.results.length,
-      totalRecords: Number(recordCount?.totalRecords || 0)
+      tablesCount: statusRows.results.length,
+      totalRecords: Number(statusRows.results[0]?.totalRecords || 0)
     }, request);
   }
   if (path.endsWith('/test-connection')) {

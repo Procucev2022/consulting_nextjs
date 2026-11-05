@@ -200,3 +200,18 @@ export const D1_SCHEMA_QUERY = `
     AND schema.name NOT LIKE 'd1_%'
   ORDER BY schema.name, columns.cid
 `;
+export const D1_DATABASE_STATUS_QUERY = `
+  SELECT tables.name, totals.totalRecords
+  FROM sqlite_master AS tables
+  CROSS JOIN (
+    SELECT
+      (SELECT COUNT(*) FROM TenantMaster) +
+      (SELECT COUNT(*) FROM RawDocumentIngestion) +
+      (SELECT COUNT(*) FROM ValidationPreCheckRecord) +
+      (SELECT COUNT(*) FROM SpendCategorySummary) +
+      (SELECT COUNT(*) FROM VendorYearDetail) +
+      (SELECT COUNT(*) FROM AssessmentRecord) +
+      (SELECT COUNT(*) FROM ProcurementTransaction) AS totalRecords
+  ) AS totals
+  WHERE tables.type = 'table' AND tables.name NOT LIKE 'sqlite_%'
+`;

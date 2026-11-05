@@ -1533,6 +1533,7 @@ describe('Cloudflare worker core routes', () => {
       ].reduce((total, tableName) => total + Number(
         fixture.db.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get<{ count: number }>()?.count || 0
       ), 0);
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
 
       const data = await dataOf(await send('/api/db/status', {}, runtimeEnvironment({ DB: fixture.d1, D1_DATABASE_NAME: 'consulting-dev' })));
 
@@ -1543,6 +1544,8 @@ describe('Cloudflare worker core routes', () => {
         tablesCount: tables?.n,
         totalRecords: expectedRecordCount
       });
+      expect(prepareSpy.mock.calls).toHaveLength(1);
+      expect(prepareSpy.mock.calls[0]?.[0]).toContain('CROSS JOIN');
     });
 
     it('reports a null database name when the binding name is not configured', async () => {
