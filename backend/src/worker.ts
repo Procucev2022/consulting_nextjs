@@ -4,9 +4,7 @@ import {
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
-import type {
-  CloudflareD1MutationResult, CloudflareEnvironment, CloudflareExecutionContext
-} from './types/cloudflare';
+import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
 import { handleUpgradeRoute } from './services/workerCommercialUpgrade';
 import { handleSubscriptionRoute } from './services/workerCommercialSubscriptions';
@@ -159,13 +157,14 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
       }, 400, request);
     }
     const updates = validation.data;
-    const result = await database.prepare(`
+    const updatedTenant = await database.prepare(`
       UPDATE TenantMaster
       SET enterprise_name = COALESCE(?, enterprise_name), region = COALESCE(?, region), base_currency = COALESCE(?, base_currency),
           total_spend_evaluated = COALESCE(?, total_spend_evaluated), total_spend_evaluated_inr = COALESCE(?, total_spend_evaluated_inr),
           status = COALESCE(?, status), major_sector = COALESCE(?, major_sector), minor_sector = COALESCE(?, minor_sector),
           updated_at = CURRENT_TIMESTAMP
       WHERE tenant_id = ?
+      RETURNING *
     `).bind(
       updates.enterprise_name ?? null,
       updates.region ?? null,
@@ -176,9 +175,8 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
       updates.major_sector ?? null,
       updates.minor_sector ?? null,
       tenantId
-    ).run() as CloudflareD1MutationResult;
-    const affectedRows = result.meta?.changes ?? result.changes;
-    if (affectedRows !== undefined && Number(affectedRows) === 0) {
+    ).first<Record<string, unknown>>();
+    if (!updatedTenant) {
       const message = D1_ROUTE_MESSAGES.tenantUnavailable(tenantId);
       logger.warn(message, {
         requestId: request.headers.get('x-request-id') || undefined,
@@ -186,11 +184,11 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
         path: new URL(request.url).pathname,
         tenantId,
         operation: 'tenant-update',
-        affectedRows: Number(affectedRows)
+        affectedRows: 0
       });
       return jsonResponse({ success: false, message }, 404, request);
     }
-    return apiData(await getTenant(environment), request);
+    return apiData(updatedTenant, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
     const authResult = await handleAuthRoute(request, environment, url);

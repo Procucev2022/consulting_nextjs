@@ -758,6 +758,7 @@ describe('Cloudflare worker core routes', () => {
       seedTenant();
 
       const read = await send('/api/tenant?tenantId=TNT-1');
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const updated = await send('/api/tenant?tenantId=TNT-1', jsonBody('PUT', {
         enterprise_name: 'Beta Holdings',
         total_spend_evaluated: 500,
@@ -766,6 +767,8 @@ describe('Cloudflare worker core routes', () => {
 
       await expect(bodyOf(read)).resolves.toMatchObject({ success: true, data: { tenant_id: 'TNT-1', enterprise_name: 'Alpha Enterprises', region: 'APAC' } });
       expect(updated.status).toBe(200);
+      expect(prepareSpy.mock.calls).toHaveLength(1);
+      expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       await expect(bodyOf(updated)).resolves.toMatchObject({
         data: {
           enterprise_name: 'Beta Holdings', region: 'APAC', base_currency: 'INR',
@@ -817,12 +820,14 @@ describe('Cloudflare worker core routes', () => {
 
     it('returns a correlated not-found error when the assigned tenant row is missing', async () => {
       const warning = vi.spyOn(logger, 'warn');
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const response = await send('/api/tenant', {
         ...jsonBody('PUT', { enterprise_name: 'Renamed tenant' }),
         headers: { 'Content-Type': 'application/json', 'x-request-id': 'req-tenant-missing' }
       }, runtimeEnvironment({ DB: fixture.d1, REQUEST_TENANT_ID: 'TNT-MISSING' }));
 
       expect(response.status).toBe(404);
+      expect(prepareSpy.mock.calls).toHaveLength(1);
       await expect(bodyOf(response)).resolves.toEqual({
         success: false,
         message: D1_ROUTE_MESSAGES.tenantUnavailable('TNT-MISSING')
