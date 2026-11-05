@@ -103,8 +103,8 @@ const handleStaticDataRoute = async (
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/savings`) {
     const database = requireD1Binding(environment.DB);
-    const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined);
-    const tenantId = tenant.tenant_id;
+    const tenantId = environment.REQUEST_TENANT_ID;
+    if (!tenantId) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, 403, request);
     if (request.method === 'POST') {
       const parsed = deployOpportunitySchema.safeParse(await readJson(request));
       if (!parsed.success) return jsonResponse({ success: false, message: 'Opportunity deployment request is invalid.', errors: parsed.error.issues }, 400, request);

@@ -1786,12 +1786,16 @@ describe('Cloudflare worker core routes', () => {
         ['OPP-OTHER', 'TNT-2']
       ]);
 
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
+
       const data = await dataOf(await send('/api/savings?tenantId=TNT-1'));
       const cachedData = await dataOf(await send('/api/savings?tenantId=TNT-1'));
 
       expect(data).toMatchObject({ totalPotentialSavingsCr: 2.5 });
       expect(data.opportunities).toHaveLength(2);
       expect(cachedData).toEqual(data);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
     });
 
@@ -1812,7 +1816,10 @@ describe('Cloudflare worker core routes', () => {
       ]);
 
       await send('/api/savings?tenantId=TNT-1');
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const deployed = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: 'OPP-DEPLOY', targetModule: 'DPS NXT' }));
+      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(2);
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       const persisted = await fixture.d1.prepare('SELECT recommended_module, push_to_module, status FROM SavingsOpportunity WHERE opp_id = ?')
         .bind('OPP-DEPLOY').first();
       const invalid = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: '', targetModule: 'unknown' }));
@@ -1834,6 +1841,23 @@ describe('Cloudflare worker core routes', () => {
       await expect(fixture.d1.prepare('SELECT status FROM SavingsOpportunity WHERE opp_id = ?').bind('OPP-OTHER').first())
         .resolves.toEqual({ status: 'Identified' });
       expect(unsupported.status).toBe(405);
+    });
+
+    it('rejects a savings request without resolved tenant scope before querying D1', async () => {
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
+      vi.mocked(authorizeTenantRequest).mockImplementationOnce(async (authorizedRequest, environment) => ({
+        request: authorizedRequest,
+        environment
+      }));
+
+      const response = await workerFetch(request('/api/savings'), environmentWithDb(), execution);
+
+      expect(response.status).toBe(403);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.tenantScopeRequired
+      });
+      expect(prepareSpy).not.toHaveBeenCalled();
     });
 
     it.each([

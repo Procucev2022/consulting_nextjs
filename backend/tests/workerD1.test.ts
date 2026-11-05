@@ -555,6 +555,7 @@ describe('workerD1 savings routes', () => {
 
   it('updates an opportunity status and returns the refreshed row', async () => {
     seedSavings();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
 
     const result = await handleSavingsRoute(
       fixture.d1,
@@ -564,6 +565,7 @@ describe('workerD1 savings routes', () => {
     );
 
     expect(result.data).toMatchObject({ opp_id: 'OPP-1', status: 'APPROVED' });
+    expect(prepare.mock.calls.some(([sql]) => sql.includes('FROM TenantMaster'))).toBe(false);
     await expect(fixture.d1.prepare('SELECT status FROM SavingsOpportunity WHERE opp_id = ?').bind('OPP-1').first()).resolves.toEqual({ status: 'APPROVED' });
   });
 
@@ -609,6 +611,7 @@ describe('workerD1 savings routes', () => {
   it('updates persisted action-plan owner, status, priority and comments, then returns the refreshed plan', async () => {
     seedSavings();
     seedActionPlans();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
     const path = '/api/savings/action-plan/update';
 
     const result = await handleSavingsRoute(
@@ -621,6 +624,7 @@ describe('workerD1 savings routes', () => {
     expect(result).toMatchObject({ data: {
       id: 'ACT-1', status: 'Completed', owner: 'Finance', priority: 'LOW', comments: 'Signed off', target_date: '2026-12-15'
     } });
+    expect(prepare.mock.calls.some(([sql]) => sql.includes('FROM TenantMaster'))).toBe(false);
     await expect(fixture.d1.prepare('SELECT status, owner FROM ActionPlanItem WHERE id = ?').bind('ACT-1').first())
       .resolves.toEqual({ status: 'COMPLETED', owner: 'Finance' });
     await expect(fixture.d1.prepare('SELECT priority, comments FROM ActionPlanItemDetails WHERE action_id = ?').bind('ACT-1').first())
@@ -647,6 +651,29 @@ describe('workerD1 savings routes', () => {
     await expect(handleSavingsRoute(
       fixture.d1, '/action-plan/update', jsonPost(path, '{"actionId":'), new URL(`https://edge.example.com${path}`)
     )).rejects.toBeInstanceOf(RequestJsonParseError);
+  });
+
+  it('rejects savings mutations without resolved tenant context before querying D1', async () => {
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
+    const actionPlanPath = '/api/savings/action-plan/update';
+    const actionPlanResult = await handleSavingsRouteImpl(
+      fixture.d1,
+      '/action-plan/update',
+      jsonPost(actionPlanPath, JSON.stringify({ actionId: 'ACT-1', status: 'Completed' })),
+      new URL(`https://edge.example.com${actionPlanPath}`),
+      runtimeEnvironment()
+    );
+    const statusResult = await handleSavingsRouteImpl(
+      fixture.d1,
+      '/opportunity/status',
+      jsonPost(SAVINGS_STATUS_PATH, JSON.stringify({ opp_id: 'OPP-1', status: 'APPROVED' })),
+      new URL(`https://edge.example.com${SAVINGS_STATUS_PATH}`),
+      runtimeEnvironment()
+    );
+
+    expect(actionPlanResult).toMatchObject({ status: 403, data: { message: D1_ROUTE_MESSAGES.tenantScopeRequired } });
+    expect(statusResult).toMatchObject({ status: 403, data: { message: D1_ROUTE_MESSAGES.tenantScopeRequired } });
+    expect(prepare).not.toHaveBeenCalled();
   });
 
   it('rejects wrong methods and unknown savings endpoints without claiming successful updates', async () => {

@@ -279,8 +279,9 @@ export const handleSavingsRoute = async (
   };
   if (subPath === '/action-plan/update') {
     const input = await readJson(request);
-    const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined);
-    const result = await updateActionPlanInD1(database, input, tenant.tenant_id);
+    const tenantId = environment.REQUEST_TENANT_ID;
+    if (!tenantId) return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
+    const result = await updateActionPlanInD1(database, input, tenantId);
     if (result.status === undefined) logger.info('Savings action plan updated in D1', {
       requestId: request.headers.get('x-request-id'), actionId: (result.data as { id?: string } | null)?.id
     });
@@ -315,8 +316,9 @@ export const handleSavingsRoute = async (
   }
   if (subPath === '/opportunity/status' && request.method === 'POST') {
     const input = await readJson(request);
-    const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined);
-    return updateOpportunityStatusInD1(database, input, tenant.tenant_id);
+    const tenantId = environment.REQUEST_TENANT_ID;
+    if (!tenantId) return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
+    return updateOpportunityStatusInD1(database, input, tenantId);
   }
   return { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.unknownSavings } };
 };
