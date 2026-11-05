@@ -1245,8 +1245,13 @@ describe('Cloudflare worker core routes', () => {
       ]);
       fixture.db.prepare("UPDATE ValidationPreCheckRecord SET tenant_id = 'TNT-1'").run();
 
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
       const records = data.records as Array<Record<string, unknown>>;
+      const updateStatements = prepareSpy.mock.calls.filter(([sql]) => sql.includes('UPDATE ValidationPreCheckRecord'));
+      expect(updateStatements).toHaveLength(1);
+      expect(updateStatements[0]?.[0]).toContain('RETURNING *');
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('SELECT * FROM ValidationPreCheckRecord WHERE record_id'))).toBe(false);
       const persisted = await fixture.d1.prepare('SELECT amount_inr, inr_crores, fx_rate_applied, issue_flag, action_status, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX').first();
       const untouched = await fixture.d1.prepare('SELECT amount_inr, issue_flag, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-NO-DATE').first();
 

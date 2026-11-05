@@ -55,7 +55,7 @@ const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{
     WHERE tenant_id = ? AND COALESCE(amount, 0) > 0 AND COALESCE(raw_currency, '') <> ''
     ORDER BY created_at DESC LIMIT ?
   `).bind(tenantId, D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
-  const updatedIds: string[] = [];
+  const updatedRecords: Record<string, unknown>[] = [];
 
   for (const record of candidates.results || []) {
     const currency = String(record.raw_currency || '').trim().toUpperCase();
@@ -87,27 +87,26 @@ const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{
       String(record.action_status || '') !== actionStatus;
     if (!changed) continue;
 
-    await database.prepare(`
+    const updatedRecord = await database.prepare(`
       UPDATE ValidationPreCheckRecord
       SET fx_rate_applied = ?, amount_inr = ?, inr_crores = ?, resolved = ?, issue_flag = ?, action_status = ?
       WHERE record_id = ? AND tenant_id = ?
-    `).bind(rate, amountInr, inrCrores, resolved, issueFlag, actionStatus, record.record_id, tenantId).run();
-    updatedIds.push(String(record.record_id));
+      RETURNING *
+    `).bind(rate, amountInr, inrCrores, resolved, issueFlag, actionStatus, record.record_id, tenantId)
+      .first<Record<string, unknown>>();
+    if (updatedRecord) updatedRecords.push(updatedRecord);
   }
 
-  const records = await Promise.all(updatedIds.map((recordId) =>
-    database.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ? AND tenant_id = ?').bind(recordId, tenantId).first<Record<string, unknown>>()
-  ));
   logger.info('D1-backed validation currency remediation completed', {
-    updatedCount: updatedIds.length,
+    updatedCount: updatedRecords.length,
     candidateCount: candidates.results?.length || 0,
     tenantId
   });
   return {
     data: {
-      updatedCount: updatedIds.length,
-      skippedCount: Math.max(0, (candidates.results?.length || 0) - updatedIds.length),
-      records: records.filter((record): record is Record<string, unknown> => Boolean(record)).map((record) => ({
+      updatedCount: updatedRecords.length,
+      skippedCount: Math.max(0, (candidates.results?.length || 0) - updatedRecords.length),
+      records: updatedRecords.map((record) => ({
         ...record,
         resolved: Boolean(record.resolved)
       }))
