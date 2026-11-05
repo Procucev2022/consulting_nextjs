@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   mapD1Customer, mapD1Assessment, mapD1DataVersion, mapD1AnalysisRun, mapD1AuditLog,
-  loadAssessmentSnapshots, mapD1SnapshotCollection
+  loadAssessmentSnapshots, loadAssessmentSnapshotsForIds, mapD1SnapshotCollection
 } from '../../src/services/assessmentD1Mappers';
 import { ASSESSMENT_SNAPSHOT_SQL } from '../../src/constants/assessmentD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
@@ -79,6 +79,29 @@ describe('assessment D1 API serialization', () => {
     expect(bind).toHaveBeenLastCalledWith('customer');
     all.mockResolvedValueOnce({ results: [{ entry_id: 'bad', payload_json: 'invalid' }] });
     await expect(loadAssessmentSnapshots(database, 'run', 'A1')).rejects.toThrow();
+  });
+
+  it('loads snapshots for multiple scoped records in one statement and skips empty scopes', async () => {
+    const all = vi.fn().mockResolvedValue({
+      results: [
+        { entry_id: 'C1', payload_json: '{"customerId":"C1","custom":"one"}' },
+        { entry_id: 'C2', payload_json: '{"customerId":"C2","custom":"two"}' }
+      ]
+    });
+    const bind = vi.fn().mockReturnValue({ all });
+    const prepare = vi.fn().mockReturnValue({ bind });
+    const database = { prepare } as unknown as CloudflareD1Database;
+
+    await expect(loadAssessmentSnapshotsForIds(database, 'customer', [])).resolves.toEqual(new Map());
+    expect(prepare).not.toHaveBeenCalled();
+
+    const snapshots = await loadAssessmentSnapshotsForIds(database, 'customer', ['C1', 'C2']);
+    expect(snapshots).toEqual(new Map([
+      ['C1', { customerId: 'C1', custom: 'one' }], ['C2', { customerId: 'C2', custom: 'two' }]
+    ]));
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(prepare).toHaveBeenCalledWith(ASSESSMENT_SNAPSHOT_SQL.byAssessmentIds);
+    expect(bind).toHaveBeenCalledWith('customer', '["C1","C2"]');
   });
 
   it('returns all source runs and versions despite legacy scalar identifiers colliding across assessments', () => {

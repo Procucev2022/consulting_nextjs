@@ -279,6 +279,31 @@ describe('workerD1Assessment handler', () => {
     }
   });
 
+  it('loads list snapshots for all tenant customers with one scoped D1 query', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.prepare(`INSERT INTO CustomerRecord (customer_id, tenant_id, customer_name, industry)
+      VALUES ('C-A', 'TENANT-A', 'Alpha', 'Manufacturing'), ('C-C', 'TENANT-A', 'Gamma', 'Automotive')`).run();
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (entry_type, assessment_id, entry_id, payload_json, source_checksum)
+      VALUES ('customer', 'C-A', 'C-A', '{"customerId":"C-A","customMetadata":{"segment":"A"}}', 'sum-a'),
+        ('customer', 'C-C', 'C-C', '{"customerId":"C-C","customMetadata":{"segment":"C"}}', 'sum-c'),
+        ('customer', 'C-OTHER', 'C-OTHER', '{"customerId":"C-OTHER","customMetadata":{"segment":"other"}}', 'sum-other')`).run();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
+    try {
+      const response = await handleAssessmentRoute(fixture.d1, '/customers', req('/customers'),
+        new URL('https://consulting.edge/api/assessment/customers'), { REQUEST_TENANT_ID: 'TENANT-A' });
+      const snapshotQueries = prepare.mock.calls.filter(([sql]) => sql.includes('AssessmentStoreEntry'));
+      expect(snapshotQueries).toHaveLength(1);
+      expect(snapshotQueries[0][0]).toContain('json_each(?)');
+      expect(response.data).toMatchObject([
+        { customerId: 'C-A', customMetadata: { segment: 'A' } },
+        { customerId: 'C-C', customMetadata: { segment: 'C' } }
+      ]);
+      expect(response.data).not.toMatchObject([{ customerId: 'C-OTHER' }]);
+    } finally {
+      fixture.close();
+    }
+  });
+
   it('creates an unlinked customer and assessment together inside the assigned tenant', async () => {
     const fixture = createWorkerDatabase();
     const create = req('/', {

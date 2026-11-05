@@ -93,5 +93,7 @@ export const ASSESSMENT_D1_MESSAGES = {
 
 export const ASSESSMENT_SNAPSHOT_SQL = {
   byType: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
-  byAssessment: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?'
+  byAssessment: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?',
+  byAssessmentIds: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? ' +
+    'AND assessment_id IN (SELECT value FROM json_each(?))'
 } as const;

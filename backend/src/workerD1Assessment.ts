@@ -16,7 +16,7 @@ import { handleAssessmentLifecycleAction } from './services/assessmentLifecycleD
 import type { AssessmentLifecycleActionContext } from './types/assessmentDataVersionD1';
 import {
   mapD1Customer, mapD1Assessment, mapD1DataVersion, mapD1AnalysisRun, mapD1AuditLog,
-  loadAssessmentSnapshots, mapD1SnapshotCollection
+  loadAssessmentSnapshots, loadAssessmentSnapshotsForIds, mapD1SnapshotCollection
 } from './services/assessmentD1Mappers';
 import { runAssessmentAnalysisFromD1 } from './services/assessmentAnalysisD1';
 import { runStatements } from './services/assessmentDataVersionD1Helpers';
@@ -39,10 +39,7 @@ const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, v
 
 const loadScopedSnapshots = async (
   db: CloudflareD1Database, entryType: 'customer' | 'assessment', ids: string[]
-): Promise<Map<string, D1Record>> => {
-  const snapshots = await Promise.all(ids.map((id) => loadAssessmentSnapshots(db, entryType, id)));
-  return new Map(snapshots.flatMap((snapshot) => [...snapshot.entries()]));
-};
+): Promise<Map<string, D1Record>> => loadAssessmentSnapshotsForIds(db, entryType, ids);
 
 const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): Promise<D1Record[]> => {
   const rows = await queryAll<D1Record>(db,

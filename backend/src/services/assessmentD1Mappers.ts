@@ -24,6 +24,17 @@ export async function loadAssessmentSnapshots(
   ]));
 }
 
+export async function loadAssessmentSnapshotsForIds(
+  db: CloudflareD1Database, entryType: AssessmentSnapshotType, assessmentIds: string[]
+): Promise<Map<string, D1Record>> {
+  if (assessmentIds.length === 0) return new Map();
+  const rows = await db.prepare(ASSESSMENT_SNAPSHOT_SQL.byAssessmentIds)
+    .bind(entryType, JSON.stringify(assessmentIds)).all<AssessmentSnapshotRow>();
+  return new Map(rows.results.map((row) => [
+    row.entry_id, assessmentD1ObjectSchema.parse(JSON.parse(row.payload_json))
+  ]));
+}
+
 export function mapD1SnapshotCollection<T>(
   rows: D1Record[], snapshots: Map<string, D1Record>, mapper: (row: D1Record, snapshot?: D1Record) => T
 ): T[] {
