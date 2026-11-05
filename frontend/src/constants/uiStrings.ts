@@ -1378,12 +1378,15 @@ export const UI_STRINGS = {
     apiOperations: {
       load: 'load consolidated savings',
       tenant: 'load the assigned organization',
+      tenantUpdate: 'update the assigned organization',
       ingestion: 'load the tenant ingestion queue and validation records',
       actionPlan: 'save the action plan',
       opportunity: 'save the opportunity status'
     },
     apiNoDetails: 'The server returned no usable savings data or error detail',
+    tenantApiNoDetails: 'The server returned no organization error detail',
     apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry after checking Worker route availability. If this continues, contact support with request ${requestId}.`,
+    apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed JSON. Retry; if this continues, contact support with request ${requestId}.`,
     saveFailed: (reason: string): string => `The savings change was not saved: ${reason}. The last persisted values are still displayed; retry after the service is available.`,
     title: 'SAVINGS ENGINE',
     subtitle: 'Consolidated Savings, Actions & Realization',

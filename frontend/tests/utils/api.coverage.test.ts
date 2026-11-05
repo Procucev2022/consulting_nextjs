@@ -17,6 +17,7 @@ describe('apiClient coverage', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     fetchMock.mockReset();
   });
 
@@ -68,6 +69,27 @@ describe('apiClient coverage', () => {
       expect(log).toHaveBeenCalledWith('Tenant master request failed', expect.objectContaining({
         tenantId: 'TNT-2', status: 403, requestId: 'REQ-TENANT-403'
       }));
+      fetchMock.mockResolvedValueOnce(new Response('{}', {
+        status: 500, headers: { 'x-request-id': 'REQ-TENANT-500' }
+      }));
+      await expect(apiClient.getTenant('TNT-2')).rejects.toThrow(UI_STRINGS.module4.apiRequestFailed(
+        UI_STRINGS.module4.apiOperations.tenant, 500, UI_STRINGS.module4.tenantApiNoDetails, 'REQ-TENANT-500'
+      ));
+      log.mockRestore();
+    });
+
+    it('logs malformed tenant read responses with HTTP and request context', async () => {
+      const log = vi.spyOn(frontendLogger, 'error');
+      fetchMock.mockResolvedValueOnce(new Response('<html>upstream error</html>', {
+        status: 502, headers: { 'x-request-id': 'REQ-TENANT-READ-502' }
+      }));
+
+      await expect(apiClient.getTenant('TNT-READ')).rejects.toThrow(UI_STRINGS.module4.apiInvalidResponse(
+        UI_STRINGS.module4.apiOperations.tenant, 502, 'REQ-TENANT-READ-502'
+      ));
+      expect(log).toHaveBeenCalledWith('Tenant API response could not be parsed', expect.objectContaining({
+        method: 'GET', path: '/api/tenant', statusCode: 502, tenantId: 'TNT-READ', requestId: 'REQ-TENANT-READ-502'
+      }), expect.any(SyntaxError));
       log.mockRestore();
     });
 
@@ -92,14 +114,34 @@ describe('apiClient coverage', () => {
       }));
 
       await expect(apiClient.updateTenant({ region: 'EU' })).rejects.toThrow(UI_STRINGS.module4.apiRequestFailed(
-        UI_STRINGS.module4.apiOperations.tenant, 400, UI_STRINGS.module4.apiNoDetails, 'REQ-TENANT-400'
+        UI_STRINGS.module4.apiOperations.tenantUpdate, 400, UI_STRINGS.module4.tenantApiNoDetails, 'REQ-TENANT-400'
       ));
       expect(log).toHaveBeenCalledWith('Tenant update request failed', expect.objectContaining({
         status: 400,
         requestId: 'REQ-TENANT-400',
-        detail: UI_STRINGS.module4.apiNoDetails
+        detail: UI_STRINGS.module4.tenantApiNoDetails
       }));
       log.mockRestore();
+    });
+
+    it('logs malformed tenant update responses and does not log submitted values', async () => {
+      const log = vi.spyOn(frontendLogger, 'error');
+      const info = vi.spyOn(frontendLogger, 'info');
+      fetchMock.mockResolvedValueOnce(new Response('<html>upstream error</html>', {
+        status: 200, headers: { 'x-request-id': 'REQ-TENANT-UPDATE-JSON' }
+      }));
+
+      await expect(apiClient.updateTenant({ total_spend_evaluated_inr: 75 })).rejects.toThrow(
+        UI_STRINGS.module4.apiInvalidResponse(UI_STRINGS.module4.apiOperations.tenantUpdate, 200, 'REQ-TENANT-UPDATE-JSON')
+      );
+      expect(log).toHaveBeenCalledWith('Tenant API response could not be parsed', expect.objectContaining({
+        method: 'PUT', path: '/api/tenant', statusCode: 200, operation: UI_STRINGS.module4.apiOperations.tenantUpdate,
+        requestId: 'REQ-TENANT-UPDATE-JSON'
+      }), expect.any(SyntaxError));
+      expect(info).toHaveBeenCalledWith('Updating tenant configuration', { fields: ['total_spend_evaluated_inr'] });
+      expect(info).not.toHaveBeenCalledWith('Updating tenant configuration', { updates: { total_spend_evaluated_inr: 75 } });
+      log.mockRestore();
+      info.mockRestore();
     });
   });
 
