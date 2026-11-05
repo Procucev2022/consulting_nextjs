@@ -799,23 +799,32 @@ describe('mergeVendor', () => {
     await insertVendorDetail(fixture.d1, 'VYD-1', 'Acme Stl', 'MV-1', 4);
     await insertVendorDetail(fixture.d1, 'VYD-2', 'Acme Stl Ltd', 'MV-1', 2);
     await insertVendorDetail(fixture.d1, 'VYD-3', 'Beta Metals', 'MV-2', 3);
+    await insertVendorRank(fixture.d1, 'MV-1', 'Acme Stl', 6);
+    await insertVendorRank(fixture.d1, 'MV-2', 'Beta Metals', 3);
 
     await resolvers.mergeVendor(MERGE_ARGS, contextFor(fixture.d1));
 
     const rows = await fixture.d1.prepare('SELECT id, vendor_name FROM VendorYearDetail ORDER BY id').all();
+    const rankings = await fixture.d1.prepare('SELECT master_id, vendor_name FROM VendorPriceRank ORDER BY master_id').all();
     expect(rows.results).toEqual([
       { id: 'VYD-1', vendor_name: 'Acme Steel' },
       { id: 'VYD-2', vendor_name: 'Acme Steel' },
       { id: 'VYD-3', vendor_name: 'Beta Metals' }
+    ]);
+    expect(rankings.results).toEqual([
+      { master_id: 'MV-1', vendor_name: 'Acme Steel' },
+      { master_id: 'MV-2', vendor_name: 'Beta Metals' }
     ]);
   });
 
   it('reports the number of rows changed from the D1 result metadata', async () => {
     const stub = createStubD1({ runResult: { success: true, meta: { changes: 3 } } });
 
-    expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 3 });
+    expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 6 });
     expect(stub.statements[0].sql).toContain('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?');
     expect(stub.statements[0].values).toEqual(['Acme Steel', 'MV-1', 'TNT-1']);
+    expect(stub.statements[1].sql).toContain('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ? AND tenant_id = ?');
+    expect(stub.statements[1].values).toEqual(['Acme Steel', 'MV-1', 'TNT-1']);
   });
 
   it('reports zero affected rows when the master vendor has no detail rows', async () => {
@@ -824,10 +833,35 @@ describe('mergeVendor', () => {
     expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 0 });
   });
 
+  it('keeps both vendor updates tenant-scoped when the GraphQL context has no tenant', async () => {
+    const stub = createStubD1({ runResult: { success: true, meta: { changes: 0 } } });
+    const context = { ...contextFor(stub.d1), tenantId: undefined };
+
+    expect(await resolvers.mergeVendor(MERGE_ARGS, context)).toEqual({ success: true, affected: 0 });
+    expect(stub.statements.map(({ values }) => values)).toEqual([
+      ['Acme Steel', 'MV-1', ''],
+      ['Acme Steel', 'MV-1', '']
+    ]);
+  });
+
   it('reports zero affected rows when the result has no metadata block', async () => {
     const stub = createStubD1({ runResult: { success: true } });
 
     expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 0 });
+  });
+
+  it('batches both tenant-scoped vendor table updates when D1 supports batch writes', async () => {
+    const stub = createStubD1();
+    const batch = vi.fn(async () => [
+      { meta: { changes: 2 } },
+      { meta: { changes: 1 } }
+    ]);
+    const d1 = { prepare: stub.d1.prepare, batch } as unknown as CloudflareD1Database;
+
+    await expect(resolvers.mergeVendor(MERGE_ARGS, contextFor(d1)))
+      .resolves.toEqual({ success: true, affected: 3 });
+    expect(batch).toHaveBeenCalledOnce();
+    expect(batch.mock.calls[0][0]).toHaveLength(2);
   });
 
   it('propagates write failures', async () => {

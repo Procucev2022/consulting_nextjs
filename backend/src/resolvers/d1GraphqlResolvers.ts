@@ -10,21 +10,17 @@ import { graphqlIngestionPageArgsSchema, tenantUpdateSchema } from '../constants
 import { getD1RuntimeMetrics } from '../services/d1QueryTelemetry';
 import { decodeGraphQLIngestionCursor, encodeGraphQLIngestionCursor } from '../services/graphqlIngestionCursor';
 import logger from '../utils/logger';
+import { mergeVendorResolver } from './d1GraphqlVendorResolvers';
 import type {
   CategoryDetailsArgs,
+  D1GraphQLContext,
   DeployOpportunityArgs,
   GraphQLIngestionPageRequest,
-  GraphQLContext,
   IngestionInputArgs,
-  MergeVendorArgs,
   UpdateTenantArgs,
   ValidationRecordArgs
 } from '../types/graphql';
 import type { TenantUpdateInput } from '../types/validation';
-
-interface D1GraphQLContext extends GraphQLContext {
-  db: CloudflareD1Database;
-}
 
 type D1Row = Record<string, unknown>;
 
@@ -274,14 +270,6 @@ const updateValidationResolver: D1Resolver = async (args, context) => {
   ).bind(input.issue_flag ?? null, input.action_status ?? null, resolvedValue, input.record_id, context.tenantId || '').run();
   return queryFirst(context.db, 'SELECT * FROM ValidationPreCheckRecord WHERE record_id = ? AND tenant_id = ?',
     [input.record_id, context.tenantId || '']);
-};
-
-const mergeVendorResolver: D1Resolver = async (args, context) => {
-  const input = (args as MergeVendorArgs).input;
-  const result = await context.db.prepare(
-    'UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?'
-  ).bind(input.canonicalName, input.masterId, context.tenantId || '').run() as { meta?: { changes?: number } };
-  return { success: true, affected: result.meta?.changes || 0 };
 };
 
 const deployOpportunityResolver: D1Resolver = async (args, context) => {

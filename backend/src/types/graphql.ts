@@ -5,6 +5,7 @@
  */
 
 import type { RawDocumentIngestion, TenantMaster, ValidationPreCheckRecord } from './models';
+import type { CloudflareD1Database } from './cloudflare';
 
 export interface GraphQLIngestionCursor {
   version: 1;
@@ -39,6 +40,10 @@ export interface GraphQLContext {
   userId?: string;
   role?: string;
   timestamp: string;
+}
+
+export interface D1GraphQLContext extends GraphQLContext {
+  db: CloudflareD1Database;
 }
 
 export interface GraphQLRequestPayload {
