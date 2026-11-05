@@ -15,7 +15,7 @@ import { geminiService } from '../src/services/geminiService';
 import { aiAnomalyService } from '../src/services/aiAnomalyService';
 import { aiCategorizationService } from '../src/services/aiCategorizationService';
 import { getTenantFromD1 } from '../src/workerD1';
-import { isD1DatabaseInstrumented } from '../src/services/d1QueryTelemetry';
+import { getD1RuntimeMetrics, isD1DatabaseInstrumented } from '../src/services/d1QueryTelemetry';
 import { handleAssessmentRoute } from '../src/workerD1Assessment';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { handleEvidenceRoute } from '../src/workerD1Evidence';
@@ -304,7 +304,7 @@ describe('Cloudflare backend worker', () => {
   });
 
   it('handles categories, vendors, and savings routes', async () => {
-    const all = vi.fn().mockResolvedValue({ results: [] });
+    const all = vi.fn().mockResolvedValue({});
     const statement = { all, first: vi.fn().mockResolvedValue({ tenant_id: 'TNT-1' }), bind: vi.fn() };
     statement.bind.mockReturnValue(statement);
     const environment = { DB: { prepare: vi.fn().mockReturnValue(statement) } };
@@ -1587,6 +1587,20 @@ describe('Cloudflare worker core routes', () => {
       expect((data.topActionableOpportunities as Array<{ opp_id: string }>).map((row) => row.opp_id)).toEqual(['OPP-2', 'OPP-1']);
     });
 
+    it('returns empty cached datasets when D1 omits report result arrays', async () => {
+      const all = vi.fn().mockResolvedValue({});
+      const first = vi.fn().mockResolvedValue({ tenant_id: 'TNT-1' });
+      const statement = { all, first, bind: vi.fn() };
+      statement.bind.mockReturnValue(statement);
+      const database = { prepare: vi.fn().mockReturnValue(statement) };
+
+      const data = await dataOf(await send('/api/report?tenantId=TNT-1', {}, runtimeEnvironment({
+        DB: database as unknown as CloudflareEnvironment['DB']
+      })));
+
+      expect(data).toMatchObject({ categoryHighlights: [], topActionableOpportunities: [] });
+    });
+
     it('falls back to the tenant spend and then to zero when no ingestion totals exist', async () => {
       seedTenant('TNT-1', '2026-01-01T00:00:00Z', 42.5);
 
@@ -1649,9 +1663,12 @@ describe('Cloudflare worker core routes', () => {
       ]);
 
       const data = await dataOf(await send('/api/categories'));
+      const cachedData = await dataOf(await send('/api/categories'));
 
       expect((data.categories as Array<{ name: string }>).map((row) => row.name)).toEqual(['Chemicals', 'Packaging']);
       expect((data.categoryDetails as Array<{ category: string }>).map((row) => row.category)).toEqual(['Chemicals', 'Packaging']);
+      expect(cachedData).toEqual(data);
+      expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 2, cacheMisses: 2 });
     });
 
     it('lists vendor rankings and vendor detail by spend', async () => {
@@ -1665,9 +1682,12 @@ describe('Cloudflare worker core routes', () => {
       ]);
 
       const data = await dataOf(await send('/api/vendors'));
+      const cachedData = await dataOf(await send('/api/vendors'));
 
       expect((data.vendorRankings as Array<{ vendor_name: string }>).map((row) => row.vendor_name)).toEqual(['Vendor B', 'Vendor A']);
       expect((data.vendorDetails as Array<{ vendor_name: string }>).map((row) => row.vendor_name)).toEqual(['Vendor B', 'Vendor A']);
+      expect(cachedData).toEqual(data);
+      expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 2, cacheMisses: 2 });
     });
 
     it('persists supplier-master merges in vendor rankings and details', async () => {
@@ -1678,6 +1698,7 @@ describe('Cloudflare worker core routes', () => {
       insertRows(fixture.db, 'INSERT INTO VendorPriceRank (vendor_name, master_id, category) VALUES (?, ?, ?)', [
         ['Acme Steel Ltd', 'MV-1', 'Steel']
       ]);
+      await send('/api/vendors');
 
       const response = await send('/api/vendors', jsonBody('POST', {
         targetName: 'Acme Steel Ltd', masterId: 'MV-1', canonicalName: 'Acme Steel'
@@ -1689,6 +1710,11 @@ describe('Cloudflare worker core routes', () => {
         .resolves.toEqual({ results: [{ vendor_name: 'Acme Steel' }, { vendor_name: 'Acme Steel' }] });
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorPriceRank WHERE master_id = ?').bind('MV-1').first())
         .resolves.toEqual({ vendor_name: 'Acme Steel' });
+      const refreshed = await dataOf(await send('/api/vendors'));
+      expect((refreshed.vendorDetails as Array<{ vendor_name: string }>).map((row) => row.vendor_name))
+        .toEqual(['Acme Steel', 'Acme Steel']);
+      expect((refreshed.vendorRankings as Array<{ vendor_name: string }>).map((row) => row.vendor_name))
+        .toEqual(['Acme Steel']);
     });
 
     it('updates supplier records when the D1 binding does not support batch writes', async () => {
@@ -1758,9 +1784,12 @@ describe('Cloudflare worker core routes', () => {
       ]);
 
       const data = await dataOf(await send('/api/savings?tenantId=TNT-1'));
+      const cachedData = await dataOf(await send('/api/savings?tenantId=TNT-1'));
 
       expect(data).toMatchObject({ totalPotentialSavingsCr: 2.5 });
       expect(data.opportunities).toHaveLength(2);
+      expect(cachedData).toEqual(data);
+      expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
     });
 
     it('persists savings opportunity deployment and validates missing or unsupported requests', async () => {
@@ -1779,6 +1808,7 @@ describe('Cloudflare worker core routes', () => {
         ['OPP-OTHER', 'TNT-2']
       ]);
 
+      await send('/api/savings?tenantId=TNT-1');
       const deployed = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: 'OPP-DEPLOY', targetModule: 'DPS NXT' }));
       const persisted = await fixture.d1.prepare('SELECT recommended_module, push_to_module, status FROM SavingsOpportunity WHERE opp_id = ?')
         .bind('OPP-DEPLOY').first();
@@ -1792,6 +1822,9 @@ describe('Cloudflare worker core routes', () => {
         opp_id: 'OPP-DEPLOY', recommended_module: 'DPS NXT', push_to_module: 'DPS NXT', status: 'DEPLOYED'
       } });
       expect(persisted).toEqual({ recommended_module: 'DPS NXT', push_to_module: 'DPS NXT', status: 'DEPLOYED' });
+      const refreshed = await dataOf(await send('/api/savings?tenantId=TNT-1'));
+      expect((refreshed.opportunities as Array<{ opp_id: string; status: string }>).find(({ opp_id }) => opp_id === 'OPP-DEPLOY'))
+        .toMatchObject({ status: 'DEPLOYED' });
       expect(invalid.status).toBe(400);
       expect(missing.status).toBe(404);
       expect(otherTenant.status).toBe(404);

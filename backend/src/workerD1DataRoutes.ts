@@ -1,4 +1,5 @@
 import { CLOUDFLARE_API_PREFIX } from './constants/cloudflare';
+import { D1_TENANT_DATA_CACHE_KEYS } from './constants/db';
 import {
   calculateConversionMetricsSchema,
   currencyQuerySchema,
@@ -7,6 +8,7 @@ import {
 } from './constants/validation';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareEnvironment } from './types/cloudflare';
+import { getTenantD1Data, invalidateTenantD1Data } from './services/d1TenantDataCache';
 import { getCurrencyRatesFromD1, getTenantFromD1, requireD1Binding } from './workerD1';
 import logger from './utils/logger';
 import { apiData, jsonResponse, readJson } from './workerHttp';
@@ -54,10 +56,12 @@ const handleStaticDataRoute = async (
     const database = requireD1Binding(environment.DB);
     const tenantId = environment.REQUEST_TENANT_ID || '';
     const [categories, categoryDetails] = await Promise.all([
-      database.prepare('SELECT * FROM SpendCategorySummary WHERE tenant_id = ? ORDER BY spend_inr_crores DESC').bind(tenantId).all(),
-      database.prepare('SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC').bind(tenantId).all()
+      getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.CATEGORIES_SUMMARY, async () =>
+        (await database.prepare('SELECT * FROM SpendCategorySummary WHERE tenant_id = ? ORDER BY spend_inr_crores DESC').bind(tenantId).all()).results || []),
+      getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.CATEGORY_DETAILS, async () =>
+        (await database.prepare('SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC').bind(tenantId).all()).results || [])
     ]);
-    return apiData({ categories: categories.results, categoryDetails: categoryDetails.results }, request);
+    return apiData({ categories, categoryDetails }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/vendors`) {
     const database = requireD1Binding(environment.DB);
@@ -76,8 +80,13 @@ const handleStaticDataRoute = async (
         database.prepare('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId),
         database.prepare('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId)
       ];
-      if (database.batch) await database.batch(statements);
-      else await Promise.all(statements.map((statement) => statement.run()));
+      try {
+        if (database.batch) await database.batch(statements);
+        else await Promise.all(statements.map((statement) => statement.run()));
+      } finally {
+        invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
+        invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);
+      }
       logger.info('Supplier master name updated in D1', {
         targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined
       });
@@ -86,10 +95,12 @@ const handleStaticDataRoute = async (
     if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Vendor data supports GET and POST requests only.' }, 405, request);
     const tenantId = environment.REQUEST_TENANT_ID || '';
     const [vendorRankings, vendorDetails] = await Promise.all([
-      database.prepare('SELECT * FROM VendorPriceRank WHERE tenant_id = ? ORDER BY total_spend_inr_cr DESC').bind(tenantId).all(),
-      database.prepare('SELECT * FROM VendorYearDetail WHERE tenant_id = ? ORDER BY total_3yr_spend_inr_cr DESC').bind(tenantId).all()
+      getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS, async () =>
+        (await database.prepare('SELECT * FROM VendorPriceRank WHERE tenant_id = ? ORDER BY total_spend_inr_cr DESC').bind(tenantId).all()).results || []),
+      getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS, async () =>
+        (await database.prepare('SELECT * FROM VendorYearDetail WHERE tenant_id = ? ORDER BY total_3yr_spend_inr_cr DESC').bind(tenantId).all()).results || [])
     ]);
-    return apiData({ vendorRankings: vendorRankings.results, vendorDetails: vendorDetails.results }, request);
+    return apiData({ vendorRankings, vendorDetails }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/savings`) {
     const database = requireD1Binding(environment.DB);
@@ -106,6 +117,7 @@ const handleStaticDataRoute = async (
           WHERE scope.opp_id = SavingsOpportunity.opp_id AND scope.tenant_id = ?
         )
       `).bind(targetModule, targetModule, opportunityId, tenantId).run();
+      invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
       const deployed = await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
         INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
         WHERE opportunity.opp_id = ? AND scope.tenant_id = ?`).bind(opportunityId, tenantId).first<Record<string, unknown>>();
@@ -116,11 +128,12 @@ const handleStaticDataRoute = async (
       return apiData(deployed, request);
     }
     if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Savings data supports GET and POST requests only.' }, 405, request);
-    const opportunities = await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
-      INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
-      WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC`).bind(tenantId).all();
-    const totalPotentialSavingsCr = opportunities.results.reduce((total, item) => total + Number((item as Record<string, unknown>).est_savings_inr_cr || 0), 0);
-    return apiData({ opportunities: opportunities.results, totalPotentialSavingsCr }, request);
+    const opportunities = await getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES, async () =>
+      (await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
+        INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
+        WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC`).bind(tenantId).all()).results || []);
+    const totalPotentialSavingsCr = opportunities.reduce((total, item) => total + Number((item as Record<string, unknown>).est_savings_inr_cr || 0), 0);
+    return apiData({ opportunities, totalPotentialSavingsCr }, request);
   }
   return null;
 };
@@ -181,13 +194,15 @@ const handleReportRoute = async (
       .bind(tenantId).first<{ totalSpend: number }>(),
     database.prepare('SELECT COUNT(*) AS count FROM ValidationPreCheckRecord WHERE tenant_id = ?')
       .bind(tenantId).first<{ count: number }>(),
-    database.prepare('SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC').bind(tenantId).all(),
-    database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
-      INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
-      WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC`).bind(tenantId).all()
+    getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.CATEGORY_DETAILS, async () =>
+      (await database.prepare('SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC').bind(tenantId).all()).results || []),
+    getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES, async () =>
+      (await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
+        INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id
+        WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC`).bind(tenantId).all()).results || [])
   ]);
   const totalSpendEvaluatedCr = Number(docSpend?.totalSpend || tenant.total_spend_evaluated_inr || 0);
-  const totalIdentifiedSavingsCr = opportunities.results.reduce((total, row) => total + Number((row as Record<string, unknown>).est_savings_inr_cr || 0), 0);
+  const totalIdentifiedSavingsCr = opportunities.reduce((total, row) => total + Number((row as Record<string, unknown>).est_savings_inr_cr || 0), 0);
   return apiData({
     tenant,
     executiveSummary: {
@@ -195,8 +210,8 @@ const handleReportRoute = async (
       totalIdentifiedSavingsCr: Number(totalIdentifiedSavingsCr.toFixed(2)),
       totalLineItemsAudited: Number(recordsCount?.count || 0)
     },
-    categoryHighlights: categoryDetails.results,
-    topActionableOpportunities: opportunities.results
+    categoryHighlights: categoryDetails,
+    topActionableOpportunities: opportunities
   }, request);
 };
 

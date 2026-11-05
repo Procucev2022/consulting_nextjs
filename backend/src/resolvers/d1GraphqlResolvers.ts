@@ -1,5 +1,6 @@
 import type { CloudflareD1Database, CloudflareD1MutationResult } from '../types/cloudflare';
 import { AUTH_MESSAGES, AUTH_ROLES } from '../constants/auth';
+import { D1_TENANT_DATA_CACHE_KEYS } from '../constants/db';
 import {
   D1_GRAPHQL_CURSOR_VERSION,
   D1_GRAPHQL_PAGE_OVERFETCH_ROWS,
@@ -8,11 +9,18 @@ import {
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../constants/graphql';
 import { graphqlIngestionPageArgsSchema, tenantUpdateSchema } from '../constants/validation';
 import { getD1RuntimeMetrics } from '../services/d1QueryTelemetry';
+import { invalidateTenantD1Data } from '../services/d1TenantDataCache';
 import { decodeGraphQLIngestionCursor, encodeGraphQLIngestionCursor } from '../services/graphqlIngestionCursor';
 import logger from '../utils/logger';
+import {
+  categoryDetailsResolver,
+  categoryResolver,
+  opportunitiesResolver,
+  vendorDetailsResolver,
+  vendorRankingsResolver
+} from './d1GraphqlDataResolvers';
 import { mergeVendorResolver } from './d1GraphqlVendorResolvers';
 import type {
-  CategoryDetailsArgs,
   D1GraphQLContext,
   DeployOpportunityArgs,
   GraphQLIngestionPageRequest,
@@ -158,23 +166,8 @@ const validationResolver: D1Resolver = async (args, context) => {
     }
   };
 };
-const categoryResolver: D1Resolver = async (_args, context) => queryAll(context.db,
-  'SELECT * FROM SpendCategorySummary WHERE tenant_id = ? ORDER BY spend_inr_crores DESC', [context.tenantId || '']);
-const categoryDetailsResolver: D1Resolver = async (args, context) => {
-  const categoryArgs = args as CategoryDetailsArgs;
-  if (categoryArgs.id) return queryAll(context.db, 'SELECT * FROM CategoryYearDetail WHERE id = ? AND tenant_id = ?', [categoryArgs.id, context.tenantId || '']);
-  return queryAll(context.db, 'SELECT * FROM CategoryYearDetail WHERE tenant_id = ? ORDER BY rank ASC', [context.tenantId || '']);
-};
-const vendorDetailsResolver: D1Resolver = async (_args, context) => queryAll(context.db,
-  'SELECT * FROM VendorYearDetail WHERE tenant_id = ? ORDER BY total_3yr_spend_inr_cr DESC', [context.tenantId || '']);
-const vendorRankingsResolver: D1Resolver = async (_args, context) => queryAll(context.db,
-  'SELECT * FROM VendorPriceRank WHERE tenant_id = ? ORDER BY total_spend_inr_cr DESC', [context.tenantId || '']);
 const lineItemsResolver: D1Resolver = async (_args, context) => queryAll(context.db,
   'SELECT * FROM LineItemMapping WHERE tenant_id = ? ORDER BY mapping_id ASC', [context.tenantId || '']);
-const opportunitiesResolver: D1Resolver = async (_args, context) => queryAll(context.db,
-  'SELECT opportunity.* FROM SavingsOpportunity AS opportunity ' +
-  'INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id ' +
-  'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC', [context.tenantId || '']);
 const funnelResolver: D1Resolver = async (_args, context) =>
   queryAll(context.db, 'SELECT * FROM ConversionFunnelPhase WHERE tenant_id = ? ORDER BY phase_num ASC', [context.tenantId || '']);
 const metricsResolver: D1Resolver = async (_args, context) => {
@@ -278,6 +271,7 @@ const deployOpportunityResolver: D1Resolver = async (args, context) => {
     'WHERE opp_id = ? AND EXISTS (SELECT 1 FROM SavingsOpportunityTenantScope AS scope ' +
     'WHERE scope.opp_id = SavingsOpportunity.opp_id AND scope.tenant_id = ?)')
     .bind(input.targetModule, 'DEPLOYED', input.id, context.tenantId || '').run();
+  invalidateTenantD1Data(context.db, context.tenantId || '', D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
   return queryFirst(context.db,
     'SELECT opportunity.* FROM SavingsOpportunity AS opportunity ' +
     'INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id ' +

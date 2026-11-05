@@ -1,6 +1,10 @@
+import type { D1_TENANT_DATA_CACHE_KEYS } from '../constants/db';
+
 /**
  * Database Optimization & Query Audit Types (Backend)
  */
+
+export type D1TenantDataCacheKey = typeof D1_TENANT_DATA_CACHE_KEYS[keyof typeof D1_TENANT_DATA_CACHE_KEYS];
 
 export interface QueryAuditLog {
   queryId: string;

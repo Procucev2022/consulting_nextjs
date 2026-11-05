@@ -56,6 +56,7 @@ interface ResolverFixture {
 
 interface StubOptions {
   firstRow?: Record<string, unknown> | null;
+  allResult?: unknown;
   runResult?: unknown;
   runError?: Error;
 }
@@ -85,7 +86,8 @@ const createStubD1 = (options: StubOptions = {}): { d1: CloudflareD1Database; st
           return statement;
         },
         first: async <T = Record<string, unknown>>(): Promise<T | null> => (options.firstRow ?? null) as T | null,
-        all: async <T = Record<string, unknown>>(): Promise<{ results: T[] }> => ({ results: [] }),
+        all: async <T = Record<string, unknown>>(): Promise<{ results: T[] }> =>
+          (options.allResult ?? { results: [] }) as { results: T[] },
         run: async (): Promise<unknown> => {
           if (options.runError) throw options.runError;
           return options.runResult;
@@ -278,6 +280,14 @@ describe('D1 query resolvers', () => {
     });
     expect(await resolvers.categoryDetails({ id: 'CAT-NO-TENANT' }, context)).toEqual([]);
     expect(await resolvers.categoryDetails({}, context)).toEqual([]);
+    expect(await resolvers.vendorDetails({}, context)).toEqual([]);
+    expect(await resolvers.vendorRankings({}, context)).toEqual([]);
+  });
+
+  it('returns an empty collection when a D1 dataset response omits its result list', async () => {
+    const stub = createStubD1({ allResult: {} });
+
+    expect(await resolvers.categories({}, contextFor(stub.d1))).toEqual([]);
   });
 
   it('lists ingestion documents newest first and parses stored currency lists', async () => {
@@ -801,8 +811,11 @@ describe('mergeVendor', () => {
     await insertVendorDetail(fixture.d1, 'VYD-3', 'Beta Metals', 'MV-2', 3);
     await insertVendorRank(fixture.d1, 'MV-1', 'Acme Stl', 6);
     await insertVendorRank(fixture.d1, 'MV-2', 'Beta Metals', 3);
+    const context = contextFor(fixture.d1);
+    await resolvers.vendorDetails({}, context);
+    await resolvers.vendorRankings({}, context);
 
-    await resolvers.mergeVendor(MERGE_ARGS, contextFor(fixture.d1));
+    await resolvers.mergeVendor(MERGE_ARGS, context);
 
     const rows = await fixture.d1.prepare('SELECT id, vendor_name FROM VendorYearDetail ORDER BY id').all();
     const rankings = await fixture.d1.prepare('SELECT master_id, vendor_name FROM VendorPriceRank ORDER BY master_id').all();
@@ -812,6 +825,15 @@ describe('mergeVendor', () => {
       { id: 'VYD-3', vendor_name: 'Beta Metals' }
     ]);
     expect(rankings.results).toEqual([
+      { master_id: 'MV-1', vendor_name: 'Acme Steel' },
+      { master_id: 'MV-2', vendor_name: 'Beta Metals' }
+    ]);
+    expect(await resolvers.vendorDetails({}, context)).toMatchObject([
+      { id: 'VYD-1', vendor_name: 'Acme Steel' },
+      { id: 'VYD-3', vendor_name: 'Beta Metals' },
+      { id: 'VYD-2', vendor_name: 'Acme Steel' }
+    ]);
+    expect(await resolvers.vendorRankings({}, context)).toMatchObject([
       { master_id: 'MV-1', vendor_name: 'Acme Steel' },
       { master_id: 'MV-2', vendor_name: 'Beta Metals' }
     ]);
@@ -885,14 +907,16 @@ describe('deployOpportunity', () => {
   it('marks the opportunity deployed to the chosen module and leaves other opportunities unchanged', async () => {
     await insertOpportunity(fixture.d1, 'OPP-1', 2.5);
     await insertOpportunity(fixture.d1, 'OPP-2', 1);
+    const context = contextFor(fixture.d1);
+    await resolvers.opportunities({}, context);
 
     const deployed = await resolvers.deployOpportunity(
       { id: 'OPP-1', targetModule: 'DPS NXT' },
-      contextFor(fixture.d1)
+      context
     );
 
     expect(deployed).toMatchObject({ opp_id: 'OPP-1', status: 'DEPLOYED', recommended_module: 'DPS NXT' });
-    expect(await resolvers.opportunities({}, contextFor(fixture.d1))).toMatchObject([
+    expect(await resolvers.opportunities({}, context)).toMatchObject([
       { opp_id: 'OPP-1', status: 'DEPLOYED' },
       { opp_id: 'OPP-2', status: 'Identified', recommended_module: 'proCPX' }
     ]);

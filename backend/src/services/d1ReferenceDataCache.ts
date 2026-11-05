@@ -42,7 +42,8 @@ export const getOrLoadD1ReferenceData = async <T>(
   database: CloudflareD1Database,
   cacheKey: string,
   load: () => Promise<T>,
-  ttlMs = DEFAULT_CACHE_TTL_MS
+  ttlMs = DEFAULT_CACHE_TTL_MS,
+  shouldCache: (value: T) => boolean = () => true
 ): Promise<D1ReferenceCacheResult<T>> => {
   const state = getState(database);
   const now = Date.now();
@@ -66,7 +67,7 @@ export const getOrLoadD1ReferenceData = async <T>(
   state.loads.set(cacheKey, pending);
   try {
     const value = await pending;
-    if (state.loads.get(cacheKey) === pending) {
+    if (state.loads.get(cacheKey) === pending && shouldCache(value)) {
       const loadedAt = Date.now();
       removeExpiredEntries(state, loadedAt);
       while (state.entries.size >= D1_REFERENCE_CACHE_MAX_ENTRIES) {
