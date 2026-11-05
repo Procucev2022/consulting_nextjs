@@ -1,5 +1,7 @@
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
-import { D1_INGESTION_PAGE_QUERY_LIMIT, D1_REPORTING, D1_ROUTE_MESSAGES } from './constants/d1';
+import {
+  D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES
+} from './constants/d1';
 import {
   ingestionDataQuerySchema, updateValidationRecordSchema, addIngestionFileSchema,
   uploadIngestionFileSchema, INGESTION_UPLOAD_JSON_MAX_BYTES
@@ -36,42 +38,18 @@ const getIngestionData = async (
   }) };
 };
 
-const remediationEffectiveDate = (record: Record<string, unknown>): string | null => {
-  const transactionDate = String(record.transaction_date || '').slice(0, 10);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(transactionDate)) return transactionDate;
-  const spendYear = Number(record.spend_year);
-  return Number.isInteger(spendYear) && spendYear >= 1900 && spendYear <= 2200
-    ? `${spendYear}-12-31`
-    : null;
-};
-
 const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
   requireD1Binding(environment.DB);
   const database = environment.DB as CloudflareD1Database;
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
-  const candidates = await database.prepare(`
-    SELECT * FROM ValidationPreCheckRecord
-    WHERE tenant_id = ? AND COALESCE(amount, 0) > 0 AND COALESCE(raw_currency, '') <> ''
-    ORDER BY created_at DESC LIMIT ?
-  `).bind(tenantId, D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
+  const candidates = await database.prepare(D1_INGESTION_REMEDIATION_CANDIDATES_QUERY)
+    .bind(tenantId, D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
   const updatedRecords: Record<string, unknown>[] = [];
 
   for (const record of candidates.results || []) {
-    const currency = String(record.raw_currency || '').trim().toUpperCase();
     const amount = Number(record.amount);
-    const effectiveDate = remediationEffectiveDate(record);
-    let rate = 0;
-    if (currency === 'INR') {
-      rate = 1;
-    } else if (effectiveDate) {
-      const reference = await database.prepare(`
-        SELECT inr_per_unit FROM FxReferenceRate
-        WHERE currency = ? AND rate_date <= ?
-        ORDER BY rate_date DESC LIMIT 1
-      `).bind(currency, effectiveDate).first<{ inr_per_unit: number }>();
-      rate = Number(reference?.inr_per_unit || 0);
-    }
+    const rate = Number(record.remediation_fx_rate || 0);
     if (!Number.isFinite(rate) || rate <= 0) continue;
 
     const amountInr = amount * rate;

@@ -215,3 +215,34 @@ export const D1_DATABASE_STATUS_QUERY = `
   ) AS totals
   WHERE tables.type = 'table' AND tables.name NOT LIKE 'sqlite_%'
 `;
+export const D1_INGESTION_REMEDIATION_CANDIDATES_QUERY = `
+  WITH candidate_records AS (
+    SELECT validation.*,
+      CASE
+        WHEN substr(COALESCE(validation.transaction_date, ''), 1, 10)
+          GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
+          THEN substr(validation.transaction_date, 1, 10)
+        WHEN CAST(validation.spend_year AS REAL) BETWEEN 1900 AND 2200
+          AND CAST(validation.spend_year AS INTEGER) = CAST(validation.spend_year AS REAL)
+          THEN printf('%04d-12-31', CAST(validation.spend_year AS INTEGER))
+        ELSE NULL
+      END AS remediation_effective_date
+    FROM ValidationPreCheckRecord AS validation
+    WHERE validation.tenant_id = ?
+      AND COALESCE(validation.amount, 0) > 0
+      AND COALESCE(validation.raw_currency, '') <> ''
+    ORDER BY validation.created_at DESC
+    LIMIT ?
+  )
+  SELECT candidate_records.*,
+    CASE
+      WHEN UPPER(TRIM(COALESCE(candidate_records.raw_currency, ''))) = 'INR' THEN 1
+      ELSE COALESCE((
+        SELECT rate.inr_per_unit FROM FxReferenceRate AS rate
+        WHERE rate.currency = UPPER(TRIM(COALESCE(candidate_records.raw_currency, '')))
+          AND rate.rate_date <= candidate_records.remediation_effective_date
+        ORDER BY rate.rate_date DESC LIMIT 1
+      ), 0)
+    END AS remediation_fx_rate
+  FROM candidate_records
+`;

@@ -1248,6 +1248,10 @@ describe('Cloudflare worker core routes', () => {
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
       const records = data.records as Array<Record<string, unknown>>;
+      const rateQueries = prepareSpy.mock.calls.filter(([sql]) => sql.includes('FROM FxReferenceRate'));
+      expect(rateQueries).toHaveLength(1);
+      expect(rateQueries[0]?.[0]).toContain('WITH candidate_records');
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.startsWith('\n        SELECT inr_per_unit FROM FxReferenceRate'))).toBe(false);
       const updateStatements = prepareSpy.mock.calls.filter(([sql]) => sql.includes('UPDATE ValidationPreCheckRecord'));
       expect(updateStatements).toHaveLength(1);
       expect(updateStatements[0]?.[0]).toContain('RETURNING *');
