@@ -1,13 +1,14 @@
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import {
-  D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES
+  D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATED_RECORDS_QUERY,
+  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES
 } from './constants/d1';
 import {
   ingestionDataQuerySchema, updateValidationRecordSchema, addIngestionFileSchema,
   uploadIngestionFileSchema, INGESTION_UPLOAD_JSON_MAX_BYTES
 } from './constants/validation';
 import type { IngestionDataQueryInput } from './types/validation';
-import type { CloudflareD1Database, CloudflareEnvironment } from './types/cloudflare';
+import type { CloudflareD1Database, CloudflareD1MutationResult, CloudflareD1PreparedStatement, CloudflareEnvironment } from './types/cloudflare';
 import logger from './utils/logger';
 import {
   getTenantFromD1, getIngestionDataFromD1, parseStoredDetectedCurrencies, requireD1Binding
@@ -38,14 +39,15 @@ const getIngestionData = async (
   }) };
 };
 
-const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+const remediateIngestion = async (environment: CloudflareEnvironment, requestId?: string): Promise<{ data: unknown }> => {
   requireD1Binding(environment.DB);
   const database = environment.DB as CloudflareD1Database;
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
   const candidates = await database.prepare(D1_INGESTION_REMEDIATION_CANDIDATES_QUERY)
     .bind(tenantId, D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
-  const updatedRecords: Record<string, unknown>[] = [];
+  const updateStatements: CloudflareD1PreparedStatement[] = [];
+  const candidateRecordIds: string[] = [];
 
   for (const record of candidates.results || []) {
     const amount = Number(record.amount);
@@ -65,20 +67,40 @@ const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{
       String(record.action_status || '') !== actionStatus;
     if (!changed) continue;
 
-    const updatedRecord = await database.prepare(`
+    const statement = database.prepare(`
       UPDATE ValidationPreCheckRecord
       SET fx_rate_applied = ?, amount_inr = ?, inr_crores = ?, resolved = ?, issue_flag = ?, action_status = ?
       WHERE record_id = ? AND tenant_id = ?
-      RETURNING *
-    `).bind(rate, amountInr, inrCrores, resolved, issueFlag, actionStatus, record.record_id, tenantId)
-      .first<Record<string, unknown>>();
-    if (updatedRecord) updatedRecords.push(updatedRecord);
+    `).bind(rate, amountInr, inrCrores, resolved, issueFlag, actionStatus, record.record_id, tenantId);
+    updateStatements.push(statement);
+    candidateRecordIds.push(String(record.record_id));
   }
+
+  const updatedRecordIds: string[] = [];
+  if (database.batch && updateStatements.length) {
+    const results = await database.batch(updateStatements) as CloudflareD1MutationResult[];
+    candidateRecordIds.forEach((recordId, index) => {
+      const result = results[index];
+      const affected = Number(result?.meta?.changes ?? result?.changes);
+      if (affected > 0) updatedRecordIds.push(recordId);
+    });
+  } else {
+    for (const [index, statement] of updateStatements.entries()) {
+      const result = await statement.run() as CloudflareD1MutationResult;
+      const affected = Number(result?.meta?.changes ?? result?.changes);
+      if (affected > 0) updatedRecordIds.push(candidateRecordIds[index] as string);
+    }
+  }
+  const updatedRecords = updatedRecordIds.length
+    ? (await database.prepare(D1_INGESTION_REMEDIATED_RECORDS_QUERY)
+      .bind(JSON.stringify(updatedRecordIds), tenantId).all<Record<string, unknown>>()).results
+    : [];
 
   logger.info('D1-backed validation currency remediation completed', {
     updatedCount: updatedRecords.length,
     candidateCount: candidates.results?.length || 0,
-    tenantId
+    tenantId,
+    requestId
   });
   return {
     data: {
@@ -360,7 +382,9 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
     return getIngestionData(environment, parsed.data, request.headers.get('x-request-id') || undefined);
   }
   if (request.method === 'POST' && (url.pathname.endsWith('/upload') || url.pathname.endsWith('/upload-object'))) return uploadIngestion(request, environment);
-  if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion(environment);
+  if (request.method === 'POST' && url.pathname.endsWith('/remediate')) {
+    return remediateIngestion(environment, request.headers.get('x-request-id') || undefined);
+  }
   if (request.method === 'POST' && url.pathname.endsWith('/reset')) return resetIngestionDataset(environment);
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);

@@ -246,3 +246,10 @@ export const D1_INGESTION_REMEDIATION_CANDIDATES_QUERY = `
     END AS remediation_fx_rate
   FROM candidate_records
 `;
+export const D1_INGESTION_REMEDIATED_RECORDS_QUERY = `
+  SELECT validation.*
+  FROM ValidationPreCheckRecord AS validation
+  INNER JOIN json_each(?) AS updated ON updated.value = validation.record_id
+  WHERE validation.tenant_id = ?
+  ORDER BY CAST(updated.key AS INTEGER)
+`;

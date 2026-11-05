@@ -1240,11 +1240,16 @@ describe('Cloudflare worker core routes', () => {
       ]);
       insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, spend_year, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
         ['REC-FX', 'PO-1', 'Acme', 'Item A', 100, 'USD', null, 2025, 'Missing Currency Code', 'Fix Currency', 0],
+        ['REC-FX-2', 'PO-1', 'Acme', 'Item B', 200, 'USD', '2025-06-30', null, 'Currency Review', 'Review', 0],
         ['REC-NO-DATE', 'PO-2', 'Beta', 'Item B', 25, 'USD', null, null, 'Currency Review', 'Review', 0],
         ['REC-NO-RATE', 'PO-3', 'Gamma', 'Item C', 50, 'USD', '2024-06-30', null, 'Currency Review', 'Review', 0]
       ]);
       fixture.db.prepare("UPDATE ValidationPreCheckRecord SET tenant_id = 'TNT-1'").run();
 
+      fixture.d1.batch = vi.fn(async (statements) => {
+        await Promise.all(statements.map((statement) => statement.run()));
+        return statements.map(() => ({ meta: { changes: 1 } }));
+      });
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
       const records = data.records as Array<Record<string, unknown>>;
@@ -1253,16 +1258,39 @@ describe('Cloudflare worker core routes', () => {
       expect(rateQueries[0]?.[0]).toContain('WITH candidate_records');
       expect(prepareSpy.mock.calls.some(([sql]) => sql.startsWith('\n        SELECT inr_per_unit FROM FxReferenceRate'))).toBe(false);
       const updateStatements = prepareSpy.mock.calls.filter(([sql]) => sql.includes('UPDATE ValidationPreCheckRecord'));
-      expect(updateStatements).toHaveLength(1);
-      expect(updateStatements[0]?.[0]).toContain('RETURNING *');
-      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('SELECT * FROM ValidationPreCheckRecord WHERE record_id'))).toBe(false);
+      expect(updateStatements).toHaveLength(2);
+      expect(fixture.d1.batch).toHaveBeenCalledTimes(1);
+      expect(fixture.d1.batch).toHaveBeenCalledWith(expect.arrayContaining([expect.any(Object), expect.any(Object)]));
+      expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('INNER JOIN json_each(?) AS updated'))).toHaveLength(1);
       const persisted = await fixture.d1.prepare('SELECT amount_inr, inr_crores, fx_rate_applied, issue_flag, action_status, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX').first();
+      const persistedSecond = await fixture.d1.prepare('SELECT amount_inr, inr_crores, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX-2').first();
       const untouched = await fixture.d1.prepare('SELECT amount_inr, issue_flag, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-NO-DATE').first();
 
-      expect(data).toMatchObject({ updatedCount: 1, skippedCount: 2 });
-      expect(records).toHaveLength(1);
+      expect(data).toMatchObject({ updatedCount: 2, skippedCount: 2 });
+      expect(records).toHaveLength(2);
       expect(persisted).toEqual({ amount_inr: 8500, inr_crores: 0.00085, fx_rate_applied: 85, issue_flag: 'Passed Clean', action_status: 'Ready', resolved: 1 });
+      expect(persistedSecond).toEqual({ amount_inr: 17000, inr_crores: 0.0017, fx_rate_applied: 85 });
       expect(untouched).toEqual({ amount_inr: null, issue_flag: 'Currency Review', resolved: 0 });
+    });
+
+    it('keeps remediation working when the D1 adapter does not expose batch', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['USD', '2025-06-30', 85, 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-FX-FALLBACK', 'TNT-1', 'PO-FALLBACK', 'Acme', 'Fallback item', 100, 'USD', '2025-06-30', 'Currency Review', 'Review', 0]
+      ]);
+      fixture.d1.batch = undefined;
+
+      const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
+      const persisted = await fixture.d1.prepare('SELECT amount_inr, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX-FALLBACK').first();
+
+      expect(data).toMatchObject({ updatedCount: 1, skippedCount: 0 });
+      expect(persisted).toEqual({ amount_inr: 8500, fx_rate_applied: 85 });
     });
 
     it('reports zero updates when there are no validation records to remediate', async () => {
