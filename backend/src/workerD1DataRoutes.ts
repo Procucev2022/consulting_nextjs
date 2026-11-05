@@ -7,7 +7,7 @@ import {
   mergeVendorSchema
 } from './constants/validation';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
-import type { CloudflareEnvironment } from './types/cloudflare';
+import type { CloudflareD1MutationResult, CloudflareEnvironment } from './types/cloudflare';
 import { getTenantD1Data, invalidateTenantD1Data } from './services/d1TenantDataCache';
 import { getCurrencyRatesFromD1, getTenantFromD1, requireD1Binding } from './workerD1';
 import logger from './utils/logger';
@@ -70,23 +70,22 @@ const handleStaticDataRoute = async (
       if (!parsed.success) return jsonResponse({ success: false, message: 'Vendor merge request is invalid.', errors: parsed.error.issues }, 400, request);
       const { targetName, masterId, canonicalName } = parsed.data;
       const tenantId = environment.REQUEST_TENANT_ID || '';
-      const [vendorDetailCount, vendorRankCount] = await Promise.all([
-        database.prepare('SELECT COUNT(*) AS count FROM VendorYearDetail WHERE master_vendor_id = ? AND tenant_id = ?').bind(masterId, tenantId).first<{ count: number }>(),
-        database.prepare('SELECT COUNT(*) AS count FROM VendorPriceRank WHERE master_id = ? AND tenant_id = ?').bind(masterId, tenantId).first<{ count: number }>()
-      ]);
-      const affected = Number(vendorDetailCount?.count || 0) + Number(vendorRankCount?.count || 0);
-      if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
       const statements = [
         database.prepare('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId),
         database.prepare('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId)
       ];
+      let updateResults: CloudflareD1MutationResult[];
       try {
-        if (database.batch) await database.batch(statements);
-        else await Promise.all(statements.map((statement) => statement.run()));
+        updateResults = database.batch
+          ? await database.batch(statements) as CloudflareD1MutationResult[]
+          : await Promise.all(statements.map(async (statement) => await statement.run() as CloudflareD1MutationResult));
       } finally {
         invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
         invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);
       }
+      const affected = updateResults.reduce((total, result) =>
+        total + Number(result.meta?.changes ?? result.changes ?? 0), 0);
+      if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
       logger.info('Supplier master name updated in D1', {
         targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined
       });

@@ -1699,6 +1699,7 @@ describe('Cloudflare worker core routes', () => {
         ['Acme Steel Ltd', 'MV-1', 'Steel']
       ]);
       await send('/api/vendors');
+      const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
 
       const response = await send('/api/vendors', jsonBody('POST', {
         targetName: 'Acme Steel Ltd', masterId: 'MV-1', canonicalName: 'Acme Steel'
@@ -1706,6 +1707,8 @@ describe('Cloudflare worker core routes', () => {
 
       expect(response.status).toBe(200);
       await expect(bodyOf(response)).resolves.toMatchObject({ success: true, data: { success: true, affected: 3 } });
+      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(2);
+      expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*)'))).toBe(false);
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorYearDetail ORDER BY id').all())
         .resolves.toEqual({ results: [{ vendor_name: 'Acme Steel' }, { vendor_name: 'Acme Steel' }] });
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorPriceRank WHERE master_id = ?').bind('MV-1').first())
