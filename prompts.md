@@ -114066,6 +114066,18 @@ resume
 
 ## Prompt 603
 
+PR_TITLE and PR_BODY are injected via shell args into the JSON payload. If a malicious PR contains crafted quotes or control characters, it can corrupt the JSON structure or lead to prompt injection vulnerabilities allowing arbitrary instruction override.
+
+The object lookup used in `sort_by` assumes the severity will always be one of the four exact keys. If Gemini returns an unexpected string, the lookup will evaluate to null, causing jq to fail with a type error and break the workflow.
+
+fix both issues
+
+## Prompt 604
+
+Bad JSON in --slurpfile schema schema.json: Expected separator between values at line 17, column 17
+
+## Prompt 605
+
 1. 1\. Analyse the code, there are a Lot of Architectural issues:
    1. **Analyse the database**, lot of database tables or data not in sync, duplicate data etc. please analyse database issues.
    2. **Too many Cloudflare D1 database utilisation issues**, please check.
@@ -114075,18 +114087,26 @@ resume
 
 Currently the customers are not using the system. So we are free to do any changes
 
-## Prompt 604
+## Prompt 606
 
 Keep solving the issues as well.
 
-## Prompt 605
+## Prompt 607
 
 Keep solving the architectural issues as well. Do a detailed analysis, do not stop till all architectural issues are resolved.
 
-## Prompt 606
+## Prompt 608
 
 One tenant per user, stored as an explicit User.tenant_id (Recommended)
 
-## Prompt 607
+## Prompt 609
 
 Keep committing & pushing the changes one by one. as soon as you improve something
+
+## Prompt 610
+
+Please finalize & push all the existing changes & resolve the File conflict in
+
+[https://github.com/Procucev2022/consulting_nextjs/pull/28](https://github.com/Procucev2022/consulting_nextjs/pull/28)
+
+Pause for sometime, then I  would ask to resume in sometime
