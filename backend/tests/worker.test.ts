@@ -2122,6 +2122,23 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
+    it('exposes D1 timing provenance in admin GraphQL query audits', async () => {
+      const response = await send('/api/graphql', jsonBody('POST', {
+        query: '{ queryMetrics { recentAudits { durationMs wallDurationMs durationSource batchDurationMs batchSize batchStatementIndex } } }'
+      }), runtimeEnvironment({ DB: fixture.d1, REQUEST_USER_ROLE: 'ADMIN' }));
+
+      expect(response.status).toBe(200);
+      await expect(dataOf(response)).resolves.toMatchObject({
+        queryMetrics: {
+          recentAudits: expect.arrayContaining([expect.objectContaining({
+            durationMs: expect.any(Number),
+            wallDurationMs: expect.any(Number),
+            durationSource: expect.stringMatching(/^(database|wall-clock)$/u)
+          })])
+        }
+      });
+    });
+
     it('rejects a GraphQL request with no query document', async () => {
       const response = await send('/api/graphql');
 

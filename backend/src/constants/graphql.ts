@@ -5,6 +5,7 @@
  */
 
 import { D1_INGESTION_PAGE_SIZE } from './d1';
+import { GRAPHQL_AUDIT_TYPES_SDL } from './graphqlAudit';
 import { GRAPHQL_INGESTION_TYPES_SDL } from './graphqlIngestion';
 
 export const GRAPHQL_SCHEMA_SDL = `
@@ -223,16 +224,7 @@ export const GRAPHQL_SCHEMA_SDL = `
     status: String!
   }
 
-  type QueryAuditItem {
-    queryId: String!
-    requestId: String!
-    operation: String!
-    model: String!
-    durationMs: Float!
-    cached: Boolean!
-    timestamp: String!
-    rowCount: Int
-  }
+  ${GRAPHQL_AUDIT_TYPES_SDL}
 
   type QueryMetrics {
     totalQueries: Int!
