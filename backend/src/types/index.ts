@@ -89,6 +89,7 @@ export * from './module2Persistence';
 export * from './pcbiD1';
 export * from './assessmentD1';
 export * from './orchestrationPcbi';
+export * from './orchestrationLogging';
 export * from './procurementTransactionD1';
 export * from './module2D1Scoped';
 export * from './module2D1AuditDossier';

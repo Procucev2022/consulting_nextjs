@@ -57,7 +57,7 @@ export const listJobs: OrchestrationHandler = async (context) => {
 
 export const getJob: OrchestrationHandler = async (context) => {
   const row = await loadAccessibleJob(context, context.params.jobId);
-  return dataOk(context, await buildJobDetail(context.database, row, context.actor));
+  return dataOk(context, await buildJobDetail(context.database, row, context.actor, context.requestId));
 };
 
 export const getReadiness: OrchestrationHandler = async (context) => {
@@ -90,5 +90,5 @@ export const getNotifications: OrchestrationHandler = async (context) => {
 export const getAuditTrail: OrchestrationHandler = async (context) => {
   const tenantId = requireOrchestrationTenantId(context);
   const rows = await listRecentAuditRows(context.database, tenantId, ORCHESTRATION_LIMITS.auditTrailLimit);
-  return dataOk(context, rows.map((row) => mapAuditEvent(row)));
+  return dataOk(context, rows.map((row) => mapAuditEvent(row, context.requestId)));
 };

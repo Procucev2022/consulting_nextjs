@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ORCHESTRATION_DEFAULTS } from '../../src/constants/orchestration';
+import {
+  ORCHESTRATION_DEFAULTS,
+  ORCHESTRATION_LOG_ACTIONS,
+  ORCHESTRATION_LOG_MESSAGES
+} from '../../src/constants/orchestration';
 import {
   buildStatsByDocument,
   mapAcknowledgement,
@@ -26,6 +30,7 @@ import type {
   ReportRow
 } from '../../src/types/orchestrationD1';
 import type { PCBIGapSourceRow } from '../../src/types/orchestrationPcbi';
+import logger from '../../src/utils/logger';
 
 vi.mock('../../src/utils/logger', () => ({
   default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -356,6 +361,45 @@ describe('checklist mapping', () => {
     expect(parseStoredChecklist('{"dataQuality": {}}')).toBeNull();
   });
 
+  it('logs malformed checklist JSON with correlation and record context without logging stored content', () => {
+    vi.mocked(logger.warn).mockClear();
+    const context = {
+      requestId: 'req-checklist-corrupt',
+      tenantId: 'cust-1',
+      assessmentId: 'AIC-1',
+      reportVersionId: 'RPT-AIC-1-v1',
+      checklistId: 'chk-corrupt'
+    };
+
+    expect(parseStoredChecklist('{private stored payload', context)).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      ORCHESTRATION_LOG_MESSAGES.invalidStoredChecklist,
+      expect.objectContaining({
+        action: ORCHESTRATION_LOG_ACTIONS.invalidStoredChecklist,
+        ...context,
+        fallback: 'omit-checklist'
+      }),
+      expect.any(SyntaxError)
+    );
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('{private stored payload');
+  });
+
+  it('logs schema-invalid checklists with safe validation issues', () => {
+    vi.mocked(logger.warn).mockClear();
+
+    expect(parseStoredChecklist('{"dataQuality": {}}', { requestId: 'req-checklist-schema' })).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      ORCHESTRATION_LOG_MESSAGES.invalidStoredChecklist,
+      expect.objectContaining({
+        action: ORCHESTRATION_LOG_ACTIONS.invalidStoredChecklist,
+        requestId: 'req-checklist-schema',
+        fallback: 'omit-checklist',
+        validationIssues: expect.arrayContaining([expect.objectContaining({ path: expect.any(String) })])
+      }),
+      expect.objectContaining({ name: 'TypeError', stack: expect.any(String) })
+    );
+  });
+
   it('adds the confirming admin and confirmation time, leaving confirmedAt undefined when incomplete', () => {
     const row: ChecklistRow = {
       checklist_id: 'chk-1',
@@ -494,6 +538,42 @@ describe('audit mapping and metadata parsing', () => {
     expect(parseMetadata('"text"')).toBeUndefined();
     expect(parseMetadata('null')).toBeUndefined();
     expect(parseMetadata('{broken')).toBeUndefined();
+  });
+
+  it('logs malformed audit metadata with request, tenant and event context without logging its contents', () => {
+    vi.mocked(logger.warn).mockClear();
+    const row = auditRow({ metadata_json: '{private audit payload' });
+
+    expect(mapAuditEvent(row, 'req-audit-corrupt').metadata).toBeUndefined();
+    expect(logger.warn).toHaveBeenCalledWith(
+      ORCHESTRATION_LOG_MESSAGES.invalidAuditMetadata,
+      expect.objectContaining({
+        action: ORCHESTRATION_LOG_ACTIONS.invalidAuditMetadata,
+        requestId: 'req-audit-corrupt',
+        tenantId: row.tenant_id,
+        assessmentId: row.assessment_id,
+        eventId: row.event_id,
+        fallback: 'omit-metadata'
+      }),
+      expect.any(SyntaxError)
+    );
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('{private audit payload');
+  });
+
+  it('warns when valid audit JSON has a non-object shape', () => {
+    vi.mocked(logger.warn).mockClear();
+
+    expect(parseMetadata('[1,2]', { requestId: 'req-audit-shape', eventId: 'aud-shape' })).toBeUndefined();
+    expect(logger.warn).toHaveBeenCalledWith(
+      ORCHESTRATION_LOG_MESSAGES.invalidAuditMetadata,
+      expect.objectContaining({
+        action: ORCHESTRATION_LOG_ACTIONS.invalidAuditMetadata,
+        requestId: 'req-audit-shape',
+        eventId: 'aud-shape',
+        fallback: 'omit-metadata'
+      }),
+      expect.objectContaining({ name: 'TypeError', stack: expect.any(String) })
+    );
   });
 
   it('rejects an audit actor role outside the allowed list', () => {

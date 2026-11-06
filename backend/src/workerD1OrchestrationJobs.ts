@@ -48,12 +48,20 @@ import {
 
 const loadChecklist = async (
   database: OrchestrationDatabase,
-  report: ReportRow | null
+  report: ReportRow | null,
+  tenantId: string,
+  requestId?: string
 ): Promise<AdminQualityGateChecklist | undefined> => {
   if (report === null) return undefined;
   const row = await findLatestChecklistRow(database, report.report_version_id);
   if (row === null) return undefined;
-  const checklist = parseStoredChecklist(row.checklist_json);
+  const checklist = parseStoredChecklist(row.checklist_json, {
+    requestId,
+    tenantId,
+    assessmentId: row.assessment_id,
+    reportVersionId: report.report_version_id,
+    checklistId: row.checklist_id
+  });
   return checklist === null ? undefined : mapChecklist(row, checklist);
 };
 
@@ -82,7 +90,8 @@ export const loadReportForJob = async (
 export const buildJobDetail = async (
   database: OrchestrationDatabase,
   row: AssessmentJobRow,
-  actor: OrchestrationActor
+  actor: OrchestrationActor,
+  requestId?: string
 ): Promise<AnalysisJobDetailPayload> => {
   const assessmentId = row.assessment_id;
   const [versionRows, statsRows, reportRows, correctionRows, openCount, pcbiRows] = await Promise.all([
@@ -98,7 +107,7 @@ export const buildJobDetail = async (
   const activeVisible = activeReport !== null && isCustomerVisibleState(activeReport.workflow_state);
   const pcbiGaps = await Promise.all(pcbiRows.map((gap) => mapPcbiGap(gap, row.customer_id)));
   const [checklist, acknowledgement] = await Promise.all([
-    loadChecklist(database, isAdmin ? activeReport : null),
+    loadChecklist(database, isAdmin ? activeReport : null, row.tenant_id, requestId),
     loadAcknowledgement(database, activeReport)
   ]);
   return {

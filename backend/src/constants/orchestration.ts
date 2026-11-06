@@ -177,6 +177,16 @@ export const ORCHESTRATION_EVENT_TYPES = {
   PCBI_GAP_RESOLVED: 'PCBI_GAP_RESOLVED'
 } as const;
 
+export const ORCHESTRATION_LOG_ACTIONS = {
+  invalidStoredChecklist: 'orchestration.checklist.stored_json_invalid',
+  invalidAuditMetadata: 'orchestration.audit.metadata_invalid'
+} as const;
+
+export const ORCHESTRATION_LOG_MESSAGES = {
+  invalidStoredChecklist: 'Stored analysis quality checklist is invalid; the checklist was omitted',
+  invalidAuditMetadata: 'Stored analysis audit metadata is invalid; metadata was omitted'
+} as const;
+
 export const ORCHESTRATION_ENTITY_TYPES = {
   ANALYSIS_JOB: 'AnalysisJob',
   REPORT_VERSION: 'ReportVersion',

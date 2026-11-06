@@ -26,6 +26,10 @@ import type {
   ReportRow,
   VersionMappingContext
 } from './types/orchestrationD1';
+import type {
+  OrchestrationAuditMetadataLogContext,
+  OrchestrationChecklistLogContext
+} from './types/orchestrationLogging';
 import type { PCBIGapSourceRow } from './types/orchestrationPcbi';
 import type { QualityGateChecklistBody } from './types/orchestrationValidation';
 import {
@@ -35,6 +39,8 @@ import {
   NOTIFICATION_RECIPIENT_VALUES,
   NOTIFICATION_SEVERITY_VALUES,
   ORCHESTRATION_DEFAULTS,
+  ORCHESTRATION_LOG_ACTIONS,
+  ORCHESTRATION_LOG_MESSAGES,
   ORCHESTRATION_ID_PREFIX,
   ORCHESTRATION_NUMERIC,
   AUDIT_ACTOR_ROLE_VALUES,
@@ -50,6 +56,7 @@ import {
   roundTo,
   toFileType
 } from './workerD1OrchestrationDerive';
+import logger from './utils/logger';
 
 const reportTimeline = (
   row: AssessmentJobRow
@@ -238,13 +245,38 @@ export const mapReport = (row: ReportRow): ReportVersion => {
 };
 
 /** Parses the stored checklist JSON. Returns null when the stored value is not a valid checklist. */
-export const parseStoredChecklist = (json: string): QualityGateChecklistBody | null => {
+export const parseStoredChecklist = (
+  json: string,
+  context: OrchestrationChecklistLogContext = {}
+): QualityGateChecklistBody | null => {
+  const logContext = {
+    action: ORCHESTRATION_LOG_ACTIONS.invalidStoredChecklist,
+    requestId: context.requestId,
+    tenantId: context.tenantId,
+    assessmentId: context.assessmentId,
+    reportVersionId: context.reportVersionId,
+    checklistId: context.checklistId,
+    fallback: 'omit-checklist'
+  };
+  let value: unknown;
   try {
-    const parsed = qualityGateChecklistSchema.safeParse(JSON.parse(json) as unknown);
-    return parsed.success ? parsed.data : null;
-  } catch {
+    value = JSON.parse(json) as unknown;
+  } catch (error: unknown) {
+    logger.warn(ORCHESTRATION_LOG_MESSAGES.invalidStoredChecklist, logContext, error);
     return null;
   }
+  const parsed = qualityGateChecklistSchema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  const validationError = new TypeError('Stored quality checklist does not match its schema.');
+  logger.warn(ORCHESTRATION_LOG_MESSAGES.invalidStoredChecklist, {
+    ...logContext,
+    validationIssues: parsed.error.issues.map((issue) => ({
+      code: issue.code,
+      path: issue.path.join('.'),
+      message: issue.message
+    }))
+  }, validationError);
+  return null;
 };
 
 export const mapChecklist = (row: ChecklistRow, checklist: QualityGateChecklistBody): AdminQualityGateChecklist => ({
@@ -303,17 +335,32 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** Parses audit metadata JSON. Anything that is not a JSON object is dropped. */
-export const parseMetadata = (json: string | null): Record<string, unknown> | undefined => {
+export const parseMetadata = (
+  json: string | null,
+  context: OrchestrationAuditMetadataLogContext = {}
+): Record<string, unknown> | undefined => {
   if (json === null) return undefined;
+  const logContext = {
+    action: ORCHESTRATION_LOG_ACTIONS.invalidAuditMetadata,
+    requestId: context.requestId,
+    tenantId: context.tenantId,
+    assessmentId: context.assessmentId,
+    eventId: context.eventId,
+    fallback: 'omit-metadata'
+  };
   try {
     const parsed = JSON.parse(json) as unknown;
-    return isRecord(parsed) ? parsed : undefined;
-  } catch {
+    if (isRecord(parsed)) return parsed;
+    logger.warn(ORCHESTRATION_LOG_MESSAGES.invalidAuditMetadata, logContext,
+      new TypeError('Stored analysis audit metadata must be a JSON object.'));
+    return undefined;
+  } catch (error: unknown) {
+    logger.warn(ORCHESTRATION_LOG_MESSAGES.invalidAuditMetadata, logContext, error);
     return undefined;
   }
 };
 
-export const mapAuditEvent = (row: AuditRow): AnalysisAuditEvent => ({
+export const mapAuditEvent = (row: AuditRow, requestId?: string): AnalysisAuditEvent => ({
   eventId: row.event_id,
   tenantId: row.tenant_id,
   actorId: row.actor_id,
@@ -324,5 +371,10 @@ export const mapAuditEvent = (row: AuditRow): AnalysisAuditEvent => ({
   entityId: row.entity_id,
   previousState: row.previous_state ?? undefined,
   newState: row.new_state ?? undefined,
-  metadata: parseMetadata(row.metadata_json)
+  metadata: parseMetadata(row.metadata_json, {
+    requestId,
+    tenantId: row.tenant_id,
+    assessmentId: row.assessment_id,
+    eventId: row.event_id
+  })
 });
