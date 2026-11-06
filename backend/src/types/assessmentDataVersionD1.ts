@@ -32,6 +32,7 @@ export interface AssessmentDatasetActionContext {
 }
 
 export interface AssessmentSnapshotReadContext {
+  assessmentId?: string;
   requestId?: string;
   tenantId?: string;
 }

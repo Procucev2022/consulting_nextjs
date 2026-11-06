@@ -53,7 +53,10 @@ const loadDeliveryContext = async (context: AssessmentLifecycleActionContext): P
     `SELECT * FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ? AND analysis_run_id = ?`,
     [context.assessmentId, runId]);
   if (!runRow) return { ok: false, result: resultError(404, LIFECYCLE_MESSAGES.runNotFound(runId)) };
-  const runSnapshots = await loadAssessmentSnapshots(context.db, 'run', context.assessmentId);
+  const runSnapshots = await loadAssessmentSnapshots(context.db, 'run', context.assessmentId, {
+    requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID,
+    assessmentId: context.assessmentId
+  });
   const run = mapD1AnalysisRun(runRow, runSnapshots.get(runId));
   if (!run.isApproved) return { ok: false, result: resultError(400, LIFECYCLE_MESSAGES.unapprovedRun) };
   if (run.isSuperseded) return { ok: false, result: resultError(400, LIFECYCLE_MESSAGES.supersededRun) };

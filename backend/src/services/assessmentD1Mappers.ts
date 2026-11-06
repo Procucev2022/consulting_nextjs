@@ -1,6 +1,9 @@
 import {
   ASSESSMENT_D1_BOOLEAN_COLUMNS,
   ASSESSMENT_D1_COLLECTION_ID_COLUMNS,
+  ASSESSMENT_D1_FALLBACKS,
+  ASSESSMENT_D1_LOG_ACTIONS,
+  ASSESSMENT_D1_LOG_MESSAGES,
   ASSESSMENT_D1_JSON_COLUMNS,
   ASSESSMENT_SNAPSHOT_SQL,
   assessmentD1ObjectSchema
@@ -11,28 +14,53 @@ import type {
 import type { D1Record } from '../types/d1';
 import type { CloudflareD1Database } from '../types/cloudflare';
 import type { AssessmentSnapshotRow, AssessmentSnapshotType } from '../types/assessmentD1';
+import type { AssessmentSnapshotReadContext } from '../types/assessmentDataVersionD1';
+import logger from '../utils/logger';
+
+const parseSnapshotRow = (
+  row: AssessmentSnapshotRow,
+  entryType: AssessmentSnapshotType,
+  context?: AssessmentSnapshotReadContext
+): [string, D1Record] => {
+  try {
+    return [row.entry_id, assessmentD1ObjectSchema.parse(JSON.parse(row.payload_json))];
+  } catch (error) {
+    logger.error(ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotCollection, {
+      action: ASSESSMENT_D1_LOG_ACTIONS.snapshotCollectionRead,
+      requestId: context?.requestId,
+      tenantId: context?.tenantId,
+      assessmentId: row.assessment_id || context?.assessmentId,
+      entryType,
+      entryId: row.entry_id,
+      fallback: ASSESSMENT_D1_FALLBACKS.REJECT_SNAPSHOT_RESPONSE
+    }, error);
+    throw error;
+  }
+};
 
 export async function loadAssessmentSnapshots(
-  db: CloudflareD1Database, entryType: AssessmentSnapshotType, assessmentId?: string
+  db: CloudflareD1Database,
+  entryType: AssessmentSnapshotType,
+  assessmentId?: string,
+  context?: AssessmentSnapshotReadContext
 ): Promise<Map<string, D1Record>> {
   const statement = assessmentId === undefined
     ? db.prepare(ASSESSMENT_SNAPSHOT_SQL.byType).bind(entryType)
     : db.prepare(ASSESSMENT_SNAPSHOT_SQL.byAssessment).bind(entryType, assessmentId);
   const rows = await statement.all<AssessmentSnapshotRow>();
-  return new Map(rows.results.map((row) => [
-    row.entry_id, assessmentD1ObjectSchema.parse(JSON.parse(row.payload_json))
-  ]));
+  return new Map(rows.results.map((row) => parseSnapshotRow(row, entryType, context)));
 }
 
 export async function loadAssessmentSnapshotsForIds(
-  db: CloudflareD1Database, entryType: AssessmentSnapshotType, assessmentIds: string[]
+  db: CloudflareD1Database,
+  entryType: AssessmentSnapshotType,
+  assessmentIds: string[],
+  context?: AssessmentSnapshotReadContext
 ): Promise<Map<string, D1Record>> {
   if (assessmentIds.length === 0) return new Map();
   const rows = await db.prepare(ASSESSMENT_SNAPSHOT_SQL.byAssessmentIds)
     .bind(entryType, JSON.stringify(assessmentIds)).all<AssessmentSnapshotRow>();
-  return new Map(rows.results.map((row) => [
-    row.entry_id, assessmentD1ObjectSchema.parse(JSON.parse(row.payload_json))
-  ]));
+  return new Map(rows.results.map((row) => parseSnapshotRow(row, entryType, context)));
 }
 
 export function mapD1SnapshotCollection<T>(

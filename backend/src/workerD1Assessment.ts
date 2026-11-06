@@ -13,7 +13,9 @@ import {
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { uploadAssessmentDataVersion, validateAssessmentDataVersion } from './services/assessmentDataVersionD1';
 import { handleAssessmentLifecycleAction } from './services/assessmentLifecycleD1';
-import type { AssessmentLifecycleActionContext } from './types/assessmentDataVersionD1';
+import type {
+  AssessmentLifecycleActionContext, AssessmentSnapshotReadContext
+} from './types/assessmentDataVersionD1';
 import {
   mapD1Customer, mapD1Assessment, mapD1DataVersion, mapD1AnalysisRun, mapD1AuditLog,
   loadAssessmentSnapshots, loadAssessmentSnapshotsForIds, mapD1SnapshotCollection
@@ -38,8 +40,11 @@ const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, v
 };
 
 const loadScopedSnapshots = async (
-  db: CloudflareD1Database, entryType: 'customer' | 'assessment', ids: string[]
-): Promise<Map<string, D1Record>> => loadAssessmentSnapshotsForIds(db, entryType, ids);
+  db: CloudflareD1Database,
+  entryType: 'customer' | 'assessment',
+  ids: string[],
+  context?: AssessmentSnapshotReadContext
+): Promise<Map<string, D1Record>> => loadAssessmentSnapshotsForIds(db, entryType, ids, context);
 
 const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): Promise<D1Record[]> => {
   const rows = await queryAll<D1Record>(db,
@@ -165,7 +170,9 @@ const handleCustomerRoute = async (
     }
     const customers = await queryAll(db,
       `SELECT * FROM ${D1_TABLES.customers} WHERE tenant_id = ? ORDER BY customer_name ASC`, [tenantId]);
-    const snapshots = await loadScopedSnapshots(db, 'customer', customers.map((row) => String(row.customer_id)));
+    const snapshots = await loadScopedSnapshots(db, 'customer', customers.map((row) => String(row.customer_id)), {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    });
     return { data: customers.map((row) => mapD1Customer(row, snapshots.get(String(row.customer_id)))) };
   }
 
@@ -189,7 +196,9 @@ const handleCustomerRoute = async (
       body.notes ?? null, customerId, tenantId
     ).run();
     const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`, [customerId, tenantId]);
-    const snapshots = await loadAssessmentSnapshots(db, 'customer', customerId);
+    const snapshots = await loadAssessmentSnapshots(db, 'customer', customerId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    });
     return { data: updated ? mapD1Customer(updated, snapshots.get(customerId)) : null };
   }
 
@@ -199,8 +208,12 @@ const handleCustomerRoute = async (
   const assessments = await queryAll(db,
     `SELECT * FROM ${D1_TABLES.assessments} WHERE customer_id = ? AND tenant_id = ? ORDER BY created_at DESC`, [customerId, tenantId]);
   const [customerSnapshots, assessmentSnapshots] = await Promise.all([
-    loadAssessmentSnapshots(db, 'customer', customerId),
-    loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)))
+    loadAssessmentSnapshots(db, 'customer', customerId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    }),
+    loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)), {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    })
   ]);
   return { data: {
     customer: mapD1Customer(customer, customerSnapshots.get(customerId)),
@@ -283,7 +296,9 @@ const handleAssessmentAction = async (
     const ndaStatus = typeof body.ndaStatus === 'string' ? body.ndaStatus : 'SIGNED';
     await db.prepare(`UPDATE ${D1_TABLES.assessments} SET nda_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ? AND tenant_id = ?`).bind(ndaStatus, assessmentId, tenantId).run();
     const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
-    const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId);
+    const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    });
     return { data: updated ? mapD1Assessment(updated, snapshots.get(assessmentId)) : null };
   }
 
@@ -292,13 +307,17 @@ const handleAssessmentAction = async (
     const dataStatus = typeof body.dataStatus === 'string' ? body.dataStatus : 'VALIDATED';
     await db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ? AND tenant_id = ?`).bind(dataStatus, assessmentId, tenantId).run();
     const updated = await queryFirst(db, `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
-    const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId);
+    const snapshots = await loadAssessmentSnapshots(db, 'assessment', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    });
     return { data: updated ? mapD1Assessment(updated, snapshots.get(assessmentId)) : null };
   }
 
   if (action === 'audit') {
     const records = await queryAll(db, `SELECT * FROM ${D1_TABLES.auditLogs} WHERE assessment_id = ? ORDER BY timestamp DESC`, [assessmentId]);
-    const snapshots = await loadAssessmentSnapshots(db, 'audit', assessmentId);
+    const snapshots = await loadAssessmentSnapshots(db, 'audit', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    });
     return { data: mapD1SnapshotCollection(records, snapshots, mapD1AuditLog) };
   }
 
@@ -307,10 +326,18 @@ const handleAssessmentAction = async (
     queryAll(db, `SELECT * FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ?`, [assessmentId]),
     queryAll(db, `SELECT * FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ?`, [assessmentId]),
     queryAll(db, `SELECT * FROM ${D1_TABLES.auditLogs} WHERE assessment_id = ? ORDER BY timestamp DESC`, [assessmentId]),
-    loadAssessmentSnapshots(db, 'assessment', assessmentId),
-    loadAssessmentSnapshots(db, 'version', assessmentId),
-    loadAssessmentSnapshots(db, 'run', assessmentId),
-    loadAssessmentSnapshots(db, 'audit', assessmentId)
+    loadAssessmentSnapshots(db, 'assessment', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    }),
+    loadAssessmentSnapshots(db, 'version', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    }),
+    loadAssessmentSnapshots(db, 'run', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    }),
+    loadAssessmentSnapshots(db, 'audit', assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId, assessmentId
+    })
   ]);
   if (!assessment) return { data: { success: false, message: `Assessment ${assessmentId} not found` }, status: 404 };
   return { data: {
@@ -418,7 +445,9 @@ export const handleAssessmentRoute = async (
     }
     const assessments = await queryAll(db,
       `SELECT * FROM ${D1_TABLES.assessments} WHERE tenant_id = ? ORDER BY created_at DESC`, [tenantId]);
-    const snapshots = await loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)));
+    const snapshots = await loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)), {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    });
     return { data: assessments.map((row) => mapD1Assessment(row, snapshots.get(String(row.assessment_id)))) };
   }
 

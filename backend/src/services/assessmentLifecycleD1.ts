@@ -69,7 +69,10 @@ const loadAnalysisRun = async (
     `SELECT * FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ? AND analysis_run_id = ?`,
     [context.assessmentId, analysisRunId]);
   if (!row) return { ok: false as const, result: resultError(404, LIFECYCLE_MESSAGES.runNotFound(analysisRunId)) };
-  const snapshots = await loadAssessmentSnapshots(context.db, 'run', context.assessmentId);
+  const snapshots = await loadAssessmentSnapshots(context.db, 'run', context.assessmentId, {
+    requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID,
+    assessmentId: context.assessmentId
+  });
   return { ok: true as const, row, run: mapD1AnalysisRun(row, snapshots.get(analysisRunId)) };
 };
 

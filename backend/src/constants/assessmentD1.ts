@@ -92,16 +92,22 @@ export const ASSESSMENT_D1_MESSAGES = {
 } as const;
 
 export const ASSESSMENT_D1_LOG_MESSAGES = {
-  invalidSnapshotFallback: 'Invalid assessment snapshot in D1 fell back to an empty object'
+  invalidSnapshotFallback: 'Invalid assessment snapshot in D1 fell back to an empty object',
+  invalidSnapshotCollection: 'Assessment snapshot collection row could not be parsed from D1'
+} as const;
+
+export const ASSESSMENT_D1_LOG_ACTIONS = {
+  snapshotCollectionRead: 'assessment.snapshot-collection.read'
 } as const;
 
 export const ASSESSMENT_D1_FALLBACKS = {
-  EMPTY_SNAPSHOT_OBJECT: 'empty-snapshot-object'
+  EMPTY_SNAPSHOT_OBJECT: 'empty-snapshot-object',
+  REJECT_SNAPSHOT_RESPONSE: 'reject-snapshot-response'
 } as const;
 
 export const ASSESSMENT_SNAPSHOT_SQL = {
-  byType: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
-  byAssessment: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?',
-  byAssessmentIds: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? ' +
+  byType: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
+  byAssessment: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?',
+  byAssessmentIds: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? ' +
     'AND assessment_id IN (SELECT value FROM json_each(?))'
 } as const;
