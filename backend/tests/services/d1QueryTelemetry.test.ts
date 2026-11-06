@@ -131,15 +131,71 @@ describe('request-scoped D1 query telemetry', () => {
       instrumented.prepare('UPDATE TenantMaster SET status = ?').bind('ACTIVE'),
       instrumented.prepare('INSERT INTO AuditLog (id) VALUES (?)').bind('LOG-1')
     ];
+    const clock = vi.spyOn(Date, 'now').mockReturnValueOnce(100).mockReturnValueOnce(140);
 
     await instrumented.batch?.(statements);
 
     expect(database.statements).toHaveLength(2);
-    expect(metrics).toMatchObject({ totalQueries: 2, totalRowsWritten: 2 });
+    expect(metrics).toMatchObject({ totalQueries: 2, totalRowsWritten: 2, totalDurationMs: 40 });
+    expect(getD1RuntimeMetrics(instrumented).averageDurationMs).toBe(20);
     expect(logger.debug).toHaveBeenCalledTimes(2);
     expect(logger.debug).toHaveBeenCalledWith(D1_QUERY_LOG_MESSAGES.completed, expect.objectContaining({
-      requestId: 'req-batch', operation: 'INSERT', model: 'AuditLog', affectedRows: 1
+      requestId: 'req-batch', operation: 'INSERT', model: 'AuditLog', affectedRows: 1,
+      durationMs: 20, durationSource: 'batch-allocation', batchDurationMs: 40, batchSize: 2,
+      batchStatementIndex: 2, wallDurationMs: 40
     }));
+    expect(getD1RuntimeMetrics(instrumented).recentAudits[0]).toMatchObject({
+      durationMs: 20, wallDurationMs: 40, durationSource: 'batch-allocation',
+      batchDurationMs: 40, batchSize: 2, batchStatementIndex: 2
+    });
+    clock.mockRestore();
+  });
+
+  it('uses D1 per-statement durations and warns once when batch latency is slow', async () => {
+    const database = new FakeDatabase();
+    const metrics = createD1RequestMetrics();
+    const instrumented = instrumentD1Database(database, 'req-batch-slow', metrics);
+    const statements = [
+      instrumented.prepare('UPDATE TenantMaster SET status = ?').bind('ACTIVE'),
+      instrumented.prepare('INSERT INTO AuditLog (id) VALUES (?)').bind('LOG-1')
+    ];
+    const clock = vi.spyOn(Date, 'now').mockReturnValueOnce(100).mockReturnValueOnce(300);
+    database.batch = async () => [
+      { meta: { duration: 20, rows_written: 1, changes: 1 } },
+      { meta: { duration: 30, rows_written: 1, changes: 1 } }
+    ];
+
+    await instrumented.batch?.(statements);
+
+    expect(metrics).toMatchObject({ totalQueries: 2, totalDurationMs: 50, slowQueries: 0 });
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(D1_QUERY_LOG_MESSAGES.slowBatch, expect.objectContaining({
+      requestId: 'req-batch-slow', operation: 'BATCH', durationMs: 200, batchSize: 2
+    }));
+    expect(logger.debug).toHaveBeenCalledWith(D1_QUERY_LOG_MESSAGES.completed, expect.objectContaining({
+      requestId: 'req-batch-slow', durationMs: 30, databaseDurationMs: 30,
+      durationSource: 'database', batchDurationMs: 200, batchStatementIndex: 2,
+      wallDurationMs: 200
+    }));
+    clock.mockRestore();
+  });
+
+  it('falls back to measured batch allocation when a D1 result has no metadata', async () => {
+    const database = new FakeDatabase();
+    database.batch = async () => [null, { meta: null }];
+    const metrics = createD1RequestMetrics();
+    const instrumented = instrumentD1Database(database, 'req-batch-no-meta', metrics);
+    const statements = [
+      instrumented.prepare('UPDATE TenantMaster SET status = ?').bind('ACTIVE'),
+      instrumented.prepare('INSERT INTO AuditLog (id) VALUES (?)').bind('LOG-1')
+    ];
+
+    await instrumented.batch?.(statements);
+
+    expect(metrics).toMatchObject({ totalQueries: 2 });
+    expect(getD1RuntimeMetrics(instrumented).recentAudits).toEqual(expect.arrayContaining([
+      expect.objectContaining({ durationSource: 'batch-allocation', batchSize: 2 })
+    ]));
   });
 
   it('logs batch failures and leaves an unsupported batch binding undefined', async () => {
@@ -148,7 +204,7 @@ describe('request-scoped D1 query telemetry', () => {
     const failedDatabase = instrumentD1Database(new FakeDatabase({}, failure), 'req-batch-fail', metrics);
     const statement = failedDatabase.prepare('DELETE FROM TenantMaster WHERE tenant_id = ?').bind('T-1');
 
-    await expect(failedDatabase.batch?.([statement])).rejects.toThrow(failure);
+    await expect(failedDatabase.batch?.([statement, new FakeStatement({})])).rejects.toThrow(failure);
 
     const noBatch = { prepare: (sql: string) => new FakeStatement({ allResult: { results: [] } }) };
     const withoutBatch = instrumentD1Database(noBatch, 'req-no-batch', createD1RequestMetrics());

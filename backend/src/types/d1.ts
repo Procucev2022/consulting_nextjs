@@ -1,4 +1,5 @@
 import type { QueryAuditLog } from './db';
+import type { CloudflareD1Database, CloudflareD1PreparedStatement } from './cloudflare';
 
 export type D1Record = Record<string, unknown>;
 
@@ -27,6 +28,22 @@ export interface D1RuntimeMetrics extends D1RequestMetrics {
   cacheHitRatio: number;
   averageDurationMs: number;
   recentAudits: QueryAuditLog[];
+}
+
+export interface D1BatchQueryMeasurement {
+  queryDurationMs: number;
+  durationSource: 'database' | 'batch-allocation';
+  batchDurationMs: number;
+  batchSize: number;
+  batchStatementIndex: number;
+}
+
+export interface D1PreparedStatementTelemetryMetadata {
+  statement: CloudflareD1PreparedStatement;
+  sql: string;
+  requestId: string;
+  metrics: D1RequestMetrics;
+  cacheIdentity: CloudflareD1Database;
 }
 
 export interface D1QueryMetaRecord {

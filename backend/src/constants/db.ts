@@ -10,6 +10,7 @@ export const SLOW_QUERY_ROWS_READ_THRESHOLD = 10000;
 export const D1_QUERY_LOG_MESSAGES = {
   completed: 'D1 statement completed',
   slow: 'Slow D1 statement',
+  slowBatch: 'Slow D1 batch',
   failed: 'D1 statement failed',
   requestSummary: 'D1 request query summary'
 } as const;

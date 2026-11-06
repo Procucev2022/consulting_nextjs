@@ -12,7 +12,12 @@ export interface QueryAuditLog {
   operation: string;
   model: string;
   durationMs: number;
+  wallDurationMs?: number;
+  durationSource?: 'database' | 'batch-allocation' | 'wall-clock';
   cached: boolean;
+  batchDurationMs?: number;
+  batchSize?: number;
+  batchStatementIndex?: number;
   rowsAffected?: number;
   timestamp: string;
 }

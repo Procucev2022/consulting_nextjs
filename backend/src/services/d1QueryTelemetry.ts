@@ -9,19 +9,18 @@ import type {
   CloudflareD1PreparedStatement,
   CloudflareD1QueryMeta
 } from '../types/cloudflare';
-import type { D1RequestMetrics, D1RuntimeMetrics, D1RuntimeMetricsState } from '../types/d1';
+import type {
+  D1BatchQueryMeasurement,
+  D1PreparedStatementTelemetryMetadata,
+  D1RequestMetrics,
+  D1RuntimeMetrics,
+  D1RuntimeMetricsState
+} from '../types/d1';
 import type { D1ReferenceCacheStatus, QueryAuditLog } from '../types/db';
 import logger from '../utils/logger';
+import { runInstrumentedD1Batch } from './d1BatchTelemetry';
 
-interface PreparedStatementMetadata {
-  statement: CloudflareD1PreparedStatement;
-  sql: string;
-  requestId: string;
-  metrics: D1RequestMetrics;
-  cacheIdentity: CloudflareD1Database;
-}
-
-const preparedStatements = new WeakMap<object, PreparedStatementMetadata>();
+const preparedStatements = new WeakMap<object, D1PreparedStatementTelemetryMetadata>();
 const instrumentedDatabases = new WeakSet<object>();
 const cacheIdentityByDatabase = new WeakMap<CloudflareD1Database, CloudflareD1Database>();
 const requestMetricsByDatabase = new WeakMap<CloudflareD1Database, D1RequestMetrics>();
@@ -93,10 +92,13 @@ const addQueryToTotals = (
 
 const appendRecentAudit = (
   runtime: D1RuntimeMetricsState,
-  metadata: PreparedStatementMetadata,
+  metadata: D1PreparedStatementTelemetryMetadata,
   durationMs: number,
+  wallDurationMs: number,
+  durationSource: 'database' | 'batch-allocation' | 'wall-clock',
   result: unknown,
-  meta: CloudflareD1QueryMeta | undefined
+  meta: CloudflareD1QueryMeta | undefined,
+  batchMeasurement?: D1BatchQueryMeasurement
 ): void => {
   const audit: QueryAuditLog = {
     queryId: `${metadata.requestId}:${metadata.metrics.totalQueries}`,
@@ -104,7 +106,14 @@ const appendRecentAudit = (
     operation: operationFor(metadata.sql),
     model: modelFor(metadata.sql) || 'UNKNOWN',
     durationMs,
+    wallDurationMs,
+    durationSource,
     cached: false,
+    ...(batchMeasurement && {
+      batchDurationMs: batchMeasurement.batchDurationMs,
+      batchSize: batchMeasurement.batchSize,
+      batchStatementIndex: batchMeasurement.batchStatementIndex
+    }),
     rowsAffected: affectedRows(result, meta),
     timestamp: new Date().toISOString()
   };
@@ -114,33 +123,65 @@ const appendRecentAudit = (
   }
 };
 
+const resolveQueryDuration = (
+  wallDurationMs: number,
+  meta: CloudflareD1QueryMeta | undefined,
+  batchMeasurement?: D1BatchQueryMeasurement
+): { durationMs: number; durationSource: 'database' | 'batch-allocation' | 'wall-clock' } => {
+  if (batchMeasurement) {
+    return { durationMs: batchMeasurement.queryDurationMs, durationSource: batchMeasurement.durationSource };
+  }
+  if (typeof meta?.duration === 'number' && Number.isFinite(meta.duration)) {
+    return { durationMs: meta.duration, durationSource: 'database' };
+  }
+  return { durationMs: wallDurationMs, durationSource: 'wall-clock' };
+};
+
 const recordQuery = (
-  metadata: PreparedStatementMetadata,
+  metadata: D1PreparedStatementTelemetryMetadata,
   startedAt: number,
   result?: unknown,
   failure?: unknown,
-  failed = false
+  failed = false,
+  batchMeasurement?: D1BatchQueryMeasurement
 ): void => {
-  const durationMs = Date.now() - startedAt;
+  const wallDurationMs = Date.now() - startedAt;
   const meta = readQueryMeta(result);
+  const { durationMs, durationSource } = resolveQueryDuration(wallDurationMs, meta, batchMeasurement);
   const rowsRead = meta?.rows_read || 0;
   const rowsWritten = meta?.rows_written || 0;
   const slow = isSlowQuery(durationMs, meta?.duration, rowsRead);
   addQueryToTotals(metadata.metrics, durationMs, rowsRead, rowsWritten, failed, slow);
   const runtime = getRuntimeState(metadata.cacheIdentity);
   addQueryToTotals(runtime, durationMs, rowsRead, rowsWritten, failed, slow);
-  appendRecentAudit(runtime, metadata, durationMs, result, meta);
+  appendRecentAudit(
+    runtime,
+    metadata,
+    durationMs,
+    batchMeasurement?.batchDurationMs ?? wallDurationMs,
+    durationSource,
+    result,
+    meta,
+    batchMeasurement
+  );
 
   const context = {
     requestId: metadata.requestId,
     operation: operationFor(metadata.sql),
     model: modelFor(metadata.sql),
     durationMs,
+    wallDurationMs: batchMeasurement?.batchDurationMs ?? wallDurationMs,
+    durationSource,
     databaseDurationMs: meta?.duration,
     rowsRead: meta?.rows_read,
     rowsWritten: meta?.rows_written,
     affectedRows: affectedRows(result, meta),
-    cacheStatus: 'miss'
+    cacheStatus: 'miss',
+    ...(batchMeasurement && {
+      batchDurationMs: batchMeasurement.batchDurationMs,
+      batchSize: batchMeasurement.batchSize,
+      batchStatementIndex: batchMeasurement.batchStatementIndex
+    })
   };
   if (failed) logger.error(D1_QUERY_LOG_MESSAGES.failed, context, failure);
   else if (slow) logger.warn(D1_QUERY_LOG_MESSAGES.slow, context);
@@ -154,7 +195,7 @@ const wrapStatement = (
   metrics: D1RequestMetrics,
   cacheIdentity: CloudflareD1Database
 ): CloudflareD1PreparedStatement => {
-  const metadata = { statement, sql, requestId, metrics, cacheIdentity };
+  const metadata: D1PreparedStatementTelemetryMetadata = { statement, sql, requestId, metrics, cacheIdentity };
   const wrapped = new Proxy(statement, {
     get(target, property) {
       if (property === 'bind') {
@@ -245,23 +286,12 @@ export const instrumentD1Database = (
         };
       }
       if (property === 'batch' && target.batch) {
-        return async (statements: CloudflareD1PreparedStatement[]) => {
-          const startedAt = Date.now();
-          const metadata = statements.map((statement) => preparedStatements.get(statement));
-          const nativeStatements = statements.map((statement, index) => metadata[index]?.statement || statement);
-          try {
-            const results = await target.batch?.call(target, nativeStatements) || [];
-            metadata.forEach((query, index) => {
-              if (query) recordQuery(query, startedAt, results[index]);
-            });
-            return results;
-          } catch (error) {
-            metadata.forEach((query) => {
-              if (query) recordQuery(query, startedAt, undefined, error, true);
-            });
-            throw error;
-          }
-        };
+        return (statements: CloudflareD1PreparedStatement[]) => runInstrumentedD1Batch(
+          target as CloudflareD1Database & { batch: NonNullable<CloudflareD1Database['batch']> },
+          statements,
+          preparedStatements,
+          recordQuery
+        );
       }
       const value = Reflect.get(target, property, target);
       return typeof value === 'function' ? value.bind(target) : value;
