@@ -157,6 +157,7 @@ export const D1_ROUTE_MESSAGES = {
   pcbiDataLabFileRequired: 'Select a research evidence file before uploading it to the Data Lab.',
   pcbiDataLabFileInvalid: 'The evidence file could not be read. Check its format and try again.',
   pcbiDataLabR2Unavailable: 'Research evidence cannot be saved because the Cloudflare R2 object store is not configured.',
+  pcbiDataLabPersistenceFailed: 'Research evidence could not be committed consistently to D1. Contact support with the request ID before retrying so any partial D1 or R2 records can be checked.',
   pcbiDataLabUploadTooLarge: 'Research evidence exceeds the supported upload size. Choose a file under 10 MB.',
   pcbiDataLabPdfExtractionFailed: 'No reliable dated commodity price rows could be extracted from this PDF. Upload a text-searchable PDF with explicit dates and prices, or use CSV/XLSX.',
   pcbiDataLabPdfExtractionUnavailable: 'PDF observations could not be extracted because the document extraction service is not configured. Contact the administrator to configure it, then upload the PDF again.',

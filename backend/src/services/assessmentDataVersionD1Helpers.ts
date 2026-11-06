@@ -4,6 +4,7 @@ import type { AssessmentDatasetActionContext } from '../types/assessmentDataVers
 import type { AssessmentSnapshotReadContext } from '../types/assessmentDataVersionD1';
 import { ASSESSMENT_D1_FALLBACKS, ASSESSMENT_D1_LOG_MESSAGES } from '../constants/assessmentD1';
 import logger from '../utils/logger';
+import { runD1Statements } from './workerD1Query';
 
 export const ASSESSMENT_SNAPSHOT_TYPE = 'assessment';
 export const ASSESSMENT_VERSION_SNAPSHOT_TYPE = 'version';
@@ -24,13 +25,7 @@ export const queryFirst = async <T>(
 export const runStatements = async (
   db: AssessmentDatasetActionContext['db'],
   statements: CloudflareD1PreparedStatement[]
-): Promise<void> => {
-  if (db.batch) {
-    await db.batch(statements);
-    return;
-  }
-  for (const statement of statements) await statement.run();
-};
+): Promise<void> => runD1Statements(db, statements);
 
 export const readAssessmentSnapshot = async (
   db: AssessmentDatasetActionContext['db'],

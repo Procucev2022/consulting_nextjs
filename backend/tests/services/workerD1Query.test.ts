@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { queryD1Rows, requireWorkerDb } from '../../src/services/workerD1Query';
+import { queryD1Rows, requireWorkerDb, runD1Statements } from '../../src/services/workerD1Query';
 import { SLOW_QUERY_ROWS_READ_THRESHOLD } from '../../src/constants/db';
 import logger from '../../src/utils/logger';
-import type { CloudflareD1Database } from '../../src/types/cloudflare';
+import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../../src/types/cloudflare';
 
 vi.mock('../../src/utils/logger', () => ({ default: { debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -19,6 +19,30 @@ describe('audited Worker D1 dataset reads', () => {
     const binding = db();
     expect(requireWorkerDb(binding)).toBe(binding);
     expect(() => requireWorkerDb()).toThrow('Cloudflare D1 binding DB is not configured');
+  });
+
+  it('batches D1 mutations together when the binding supports atomic batches', async () => {
+    const first = { run: vi.fn().mockResolvedValue(undefined) } as unknown as CloudflareD1PreparedStatement;
+    const second = { run: vi.fn().mockResolvedValue(undefined) } as unknown as CloudflareD1PreparedStatement;
+    const batch = vi.fn().mockResolvedValue([]);
+    const binding = { prepare: vi.fn(), batch } as unknown as CloudflareD1Database;
+
+    await runD1Statements(binding, [first, second]);
+
+    expect(batch).toHaveBeenCalledWith([first, second]);
+    expect(first.run).not.toHaveBeenCalled();
+    expect(second.run).not.toHaveBeenCalled();
+  });
+
+  it('executes D1 mutations in order when the binding has no batch API', async () => {
+    const order: string[] = [];
+    const first = { run: vi.fn(async () => { order.push('first'); }) } as unknown as CloudflareD1PreparedStatement;
+    const second = { run: vi.fn(async () => { order.push('second'); }) } as unknown as CloudflareD1PreparedStatement;
+    const binding = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+
+    await runD1Statements(binding, [first, second]);
+
+    expect(order).toEqual(['first', 'second']);
   });
 
   it('reads bound values and logs query timing, rows, model and request correlation', async () => {

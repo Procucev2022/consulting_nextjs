@@ -44,7 +44,7 @@ import type {
   PCBIParsedObservation
 } from './types/pcbiDataLabStorage';
 import type { AssignPcbiResearchInput, PcbiAdminImportInput, UploadCommoditySourceInput } from './types/validation';
-import { queryD1Rows, requireWorkerDb } from './services/workerD1Query';
+import { queryD1Rows, requireWorkerDb, runD1Statements } from './services/workerD1Query';
 import { getPublishedPcbiPayload, mapPcbiImportRow } from './workerD1PcbiAdmin';
 import logger from './utils/logger';
 import { countPcbiHighImpactGaps, countPcbiPriorities, prioritizePcbiResearchQueue } from './services/pcbiResearchPrioritization';
@@ -416,15 +416,34 @@ const uploadSource = async (
       checksum, objectKey, geography, input.gradeSpecification || '', unit, currency, frequency,
       input.deliveryBasis || '', input.historicalCoverage || '', extractionStatus, validationStatus, 'PENDING',
       'UNDER_REVIEW', observations.length);
-  await insertSource.run();
-  for (const observation of observations) {
-    const observationStatus = validationStatus === 'VALIDATED' ? 'VERIFIED' : 'NEEDS_REVIEW';
-    await db.prepare(`INSERT INTO ${D1_TABLES.pcbiCommodityObservations} (
+  const observationStatus = validationStatus === 'VALIDATED' ? 'VERIFIED' : 'NEEDS_REVIEW';
+  const insertObservations = observations.map((observation) => db.prepare(`INSERT INTO ${D1_TABLES.pcbiCommodityObservations} (
       observation_id, source_id, pcbi_id, observation_date, raw_value, raw_unit, raw_currency,
       normalized_value, normalized_unit, normalized_currency, frequency, status, payload_json
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(id(), sourceId, input.pcbiId, observation.observationDate, observation.value, unit, currency,
-        observation.value, unit, currency, frequency, observationStatus, JSON.stringify(observation.originalRow)).run();
+        observation.value, unit, currency, frequency, observationStatus, JSON.stringify(observation.originalRow)));
+  try {
+    await runD1Statements(db, [insertSource, ...insertObservations]);
+  } catch (error: unknown) {
+    const failureContext = { requestId, sourceId, pcbiId: input.pcbiId, observationCount: observations.length };
+    logger.error('PCBI commodity source D1 persistence failed; cleanup was attempted', failureContext, error);
+    if (!db.batch) {
+      try {
+        await runD1Statements(db, [
+          db.prepare(`DELETE FROM ${D1_TABLES.pcbiCommodityObservations} WHERE source_id = ?`).bind(sourceId),
+          db.prepare(`DELETE FROM ${D1_TABLES.pcbiCommoditySources} WHERE source_id = ?`).bind(sourceId)
+        ]);
+      } catch (rollbackError: unknown) {
+        logger.error('Failed to roll back partially persisted PCBI source rows', failureContext, rollbackError);
+      }
+    }
+    try {
+      await environment.OBJECTS.delete(objectKey);
+    } catch (cleanupError: unknown) {
+      logger.error('Failed to remove PCBI evidence object after D1 persistence failure', failureContext, cleanupError);
+    }
+    return { status: 503, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } };
   }
   logger.info('Persisted commodity research source in D1 and R2', {
     requestId, sourceId, pcbiId: input.pcbiId, extractionStatus, validationStatus, observationCount: observations.length
