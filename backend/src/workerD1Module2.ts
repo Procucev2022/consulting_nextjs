@@ -706,7 +706,9 @@ export const handleModule2Route = async (
       'net_price, currency, order_quantity, document_date_raw ' +
       `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC LIMIT ?`, values);
     if (!normalized.startsWith('/line-items')) return { data: items };
-    const savedMappings = assessmentId ? await loadAssessmentMaterialMappings(db, assessmentId) : [];
+    const savedMappings = assessmentId ? await loadAssessmentMaterialMappings(db, assessmentId, {
+      requestId: request.headers.get('x-request-id') || undefined, tenantId
+    }) : [];
     const mappingByMaterial = new Map(savedMappings.map((mapping) => [mapping.sourceMaterialId, mapping]));
     return { data: { lineItems: items.map((item) => {
       const key = String(item.material_code || '').trim().toLocaleUpperCase('en-US');

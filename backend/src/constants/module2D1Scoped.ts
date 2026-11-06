@@ -34,6 +34,15 @@ export const MODULE2_D1_SCOPED_MESSAGES = {
   invalidAlternateSourcingFilter: 'Alternate sourcing filters are invalid. Choose an available state or city and a supported match type.'
 } as const;
 
+export const MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS = {
+  ACTION: 'assessment.material-mappings.read',
+  MESSAGE: 'Invalid assessment material mappings were omitted from the D1 response',
+  FALLBACK: 'omit-invalid-mappings',
+  MAX_SAMPLE_SOURCE_IDS: 20,
+  INVALID_SCHEMA_ERROR: 'Stored material mapping failed schema validation',
+  SOURCE_ID_MISMATCH_ERROR: 'Stored material mapping does not match its persisted source id'
+} as const;
+
 export const MODULE2_D1_PENDING_ROUTES: ReadonlySet<string> = new Set<string>();
 
 export const MODULE2_D1_ROUTE_MESSAGES = {

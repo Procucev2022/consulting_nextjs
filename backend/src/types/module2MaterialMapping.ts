@@ -43,6 +43,20 @@ export interface MaterialMappingEntry {
   auditNotes?: string;
 }
 
+export interface AssessmentMaterialMappingReadContext {
+  requestId?: string;
+  tenantId?: string;
+}
+
+export type AssessmentMaterialMappingParseResult =
+  | { valid: true; mapping: MaterialMappingEntry }
+  | {
+    valid: false;
+    reason: 'invalid-json' | 'schema-invalid' | 'source-id-mismatch';
+    error: unknown;
+    schemaIssuePaths: string[];
+  };
+
 export interface ClassificationCoverageSummary {
   totalMaterialsCount: number;
   totalSpendInr: number;
