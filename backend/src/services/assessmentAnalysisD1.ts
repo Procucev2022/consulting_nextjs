@@ -216,7 +216,9 @@ export const runAssessmentAnalysisFromD1 = async (
     savingsPct: 0, reviewGates, allGatesPassed: reviewGates.every((gate) => gate.passed),
     isApproved: false, isSuperseded: false, module1Metrics, createdAt: evaluatedAt
   };
-  const assessmentSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId);
+  const assessmentSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId, {
+    requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID
+  });
   const nextAssessmentSnapshot: D1Record = {
     ...assessmentSnapshot, assessmentId, status: assessmentStatus, dataStatus,
     activeAnalysisRunId: analysisRunId, currentDataVersionId: dataVersionId,

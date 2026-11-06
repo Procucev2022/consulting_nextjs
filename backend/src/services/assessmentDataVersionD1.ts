@@ -85,7 +85,9 @@ export const validateAssessmentDataVersion = async (
   const validationSummary = buildValidationSummary(records.results);
   const nextDataStatus = validationSummary.sourceRowCount
     ? ASSESSMENT_DATA_STATUS_VALIDATED : ASSESSMENT_DATA_STATUS_CLARIFICATION;
-  const priorSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId);
+  const priorSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId, {
+    requestId: context.requestId, tenantId
+  });
   const nextSnapshot = {
     ...priorSnapshot,
     assessmentId,

@@ -56,7 +56,8 @@ const loadAssessment = async (
   if (!row) {
     return { ok: false as const, result: resultError(404, LIFECYCLE_MESSAGES.missingRecord(context.assessmentId)) };
   }
-  const snapshot = await readAssessmentSnapshot(context.db, ASSESSMENT_SNAPSHOT_TYPE, context.assessmentId);
+  const snapshot = await readAssessmentSnapshot(context.db, ASSESSMENT_SNAPSHOT_TYPE, context.assessmentId,
+    context.assessmentId, { requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID });
   return { ok: true as const, row, snapshot, assessment: mapD1Assessment(row, snapshot) };
 };
 

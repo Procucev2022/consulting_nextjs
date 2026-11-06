@@ -91,6 +91,14 @@ export const ASSESSMENT_D1_MESSAGES = {
   unsupportedMethod: 'This HTTP method is not supported for the assessment action. No assessment state was changed.'
 } as const;
 
+export const ASSESSMENT_D1_LOG_MESSAGES = {
+  invalidSnapshotFallback: 'Invalid assessment snapshot in D1 fell back to an empty object'
+} as const;
+
+export const ASSESSMENT_D1_FALLBACKS = {
+  EMPTY_SNAPSHOT_OBJECT: 'empty-snapshot-object'
+} as const;
+
 export const ASSESSMENT_SNAPSHOT_SQL = {
   byType: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
   byAssessment: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?',

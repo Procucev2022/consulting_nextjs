@@ -126,7 +126,9 @@ const prepareUpload = async (context: AssessmentDatasetActionContext,
       status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.missingRecord(assessmentId) }
     } };
   }
-  const previousSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId);
+  const previousSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId, {
+    requestId: context.requestId, tenantId
+  });
   const previousDataStatus = String(assessment.data_status || 'NOT_RECEIVED');
   const versionRow = await queryFirst<{ max_version: number | string | null }>(db,
     `SELECT COALESCE(MAX(version_number), 0) AS max_version FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ?`,

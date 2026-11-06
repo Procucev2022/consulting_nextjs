@@ -38,7 +38,8 @@ const loadDeliveryContext = async (context: AssessmentLifecycleActionContext): P
   const row = await queryFirst<AssessmentRow>(context.db,
     `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [context.assessmentId]);
   if (!row) return { ok: false, result: resultError(404, LIFECYCLE_MESSAGES.missingRecord(context.assessmentId)) };
-  const snapshot = await readAssessmentSnapshot(context.db, 'assessment', context.assessmentId);
+  const snapshot = await readAssessmentSnapshot(context.db, 'assessment', context.assessmentId,
+    context.assessmentId, { requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID });
   const assessment = mapD1Assessment(row, snapshot);
   const allowedStatuses = [ASSESSMENT_STATUSES.APPROVED, ASSESSMENT_STATUSES.DELIVERED] as string[];
   if (!allowedStatuses.includes(assessment.status)) {
@@ -212,7 +213,8 @@ export const downloadAssessmentDeliveryArtifact = async (
   if (!loaded.ok) return loaded.result;
   const { run } = loaded.value;
   const manifest = await readAssessmentSnapshot(
-    context.db, ASSESSMENT_DELIVERY_PACKAGE_SNAPSHOT_TYPE, context.assessmentId, run.analysisRunId
+    context.db, ASSESSMENT_DELIVERY_PACKAGE_SNAPSHOT_TYPE, context.assessmentId, run.analysisRunId,
+    { requestId: context.requestId, tenantId: context.environment.REQUEST_TENANT_ID }
   );
   const items = Array.isArray(manifest.items) ? manifest.items as DeliveryPackageItem[] : [];
   const item = items.find((candidate) => candidate.id === artifactId && candidate.analysisRunId === run.analysisRunId);

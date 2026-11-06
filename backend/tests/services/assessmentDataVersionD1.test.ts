@@ -7,6 +7,9 @@ import {
 } from '../../src/services/assessmentDataVersionD1';
 import { ASSESSMENT_DATA_VERSION_MAX_BYTES } from '../../src/constants/assessmentValidation';
 import * as XLSX from 'xlsx';
+import logger from '../../src/utils/logger';
+import { readAssessmentSnapshot } from '../../src/services/assessmentDataVersionD1Helpers';
+import { ASSESSMENT_D1_LOG_MESSAGES } from '../../src/constants/assessmentD1';
 
 const WORKBOOK_CSV = [
   'PO Number,Supplier Name,Description,Quantity,Net Price,Currency,Transaction Date',
@@ -505,6 +508,55 @@ describe('assessment data version D1 lifecycle', () => {
       expect(batched.batch).toHaveBeenCalled();
       const snapshot = JSON.parse(fixture.db.prepare("SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = 'assessment'").get().payload_json as string);
       expect(snapshot.currentDataVersionId).toBe(dataOf(result).dataVersion.dataVersionId);
+    } finally {
+      fixture.close();
+    }
+  });
+});
+
+describe('assessment D1 snapshot reads', () => {
+  it('logs malformed stored JSON with request context and keeps the empty-object fallback', async () => {
+    const fixture = makeDatabase();
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
+      entry_type, assessment_id, entry_id, payload_json, source_checksum
+    ) VALUES (?, ?, ?, ?, ?)`).run('assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', '{private snapshot', 'checksum');
+    try {
+      await expect(readAssessmentSnapshot(fixture.d1, 'assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', {
+        requestId: 'req-snapshot-invalid', tenantId: TEST_TENANT_ID
+      })).resolves.toEqual({});
+      expect(warning).toHaveBeenCalledWith(
+        ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotFallback,
+        expect.objectContaining({
+          action: 'assessment.snapshot.read', assessmentId: 'AIC-UPLOAD-1', entryType: 'assessment',
+          entryId: 'AIC-UPLOAD-1', tenantId: TEST_TENANT_ID, requestId: 'req-snapshot-invalid',
+          fallback: 'empty-snapshot-object'
+        }),
+        expect.any(SyntaxError)
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain('private snapshot');
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('logs valid JSON with an invalid snapshot shape and keeps the empty-object fallback', async () => {
+    const fixture = makeDatabase();
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
+      entry_type, assessment_id, entry_id, payload_json, source_checksum
+    ) VALUES (?, ?, ?, ?, ?)`).run('assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', '["private snapshot"]', 'checksum');
+    try {
+      await expect(readAssessmentSnapshot(fixture.d1, 'assessment', 'AIC-UPLOAD-1')).resolves.toEqual({});
+      expect(warning).toHaveBeenCalledWith(
+        ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotFallback,
+        expect.objectContaining({
+          action: 'assessment.snapshot.read', assessmentId: 'AIC-UPLOAD-1', entryType: 'assessment',
+          entryId: 'AIC-UPLOAD-1', fallback: 'empty-snapshot-object'
+        }),
+        expect.any(TypeError)
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain('private snapshot');
     } finally {
       fixture.close();
     }

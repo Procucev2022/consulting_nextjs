@@ -31,6 +31,11 @@ export interface AssessmentDatasetActionContext {
   uploadedBy?: string;
 }
 
+export interface AssessmentSnapshotReadContext {
+  requestId?: string;
+  tenantId?: string;
+}
+
 export interface AssessmentValidationSummary {
   sourceRowCount: number;
   validRowCount: number;
