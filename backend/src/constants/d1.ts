@@ -175,7 +175,14 @@ export const D1_ROUTE_MESSAGES = {
 } as const;
 
 export const D1_LOG_MESSAGES = {
-  invalidStoredCurrencyMetadata: 'Stored ingestion currency metadata could not be parsed; an empty currency list was used.'
+  invalidStoredCurrencyMetadata: 'Stored ingestion currency metadata could not be parsed; an empty currency list was used.',
+  invalidPcbiAdminStoredJson: 'Stored PCBI administration JSON is invalid; the value was not trusted',
+  invalidPcbiAdminPayloadSchema: 'Stored PCBI administration payload does not match its schema; publication was blocked'
+} as const;
+
+export const D1_LOG_ACTIONS = {
+  invalidPcbiAdminStoredJson: 'd1.pcbi_admin.stored_json_invalid',
+  invalidPcbiAdminPayloadSchema: 'd1.pcbi_admin.payload_schema_invalid'
 } as const;
 
 export const D1_TAXONOMY_DEFAULT_LIMIT = 50;

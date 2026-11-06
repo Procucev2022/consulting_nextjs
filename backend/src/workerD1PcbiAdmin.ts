@@ -1,4 +1,4 @@
-import { D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
 import { DEFAULT_CACHE_TTL_MS, D1_REFERENCE_CACHE_KEYS } from './constants/db';
 import { PCBI_PUBLISHED_PAYLOAD_QUERY } from './constants/pcbiHistorical';
 import { pcbiAdminImportSchema, pcbiAdminPublishSchema } from './constants/validation';
@@ -7,6 +7,7 @@ import { clearD1ReferenceDataCache } from './services/d1ReferenceDataCache';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import type { PCBIPublishedPayloadCacheEntry } from './types/pcbi';
+import type { PcbiAdminStoredJsonLogContext, PcbiAdminStoredJsonResult } from './types/pcbiAdminLogging';
 import type { PcbiAdminImportInput } from './types/validation';
 import logger from './utils/logger';
 import { readJson, requestJsonFailureResult } from './workerHttp';
@@ -26,12 +27,37 @@ let publishedPayloadCache = new WeakMap<CloudflareD1Database, PCBIPublishedPaylo
 let publishedPayloadLoads = new WeakMap<CloudflareD1Database, Promise<PcbiAdminImportInput | null>>();
 let publishedPayloadGenerations = new WeakMap<CloudflareD1Database, number>();
 
-const jsonObject = (value: unknown): Record<string, unknown> =>
-  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+const parseJsonField = (value: unknown, context: PcbiAdminStoredJsonLogContext): PcbiAdminStoredJsonResult => {
+  try {
+    const parsed: unknown = typeof value === 'string' ? JSON.parse(value) as unknown : value;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return { value: parsed as Record<string, unknown>, valid: true };
+    }
+    throw new TypeError(`Stored PCBI ${context.field} must contain a JSON object.`);
+  } catch (error: unknown) {
+    logger.warn(D1_LOG_MESSAGES.invalidPcbiAdminStoredJson, {
+      action: D1_LOG_ACTIONS.invalidPcbiAdminStoredJson,
+      ...context,
+      fallback: 'empty-object'
+    }, error);
+    return { value: {}, valid: false };
+  }
+};
 
-const parseJsonField = (value: unknown): Record<string, unknown> => {
-  if (typeof value !== 'string') return jsonObject(value);
-  try { return jsonObject(JSON.parse(value)); } catch { return {}; }
+const logInvalidStoredPayloadSchema = (
+  context: PcbiAdminStoredJsonLogContext,
+  issues: readonly { code: string; path: PropertyKey[]; message: string }[]
+): void => {
+  logger.warn(D1_LOG_MESSAGES.invalidPcbiAdminPayloadSchema, {
+    action: D1_LOG_ACTIONS.invalidPcbiAdminPayloadSchema,
+    ...context,
+    fallback: 'block-publication',
+    validationIssues: issues.map((issue) => ({
+      code: issue.code,
+      path: issue.path.join('.'),
+      message: issue.message
+    }))
+  }, new TypeError('Stored PCBI payload failed schema validation.'));
 };
 
 const mapValue = (
@@ -103,21 +129,26 @@ const versionMetrics = (payload: PcbiAdminImportInput): Record<string, unknown> 
   errors_count: payload.validationSummary.blockingErrorCount
 });
 
-const serializeVersion = (row: VersionRow): Record<string, unknown> => ({
-  id: row.id,
-  version: row.version,
-  upload_id: row.upload_id,
-  file_name: row.file_name,
-  file_size_mb: Number(row.file_size_mb || 0),
-  upload_date: row.uploaded_at,
-  uploaded_by: row.uploaded_by,
-  effective_date: row.effective_date,
-  status: row.status,
-  metrics: parseJsonField(row.metrics_json),
-  validation_report_json: row.validation_report_json,
-  published_at: row.published_at || null,
-  published_by: row.published_by || null
-});
+const serializeVersion = (row: VersionRow, requestId: string): Record<string, unknown> => {
+  const metrics = parseJsonField(row.metrics_json, {
+    requestId, version: row.version, uploadId: row.upload_id, field: 'metrics_json'
+  });
+  return {
+    id: row.id,
+    version: row.version,
+    upload_id: row.upload_id,
+    file_name: row.file_name,
+    file_size_mb: Number(row.file_size_mb || 0),
+    upload_date: row.uploaded_at,
+    uploaded_by: row.uploaded_by,
+    effective_date: row.effective_date,
+    status: row.status,
+    metrics: metrics.value,
+    validation_report_json: row.validation_report_json,
+    published_at: row.published_at || null,
+    published_by: row.published_by || null
+  };
+};
 
 const readBody = async (request: Request): Promise<unknown> => readJson(request);
 
@@ -205,7 +236,22 @@ const publishVersion = async (
   const row = await db.prepare(`SELECT * FROM ${D1_TABLES.pcbiMasterVersions} WHERE version = ?`)
     .bind(version).first<VersionRow>();
   if (!row) return { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiVersionNotFound } };
-  const payload = parseJsonField(row.payload_json) as unknown as PcbiAdminImportInput;
+  const payloadContext: PcbiAdminStoredJsonLogContext = {
+    requestId, version: row.version, uploadId: row.upload_id, field: 'payload_json'
+  };
+  const storedPayload = parseJsonField(row.payload_json, payloadContext);
+  if (!storedPayload.valid) {
+    return { status: 422, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiPublishBlocked } };
+  }
+  const parsedPayload = pcbiAdminImportSchema.safeParse(storedPayload.value);
+  if (!parsedPayload.success) {
+    logInvalidStoredPayloadSchema(payloadContext, parsedPayload.error.issues);
+    return {
+      status: 422,
+      data: { success: false, message: D1_ROUTE_MESSAGES.pcbiPublishBlocked, errors: parsedPayload.error.issues }
+    };
+  }
+  const payload: PcbiAdminImportInput = parsedPayload.data;
   const issues = collectImportIssues(payload);
   if (row.status !== 'VALIDATED' && row.status !== 'PUBLISHED' || issues.length > 0) {
     return { status: 422, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiPublishBlocked, errors: issues } };
@@ -225,7 +271,9 @@ const publishVersion = async (
     data: {
       success: true,
       activeVersion: version,
-      metrics: parseJsonField(row.metrics_json)
+      metrics: parseJsonField(row.metrics_json, {
+        requestId, version: row.version, uploadId: row.upload_id, field: 'metrics_json'
+      }).value
     }
   };
 };
@@ -262,8 +310,17 @@ export const getPublishedPcbiPayload = async (
   }
   const generation = publishedPayloadGenerations.get(db) || 0;
   const load = (async (): Promise<PcbiAdminImportInput | null> => {
-    const [row] = await queryD1Rows<{ payload_json: string }>(db, PCBI_PUBLISHED_PAYLOAD_QUERY, [], requestId);
-    const parsed = row ? pcbiAdminImportSchema.safeParse(parseJsonField(row.payload_json)) : null;
+    const [row] = await queryD1Rows<{ version: string; upload_id: string; payload_json: string }>(
+      db, PCBI_PUBLISHED_PAYLOAD_QUERY, [], requestId
+    );
+    const payloadContext: PcbiAdminStoredJsonLogContext | null = row ? {
+      requestId, version: row.version, uploadId: row.upload_id, field: 'payload_json'
+    } : null;
+    const storedPayload = row && payloadContext ? parseJsonField(row.payload_json, payloadContext) : null;
+    const parsed = storedPayload?.valid ? pcbiAdminImportSchema.safeParse(storedPayload.value) : null;
+    if (parsed && !parsed.success && payloadContext) {
+      logInvalidStoredPayloadSchema(payloadContext, parsed.error.issues);
+    }
     const payload = parsed?.success ? parsed.data : null;
     if ((publishedPayloadGenerations.get(db) || 0) === generation) {
       publishedPayloadCache.set(db, { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, payload });
@@ -289,7 +346,7 @@ export const handlePcbiAdminRoute = async (
   try {
   if (path === '/versions' && request.method === 'GET') {
     const rows = await database.prepare(`SELECT * FROM ${D1_TABLES.pcbiMasterVersions} ORDER BY uploaded_at DESC`).all<VersionRow>();
-    const versions = rows.results.map(serializeVersion);
+    const versions = rows.results.map((row) => serializeVersion(row, requestId));
     const active = versions.find((version) => version.status === 'PUBLISHED');
     return { data: { success: true, total: versions.length, active_version: active?.version || null, versions } };
   }
@@ -306,7 +363,7 @@ export const handlePcbiAdminRoute = async (
     const row = await database.prepare(`SELECT * FROM ${D1_TABLES.pcbiMasterVersions} WHERE version = ?`)
       .bind(decodeURIComponent(versionMatch[1])).first<VersionRow>();
     return row
-      ? { data: { success: true, version: serializeVersion(row) } }
+      ? { data: { success: true, version: serializeVersion(row, requestId) } }
       : { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiVersionNotFound } };
   }
   const allowedMethod = path === '/versions' ? 'GET' : path === '/import' ? 'POST' : 'GET or POST';
