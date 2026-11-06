@@ -51,12 +51,16 @@ export const AI_LOG_MESSAGES = {
   fallbackReturned: 'AI request failed; structured fallback response returned',
   extractionAttemptFailed: 'Gemini extraction attempt failed',
   jsonGenerationAttemptFailed: 'Gemini JSON generation attempt failed',
-  jsonGenerationSucceeded: 'Gemini JSON generation completed successfully'
+  jsonGenerationSucceeded: 'Gemini JSON generation completed successfully',
+  extractionNotConfigured: 'Gemini extraction could not start because the API key is not configured',
+  jsonGenerationNotConfigured: 'Gemini JSON generation could not start because the API key is not configured'
 } as const;
 
 export const AI_LOG_ACTIONS = {
   extractionAttempt: 'ai.gemini.extract.attempt',
+  extractionNotConfigured: 'ai.gemini.extract.not_configured',
   jsonGenerationAttempt: 'ai.gemini.generate_json.attempt',
+  jsonGenerationNotConfigured: 'ai.gemini.generate_json.not_configured',
   jsonGenerationSucceeded: 'ai.gemini.generate_json.success',
   categorizationFallback: 'ai.categorization.deterministic_fallback',
   anomalyFallback: 'ai.anomaly.heuristic_fallback',

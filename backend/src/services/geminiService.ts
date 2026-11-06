@@ -259,7 +259,12 @@ export class GeminiService {
     };
 
     if (!this.isConfigured()) {
-      logger.warn('Gemini extraction skipped: GEMINI_API_KEY is not set', {}, new Error('Gemini API key missing'));
+      logger.warn(AI_LOG_MESSAGES.extractionNotConfigured, {
+        action: AI_LOG_ACTIONS.extractionNotConfigured,
+        provider: 'gemini',
+        requestId: input.requestId,
+        status: EXTRACTION_STATUS.NOT_CONFIGURED
+      }, new Error('Gemini API key missing'));
       return { ...base, status: EXTRACTION_STATUS.NOT_CONFIGURED, error: 'GEMINI_API_KEY not configured' };
     }
 

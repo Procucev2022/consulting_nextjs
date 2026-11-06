@@ -456,7 +456,11 @@ describe('GeminiService configured behaviour', () => {
     it('should return NOT_CONFIGURED with a warning and no model call when no key exists', async () => {
       const service = configuredService({ GEMINI_API_KEY: undefined, GEMINI_BACKUP_KEYS: undefined });
 
-      const result = await service.generateJson({ prompt: 'Summarize', label: 'empty-config' });
+      const result = await service.generateJson({
+        prompt: 'Summarize',
+        label: 'empty-config',
+        requestId: 'missing-key-report'
+      });
 
       expect(result).toEqual({
         status: EXTRACTION_STATUS.NOT_CONFIGURED,
@@ -465,9 +469,15 @@ describe('GeminiService configured behaviour', () => {
         error: 'GEMINI_API_KEY not set'
       });
       expect(logger.warn).toHaveBeenCalledWith(
-        'Gemini empty-config skipped: GEMINI_API_KEY is not set',
-        { label: 'empty-config' },
-        expect.any(Error)
+        AI_LOG_MESSAGES.jsonGenerationNotConfigured,
+        expect.objectContaining({
+          action: AI_LOG_ACTIONS.jsonGenerationNotConfigured,
+          provider: 'gemini',
+          label: 'empty-config',
+          requestId: 'missing-key-report',
+          status: EXTRACTION_STATUS.NOT_CONFIGURED
+        }),
+        expect.objectContaining({ name: 'Error', message: 'Gemini key missing', stack: expect.any(String) })
       );
       expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -658,13 +668,18 @@ describe('GeminiService configured behaviour', () => {
     it('should return NOT_CONFIGURED with a warning and no model call when no key exists', async () => {
       const service = configuredService({ GEMINI_API_KEY: undefined, GEMINI_BACKUP_KEYS: undefined });
 
-      const result = await service.extractLineItems({ documentText: 'Text' });
+      const result = await service.extractLineItems({ documentText: 'Text', requestId: 'missing-key-extract' });
 
       expect(result).toMatchObject({ status: EXTRACTION_STATUS.NOT_CONFIGURED, error: 'GEMINI_API_KEY not configured' });
       expect(logger.warn).toHaveBeenCalledWith(
-        'Gemini extraction skipped: GEMINI_API_KEY is not set',
-        {},
-        expect.any(Error)
+        AI_LOG_MESSAGES.extractionNotConfigured,
+        expect.objectContaining({
+          action: AI_LOG_ACTIONS.extractionNotConfigured,
+          provider: 'gemini',
+          requestId: 'missing-key-extract',
+          status: EXTRACTION_STATUS.NOT_CONFIGURED
+        }),
+        expect.objectContaining({ name: 'Error', message: 'Gemini API key missing', stack: expect.any(String) })
       );
       expect(fetchMock).not.toHaveBeenCalled();
     });

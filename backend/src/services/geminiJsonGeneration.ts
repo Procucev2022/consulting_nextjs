@@ -14,7 +14,13 @@ const invalidGenerationInput = <T>(
 ): GeminiJsonGenerationResult<T> | null => {
   const label = input.label || 'generation';
   if (!dependencies.isConfigured()) {
-    logger.warn(`Gemini ${label} skipped: GEMINI_API_KEY is not set`, { label }, new Error('Gemini key missing'));
+    logger.warn(AI_LOG_MESSAGES.jsonGenerationNotConfigured, {
+      action: AI_LOG_ACTIONS.jsonGenerationNotConfigured,
+      provider: 'gemini',
+      label,
+      requestId: input.requestId,
+      status: EXTRACTION_STATUS.NOT_CONFIGURED
+    }, new Error('Gemini key missing'));
     return { status: EXTRACTION_STATUS.NOT_CONFIGURED, data: null, model: null, error: 'GEMINI_API_KEY not set' };
   }
   if (typeof input.prompt !== 'string' || input.prompt.trim() === '') {
