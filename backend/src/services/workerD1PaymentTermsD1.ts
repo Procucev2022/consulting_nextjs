@@ -1,4 +1,4 @@
-import { D1_TABLES } from '../constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_MESSAGES, D1_TABLES } from '../constants/d1';
 import { MODULE2_D1_PAYMENT_TERMS_MESSAGES } from '../constants/module2PaymentTermsD1';
 import { MODULE2_D1_VALID_TRANSACTION_FILTER } from '../constants/module2D1Scoped';
 import type { CloudflareD1Database } from '../types/cloudflare';
@@ -25,6 +25,20 @@ export const loadPaymentTermsResultFromD1 = async (
     `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC`,
     params, requestId);
   const result = buildPaymentTermsResult(scope.assessmentId, rows);
+  const malformedSourceRecords = result.coverageRecords.filter((record) =>
+    record.gapDetails === MODULE2_D1_PAYMENT_TERMS_MESSAGES.INVALID_SOURCE
+  );
+  if (malformedSourceRecords.length > 0) {
+    logger.warn(D1_LOG_MESSAGES.invalidPaymentTermsSourceJson, {
+      action: D1_LOG_ACTIONS.invalidPaymentTermsSourceJson,
+      assessmentId: scope.assessmentId,
+      tenantId: scope.tenantId,
+      requestId,
+      affectedRecordCount: malformedSourceRecords.length,
+      sampleRecordIds: malformedSourceRecords.slice(0, 20).map((record) => record.recordId),
+      fallback: 'count-as-unverified-coverage'
+    }, new SyntaxError('Stored payment-term source JSON could not be parsed.'));
+  }
   logger.info('Calculated assessment-scoped payment-terms evidence from D1', {
     assessmentId: scope.assessmentId, tenantId: scope.tenantId, requestId,
     recordCount: rows.length, verifiedRecordCount: result.coverageSummary.completeRecordsCount

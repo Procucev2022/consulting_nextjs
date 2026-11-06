@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { D1_LOG_ACTIONS, D1_LOG_MESSAGES } from '../../src/constants/d1';
+import { MODULE2_D1_PAYMENT_TERMS_MESSAGES } from '../../src/constants/module2PaymentTermsD1';
 import {
   buildPaymentTermsResult, extractPaymentTermsEvidence,
   parsePaymentTermsEvidence
@@ -6,6 +8,11 @@ import {
 import { loadPaymentTermsResultFromD1 } from '../../src/services/workerD1PaymentTermsD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import type { PaymentTermsD1SourceRow } from '../../src/types/module2PaymentTermsD1';
+import logger from '../../src/utils/logger';
+
+vi.mock('../../src/utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
 
 const row = (overrides: Partial<PaymentTermsD1SourceRow> = {}): PaymentTermsD1SourceRow => ({
   record_id: 'TX-1', po_number: 'PO-1', po_date: '2026-01-01', supplier_code: 'SUP-1',
@@ -128,5 +135,38 @@ describe('buildPaymentTermsResult', () => {
     expect(statement.bind).toHaveBeenCalledWith('ASSESSMENT-3');
     await expect(loadPaymentTermsResultFromD1(db, { assessmentId: undefined, limit: 50 }, 'request-4'))
       .rejects.toThrow('An assessment scope is required');
+  });
+
+  it('logs malformed persisted source JSON with bounded row identifiers and preserves partial coverage', async () => {
+    vi.mocked(logger.warn).mockClear();
+    const statement = {
+      bind: vi.fn().mockReturnThis(),
+      all: vi.fn().mockResolvedValue({ results: [row({ record_id: 'TX-BROKEN', raw_json: '{private terms' })] })
+    };
+    const db = { prepare: vi.fn().mockReturnValue(statement) } as unknown as CloudflareD1Database;
+
+    const result = await loadPaymentTermsResultFromD1(db, {
+      assessmentId: 'ASSESSMENT-BROKEN', tenantId: 'TENANT-BROKEN', limit: 50
+    }, 'request-broken-terms');
+
+    expect(result.coverageRecords[0]).toMatchObject({
+      recordId: 'TX-BROKEN',
+      coverageStatus: 'PARTIAL',
+      gapDetails: MODULE2_D1_PAYMENT_TERMS_MESSAGES.INVALID_SOURCE
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.invalidPaymentTermsSourceJson,
+      expect.objectContaining({
+        action: D1_LOG_ACTIONS.invalidPaymentTermsSourceJson,
+        assessmentId: 'ASSESSMENT-BROKEN',
+        tenantId: 'TENANT-BROKEN',
+        requestId: 'request-broken-terms',
+        affectedRecordCount: 1,
+        sampleRecordIds: ['TX-BROKEN'],
+        fallback: 'count-as-unverified-coverage'
+      }),
+      expect.objectContaining({ name: 'SyntaxError', stack: expect.any(String) })
+    );
+    expect(JSON.stringify(vi.mocked(logger.warn).mock.calls)).not.toContain('{private terms');
   });
 });
