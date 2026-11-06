@@ -65,7 +65,8 @@ export const handleAiRoute = async (request: Request, url: URL, environment: Clo
         documentText: body.documentText as string | undefined,
         inlineData: body.inlineData as string | undefined,
         mimeType: body.mimeType as string | undefined,
-        fileName: body.fileName as string | undefined
+        fileName: body.fileName as string | undefined,
+        requestId: request.headers.get('x-request-id') || undefined
       });
       return jsonResponse({
         success: result.status === EXTRACTION_STATUS.SUCCESS,

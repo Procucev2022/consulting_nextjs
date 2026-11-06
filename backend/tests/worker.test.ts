@@ -413,12 +413,15 @@ describe('Cloudflare backend worker', () => {
       request('/api/ai/extract', {
         method: 'POST',
         body: JSON.stringify({ documentText: 'Line 1 Item' }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'ai-extract-request' }
       }),
       {},
       executionContext
     );
     expect(extractRes.status).toBe(200);
+    expect(geminiService.extractLineItems).toHaveBeenCalledWith(expect.objectContaining({
+      requestId: 'ai-extract-request'
+    }));
 
     const catRes = await workerFetch(
       request('/api/ai/categorize', {

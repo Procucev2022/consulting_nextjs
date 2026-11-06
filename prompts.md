@@ -114110,3 +114110,11 @@ Please finalize & push all the existing changes & resolve the File conflict in
 [https://github.com/Procucev2022/consulting_nextjs/pull/28](https://github.com/Procucev2022/consulting_nextjs/pull/28)
 
 Pause for sometime, then I  would ask to resume in sometime
+
+## Prompt 611
+
+resume
+
+## Prompt 612
+
+resume

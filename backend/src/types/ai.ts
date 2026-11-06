@@ -126,6 +126,17 @@ export interface GeminiRequestDocumentInput {
   inlineData?: string;
   mimeType?: string;
   fileName?: string;
+  requestId?: string;
+}
+
+export interface GeminiExtractionAttemptFailureContext {
+  model: string;
+  modelIndex: number;
+  keyIndex: number;
+  modelCount: number;
+  keyCount: number;
+  requestId?: string;
+  durationMs: number;
 }
 
 export interface GeminiStructuredRequestInput extends GeminiRequestDocumentInput {

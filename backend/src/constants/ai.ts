@@ -48,8 +48,15 @@ export const CLASSIFICATION_STATUS = {
 export const AI_LOG_MESSAGES = {
   requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
   invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
-  fallbackReturned: 'AI request failed; structured fallback response returned'
+  fallbackReturned: 'AI request failed; structured fallback response returned',
+  extractionAttemptFailed: 'Gemini extraction attempt failed'
 } as const;
+
+export const AI_LOG_ACTIONS = {
+  extractionAttempt: 'ai.gemini.extract.attempt'
+} as const;
+
+export const GEMINI_PROVIDER_STATUS_CODE_PATTERN = /responded\s+(\d{3})\s*:/i;
 
 export const NEW_CATEGORY_SENTINEL = 'NEW_CATEGORY_SUGGESTION';
 

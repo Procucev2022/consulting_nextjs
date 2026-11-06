@@ -4,7 +4,9 @@ import {
   GEMINI_INLINE_MIME_TYPES,
   EXTRACTION_STATUS,
   CLASSIFICATION_STATUS,
+  AI_LOG_ACTIONS,
   AI_LOG_MESSAGES,
+  GEMINI_PROVIDER_STATUS_CODE_PATTERN,
   NEW_CATEGORY_SENTINEL,
   AI_MAX_LINE_ITEMS_IN_PROMPT,
   AI_MAX_CATEGORIES_IN_PROMPT,
@@ -48,8 +50,12 @@ describe('AI Constants and Prompts', () => {
     expect(AI_LOG_MESSAGES).toEqual({
       requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
       invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
-      fallbackReturned: 'AI request failed; structured fallback response returned'
+      fallbackReturned: 'AI request failed; structured fallback response returned',
+      extractionAttemptFailed: 'Gemini extraction attempt failed'
     });
+    expect(AI_LOG_ACTIONS.extractionAttempt).toBe('ai.gemini.extract.attempt');
+    expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('Gemini model responded 503: busy')?.[1]).toBe('503');
+    expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('network unavailable')).toBeNull();
   });
 
   it('should define limits and non-empty prompt templates', () => {
