@@ -129,7 +129,7 @@ export interface GeminiRequestDocumentInput {
   requestId?: string;
 }
 
-export interface GeminiExtractionAttemptFailureContext {
+export interface GeminiProviderAttemptFailureContext {
   model: string;
   modelIndex: number;
   keyIndex: number;
@@ -137,6 +137,9 @@ export interface GeminiExtractionAttemptFailureContext {
   keyCount: number;
   requestId?: string;
   durationMs: number;
+  action: string;
+  message: string;
+  label?: string;
 }
 
 export interface GeminiStructuredRequestInput extends GeminiRequestDocumentInput {

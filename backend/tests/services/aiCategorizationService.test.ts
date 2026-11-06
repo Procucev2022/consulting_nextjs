@@ -71,6 +71,7 @@ describe('AiCategorizationService Unit Tests', () => {
   });
 
   it('should categorize items successfully with Gemini generateJson', async () => {
+    const generateSpy = vi.spyOn(geminiService, 'generateJson');
     const mockMappings = [
       {
         rawLineText: 'Centrifugal Pump 5HP',
@@ -92,11 +93,12 @@ describe('AiCategorizationService Unit Tests', () => {
 
     const result = await service.categorizeLineItems([
       { rawLineText: 'Centrifugal Pump 5HP', vendorIdentified: 'Kirloskar Brothers', amount: 45000 }
-    ]);
+    ], 'categorization-request-1');
 
     expect(result.status).toBe(CLASSIFICATION_STATUS.SUCCESS);
     expect(result.mappings.length).toBe(1);
     expect(result.mappings[0].mappedUnspscCode).toBe('40151503');
+    expect(generateSpy.mock.calls[0][0].requestId).toBe('categorization-request-1');
   });
 
   it('should fall back to UNSPSC taxonomy classification when Gemini fails', async () => {

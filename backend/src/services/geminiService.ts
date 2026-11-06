@@ -1,4 +1,6 @@
 import {
+  AI_LOG_ACTIONS,
+  AI_LOG_MESSAGES,
   GEMINI_CONFIG,
   resolveGeminiConfig,
   GEMINI_INLINE_MIME_TYPES,
@@ -17,7 +19,7 @@ import type {
   GeminiStructuredRequestInput
 } from '../types/ai';
 import logger from '../utils/logger';
-import { logGeminiExtractionAttemptFailure } from './geminiExtractionLogging';
+import { logGeminiProviderAttemptFailure } from './geminiProviderLogging';
 import { generateGeminiJson } from './geminiJsonGeneration';
 
 interface GeminiContentPart {
@@ -296,14 +298,16 @@ export class GeminiService {
           const result = await this.attemptModelExtraction(model, requestBody, remainingMs, input.fileName, apiKey);
           if (result) return result;
         } catch (err: unknown) {
-          const modelNotFound = logGeminiExtractionAttemptFailure(err, {
+          const modelNotFound = logGeminiProviderAttemptFailure(err, {
             model,
             modelIndex,
             keyIndex,
             modelCount: models.length,
             keyCount: keys.length,
             requestId: input.requestId,
-            durationMs: Date.now() - attemptStartedAt
+            durationMs: Date.now() - attemptStartedAt,
+            action: AI_LOG_ACTIONS.extractionAttempt,
+            message: AI_LOG_MESSAGES.extractionAttemptFailed
           }, failures);
           if (modelNotFound) {
             break;

@@ -1,10 +1,10 @@
-import { AI_LOG_ACTIONS, AI_LOG_MESSAGES, GEMINI_PROVIDER_STATUS_CODE_PATTERN } from '../constants/ai';
-import type { GeminiExtractionAttemptFailureContext } from '../types/ai';
+import { GEMINI_PROVIDER_STATUS_CODE_PATTERN } from '../constants/ai';
+import type { GeminiProviderAttemptFailureContext } from '../types/ai';
 import logger from '../utils/logger';
 
-export const logGeminiExtractionAttemptFailure = (
+export const logGeminiProviderAttemptFailure = (
   error: unknown,
-  context: GeminiExtractionAttemptFailureContext,
+  context: GeminiProviderAttemptFailureContext,
   failures: string[]
 ): boolean => {
   const errorMessage = error instanceof Error ? error.message : String(error);
@@ -16,10 +16,11 @@ export const logGeminiExtractionAttemptFailure = (
     : context.keyIndex < context.keyCount - 1 || context.modelIndex < context.modelCount - 1;
 
   failures.push(`${context.model}: ${errorMessage}`);
-  logger.warn(AI_LOG_MESSAGES.extractionAttemptFailed, {
-    action: AI_LOG_ACTIONS.extractionAttempt,
+  logger.warn(context.message, {
+    action: context.action,
     provider: 'gemini',
     model: context.model,
+    label: context.label,
     requestId: context.requestId,
     statusCode,
     durationMs: context.durationMs,

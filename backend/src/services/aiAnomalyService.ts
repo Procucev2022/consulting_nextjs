@@ -1,5 +1,5 @@
 import { geminiService } from './geminiService';
-import { ANOMALY_DETECTION_SYSTEM_PROMPT, EXTRACTION_STATUS } from '../constants/ai';
+import { AI_LOG_ACTIONS, ANOMALY_DETECTION_SYSTEM_PROMPT, EXTRACTION_STATUS } from '../constants/ai';
 import type { AnomalyAnalysisResult, AnomalyItem } from '../types/ai';
 import logger from '../utils/logger';
 
@@ -12,7 +12,7 @@ export class AiAnomalyService {
     amount: number;
     amountInr?: number | null;
     issueFlag?: string;
-  }>): Promise<AnomalyAnalysisResult> {
+  }>, requestId?: string): Promise<AnomalyAnalysisResult> {
     if (!Array.isArray(records) || records.length === 0) {
       return {
         status: EXTRACTION_STATUS.NO_CONTENT,
@@ -31,13 +31,16 @@ export class AiAnomalyService {
 
     const result = await geminiService.generateJson<{ anomalies: AnomalyItem[]; summary: string }>({
       prompt,
-      label: 'AI Pre-Check Anomaly Detection'
+      label: 'AI Pre-Check Anomaly Detection',
+      requestId
     });
 
     if (result.status !== EXTRACTION_STATUS.SUCCESS || !result.data) {
       logger.warn('AI anomaly analysis fallback to heuristic suggestions', {
+        action: AI_LOG_ACTIONS.anomalyFallback,
         status: result.status,
-        error: result.error
+        error: result.error,
+        requestId
       });
 
       const heuristicAnomalies: AnomalyItem[] = records

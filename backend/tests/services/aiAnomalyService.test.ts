@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AiAnomalyService, aiAnomalyService } from '../../src/services/aiAnomalyService';
 import { geminiService } from '../../src/services/geminiService';
-import { EXTRACTION_STATUS, ANOMALY_DETECTION_SYSTEM_PROMPT } from '../../src/constants/ai';
+import { AI_LOG_ACTIONS, EXTRACTION_STATUS, ANOMALY_DETECTION_SYSTEM_PROMPT } from '../../src/constants/ai';
 import logger from '../../src/utils/logger';
 
 // Logging is replaced so the suite neither writes backend/logs nor floods the console.
@@ -40,7 +40,7 @@ describe('AiAnomalyService Unit Tests', () => {
       }
     ];
 
-    vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
+    const generateSpy = vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
       status: EXTRACTION_STATUS.SUCCESS,
       data: { anomalies: mockAnomalies, summary: 'Found 1 currency anomaly' },
       model: 'gemini-3.6-flash',
@@ -56,11 +56,12 @@ describe('AiAnomalyService Unit Tests', () => {
         amount: 50000,
         issueFlag: 'Currency Discrepancy'
       }
-    ]);
+    ], 'anomaly-request-1');
 
     expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
     expect(result.anomalies.length).toBe(1);
     expect(result.anomalies[0].recordId).toBe('REC-101');
+    expect(generateSpy.mock.calls[0][0].requestId).toBe('anomaly-request-1');
   });
 
   it('should fall back to heuristic anomaly detection when Gemini fails', async () => {
@@ -80,11 +81,13 @@ describe('AiAnomalyService Unit Tests', () => {
         amount: 25000,
         issueFlag: 'Currency Mismatch'
       }
-    ]);
+    ], 'anomaly-fallback-1');
 
     expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
     expect(result.anomalies.length).toBe(1);
     expect(result.anomalies[0].actionStatus).toBe('Fix Currency');
+    expect(logger.warn).toHaveBeenCalledWith('AI anomaly analysis fallback to heuristic suggestions',
+      expect.objectContaining({ action: AI_LOG_ACTIONS.anomalyFallback, requestId: 'anomaly-fallback-1' }));
   });
 
   it('should return NO_CONTENT when records is not an array', async () => {
@@ -161,10 +164,12 @@ describe('AiAnomalyService Unit Tests', () => {
         confidence: 88
       }
     ]);
-    expect(logger.warn).toHaveBeenCalledWith('AI anomaly analysis fallback to heuristic suggestions', {
+    expect(logger.warn).toHaveBeenCalledWith('AI anomaly analysis fallback to heuristic suggestions', expect.objectContaining({
+      action: AI_LOG_ACTIONS.anomalyFallback,
       status: EXTRACTION_STATUS.SUCCESS,
-      error: null
-    });
+      error: null,
+      requestId: undefined
+    }));
   });
 
   it('should default anomalies and summary when the model returns malformed fields', async () => {

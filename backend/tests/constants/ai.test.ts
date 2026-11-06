@@ -51,9 +51,18 @@ describe('AI Constants and Prompts', () => {
       requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
       invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
       fallbackReturned: 'AI request failed; structured fallback response returned',
-      extractionAttemptFailed: 'Gemini extraction attempt failed'
+      extractionAttemptFailed: 'Gemini extraction attempt failed',
+      jsonGenerationAttemptFailed: 'Gemini JSON generation attempt failed',
+      jsonGenerationSucceeded: 'Gemini JSON generation completed successfully'
     });
-    expect(AI_LOG_ACTIONS.extractionAttempt).toBe('ai.gemini.extract.attempt');
+    expect(AI_LOG_ACTIONS).toMatchObject({
+      extractionAttempt: 'ai.gemini.extract.attempt',
+      jsonGenerationAttempt: 'ai.gemini.generate_json.attempt',
+      jsonGenerationSucceeded: 'ai.gemini.generate_json.success',
+      categorizationFallback: 'ai.categorization.deterministic_fallback',
+      anomalyFallback: 'ai.anomaly.heuristic_fallback',
+      reportFallback: 'ai.report.deterministic_fallback'
+    });
     expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('Gemini model responded 503: busy')?.[1]).toBe('503');
     expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('network unavailable')).toBeNull();
   });

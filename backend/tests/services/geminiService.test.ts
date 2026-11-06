@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeminiService, geminiService } from '../../src/services/geminiService';
-import { AI_LOG_ACTIONS, AI_LOG_MESSAGES, EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../../src/constants/ai';
+import {
+  AI_LOG_ACTIONS,
+  AI_LOG_MESSAGES,
+  EXTRACTION_STATUS,
+  EXTRACTION_SYSTEM_PROMPT
+} from '../../src/constants/ai';
 import type { CloudflareEnvironment } from '../../src/types/cloudflare';
 import type { GeminiConfig } from '../../src/types/ai';
 import logger from '../../src/utils/logger';
@@ -484,7 +489,11 @@ describe('GeminiService configured behaviour', () => {
         .mockResolvedValueOnce(geminiErrorResponse(500, 'Busy'))
         .mockResolvedValueOnce(geminiOkResponse('{"status":"done"}'));
 
-      const result = await configuredService().generateJson({ prompt: 'Summarize', label: 'report' });
+      const result = await configuredService().generateJson({
+        prompt: 'Summarize',
+        label: 'report',
+        requestId: 'report-request-1'
+      });
 
       expect(result).toEqual({
         status: EXTRACTION_STATUS.SUCCESS,
@@ -492,12 +501,28 @@ describe('GeminiService configured behaviour', () => {
         model: 'model-primary',
         error: null
       });
-      expect(logger.warn).toHaveBeenCalledWith('Gemini report attempt failed on model-primary', {
-        error: 'Gemini model-primary responded 500: Busy'
-      });
-      expect(logger.info).toHaveBeenCalledWith('Gemini model-primary completed report successfully', {
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.jsonGenerationAttemptFailed, expect.objectContaining({
+        action: AI_LOG_ACTIONS.jsonGenerationAttempt,
+        provider: 'gemini',
         model: 'model-primary',
-        label: 'report'
+        label: 'report',
+        requestId: 'report-request-1',
+        statusCode: 500,
+        durationMs: expect.any(Number),
+        fallbackAttemptConfigured: true,
+        error: 'Gemini model-primary responded 500: Busy'
+      }), expect.objectContaining({
+        name: 'Error',
+        message: 'Gemini model-primary responded 500: Busy',
+        stack: expect.any(String)
+      }));
+      expect(logger.info).toHaveBeenCalledWith(AI_LOG_MESSAGES.jsonGenerationSucceeded, {
+        action: AI_LOG_ACTIONS.jsonGenerationSucceeded,
+        provider: 'gemini',
+        model: 'model-primary',
+        label: 'report',
+        requestId: 'report-request-1',
+        durationMs: expect.any(Number)
       });
     });
 

@@ -91,7 +91,10 @@ export const handleAiRoute = async (request: Request, url: URL, environment: Clo
     try {
       const body = await readJson(request);
       const items = (Array.isArray(body.items) ? body.items : []) as AiCategorizationItem[];
-      const result = await aiCategorizationService.categorizeLineItems(items);
+      const result = await aiCategorizationService.categorizeLineItems(
+        items,
+        request.headers.get('x-request-id') || undefined
+      );
       return jsonResponse({
         success: result.status === CLASSIFICATION_STATUS.SUCCESS,
         ...result,
@@ -120,7 +123,7 @@ export const handleAiRoute = async (request: Request, url: URL, environment: Clo
         categories: (body.categories as any) || [],
         vendors: (body.vendors as any) || [],
         currency: body.currency as string | undefined
-      });
+      }, request.headers.get('x-request-id') || undefined);
       return jsonResponse({
         success: result.status === EXTRACTION_STATUS.SUCCESS,
         ...result,
@@ -144,7 +147,10 @@ export const handleAiRoute = async (request: Request, url: URL, environment: Clo
     try {
       const body = await readJson(request);
       const records = (body.records as any) || [];
-      const result = await aiAnomalyService.analyzeAnomalies(records);
+      const result = await aiAnomalyService.analyzeAnomalies(
+        records,
+        request.headers.get('x-request-id') || undefined
+      );
       return jsonResponse({
         success: result.status === EXTRACTION_STATUS.SUCCESS,
         ...result,

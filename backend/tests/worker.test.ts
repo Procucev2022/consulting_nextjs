@@ -427,35 +427,73 @@ describe('Cloudflare backend worker', () => {
       request('/api/ai/categorize', {
         method: 'POST',
         body: JSON.stringify({ items: [{ lineId: '1', rawDescription: 'Ball bearings' }] }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'ai-categorize-request' }
       }),
       {},
       executionContext
     );
     expect(catRes.status).toBe(200);
+    expect(aiCategorizationService.categorizeLineItems).toHaveBeenCalledWith(
+      expect.any(Array), 'ai-categorize-request'
+    );
 
     const execReportRes = await workerFetch(
       request('/api/ai/executive-summary', {
         method: 'POST',
         body: JSON.stringify({ tenantName: 'Acme', totalSpendInrCr: 10 }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'ai-report-request' }
       }),
       {},
       executionContext
     );
     expect(execReportRes.status).toBe(200);
+    expect(aiReportService.generateExecutiveSummary).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantName: 'Acme' }), 'ai-report-request'
+    );
 
     const anomaliesRes = await workerFetch(
       request('/api/ai/analyze-anomalies', {
         method: 'POST',
         body: JSON.stringify({ records: [] }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'ai-anomaly-request' }
       }),
       {},
       executionContext
     );
     expect(anomaliesRes.status).toBe(200);
+    expect(aiAnomalyService.analyzeAnomalies).toHaveBeenCalledWith([], 'ai-anomaly-request');
   }, 30000);
+
+  it('forwards an absent request ID as undefined on AI routes', async () => {
+    const { handleAiRoute } = await import('../src/workerAiRoutes');
+    const { aiCategorizationService } = await import('../src/services/aiCategorizationService');
+    const { aiReportService } = await import('../src/services/aiReportService');
+    const { aiAnomalyService } = await import('../src/services/aiAnomalyService');
+    const categorize = vi.spyOn(aiCategorizationService, 'categorizeLineItems')
+      .mockResolvedValue({ status: 'SUCCESS', mappings: [] } as any);
+    const report = vi.spyOn(aiReportService, 'generateExecutiveSummary')
+      .mockResolvedValue({ status: 'SUCCESS', data: {} } as any);
+    const anomalies = vi.spyOn(aiAnomalyService, 'analyzeAnomalies')
+      .mockResolvedValue({ status: 'SUCCESS', anomalies: [] } as any);
+    const cases = [
+      ['/api/ai/categorize', { items: [] }],
+      ['/api/ai/executive-summary', { totalSpendInrCr: 0 }],
+      ['/api/ai/analyze-anomalies', { records: [] }]
+    ] as const;
+
+    for (const [path, body] of cases) {
+      const routeRequest = request(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      await handleAiRoute(routeRequest, new URL(routeRequest.url), {});
+    }
+
+    expect(categorize).toHaveBeenCalledWith([], undefined);
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ totalSpendInrCr: 0 }), undefined);
+    expect(anomalies).toHaveBeenCalledWith([], undefined);
+  });
 
   it('covers AI fallback inputs, malformed JSON, and provider failures', async () => {
     const { geminiService } = await import('../src/services/geminiService');
@@ -476,24 +514,27 @@ describe('Cloudflare backend worker', () => {
     expect(failedExtraction.status).toBe(500);
 
     const emptyCategories = await workerFetch(request('/api/ai/categorize', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: 'invalid' })
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'empty-categorize-request' },
+      body: JSON.stringify({ items: 'invalid' })
     }), {}, executionContext);
     expect(emptyCategories.status).toBe(200);
-    expect(categorize).toHaveBeenCalledWith([]);
+    expect(categorize).toHaveBeenCalledWith([], 'empty-categorize-request');
 
     const emptyReport = await workerFetch(request('/api/ai/executive-summary', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'empty-report-request' },
+      body: JSON.stringify({})
     }), {}, executionContext);
     expect(emptyReport.status).toBe(200);
     expect(report).toHaveBeenCalledWith({
       tenantName: undefined, totalSpendInrCr: 0, categories: [], vendors: [], currency: undefined
-    });
+    }, 'empty-report-request');
 
     const emptyAnomalies = await workerFetch(request('/api/ai/analyze-anomalies', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ records: null })
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'empty-anomaly-request' },
+      body: JSON.stringify({ records: null })
     }), {}, executionContext);
     expect(emptyAnomalies.status).toBe(200);
-    expect(anomalies).toHaveBeenCalledWith([]);
+    expect(anomalies).toHaveBeenCalledWith([], 'empty-anomaly-request');
 
     const malformed = await workerFetch(request('/api/ai/analyze-anomalies', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{'
@@ -2564,10 +2605,13 @@ describe('Cloudflare worker core routes', () => {
         error: null
       });
 
-      const response = await send('/api/ai/categorize', jsonBody('POST', { items: [{ rawLineText: 'Ball bearings' }] }));
+      const response = await send('/api/ai/categorize', {
+        ...jsonBody('POST', { items: [{ rawLineText: 'Ball bearings' }] }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'parsed-categorize-request' }
+      });
 
       await expect(bodyOf(response)).resolves.toMatchObject({ success: true, status: CLASSIFICATION_STATUS.SUCCESS });
-      expect(categorize).toHaveBeenCalledWith([{ rawLineText: 'Ball bearings' }]);
+      expect(categorize).toHaveBeenCalledWith([{ rawLineText: 'Ball bearings' }], 'parsed-categorize-request');
     });
 
     it('reports that no anomalies can be analysed when no records are supplied', async () => {
