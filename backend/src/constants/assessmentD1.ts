@@ -49,6 +49,11 @@ export const ASSESSMENT_D1_DEFAULT_ACTORS = {
 } as const;
 
 export const ASSESSMENT_D1_MESSAGES = {
+  tenantScopeRequired: 'An authenticated tenant assignment is required to access customer and assessment records.',
+  customerNotFound: (customerId: string): string => `Customer ${customerId} not found in the assigned tenant. Refresh the customer list and retry.`,
+  customerValidation: 'Customer details are invalid. Correct the highlighted fields and retry.',
+  customerUpdateValidation: 'Customer update is invalid. Correct the highlighted fields and retry.',
+  assessmentValidation: 'Assessment details are invalid. Correct the highlighted fields and retry.',
   actionValidation: 'Assessment action request is invalid. Correct the highlighted fields and retry.',
   permissionDenied: 'This assessment action requires an internal analyst or administrator role.',
   missingRecord: (assessmentId: string): string => `Assessment ${assessmentId} not found`,
@@ -86,7 +91,23 @@ export const ASSESSMENT_D1_MESSAGES = {
   unsupportedMethod: 'This HTTP method is not supported for the assessment action. No assessment state was changed.'
 } as const;
 
+export const ASSESSMENT_D1_LOG_MESSAGES = {
+  invalidSnapshotFallback: 'Invalid assessment snapshot in D1 fell back to an empty object',
+  invalidSnapshotCollection: 'Assessment snapshot collection row could not be parsed from D1'
+} as const;
+
+export const ASSESSMENT_D1_LOG_ACTIONS = {
+  snapshotCollectionRead: 'assessment.snapshot-collection.read'
+} as const;
+
+export const ASSESSMENT_D1_FALLBACKS = {
+  EMPTY_SNAPSHOT_OBJECT: 'empty-snapshot-object',
+  REJECT_SNAPSHOT_RESPONSE: 'reject-snapshot-response'
+} as const;
+
 export const ASSESSMENT_SNAPSHOT_SQL = {
-  byType: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
-  byAssessment: 'SELECT entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?'
+  byType: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?',
+  byAssessment: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ?',
+  byAssessmentIds: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? ' +
+    'AND assessment_id IN (SELECT value FROM json_each(?))'
 } as const;

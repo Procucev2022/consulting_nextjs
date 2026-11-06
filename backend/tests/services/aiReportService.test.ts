@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AiReportService, aiReportService } from '../../src/services/aiReportService';
 import { geminiService } from '../../src/services/geminiService';
-import { EXTRACTION_STATUS } from '../../src/constants/ai';
+import { AI_LOG_ACTIONS, EXTRACTION_STATUS } from '../../src/constants/ai';
 import logger from '../../src/utils/logger';
 
 // Logging is replaced so the suite neither writes backend/logs nor floods the console.
@@ -55,7 +55,7 @@ describe('AiReportService Unit Tests', () => {
       ]
     };
 
-    vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
+    const generateSpy = vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
       status: EXTRACTION_STATUS.SUCCESS,
       data: mockReport,
       model: 'gemini-3.6-flash',
@@ -68,11 +68,12 @@ describe('AiReportService Unit Tests', () => {
       categories: [{ name: 'Pumps & Valves', spendInrCr: 45.2, targetReductionPct: 9.0 }],
       vendors: [{ vendorName: 'Vendor A', totalSpendInrCr: 30.0, priceCreepPct: 5.2 }],
       currency: 'INR'
-    });
+    }, 'report-request-1');
 
     expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
     expect(result.data?.executiveSummary).toBe('AI generated strategic spend executive summary.');
     expect(result.data?.savingsOpportunities.length).toBe(1);
+    expect(generateSpy.mock.calls[0][0].requestId).toBe('report-request-1');
   });
 
   it('should fall back to deterministic summary when Gemini call fails', async () => {
@@ -89,12 +90,14 @@ describe('AiReportService Unit Tests', () => {
       categories: [{ name: 'Chemicals', spendInrCr: 80.0, targetReductionPct: 10.0 }],
       vendors: [{ vendorName: 'Supplier X', totalSpendInrCr: 50.0 }],
       currency: 'INR'
-    });
+    }, 'report-fallback-1');
 
     expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
     expect(result.data?.executiveSummary).toContain('Strategic sourcing analysis evaluated');
     expect(result.data?.totalSpendEvaluated).toBe(200.0);
     expect(result.data?.strategicRoadmapPhases.length).toBe(3);
+    expect(logger.warn).toHaveBeenCalledWith('AI executive report generation fell back to deterministic summary',
+      expect.objectContaining({ action: AI_LOG_ACTIONS.reportFallback, requestId: 'report-fallback-1' }));
   });
 
   it('should use enterprise, currency, and empty-data placeholders when context is missing', async () => {
@@ -184,10 +187,12 @@ describe('AiReportService Unit Tests', () => {
     expect(result.model).toBe('gemini-test');
     expect(result.error).toBe('Empty body');
     expect(result.data?.executiveSummary).toContain('₹50.00 Cr');
-    expect(logger.warn).toHaveBeenCalledWith('AI executive report generation fell back to deterministic summary', {
+    expect(logger.warn).toHaveBeenCalledWith('AI executive report generation fell back to deterministic summary', expect.objectContaining({
+      action: AI_LOG_ACTIONS.reportFallback,
       status: EXTRACTION_STATUS.SUCCESS,
-      error: 'Empty body'
-    });
+      error: 'Empty body',
+      requestId: undefined
+    }));
   });
 
   it('should compute estimated savings and cap fallback opportunities at five categories', async () => {

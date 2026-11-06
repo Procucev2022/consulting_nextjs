@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { EXECUTIVE_BRIEF_HTTP_STATUS } from '../src/constants/executiveBriefRouteConstants';
-import {
-  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
-  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
-} from '../src/constants/executiveOpportunityBriefConstants';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from '../src/constants/executiveOpportunityBriefConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
 import { adminToken, briefRequest, briefUrl, testEnvironment } from './executiveBriefTestHelpers';
 import * as workerAuth from '../src/workerAuth';
@@ -57,7 +54,7 @@ describe('D1 executive brief error handling', () => {
     const environment = testEnvironment({
       DB: {
         prepare: (query: string) => {
-          if (query.includes('FROM User WHERE id = ?')) {
+          if (query.includes('FROM User')) {
             const statement = {
               bind: () => statement,
               first: async <T>() => ({
@@ -181,9 +178,7 @@ describe('D1 executive brief error handling', () => {
               status: 'ACTIVE'
             } as T
             : null,
-          all: async <T>() => ({
-            results: query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants ? [] as T[] : [] as T[]
-          }),
+          all: async <T>() => ({ results: [] as T[] }),
           run: async () => ({ success: true })
         };
         return statement;

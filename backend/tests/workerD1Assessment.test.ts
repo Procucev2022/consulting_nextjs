@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { handleAssessmentRoute } from '../src/workerD1Assessment';
+import { handleAssessmentRoute as handleAssessmentRouteImpl } from '../src/workerD1Assessment';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { ASSESSMENT_D1_MESSAGES } from '../src/constants/assessmentD1';
 import { createWorkerAuthToken } from '../src/workerAuth';
+import logger from '../src/utils/logger';
 import { createWorkerDatabase, runtimeEnvironment, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
 
 const mockDb = (records: {
@@ -36,11 +37,11 @@ const mockDb = (records: {
       first: vi.fn(async () => {
         if (sql.includes('SELECT 1')) return { ok: 1 };
         if (sql.includes('CustomerRecord')) {
-          const id = args[args.length - 1] || args[0];
+          const id = args[0];
           return customers.find((c) => c.customer_id === id) || customers[0] || null;
         }
         if (sql.includes('AssessmentRecord')) {
-          const id = args[args.length - 1] || args[0];
+          const id = args[0];
           return assessments.find((a) => a.assessment_id === id) || assessments[0] || null;
         }
         return null;
@@ -69,6 +70,17 @@ const mockDb = (records: {
 
 const req = (path: string, options: RequestInit = {}): Request =>
   new Request(`https://consulting.edge/api/assessment${path}`, options);
+
+const handleAssessmentRoute = (
+  db: CloudflareD1Database | undefined,
+  subPath: string,
+  request: Request,
+  url: URL,
+  environment: Parameters<typeof handleAssessmentRouteImpl>[4] = {}
+) => handleAssessmentRouteImpl(db, subPath, request, url, {
+  ...environment,
+  REQUEST_TENANT_ID: environment.REQUEST_TENANT_ID || 'TNT-GLOBAL-8902'
+});
 
 describe('workerD1Assessment handler', () => {
   it('dispatches assessment workbook upload and validation to the D1 lifecycle', async () => {
@@ -165,11 +177,13 @@ describe('workerD1Assessment handler', () => {
       });
     }
   });
-  it('handles missing post-write records and optional customer updates without fabricating API entities', async () => {
+  it('validates empty customer and assessment creates and does not fabricate API entities', async () => {
     const empty = mockDb();
     for (const path of ['/customers', '/']) {
       const request = req(path, { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } });
-      expect((await handleAssessmentRoute(empty, path, request, new URL(request.url))).data).toBeNull();
+      const response = await handleAssessmentRoute(empty, path, request, new URL(request.url));
+      expect(response.status).toBe(400);
+      expect(response.data).toMatchObject({ success: false, errors: expect.any(Array) });
     }
     const patch = req('/customers/C1', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
@@ -182,7 +196,7 @@ describe('workerD1Assessment handler', () => {
     for (const action of ['nda', 'data-status']) {
       const path = `/A1/${action}`;
       const request = req(path, { method: 'PATCH', body: '{}', headers: { 'Content-Type': 'application/json' } });
-      expect((await handleAssessmentRoute(empty, path, request, new URL(request.url))).data).toBeNull();
+      expect((await handleAssessmentRoute(empty, path, request, new URL(request.url))).status).toBe(404);
     }
     expect((await handleAssessmentRoute(empty, '//', req('//'), new URL(req('//').url))).status).toBe(404);
   });
@@ -218,10 +232,159 @@ describe('workerD1Assessment handler', () => {
   it('handles /mode and /system-info', async () => {
     const db = mockDb();
     const mode = await handleAssessmentRoute(db, '/mode', req('/mode'), new URL('https://consulting.edge/api/assessment/mode'));
+    expect(db.prepare).not.toHaveBeenCalled();
     expect(mode.data).toHaveProperty('mode', 'INTERNAL_ASSESSMENT');
 
     const sys = await handleAssessmentRoute(db, '/system-info', req('/system-info'), new URL('https://consulting.edge/api/assessment/system-info'));
+    expect(db.prepare).toHaveBeenCalledWith('SELECT 1 AS ok');
     expect(sys.data).toHaveProperty('appVersion', '2.4.0');
+  });
+
+  it('fails closed when a database-backed assessment request has no authenticated tenant scope', async () => {
+    const db = mockDb();
+    const response = await handleAssessmentRouteImpl(
+      db, '/customers', req('/customers'), new URL('https://consulting.edge/api/assessment/customers'), {}
+    );
+    expect(response.status).toBe(403);
+    expect(response.data).toMatchObject({ success: false, message: ASSESSMENT_D1_MESSAGES.tenantScopeRequired });
+  });
+
+  it('isolates customer and assessment lists and details by the authenticated tenant', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.prepare(`INSERT INTO CustomerRecord (customer_id, tenant_id, customer_name, industry)
+      VALUES ('C-A', 'TENANT-A', 'Alpha', 'Manufacturing'), ('C-B', 'TENANT-B', 'Beta', 'Cement')`).run();
+    fixture.db.prepare(`INSERT INTO AssessmentRecord (assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner)
+      VALUES ('A-A', 'TENANT-A', 'C-A', 'Alpha', 'Manufacturing', 'analyst@example.test'),
+        ('A-B', 'TENANT-B', 'C-B', 'Beta', 'Cement', 'analyst@example.test')`).run();
+    const environment = { REQUEST_TENANT_ID: 'TENANT-A' };
+    try {
+      const customers = await handleAssessmentRoute(fixture.d1, '/customers', req('/customers'),
+        new URL('https://consulting.edge/api/assessment/customers'), environment);
+      const assessments = await handleAssessmentRoute(fixture.d1, '', req(''),
+        new URL('https://consulting.edge/api/assessment'), environment);
+      const customerDetail = await handleAssessmentRoute(fixture.d1, '/customers/C-A', req('/customers/C-A'),
+        new URL('https://consulting.edge/api/assessment/customers/C-A'), environment);
+      const foreignCustomer = await handleAssessmentRoute(fixture.d1, '/customers/C-B', req('/customers/C-B'),
+        new URL('https://consulting.edge/api/assessment/customers/C-B'), environment);
+      const foreignAssessment = await handleAssessmentRoute(fixture.d1, '/A-B', req('/A-B'),
+        new URL('https://consulting.edge/api/assessment/A-B'), environment);
+
+      expect((customers.data as Array<{ customerId: string }>).map((row) => row.customerId)).toEqual(['C-A']);
+      expect((assessments.data as Array<{ assessmentId: string }>).map((row) => row.assessmentId)).toEqual(['A-A']);
+      expect((customerDetail.data as { assessments: Array<{ assessmentId: string }> }).assessments)
+        .toMatchObject([{ assessmentId: 'A-A' }]);
+      expect(foreignCustomer.status).toBe(404);
+      expect(foreignAssessment.status).toBe(404);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('loads list snapshots for all tenant customers with one scoped D1 query', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.prepare(`INSERT INTO CustomerRecord (customer_id, tenant_id, customer_name, industry)
+      VALUES ('C-A', 'TENANT-A', 'Alpha', 'Manufacturing'), ('C-C', 'TENANT-A', 'Gamma', 'Automotive')`).run();
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (entry_type, assessment_id, entry_id, payload_json, source_checksum)
+      VALUES ('customer', 'C-A', 'C-A', '{"customerId":"C-A","customMetadata":{"segment":"A"}}', 'sum-a'),
+        ('customer', 'C-C', 'C-C', '{"customerId":"C-C","customMetadata":{"segment":"C"}}', 'sum-c'),
+        ('customer', 'C-OTHER', 'C-OTHER', '{"customerId":"C-OTHER","customMetadata":{"segment":"other"}}', 'sum-other')`).run();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
+    try {
+      const response = await handleAssessmentRoute(fixture.d1, '/customers', req('/customers'),
+        new URL('https://consulting.edge/api/assessment/customers'), { REQUEST_TENANT_ID: 'TENANT-A' });
+      const snapshotQueries = prepare.mock.calls.filter(([sql]) => sql.includes('AssessmentStoreEntry'));
+      expect(snapshotQueries).toHaveLength(1);
+      expect(snapshotQueries[0][0]).toContain('json_each(?)');
+      expect(response.data).toMatchObject([
+        { customerId: 'C-A', customMetadata: { segment: 'A' } },
+        { customerId: 'C-C', customMetadata: { segment: 'C' } }
+      ]);
+      expect(response.data).not.toMatchObject([{ customerId: 'C-OTHER' }]);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('creates an unlinked customer and assessment together inside the assigned tenant', async () => {
+    const fixture = createWorkerDatabase();
+    const create = req('/', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerName: 'New Client', industry: 'Manufacturing', assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31' })
+    });
+    try {
+      const response = await handleAssessmentRoute(fixture.d1, '/', create,
+        new URL('https://consulting.edge/api/assessment'), { REQUEST_TENANT_ID: 'TENANT-A' });
+      const data = response.data as { assessmentId: string; customerId: string; status: string; dataStatus: string };
+      expect(response.status).toBe(201);
+      expect(data).toMatchObject({ status: 'CREATED', dataStatus: 'NOT_RECEIVED' });
+      expect(await fixture.d1.prepare('SELECT tenant_id FROM CustomerRecord WHERE customer_id = ?').bind(data.customerId).first())
+        .toEqual({ tenant_id: 'TENANT-A' });
+      expect(await fixture.d1.prepare('SELECT tenant_id FROM AssessmentRecord WHERE assessment_id = ?').bind(data.assessmentId).first())
+        .toEqual({ tenant_id: 'TENANT-A' });
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('logs assessment insert failures and attempts to remove an unlinked customer', async () => {
+    const assessmentInsertError = new Error('assessment insert failed');
+    const rollbackError = new Error('customer rollback failed');
+    const makeFailingDb = (options: { rollbackFails?: boolean; existingCustomer?: boolean } = {}) => ({
+      prepare: vi.fn((sql: string) => ({
+        bind: vi.fn((..._values: unknown[]) => ({
+          all: vi.fn(async () => ({ results: [] })),
+          first: vi.fn(async () => sql.includes('CustomerRecord') && options.existingCustomer ? {
+            customer_id: 'CUST-EXISTING', customer_name: 'Existing', industry: 'Manufacturing',
+            business_unit: 'Default BU', company_website: null
+          } : null),
+          run: vi.fn(async () => {
+            if (sql.includes('INSERT INTO AssessmentRecord')) throw assessmentInsertError;
+            if (sql.startsWith('DELETE FROM CustomerRecord') && options.rollbackFails) throw rollbackError;
+            return {};
+          })
+        })),
+        all: vi.fn(async () => ({ results: [] })),
+        first: vi.fn(async () => null),
+        run: vi.fn(async () => ({}))
+      }))
+    }) as unknown as CloudflareD1Database;
+    const requestForCreate = (customerId?: string) => req('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-request-id': 'assessment-create-failure' },
+      body: JSON.stringify({
+        ...(customerId ? { customerId } : {}), customerName: 'New Client', industry: 'Manufacturing',
+        assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
+      })
+    });
+    const logError = vi.spyOn(logger, 'error');
+    try {
+      const rollbackSuccessDb = makeFailingDb();
+      const rollbackSuccessRequest = requestForCreate();
+      await expect(handleAssessmentRoute(rollbackSuccessDb, '/', rollbackSuccessRequest,
+        new URL(rollbackSuccessRequest.url))).rejects.toBe(assessmentInsertError);
+
+      const rollbackFailureDb = makeFailingDb({ rollbackFails: true });
+      const rollbackFailureRequest = requestForCreate();
+      await expect(handleAssessmentRoute(rollbackFailureDb, '/', rollbackFailureRequest,
+        new URL(rollbackFailureRequest.url))).rejects.toBe(assessmentInsertError);
+      expect(logError).toHaveBeenCalledWith(
+        'Failed to roll back an unlinked customer created with an assessment',
+        expect.objectContaining({ requestId: 'assessment-create-failure', customerId: expect.any(String) }),
+        rollbackError
+      );
+
+      const existingCustomerDb = makeFailingDb({ existingCustomer: true });
+      const existingCustomerRequest = requestForCreate('CUST-EXISTING');
+      await expect(handleAssessmentRoute(existingCustomerDb, '/', existingCustomerRequest,
+        new URL(existingCustomerRequest.url))).rejects.toBe(assessmentInsertError);
+      expect(logError).toHaveBeenCalledWith(
+        'Failed to create tenant-scoped assessment',
+        expect.objectContaining({ requestId: 'assessment-create-failure', tenantId: 'TNT-GLOBAL-8902' }),
+        assessmentInsertError
+      );
+    } finally {
+      logError.mockRestore();
+    }
   });
 
   it('handles /customers listing and creation with generated and explicit customerId', async () => {
@@ -292,7 +455,13 @@ describe('workerD1Assessment handler', () => {
 
   it('handles assessment collection list and creation with generated and explicit assessmentId', async () => {
     const sampleAssessment = { assessment_id: 'AIC-2026-0001', customer_name: 'Acme' };
-    const db = mockDb({ assessments: [sampleAssessment] });
+    const db = mockDb({
+      assessments: [sampleAssessment],
+      customers: [
+        { customer_id: 'CUST-002', customer_name: 'New Client', industry: 'Manufacturing', status: 'ACTIVE' },
+        { customer_id: 'CUST-003', customer_name: 'Full Client', industry: 'Automotive', status: 'ACTIVE' }
+      ]
+    });
 
     const listRes = await handleAssessmentRoute(db, '', req(''), new URL('https://consulting.edge/api/assessment'));
     expect(listRes.data).toEqual([{ assessmentId: 'AIC-2026-0001', customerName: 'Acme' }]);
@@ -303,7 +472,7 @@ describe('workerD1Assessment handler', () => {
     // Create with generated id
     const createReq = req('/', {
       method: 'POST',
-      body: JSON.stringify({ customerName: 'New Client', customerId: 'CUST-002' }),
+      body: JSON.stringify({ customerName: 'New Client', industry: 'Manufacturing', customerId: 'CUST-002', assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31' }),
       headers: { 'Content-Type': 'application/json' }
     });
     const createRes = await handleAssessmentRoute(db, '/', createReq, new URL('https://consulting.edge/api/assessment'));
@@ -401,10 +570,10 @@ describe('workerD1Assessment handler', () => {
       'unused', 'ADMIN', 'ACTIVE', 'GOLD'
     );
     fixture.db.prepare(`INSERT INTO User (
-      id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       'review-user', 'Review User', '+10000000001', 'review-user@example.test', 'Customer', 'Address',
-      'unused', 'USER', 'ACTIVE', 'BRONZE'
+      'unused', 'USER', 'ACTIVE', 'BRONZE', 'TNT-GLOBAL-8902'
     );
     const adminToken = await createWorkerAuthToken({
       id: 'review-admin', email: 'review-admin@example.test', role: 'ADMIN'

@@ -26,6 +26,10 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   onUpdateTenant,
   ingestionQueue,
   validationRecords,
+  validationDataSummary,
+  hasMoreValidationRecords,
+  isLoadingMoreValidationRecords,
+  onLoadMoreValidationRecords,
   onFixCurrency,
   onMergeVendor,
   onApplyBlanketFixes,
@@ -46,6 +50,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   onUpgrade,
   canonicalViewModel,
   onConfirmDatasetBaseCurrency,
+  summarySectionRef,
   ...restProps
 }: Module1IngestionProps & { rawUploadRecords?: any[] }) => {
   const rawUploadRecords = (restProps as any).rawUploadRecords;
@@ -353,6 +358,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             onNavigateToCategorization={onRunAICategorization}
             periodMetadata={canonicalViewModel?.periodMetadata}
             canonicalViewModel={canonicalViewModel}
+            summarySectionRef={summarySectionRef}
           />
 
           {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
@@ -365,6 +371,10 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           {/* Ingestion Validation & Remediation Log (Extracted Pre-Check Component) */}
           <ValidationPreCheckSection
             validationRecords={validationRecords}
+            validationDataSummary={validationDataSummary}
+            hasMoreValidationRecords={hasMoreValidationRecords}
+            isLoadingMoreValidationRecords={isLoadingMoreValidationRecords}
+            onLoadMoreValidationRecords={onLoadMoreValidationRecords}
             onFixCurrency={onFixCurrency}
             onMergeVendor={onMergeVendor}
             onMergeItem={onMergeItem}

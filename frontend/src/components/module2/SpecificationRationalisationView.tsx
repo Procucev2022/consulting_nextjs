@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
@@ -16,6 +17,7 @@ import {
 import { SpecificationRationalisationReviewModal } from './SpecificationRationalisationReviewModal';
 import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 import { authApiClient } from '../../utils/authApi';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const SpecificationRationalisationView: React.FC<SpecificationRationalisationViewProps> = ({
   assessmentId = '',
@@ -28,8 +30,10 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
   const [selectedCandidate, setSelectedCandidate] = useState<SpecificationCandidateItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
+    const requestId = beginRequest();
     if (!assessmentId) {
       setData(null);
       setLoading(false);
@@ -37,28 +41,32 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
     }
     setLoading(true);
     setError(null);
+    setData(null);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/module2/sourcing/specification-rationalisation?assessmentId=${encodeURIComponent(assessmentId)}`
       );
       if (!res.ok) {
         throw new Error(`Failed to load Specification Rationalisation (HTTP ${res.status})`);
       }
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (!json.success || !json.data) {
         throw new Error(json.message || 'Invalid API response');
       }
       setData(json.data);
     } catch (err: unknown) {
+      if (!isCurrentRequest(requestId)) return;
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void fetchData();
+    return invalidateRequests;
+  }, [fetchData, invalidateRequests]);
 
   const handleExportExcel = async (): Promise<void> => {
     const url = `/api/module2/sourcing/specification-rationalisation/export-excel?assessmentId=${encodeURIComponent(
@@ -78,7 +86,7 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch('/api/module2/sourcing/specification-rationalisation/review', {
+      const res = await apiFetch('/api/module2/sourcing/specification-rationalisation/review', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)

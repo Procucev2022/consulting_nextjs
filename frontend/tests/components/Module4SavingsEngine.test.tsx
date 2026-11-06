@@ -277,14 +277,12 @@ describe('Module4SavingsEngine Component', () => {
     expect(onProceed).toHaveBeenCalled();
   });
 
-  it('links to the executive brief and suppresses the default navigation', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('links to the executive brief with a native navigation target', () => {
     renderEngine();
 
     const briefLink = screen.getByTestId('module4-open-brief-btn');
     expect(briefLink).toHaveAttribute('href', '/executive-brief');
     expect(briefLink).toHaveTextContent(UI_STRINGS.module4.btnOpenExecutiveBrief);
-    expect(fireEvent.click(briefLink)).toBe(false);
   });
 
   it('renders masked overlay for Bronze customer and handles upgrade to silver', () => {

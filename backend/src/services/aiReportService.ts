@@ -1,5 +1,5 @@
 import { geminiService } from './geminiService';
-import { EXECUTIVE_REPORT_SYSTEM_PROMPT, EXTRACTION_STATUS } from '../constants/ai';
+import { AI_LOG_ACTIONS, EXECUTIVE_REPORT_SYSTEM_PROMPT, EXTRACTION_STATUS } from '../constants/ai';
 import type { ExecutiveReportData, ExecutiveReportResult } from '../types/ai';
 import logger from '../utils/logger';
 
@@ -10,7 +10,7 @@ export class AiReportService {
     categories: Array<{ name: string; spendInrCr: number; targetReductionPct: number }>;
     vendors: Array<{ vendorName: string; totalSpendInrCr: number; priceCreepPct?: number }>;
     currency?: string;
-  }): Promise<ExecutiveReportResult> {
+  }, requestId?: string): Promise<ExecutiveReportResult> {
     const categoryLines = (spendSummary.categories || [])
       .slice(0, 15)
       .map((c) => `- ${c.name}: ₹${c.spendInrCr.toFixed(2)} Cr (Target Reduction: ${c.targetReductionPct}%)`)
@@ -36,13 +36,16 @@ ${vendorLines || '(No vendor data)'}`;
 
     const result = await geminiService.generateJson<ExecutiveReportData>({
       prompt,
-      label: 'CPO Strategic Executive Report'
+      label: 'CPO Strategic Executive Report',
+      requestId
     });
 
     if (result.status !== EXTRACTION_STATUS.SUCCESS || !result.data) {
       logger.warn('AI executive report generation fell back to deterministic summary', {
+        action: AI_LOG_ACTIONS.reportFallback,
         status: result.status,
-        error: result.error
+        error: result.error,
+        requestId
       });
 
       const fallbackData: ExecutiveReportData = {

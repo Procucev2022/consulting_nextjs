@@ -12,6 +12,17 @@ const EVALUATED_SPEND_UNAVAILABLE = 'Evaluated spend unavailable';
 
 export const UI_STRINGS = {
   databaseData: {
+    apiOperations: {
+      categories: 'load spend categories',
+      categoryDetails: 'load category year details',
+      vendors: 'load vendor rankings',
+      vendorDetails: 'load vendor year details',
+      savings: 'load savings opportunities'
+    },
+    apiNoDetails: 'The server returned no dashboard data or error detail',
+    apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry and contact support with request ${requestId} if the issue continues.`,
+    apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed or unexpected data. Retry; if this continues, contact support with request ${requestId}.`,
+    dashboardPartialLoadFailed: (operations: string, detail: string): string => `Some dashboard data could not be loaded (${operations}): ${detail}. Refresh the page to retry; if the issue continues, contact support with the affected data names and any request ID shown in the error details.`,
     conversionLoadFailed: (status: number) => `The conversion stages could not be loaded because the database API returned HTTP ${status}. Refresh the page and ask support to verify the D1 conversion stage seed if the error continues.`,
     schemaLoadFailed: 'The database schema could not be loaded. Check your connection and retry; ask support to verify the D1 database binding if the issue continues.',
     loadingSchema: 'Loading the database schema...',
@@ -61,6 +72,8 @@ export const UI_STRINGS = {
     retry: 'Retry',
     success: 'Success',
     notAvailable: 'N/A',
+    dataProtectionBadge: 'Cloudflare D1/R2 Encrypted at Rest',
+    dataProtectionNotice: 'Cloudflare D1/R2 protect stored data at rest; application traffic uses TLS.',
     viewDetails: 'View Details',
     selectOption: 'Select an option',
     croreAmount: (amountCr: string): string => `₹${amountCr} Cr`
@@ -80,8 +93,7 @@ export const UI_STRINGS = {
     authorFull: 'Author: Procurement Lead',
     authorFormatted: (name: string, role: string) => `Author: ${name} (${role})`,
     baseCurrencyNote: 'Base Currency: INR in Crores (₹ Cr) | Multi-Currency Live FX',
-    slaText: 'SLA: <800ms Query',
-    slaQuery: (ms: number) => `SLA: <${ms}ms Query`,
+    slaText: 'D1 Query Monitoring',
     enterpriseFallback: 'Enterprise',
     noActiveCustomer: 'No Active Customer',
     spendUnavailable: 'Spend data unavailable',
@@ -122,13 +134,17 @@ export const UI_STRINGS = {
     multiCurrencyLiveFX: 'Multi-Currency Live FX',
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
-    securityBadge: 'AES-256-GCM Encrypted',
+    securityBadge: 'Cloudflare D1/R2 Encrypted at Rest',
     dpsVerified: 'Verified Pipeline Architecture',
     userProfile: {
       menuButtonTitle: 'User Profile & Settings Menu',
       defaultName: 'Guest User',
       defaultRole: 'Guest',
       defaultEmail: 'Sign in to access account',
+      unknownLoadFailure: 'the service did not provide diagnostic details',
+      profileRefreshFailed: (reason: string): string => `Your latest profile could not be verified (${reason}); saved profile details are shown. Check your connection and reload this page to verify the current account state.`,
+      tenantLoadFailed: (reason: string): string => `Organization details could not be loaded (${reason}). Check your connection and reload this page; your profile remains available.`,
+      ingestionLoadFailed: (reason: string): string => `Ingestion documents could not be loaded (${reason}). Check your connection and reload this page; your profile remains available.`,
       userDetailsTitle: 'Account & Subscription',
       switchTierTitle: 'Your Procurement Intelligence Plan',
       currencyTitle: 'Display Currency',
@@ -198,9 +214,9 @@ export const UI_STRINGS = {
         awaitingDataset: 'Awaiting dataset'
       },
       realTimeProcessing: {
-        label: 'Real-Time Processing',
-        value: '100%',
-        sub: 'Sub-800ms Query Render',
+        label: 'Module 1 Run Status',
+        value: 'Completed',
+        sub: 'Valid records reconciled',
         notStarted: 'Not started'
       },
       avgIdentifiedSavings: {
@@ -279,15 +295,15 @@ export const UI_STRINGS = {
   },
 
   schema: {
-    title: 'PostgreSQL Enterprise Data Architecture & Prisma DDL Schema',
-    subtitle: 'Normalized relational schema with multi-tenant isolation, UUID surrogate keys, and foreign keys.',
+    title: 'Cloudflare D1 Data Architecture',
+    subtitle: 'SQLite relational schema with tenant-scoped records and database constraints.',
     bannerBadge: 'FRD Section 5 & 6',
-    bannerSubtitle: 'PostgreSQL / Snowflake Database Schema & NFRs',
-    bannerTitle: 'Data Architecture & Security SLA Specifications',
-    bannerDescription: 'Core normalized relational database schema powering the high-performance ETL pipeline and real-time analytics engine.',
-    securityBadge: 'AES-256 / TLS 1.3 Active',
-    entitiesHeader: 'Database Core Entities (6)',
-    tableTypeBadge: 'PostgreSQL / Snowflake Table',
+    bannerSubtitle: 'Cloudflare D1 / SQLite Schema',
+    bannerTitle: 'Cloudflare D1 Data Architecture',
+    bannerDescription: 'Table definitions loaded from the configured Cloudflare D1 database.',
+    securityBadge: 'Cloudflare D1/R2 Encrypted at Rest',
+    entitiesHeader: 'D1 Application Tables',
+    tableTypeBadge: 'D1 / SQLite Table',
     tabs: {
       attributes: 'Attributes',
       sqlDdl: 'SQL DDL',
@@ -295,9 +311,15 @@ export const UI_STRINGS = {
     },
     primaryAttributesLabel: 'Primary Attributes / Fields:',
     slaCards: {
-      performanceTitle: 'System Performance SLA',
-      securityTitle: 'Security & Global Compliance',
-      uptimeTitle: 'System Uptime & Failover'
+      performanceTitle: 'Database Query Monitoring',
+      queryTelemetry: 'Worker database calls record duration, rows read or written, affected rows, and request correlation. Slow queries and large scans emit structured warnings.',
+      readCache: 'Currency rates, industry profiles, and PCBI benchmarks use bounded 60-second caches with write invalidation.',
+      securityTitle: 'Security Controls',
+      encryptionDescription: 'Cloudflare D1 and R2 encrypt stored data at rest with AES-256. Application traffic uses TLS; generated assessment delivery artifacts also use application-level AES-GCM when the configured key is available.',
+      complianceDescription: 'Protected routes enforce server-side tenant scope and role checks. Compliance certifications and regulatory attestations require separate organizational evidence.',
+      uptimeTitle: 'Availability & Recovery Configuration',
+      availabilityDescription: 'Application code does not configure multi-region active-passive failover or guarantee a platform availability SLA.',
+      recoveryDescription: 'D1 backup and recovery settings must be verified in the owning Cloudflare account before production use.'
     },
     entityCountBadge: '10 Relational Tables',
     backToPipeline: 'Back to Pipeline',
@@ -378,6 +400,8 @@ export const UI_STRINGS = {
     runAiCategorization: 'Run AI Categorization Engine',
     resetAnomalyState: 'Reset Anomaly State',
     noFileUploaded: 'No file uploaded yet',
+    fileTooLarge: (fileSizeMb: number, maxSizeMb: number): string =>
+      `This ${fileSizeMb.toFixed(1)} MiB file exceeds the ${maxSizeMb} MiB upload limit. Split it into smaller files and retry.`,
     configureClientDataset: 'Configure Client & Dataset',
     confirmAndProceedToUpload: 'Confirm & Proceed to Upload Data',
     needsAction: 'Needs Action',
@@ -412,6 +436,14 @@ export const UI_STRINGS = {
     },
     validationSectionTitle: 'Multi-Currency Validation & Line Item Pre-Check (FR-ING-03)',
     validationSectionSubtitle: 'Line-item data cleansing pre-flight check. Converts multi-currency items to Base INR in Crores, highlights unresolved anomalies, and updates active spend in real time.',
+      showingValidationRecords: (shown: number, total: number): string => `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} validation records.`,
+      loadMoreValidationRecords: 'Load more validation records',
+      loadingMoreValidationRecords: 'Loading validation records…',
+      loadMoreValidationRecordsFailed: 'More validation records could not be loaded. Retry; if the issue continues, include the request ID from the error details when contacting support.',
+      showingIngestionDocuments: (shown: number, total: number): string => `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} uploaded documents.`,
+      loadMoreIngestionDocuments: 'Load more uploaded documents',
+      loadingMoreIngestionDocuments: 'Loading uploaded documents…',
+      loadMoreIngestionDocumentsFailed: 'More uploaded documents could not be loaded. Retry; if the issue continues, include the request ID from the error details when contacting support.',
     kpis: {
       totalFileSpend: 'Total File Spend',
       validatedSpend: 'Validated Spend (Active)',
@@ -1360,11 +1392,16 @@ export const UI_STRINGS = {
   module4: {
     apiOperations: {
       load: 'load consolidated savings',
+      tenant: 'load the assigned organization',
+      tenantUpdate: 'update the assigned organization',
+      ingestion: 'load the tenant ingestion queue and validation records',
       actionPlan: 'save the action plan',
       opportunity: 'save the opportunity status'
     },
     apiNoDetails: 'The server returned no usable savings data or error detail',
+    tenantApiNoDetails: 'The server returned no organization error detail',
     apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry after checking Worker route availability. If this continues, contact support with request ${requestId}.`,
+    apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed JSON. Retry; if this continues, contact support with request ${requestId}.`,
     saveFailed: (reason: string): string => `The savings change was not saved: ${reason}. The last persisted values are still displayed; retry after the service is available.`,
     title: 'SAVINGS ENGINE',
     subtitle: 'Consolidated Savings, Actions & Realization',
@@ -2148,6 +2185,14 @@ export const UI_STRINGS = {
     rateLimit: {
       throttled: (retryAfterSec: number) => `API rate limit exceeded. Too many requests in a short interval. Please wait ${retryAfterSec}s before retrying.`,
       actionableAdvice: 'Pause automated scripts or high-frequency clicks to allow quota replenishment.'
+    },
+    boundary: {
+      title: 'This page could not finish loading',
+      message: 'The page stopped after an unexpected rendering error. Your saved work may still be available.',
+      nextStep: 'Reload the page. If the problem continues, share the support reference below with the system administrator.',
+      supportReference: (requestId: string) => `Support reference: ${requestId}`,
+      reloadAction: 'Reload page',
+      logMessage: 'A page rendering error was caught by the application boundary.'
     }
   },
 
@@ -2188,7 +2233,7 @@ export const UI_STRINGS = {
       section3Title: '3. Analytical Projections & Safe Harbor',
       section3Body: 'All spend figures, price creep indices, and opportunity estimates represent forensic analytical deductions derived from uploaded ERP purchase orders, invoices, and market benchmarks. Actual bottom-line realization will depend on active sourcing execution and supplier negotiations.',
       section4Title: '4. Cryptographic Security & Regulatory Compliance',
-      section4Body: 'The Procucev platform operates under strict SOC2 Type II and ISO/IEC 27001 data isolation policies. All sensitive financial records are protected with authenticated AES-256-GCM encryption at rest and in transit.',
+      section4Body: 'Cloudflare D1 and R2 encrypt stored data at rest with AES-256, and application traffic uses TLS. Generated assessment delivery artifacts also use application-level AES-GCM when the configured key is available. Tenant scope and role checks are enforced by the application.',
       complianceStamp: 'COMPLIANCE VALIDATED // LEGAL & AUDIT CLEARANCE ACTIVE'
     },
     about: {
@@ -2544,6 +2589,8 @@ export const UI_STRINGS = {
     signingIn: 'Authenticating...',
     registering: 'Creating Free Workspace...',
     registrationSuccess: 'Account created successfully! Welcome to aiCEV.',
+    registrationPending: 'Your account request was received. An administrator must assign your organization before you can sign in.',
+    tenantAssignmentRequired: 'Your account is not assigned to an active organization, so this upload cannot be saved. Ask an administrator to assign your tenant, then sign in again.',
     loginSuccess: 'Login successful. Redirecting...',
     alreadyHaveAccount: 'Already have an account? Sign In',
     dontHaveAccount: 'New visitor? Start Free with Bronze Discover',
@@ -2643,6 +2690,13 @@ export const UI_STRINGS = {
     suspendedUsers: 'Suspended Accounts',
     adminAccounts: 'Administrators',
     uniqueCompanies: 'Registered Companies',
+    colTenant: 'Tenant Access',
+    unassignedTenant: 'Unassigned',
+    inactiveTenant: 'Inactive',
+    assignTenant: 'Assign tenant',
+    tenantAssigned: (email: string, tenant: string) => `Assigned ${email} to ${tenant}; the account is now active.`,
+    tenantAssignmentInvalid: 'Tenant assignment could not be saved because the selected tenant was invalid. Refresh the tenant list and choose an available organization.',
+    tenantListInvalid: 'Tenant choices could not be loaded because the server returned an invalid list. Refresh and ask support to check the tenant registry.',
     searchPlaceholder: 'Search by user name, organization email, company name, or mobile number...',
     filterTier: 'Subscription Tier',
     allTiers: 'All Tiers',
@@ -2778,7 +2832,58 @@ export const UI_STRINGS = {
     adminSubscriptionTitle: 'Subscription Management',
     adminSubscriptionSubtitle: 'Controlled offline commercial provisioning, OTP validation and customer activation lifecycle',
     adminOtpDelivery: 'Enter the six-digit code sent to your administrator email.',
-    adminOtpCodeLabel: 'Administrator verification code'
+    adminOtpCodeLabel: 'Administrator verification code',
+    provisionModal: {
+      detailsTitle: 'Provision Customer Subscription',
+      otpTitle: 'Admin OTP Verification',
+      detailsSubtitle: 'Controlled offline commercial setup',
+      close: 'Close',
+      companyName: 'Company Name',
+      customerName: 'Customer Name',
+      customerEmail: 'Customer Email',
+      tier: 'Subscription Tier',
+      silverTierOption: 'Silver — Assess',
+      goldTierOption: 'Gold — Optimize',
+      tenantId: 'Tenant ID',
+      customerId: 'Customer ID',
+      paymentReference: 'Offline Invoice / Payment Reference',
+      tenantIdPlaceholder: 'TNT-...',
+      customerIdPlaceholder: 'usr-...',
+      paymentReferencePlaceholder: 'INV-2026-...',
+      paymentConfirmation: 'I certify that offline payment/quotation has been verified by the commercial desk.',
+      requestOtp: 'Proceed to Admin OTP Authorization',
+      requestingOtp: 'Requesting OTP...',
+      otpPlaceholder: '000000',
+      developmentOtpHint: (hint: string) => `Development OTP hint: ${hint}`,
+      back: 'Back',
+      authorize: 'Authorize & Provision',
+      authorizing: 'Authorizing...',
+      paymentConfirmationRequired: 'Confirm that the offline payment was verified before requesting administrator OTP authorization.',
+      otpRequestOperation: 'Administrator OTP request',
+      provisioningOperation: 'Customer subscription provisioning',
+      serverReasonUnavailable: 'The server did not include a failure reason.',
+      requestIdUnavailable: 'not returned',
+      otpRequestFailed: (status: number, detail: string, requestId: string) =>
+        `Administrator OTP authorization could not be requested (HTTP ${status}: ${detail}). Verify the entered customer ID and administrator access, then retry. Support reference: ${requestId}.`,
+      provisioningFailed: (status: number, detail: string, requestId: string) =>
+        `The customer subscription could not be provisioned (HTTP ${status}: ${detail}). Verify the tenant and customer IDs, payment reference, and OTP, then retry. Support reference: ${requestId}.`,
+      networkFailure: (operation: string, detail: string, requestId: string) =>
+        `${operation} could not reach the subscription service: ${detail}. Check the connection and retry. Support reference: ${requestId}.`,
+      invalidOtpResponse: 'The subscription service returned an invalid OTP session. Request a new administrator OTP and retry.',
+      invalidProvisionResponse: 'The subscription service did not confirm provisioning. Refresh the subscription list and contact support with the request ID before retrying.',
+      validationFailure: (detail: string) => `Subscription details are incomplete or invalid: ${detail}. Correct the highlighted values and retry.`,
+      otpValidationFailure: (detail: string) => `Administrator authorization could not continue: ${detail}. Enter the six-digit code from the current OTP session and retry.`,
+      inputValidation: {
+        tenantIdRequired: 'Enter the tenant ID that will be assigned to this user.',
+        customerIdRequired: 'Enter the customer user ID.',
+        emailInvalid: 'Enter a valid customer email address.',
+        customerNameRequired: 'Enter the customer name.',
+        companyNameRequired: 'Enter the company name.',
+        paymentReferenceRequired: 'Enter the offline invoice or payment reference.',
+        otpInvalid: 'Enter the six-digit administrator authorization code.',
+        otpSessionRequired: 'Request a new administrator OTP before provisioning.'
+      }
+    }
   },
 
   pcbiAdmin: {
@@ -2916,6 +3021,27 @@ export const UI_STRINGS = {
     tabImport: 'Import',
     tabVersionHistory: 'Version History',
     tabPublishedVersions: 'Published Versions',
+    historicalObservationsTitle: 'Archived Monthly Price Observations',
+    historicalObservationsDescription: 'Historical source observations are shown at their original monthly frequency. They are archival reference data and are not active weekly benchmarks.',
+    historicalObservationsEmpty: 'No archived monthly observations are available for this dataset.',
+    historicalObservationsLoading: 'Loading archived observations…',
+    historicalRequestIdUnavailable: 'not available',
+    historicalObservationsLoadFailed: (reason: string) => `Archived PCBI history could not be loaded: ${reason}. Check the network and PCBI Worker, then retry. Include the request ID from the browser logs when contacting support.`,
+    historicalObservationsHttpFailure: (status: number, requestId: string) => `PCBI Worker returned HTTP ${status} while loading archived history (request ${requestId}).`,
+    historicalObservationsInvalidResponse: (requestId: string) => `PCBI Worker returned archived history in an unexpected format (request ${requestId}).`,
+    historicalObservationsInvalidQuery: 'The archived history filters are invalid. Correct the PCBI ID, date range, or row limit and retry.',
+    historicalObservationsRetry: 'Retry loading archived history',
+    historicalObservationsCount: (count: number) => `${count} archived monthly observations`,
+    historicalColPcbiId: 'PCBI ID',
+    historicalColDate: 'Observation date',
+    historicalColValueInr: 'Normalized value (INR)',
+    historicalColOriginalValue: 'Original value',
+    historicalColCurrency: 'Original currency',
+    historicalColFxRate: 'FX rate to INR',
+    historicalColUnit: 'Unit',
+    historicalColSource: 'Source',
+    historicalColStatus: 'Archive status',
+    historicalArchiveBadge: 'ARCHIVE ONLY',
     systemReferenceNotice: 'PCBI Master data is system-level reference data. Customer purchase-history data must NOT be uploaded here; customer spend data must use Module 1.',
     // Architecture QA & Hardening UI Strings
     definitionStatusTitle: 'PCBI Definition Status',
@@ -3095,6 +3221,11 @@ export const UI_STRINGS = {
     disclaimer: 'Indicative opportunity potential based on customer historical comparable transactions — NOT realized savings.',
     assessmentRequiredMessage: 'Select an assessment before opening sourcing analysis. Module 2 reads only D1 records linked to the selected assessment; use the assessment selector in the application header.',
     noFabricationNotice: 'Calculated strictly from internal customer purchase history without external market benchmarks.',
+    loadFailureHttp: (statusCode: number) => `Strategic sourcing data could not be loaded because the API returned HTTP ${statusCode}.`,
+    loadFailureNetwork: 'Strategic sourcing data could not be loaded because the service could not be reached.',
+    loadFailureUnexpected: 'Strategic sourcing data could not be processed because the response was invalid.',
+    loadFailureNextStep: 'Refresh to retry. Confirm the selected assessment is available to your account; if this continues, contact your administrator.',
+    loadFailureRequestId: (requestId: string) => `Support reference: ${requestId}.`,
     notQuantifiableText: 'Opportunity Identified — Benefit Not Yet Quantifiable',
 
     // Evidence States
@@ -3218,7 +3349,7 @@ export const UI_STRINGS = {
       {
         id: 'encryption',
         title: '2. Encryption & Secure Transfer',
-        desc: 'Protected in transit via TLS 1.3 and at rest via AES-256-GCM.'
+      desc: 'Cloudflare D1 and R2 encrypt stored data at rest with AES-256; application traffic uses TLS. Generated assessment delivery artifacts use AES-GCM when the configured key is available.'
       },
       {
         id: 'noAiTraining',
@@ -3703,6 +3834,11 @@ export const UI_STRINGS = {
     pageTitle: '10 STRATEGIC SOURCING LEVERS OVERVIEW',
     subtitle: 'Authoritative value creation taxonomy, implementation status, and audited quantifiable opportunities',
     pageSubtitle: 'Authoritative value creation taxonomy, implementation status, and audited quantifiable opportunities',
+    sectionBadge: 'MODULE 2 TAXONOMY',
+    savingsControlBadge: 'PART F SAVINGS CONTROL',
+    deduplicationEngineActive: 'Cross-Lever Deduplication Engine Active',
+    consolidatedSavingsDescription: 'Consolidated single source of truth across Levers 1–10. Prevents double-counting and establishes the maximum defensible net savings opportunity.',
+    btnViewConsolidatedSavings: 'View Consolidated Savings',
     statusImplemented: 'IMPLEMENTED & AUDITED',
     statusPlanned: 'PLANNED / NOT IMPLEMENTED',
     statusComingSoon: 'COMING SOON',
@@ -3711,12 +3847,98 @@ export const UI_STRINGS = {
     btnComingSoon: 'Coming Soon',
     lblHistoricalOpp: 'Historical Lost Opportunity',
     lblValidatedSavings: 'Commercially Validated Savings',
+    zeroValidatedSavings: '₹0.00 Cr',
+    formatOpportunity: (amountCr: number): string => `₹${amountCr.toFixed(2)} Cr`,
     unquantifiedNotice: '₹0.00 Cr (Unquantified — Calculation engine pending implementation)',
     provisionalNotice: 'Indicative historical opportunity based on lowest historical unit rate. Validation pending.',
     collapsibleToggle: 'Technical Diagnostics & Methodology',
+    methodologySummaryTitle: 'Methodology Summary:',
     requiredFieldsTitle: 'Required Transaction Fields:',
     preconditionsTitle: 'Preconditions for Commercial Validation:',
-    governanceDisclaimer: 'Strict Governance Rule: Only implemented levers with audited transaction engines display quantified opportunities. Unimplemented levers strictly report ₹0.00 until calculations and tests are verified.'
+    comingSoonTitle: 'Lever 7: Logistics & Packaging Specifications is coming soon',
+    governanceDisclaimer: 'Strict Governance Rule: Only implemented levers with audited transaction engines display quantified opportunities. Unimplemented levers strictly report ₹0.00 until calculations and tests are verified.',
+    levers: [
+      {
+        name: 'Direct Price Improvement',
+        purpose: 'Identifies historical purchase rate disparities and unit price dispersion across facilities and purchase orders for identical materials, establishing lowest achieved historical unit rate as benchmark.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Annual lowest comparable historical unit price methodology grouped by FY, clean material code, UOM, and currency. Arithmetically reconciled against underlying transactions.',
+        requiredFields: ['material_code', 'uom', 'currency', 'unit_price', 'quantity', 'po_date', 'po_number', 'vendor_code'],
+        preconditions: ['Clean material code matching', 'Identical UOM & currency', 'Supplier quote verification', 'Contractual price amendment']
+      },
+      {
+        name: 'E-Auction / Dynamic Bidding',
+        purpose: 'Introduces real-time competitive market tension through reverse electronic bidding and dynamic lot auctions across pre-qualified suppliers for liquid spend categories.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Evaluates repeat purchases, multi-supplier history, and price dispersion across SAP purchase history to identify candidate categories and materials for competitive dynamic bidding.',
+        requiredFields: ['spend_category', 'material_code', 'total_spend_inr', 'po_number', 'vendor_code'],
+        preconditions: ['Supplier auction participation agreement', 'Specification comparability review', 'Binding electronic bid confirmation']
+      },
+      {
+        name: 'Vendor Base Consolidation',
+        purpose: 'Consolidates fractured vendor tail-spend within material categories to primary strategic suppliers to eliminate administrative overhead and capture volume tier discounts.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Evaluates supplier count per category, supplier shift capacity (<= 30% reallocation limit), and verified lower unit price.',
+        requiredFields: ['vendor_code', 'vendor_name', 'spend_category', 'material_code', 'unit_price', 'quantity'],
+        preconditions: ['Supplier capacity audit', 'Supply continuity approval', 'Quality certification for target supplier']
+      },
+      {
+        name: 'Volume Aggregation',
+        purpose: 'Aggregates fragmented purchasing volume across business units, regional hubs, and operational quarters into institutional procurement lots.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Multi-facility volume aggregation modeling with strict separation of Tier 1 Identical, Tier 2 Comparable, and Tier 3 Category opportunities.',
+        requiredFields: ['plant', 'division', 'material_code', 'quantity', 'uom', 'total_spend_inr'],
+        preconditions: ['Documented technical validation for Tier 2', 'Verified density for cross-dimensional UOM', 'Inter-plant logistics harmonization']
+      },
+      {
+        name: 'Payment Terms Optimisation',
+        purpose: 'Harmonizes disparate credit terms and payment windows across suppliers to improve operating working capital and capture early-payment cash discounts.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Procucev standard 1.5% linear financing rate per 30 days of credit extension and working capital modeling. Strict data availability transparency and segregation.',
+        requiredFields: ['payment_terms', 'vendor_code', 'vendor_name', 'total_spend_inr', 'po_number', 'po_date'],
+        preconditions: ['Verified source ERP payment terms extract', 'Approved commercial credit extension scenario']
+      },
+      {
+        name: 'Category Specialisation',
+        purpose: 'Identifies procurement categories requiring specialised category management, models 10 planning opportunity heads, and prioritises procurement resourcing.',
+        statusLabel: 'IMPLEMENTED & AUDITED',
+        methodologySummary: 'Multi-dimensional category assessment (Priority A/B/C), 10 opportunity head assumptions, resource planning, and mandatory cross-lever deduplication controls.',
+        requiredFields: ['spend_category', 'vendor_name', 'material_desc', 'total_spend_inr', 'plant', 'po_number'],
+        preconditions: ['Documented category governance charter', 'Authorised planning assumptions', 'Cross-lever deduplication review']
+      },
+      {
+        name: 'Logistics & Packaging Specifications',
+        purpose: 'Reviews assessment-scoped shipment lanes, freight cost references, incoterms, packaging specifications, and container utilization from D1.',
+        statusLabel: 'D1 DATA VIEW',
+        methodologySummary: 'Displays stored freight and packaging inputs for analyst review. The data view does not calculate or certify savings; demo-only records are labeled and must not be used as carrier quotes or approved baselines.',
+        requiredFields: ['freight_cost', 'shipping_mode', 'incoterms', 'packaging_spec', 'container_fill_pct'],
+        preconditions: ['Verified carrier rate sheet or quote', 'Approved packaging dimensions', 'Assessment owner review before any commercial action']
+      },
+      {
+        name: 'Specification Rationalisation',
+        purpose: 'Identifies potentially duplicate, redundant, non-standard, or unnecessarily varied material specifications across facilities and routes candidates for authorised technical review.',
+        statusLabel: 'IMPLEMENTED (PHASE 1)',
+        methodologySummary: 'Staged description normalisation, technical attribute extraction (dimensions, grades, ratings), attribute comparison matrix with critical vs non-critical flags, and authorised technical review workflows. Financial savings deferred to Phase 2.',
+        requiredFields: ['material_code', 'material_desc', 'spend_category', 'plant', 'quantity', 'total_spend_inr'],
+        preconditions: ['Authorised technical review & engineering sign-off', 'Inter-plant specification harmonisation approval', 'No automated commercial assumptions in Phase 1']
+      },
+      {
+        name: 'Procurement Compliance & Control',
+        purpose: 'Identifies potential procurement-control gaps, transaction anomalies, price inconsistencies, and purchasing exceptions from available customer data without falsely claiming contractual violations or realised savings.',
+        statusLabel: 'IMPLEMENTED (CONTROL & AUDIT)',
+        methodologySummary: 'Defensible transaction auditing, price inconsistency detection across identical items/UOM, deterministic duplicate transaction matching, and formal review workflows. Contract-document integration deferred.',
+        requiredFields: ['po_number', 'vendor_name', 'material_code', 'material_desc', 'quantity', 'total_spend_inr'],
+        preconditions: ['Deterministic data matching validation', 'Authorised audit review & governance sign-off', 'No assumed contractual breaches']
+      },
+      {
+        name: 'New-Vendor Development & Alternate Sourcing',
+        purpose: 'Matches assessment materials to exact D1 directory categories and shows aggregate supplier location and contact counts. Supplier identities and qualification are unavailable.',
+        statusLabel: 'IMPLEMENTED (AGGREGATE CATEGORY DISCOVERY)',
+        methodologySummary: 'Exact normalized category joins against D1 aggregate profiles. Hierarchy matching, incumbent exclusion, and preferred-region deduplication require directory identity and location records. No savings or qualification is inferred.',
+        requiredFields: ['material_code', 'spend_category', 'customer_plant', 'current_supplier_count', 'relevant_spend_inr'],
+        preconditions: ['Assessment-linked transaction evidence', 'Exact category alignment', 'Alternate vendor aggregates seeded in D1']
+      }
+    ]
   },
 
   enterprisePrivacy: {
@@ -3998,6 +4220,18 @@ export const UI_STRINGS = {
     checkExecutiveSummary: 'Executive summary reviewed',
     modalConfirmChecklist: 'Confirm Quality Checklist',
     searchPlaceholder: 'Search by customer name, job ID or tenant...',
+    apiOperations: {
+      listJobs: 'load analysis jobs',
+      loadJobDetails: 'load analysis job details',
+      loadReadiness: 'load analysis readiness',
+      loadAdminKpis: 'load orchestration KPIs',
+      loadNotifications: 'load orchestration notifications',
+      loadAuditTrail: 'load orchestration audit history'
+    },
+    apiNetworkFailure: (operation: string, reason: string): string =>
+      `Could not ${operation} because the connection failed: ${reason}. Check the network and retry.`,
+    apiInvalidResponse: (operation: string, requestId: string): string =>
+      `Could not ${operation} because the server returned an unreadable response. Retry; if this continues, provide request ID ${requestId} to support.`,
     btnRefresh: 'Refresh',
     btnCloseModal: 'Close dialog',
     btnDismissMessage: 'Dismiss message',

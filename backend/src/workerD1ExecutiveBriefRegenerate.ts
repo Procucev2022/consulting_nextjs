@@ -17,17 +17,26 @@ import type { CloudflareEnvironment } from './types/cloudflare';
 import type { ExecutiveBriefParseResult } from './types/executiveBriefRoutes';
 import type { ExecutiveBriefRegenerateBody } from './types/executiveBriefValidation';
 import type { ExecutiveOpportunityBriefReport } from './types/executiveOpportunityBrief';
+import { readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 const parseRegenerateBody = async (
   request: Request
 ): Promise<ExecutiveBriefParseResult<ExecutiveBriefRegenerateBody>> => {
-  const raw = await request.text();
-  if (raw.trim().length === 0) return { ok: true, data: {} };
   let json: unknown;
   try {
-    json = JSON.parse(raw);
-  } catch {
-    return { ok: false, issues: [{ path: '', message: EXECUTIVE_BRIEF_MESSAGES.invalidJsonBody }] };
+    json = await readJson(request);
+  } catch (error: unknown) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return { ok: false, statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.PAYLOAD_TOO_LARGE, issues: [{ path: 'body', message: error.message }] };
+    }
+    if (error instanceof RequestJsonParseError) {
+      return { ok: false, issues: [{ path: 'body', message: EXECUTIVE_BRIEF_MESSAGES.invalidJsonBody }] };
+    }
+    logger.error('Failed to read D1 executive brief regeneration body', {
+      requestId: resolveExecutiveBriefRequestId(request),
+      action: 'regenerate.readBody'
+    }, error);
+    throw error;
   }
   const parsed = executiveBriefRegenerateBodySchema.safeParse(json);
   return parsed.success
@@ -38,12 +47,14 @@ const parseRegenerateBody = async (
 const dataLoadFailure = (
   request: Request,
   requestId: string,
-  reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions'
+  reason: 'tenant-scope-required' | 'no-tenant' | 'no-transactions'
 ): Response => {
-  const status = reason === 'ambiguous-tenant' ? EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
+  const status = reason === 'tenant-scope-required'
+    ? EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN
+    : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
   const message = {
+    'tenant-scope-required': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantScopeRequired,
     'no-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTenant,
-    'ambiguous-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.ambiguousTenant,
     'no-transactions': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTransactions
   }[reason];
   return executiveBriefErrorResponse(request, requestId, status, message, { reason });
@@ -66,12 +77,16 @@ export const handleExecutiveBriefRegenerate = async (
   }
   const parsed = await parseRegenerateBody(request);
   if (!parsed.ok) {
+    const statusCode = parsed.statusCode ?? EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST;
     logger.warn('Rejected D1 executive brief regeneration body', {
       requestId,
       action: 'regenerate',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST,
+      statusCode,
       issueCount: parsed.issues.length
     });
+    if (statusCode === EXECUTIVE_BRIEF_HTTP_STATUS.PAYLOAD_TOO_LARGE) {
+      return executiveBriefErrorResponse(request, requestId, statusCode, parsed.issues[0]?.message || EXECUTIVE_BRIEF_MESSAGES.invalidJsonBody);
+    }
     return executiveBriefValidationResponse(request, requestId, parsed.issues);
   }
   if (environment.DB === undefined) {
@@ -84,7 +99,7 @@ export const handleExecutiveBriefRegenerate = async (
   }
   let report: ExecutiveOpportunityBriefReport;
   try {
-    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB, environment.REQUEST_TENANT_ID ?? '');
     if (!loaded.ok) return dataLoadFailure(request, requestId, loaded.reason);
     report = loaded.report;
   } catch (error: unknown) {

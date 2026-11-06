@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
-import { handleModule2Route } from '../src/workerD1Module2';
+import { handleModule2Route as handleModule2RouteImpl } from '../src/workerD1Module2';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
@@ -31,6 +31,9 @@ const mockDb = (records: {
         if (sql.includes('SavingsOpportunity')) return { results: opportunities };
         if (sql.includes('VendorYearDetail')) return { results: vendors };
         if (sql.includes('ConversionFunnelPhase')) return { results: funnel };
+        if (sql.includes('AssessmentRecord') && sql.includes('WHERE assessment_id = ? AND tenant_id = ?')) {
+          return { results: [{ assessment_id: args[0], tenant_id: args[1] }] };
+        }
         if (sql.includes('ProcurementTransaction')) return { results: transactions };
         return { results: [] };
       }),
@@ -38,6 +41,9 @@ const mockDb = (records: {
         if (sql.includes('SELECT 1')) return { ok: 1 };
         if (sql.includes('SpendCategorySummary')) return categories[0] || null;
         if (sql.includes('TenantMaster')) return tenant;
+        if (sql.includes('AssessmentRecord') && sql.includes('WHERE assessment_id = ? AND tenant_id = ?')) {
+          return { assessment_id: args[0], tenant_id: args[1] };
+        }
         if (sql.includes('AssessmentRecord')) return assessment;
         return null;
       })
@@ -54,6 +60,9 @@ const mockDb = (records: {
       if (sql.includes('SELECT 1')) return { ok: 1 };
       if (sql.includes('SpendCategorySummary')) return categories[0] || null;
       if (sql.includes('TenantMaster')) return tenant;
+      if (sql.includes('AssessmentRecord') && sql.includes('WHERE assessment_id = ? AND tenant_id = ?')) {
+        return { assessment_id: args[0], tenant_id: args[1] };
+      }
       if (sql.includes('AssessmentRecord')) return assessment;
       return null;
     })
@@ -62,8 +71,48 @@ const mockDb = (records: {
   return { prepare } as unknown as CloudflareD1Database;
 };
 
-const req = (path: string, options: RequestInit = {}): Request =>
-  new Request(`https://consulting.edge/api/module2${path}`, options);
+const assessmentIdFromBody = (value: unknown): string | undefined => {
+  if (value === null || typeof value !== 'object' || !('assessmentId' in value)) return undefined;
+  return typeof value.assessmentId === 'string' ? value.assessmentId : undefined;
+};
+
+const req = (path: string, options: RequestInit = {}): Request => {
+  const url = new URL(`https://consulting.edge/api/module2${path}`);
+  const headers = new Headers(options.headers);
+  let bodyAssessmentId: string | undefined;
+  if (typeof options.body === 'string') {
+    try { bodyAssessmentId = assessmentIdFromBody(JSON.parse(options.body)); } catch { bodyAssessmentId = undefined; }
+  }
+  const assessmentScoped = url.searchParams.has('assessmentId') || headers.has('x-assessment-id') || Boolean(bodyAssessmentId);
+  const tenantId = url.searchParams.get('tenantId') || headers.get('x-tenant-id') ||
+    (assessmentScoped ? 'T1' : undefined);
+  if (tenantId) {
+    headers.set('x-resolved-tenant-id', tenantId);
+    headers.set('x-tenant-id', tenantId);
+  }
+  return new Request(url, { ...options, headers });
+};
+
+const handleModule2Route = async (
+  db: CloudflareD1Database | undefined,
+  path: string,
+  request: Request,
+  url: URL,
+  secret?: string
+) => {
+  let bodyAssessmentId: string | undefined;
+  try { bodyAssessmentId = assessmentIdFromBody(await request.clone().json()); } catch { bodyAssessmentId = undefined; }
+  const assessmentId = url.searchParams.get('assessmentId') || request.headers.get('x-assessment-id') || bodyAssessmentId;
+  const tenantId = request.headers.get('x-resolved-tenant-id');
+  if (db && assessmentId && tenantId && assessmentId.length <= 120) {
+    const statement = db.prepare(`INSERT OR IGNORE INTO AssessmentRecord (
+      assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, status
+      ) VALUES (?, ?, ?, ?, 'Test industry', 'test@example.test', 'COMPLETED')`)
+      .bind(assessmentId, tenantId, `CUSTOMER-${assessmentId}`, assessmentId);
+    if (typeof statement.run === 'function') await statement.run();
+  }
+  return handleModule2RouteImpl(db, path, request, url, secret);
+};
 
 describe('workerD1Module2 handler', () => {
   it('scopes uploaded transaction reads to bound assessment and tenant identifiers', async () => {
@@ -78,12 +127,39 @@ describe('workerD1Module2 handler', () => {
     const headerRequest = req('/line-items', { headers: { 'x-assessment-id': 'AIC-2026-0003', 'x-tenant-id': 'TNT-2' } });
     await handleModule2Route(db as unknown as CloudflareD1Database, '/line-items', headerRequest, new URL(headerRequest.url));
     expect(statement.bind).toHaveBeenCalledWith('AIC-2026-0003', 'TNT-2', 100);
-    const legacy = req('/canonical-input');
+    const legacy = req('/canonical-input', { headers: { 'x-tenant-id': 'T1' } });
     await handleModule2Route(db as unknown as CloudflareD1Database, '/canonical-input', legacy, new URL(legacy.url));
     expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE assessment_id IS NULL'));
     const invalid = req('/line-items?limit=0');
     expect(await handleModule2Route(db as unknown as CloudflareD1Database, '/line-items', invalid, new URL(invalid.url)))
       .toMatchObject({ status: 400, data: { success: false } });
+  });
+
+  it('rejects untrusted, mismatched, and unowned canonical input scopes', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const missingUrl = new URL('https://consulting.edge/api/module2/canonical-input?assessmentId=A1&tenantId=T1');
+      const missingTrustedTenant = await handleModule2RouteImpl(
+        fixture.d1, '/canonical-input', new Request(missingUrl), missingUrl
+      );
+      expect(missingTrustedTenant).toMatchObject({ status: 403, data: { success: false } });
+
+      const mismatchUrl = new URL('https://consulting.edge/api/module2/canonical-input?assessmentId=A1&tenantId=T2');
+      const mismatchRequest = new Request(mismatchUrl, { headers: {
+        'x-resolved-tenant-id': 'T1', 'x-tenant-id': 'T2'
+      } });
+      expect(await handleModule2RouteImpl(fixture.d1, '/canonical-input', mismatchRequest, mismatchUrl))
+        .toMatchObject({ status: 403, data: { success: false } });
+
+      const unownedUrl = new URL('https://consulting.edge/api/module2/canonical-input?assessmentId=UNKNOWN&tenantId=T1');
+      const unownedRequest = new Request(unownedUrl, { headers: {
+        'x-resolved-tenant-id': 'T1', 'x-tenant-id': 'T1'
+      } });
+      expect(await handleModule2RouteImpl(fixture.d1, '/canonical-input', unownedRequest, unownedUrl))
+        .toMatchObject({ status: 404, data: { success: false } });
+    } finally {
+      fixture.close();
+    }
   });
 
   it('uses persisted overlap and net savings values from the assessment', async () => {
@@ -180,11 +256,12 @@ describe('workerD1Module2 handler', () => {
         'MAT-A', 2, 'EA', 10, 'INR', 20, 'Plant 1', '{}');
       insert.run('SPEC-B', 'T1', 'A1', 'Supplier B', 'SUP-B', ' bolt   m12 ', 'hardware',
         'MAT-B', 3, 'EA', 15, 'INR', 45, 'Plant 2', '{}');
+      fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)').run('T1', 'Tenant 1');
       fixture.db.prepare(`INSERT INTO User (
-        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         'usr-reviewer', 'Asha Reviewer', '+910000000010', 'reviewer@example.test', 'Example', 'Pune',
-        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1'
       );
 
       const dataRequest = req('/sourcing/specification-rationalisation?assessmentId=A1&tenantId=T1');
@@ -251,11 +328,12 @@ describe('workerD1Module2 handler', () => {
         segment_code, segment_title, taxonomy_version
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('12345678', 'Resins', '123456', 'Chemical Products', '1234', 'Materials', '12', 'Chemicals', 'v1');
+      fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)').run('T1', 'Tenant 1');
       fixture.db.prepare(`INSERT INTO User (
-        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('usr-mapper', 'Mapping Reviewer', '+910000000011', 'mapper@example.test', 'Example', 'Pune',
-          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD');
+          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1');
       const token = await issueEvidenceToken({ userId: 'usr-mapper' }, WORKER_CORE_SECRET);
       const update = req('/sourcing/vendor-consolidation/mappings/update', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -311,11 +389,12 @@ describe('workerD1Module2 handler', () => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('12345678', 'Resins', '123456', 'Chemical Products', '1234', 'Materials', '12', 'Chemicals',
           'Direct Materials', 'v1');
+      fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)').run('T1', 'Tenant 1');
       fixture.db.prepare(`INSERT INTO User (
-        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('usr-bulk-mapper', 'Bulk Reviewer', '+910000000013', 'bulk@example.test', 'Example', 'Pune',
-          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD');
+          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1');
       const token = await issueEvidenceToken({ userId: 'usr-bulk-mapper' }, WORKER_CORE_SECRET);
       const update = req('/sourcing/vendor-consolidation/mappings/bulk-update', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -362,11 +441,12 @@ describe('workerD1Module2 handler', () => {
         'MAT-1', 'Resin Grade A', 'Chemicals', 10, 'KG', 100, 'INR', 1000, '{}');
       insert.run('COMPLIANCE-TX-2', 'T1', 'A1', 'PO-2', '20', '2026-04-02', 'SUP-2', 'Supplier Two',
         'MAT-1', 'Resin Grade A', 'Chemicals', 10, 'KG', 140, 'INR', 1400, '{}');
+      fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)').run('T1', 'Tenant 1');
       fixture.db.prepare(`INSERT INTO User (
-        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         'usr-compliance-reviewer', 'Compliance Reviewer', '+910000000012', 'compliance@example.test', 'Example',
-        'Pune', 'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+        'Pune', 'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1'
       );
       const token = await issueEvidenceToken({ userId: 'usr-compliance-reviewer' }, WORKER_CORE_SECRET);
       const get = req('/sourcing/procurement-compliance?assessmentId=A1&tenantId=T1');
@@ -601,7 +681,7 @@ describe('workerD1Module2 handler', () => {
       coverageSummary: { totalTransactionsCount: 2, potentiallyAggregatableSpendInr: 100 },
       tier1Opportunities: [{ materialCode: 'MAT-1', plants: ['P1', 'P2'] }]
     });
-    expect(statement.bind).toHaveBeenCalledWith('AIC-2026-0001');
+    expect(statement.bind).toHaveBeenCalledWith('AIC-2026-0001', 'T1');
     const exportRequest = req('/sourcing/volume-aggregation/export-excel?assessmentId=AIC-2026-0001');
     const exportResult = await handleModule2Route(db, '/sourcing/volume-aggregation/export-excel', exportRequest, new URL(exportRequest.url));
     expect(exportResult.response?.headers.get('Content-Type')).toContain('spreadsheetml.sheet');
@@ -650,6 +730,8 @@ describe('workerD1Module2 handler', () => {
   it('loads, updates, and exports D1 planning assumptions with authenticated approval history', async () => {
     const fixture = createWorkerDatabase();
     try {
+      fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+        .run('TNT-GLOBAL-8902', 'Global Tenant');
       fixture.db.prepare(`INSERT INTO User (
         id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
@@ -657,10 +739,10 @@ describe('workerD1Module2 handler', () => {
         'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD'
       );
       fixture.db.prepare(`INSERT INTO User (
-        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         'auction-user', 'Auction User', '+910000000022', 'auction-user@example.test', 'Example', 'Pune',
-        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902'
       );
       const adminToken = await issueEvidenceToken({ userId: 'auction-admin' }, WORKER_CORE_SECRET);
       const userToken = await issueEvidenceToken({ userId: 'auction-user' }, WORKER_CORE_SECRET);
@@ -851,10 +933,17 @@ describe('workerD1Module2 handler', () => {
 
   it('handles /canonical-input, /line-items, /handoff, /export, and /consolidated-savings', async () => {
     const db = mockDb();
-    const canonical = await handleModule2Route(db, '/sourcing/canonical-input', req('/sourcing/canonical-input'), new URL('https://consulting.edge/api/module2/sourcing/canonical-input'));
+    const canonicalRequest = req('/sourcing/canonical-input?tenantId=T1');
+    const canonical = await handleModule2Route(db, '/sourcing/canonical-input', canonicalRequest, new URL(canonicalRequest.url));
     expect(canonical.data).toHaveLength(1);
 
-    const lineItems = await handleModule2Route(db, '/sourcing/line-items', req('/sourcing/line-items'), new URL('https://consulting.edge/api/module2/sourcing/line-items'));
+    const unscopedCanonicalRequest = req('/sourcing/canonical-input');
+    expect(await handleModule2Route(
+      db, '/sourcing/canonical-input', unscopedCanonicalRequest, new URL(unscopedCanonicalRequest.url)
+    )).toMatchObject({ status: 403, data: { success: false } });
+
+    const lineItemsRequest = req('/sourcing/line-items?tenantId=T1');
+    const lineItems = await handleModule2Route(db, '/sourcing/line-items', lineItemsRequest, new URL(lineItemsRequest.url));
     expect(lineItems.data).toHaveProperty('lineItems', [expect.objectContaining({ mapping_id: 'TX-1' })]);
 
     const handoff = await handleModule2Route(db, '/sourcing/handoff', req('/sourcing/handoff'), new URL('https://consulting.edge/api/module2/sourcing/handoff'));
@@ -868,6 +957,17 @@ describe('workerD1Module2 handler', () => {
 
     const fallback = await handleModule2Route(db, '/unknown-route', req('/unknown-route'), new URL('https://consulting.edge/api/module2/unknown-route'));
     expect(fallback).toEqual({ status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } });
+  });
+
+  it('rethrows unexpected D1 failures after request-body parsing', async () => {
+    const database = {
+      prepare: () => { throw new Error('D1 query failed unexpectedly'); }
+    } as unknown as CloudflareD1Database;
+    const request = req('/sourcing/canonical-input?tenantId=T1');
+
+    await expect(handleModule2Route(
+      database, '/sourcing/canonical-input', request, new URL(request.url)
+    )).rejects.toThrow('D1 query failed unexpectedly');
   });
 
   it('exports an assessment-scoped audit dossier from persisted transaction evidence', async () => {
@@ -909,7 +1009,7 @@ describe('workerD1Module2 handler', () => {
       expect(await handleModule2Route(database, `/sourcing${path}`, unscopedRequest, new URL(unscopedRequest.url)))
         .toEqual({ status: 409, data: { success: false, message: expect.stringContaining('Select an assessment') } });
     }
-    expect(vi.mocked(database.prepare).mock.calls.every(([sql]) => sql === 'SELECT 1 AS ok')).toBe(true);
+    expect(database.prepare).not.toHaveBeenCalled();
   });
 
   it('normalizes the root path and rejects unsupported assessment-scoped lever subroutes', async () => {
@@ -941,6 +1041,9 @@ describe('workerD1Module2 handler', () => {
     }) }];
     const prepare = vi.fn((sql: string) => {
       const allFor = (values: unknown[] = []) => {
+        if (sql.includes('AssessmentRecord') && sql.includes('WHERE assessment_id = ? AND tenant_id = ?')) {
+          return { results: [{ assessment_id: values[0], tenant_id: values[1] }] };
+        }
         if (sql.includes('ProcurementTransaction')) return { results: transactionRows };
         if (sql.includes('AlternateVendorIndex')) return { results: indexRows };
         if (sql.includes('AlternateVendorCompany')) return { results: [{ distinct_vendor_count: 3, record_count: 3 }] };

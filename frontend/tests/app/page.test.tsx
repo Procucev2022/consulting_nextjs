@@ -8,6 +8,9 @@ import { orchestrationApi } from '../../src/utils/orchestrationApi';
 import { Module2StrategicSourcingApi } from '../../src/utils/module2StrategicSourcingApi';
 import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '../../src/constants/validation';
+import { loadIndustryCatalog } from '../../src/utils/industryApi';
+import type { IndustryCatalogResponse } from '../../src/types/industry';
 import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
 import { taxonomyRecords } from '../fixtures/taxonomy';
 import { conversionFunnelStages } from '../fixtures/mockData';
@@ -18,17 +21,28 @@ async function renderHome() {
   let result!: ReturnType<typeof render>;
   await act(async () => {
     result = render(<Home />);
+    for (let flush = 0; flush < 8; flush += 1) {
+      await Promise.resolve();
+    }
   });
+  await screen.findByTitle(UI_STRINGS.module1.fxReferenceTooltip('US Dollar'));
   return result;
 }
 
 async function chooseDataset(input: HTMLInputElement, file: File) {
   const completedUploads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.length;
+  fireEvent.change(input, { target: { files: [file] } });
+  await waitFor(() => {
+    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(completedUploads + 1);
+  });
+}
+
+async function clickAndFlushAsyncHandlers(element: HTMLElement) {
   await act(async () => {
-    fireEvent.change(input, { target: { files: [file] } });
-    await waitFor(() => {
-      expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(completedUploads + 1);
-    });
+    fireEvent.click(element);
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
   });
 }
 vi.mock('next/navigation', () => ({
@@ -38,6 +52,30 @@ vi.mock('next/navigation', () => ({
     prefetch: vi.fn()
   })
 }));
+
+vi.mock('../../src/utils/industryApi', () => ({
+  loadIndustryCatalog: vi.fn()
+}));
+
+const industryCatalogFixture: IndustryCatalogResponse = {
+  success: true,
+  profiles: [{
+    majorSector: 'Chemical & Petrochemicals',
+    minorSector: 'Specialty Chemicals',
+    sectorCode: 'CHEM-SPEC',
+    tagline: 'Specialty chemicals profile',
+    description: 'Representative industry profile for modal tests.',
+    typicalDirectMaterials: ['Catalysts'],
+    typicalPackagingMaterials: ['Drums'],
+    typicalLogisticsCategories: ['Freight'],
+    typicalMroCategories: ['Pumps'],
+    characteristicUNSPSCPrefixes: ['12'],
+    benchmarkSpendSplit: { directPct: 56, packagingPct: 18, logisticsPct: 14, mroPct: 12 },
+    categorizationGuidance: 'Review chemical materials against the selected profile.',
+    keyKeywords: ['catalyst']
+  }],
+  presets: []
+};
 
 vi.mock('@/utils/assessmentApi', () => ({
   assessmentApiClient: {
@@ -65,7 +103,7 @@ vi.mock('@/utils/assessmentApi', () => ({
 
 const sampleDoc = {
   doc_id: 'DOC-PAGE-001',
-  tenant_id: 'USR-TEST-1',
+  tenant_id: 'TNT-TEST-1',
   file_name: 'test_dataset.xlsx',
   file_type: 'XLSX',
   file_size_mb: 1.5,
@@ -212,6 +250,7 @@ const sampleLineItem = {
 
 describe('Home Page Component', () => {
   beforeEach(() => {
+    vi.mocked(loadIndustryCatalog).mockResolvedValue(industryCatalogFixture);
     vi.spyOn(aiApiClient, 'categorizeItems').mockResolvedValue({
       success: true, status: 'SUCCESS', mappings: [], model: null, error: null
     });
@@ -237,6 +276,7 @@ describe('Home Page Component', () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
       id: 'USR-TEST-1',
       email: 'test@example.com',
+      tenant_id: 'TNT-TEST-1',
       role: 'BUYER',
       status: 'ACTIVE',
       tier: 'GOLD',
@@ -266,6 +306,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getCurrencyRates').mockResolvedValue({
       USD: { currencyCode: 'USD', name: 'US Dollar', currentRate: 84, lastUpdated: '2026-10-30' }
     });
+    vi.spyOn(apiClient, 'getPCBIMasterBenchmarks').mockResolvedValue({ data: [] } as never);
     vi.spyOn(apiClient, 'getCurrencyConversion').mockResolvedValue({
       amount: sampleValidationRecord.amount,
       fromCurrency: 'USD',
@@ -328,10 +369,13 @@ describe('Home Page Component', () => {
 
     // Check header — brand is rendered as aiCEV logo image
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.dataProtectionBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.dataProtectionNotice)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
+    await screen.findByText(sampleDoc.file_name);
 
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
@@ -365,6 +409,7 @@ describe('Home Page Component', () => {
     const step1 = screen.getByText(UI_STRINGS.pipeline.steps.step1.title);
     fireEvent.click(step1);
     expect(screen.getByText(UI_STRINGS.module1.title)).toBeInTheDocument();
+    await screen.findByTitle(UI_STRINGS.module1.fxReferenceTooltip('US Dollar'));
   }, 20000);
 
   it('handles batch file upload with CSV and XLSX formats', async () => {
@@ -383,6 +428,9 @@ describe('Home Page Component', () => {
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
       });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      });
 
       const textFile = new File(['header\nline1\nline2\n'], 'data.txt', { type: 'text/plain' });
       textFile.text = vi.fn().mockResolvedValue('header\nline1\nline2\n');
@@ -390,6 +438,9 @@ describe('Home Page Component', () => {
 
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
+      });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
       });
 
       // XLSX upload exercising workbook parsing
@@ -410,7 +461,27 @@ describe('Home Page Component', () => {
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
       });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      });
     }
+  });
+
+  it('rejects files above the upload cap before parsing or Base64 encoding them', async () => {
+    const { container, unmount } = await renderHome();
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const oversizedFile = new File([], 'oversized.csv', { type: 'text/csv' });
+    Object.defineProperty(oversizedFile, 'size', { configurable: true, value: INGESTION_UPLOAD_MAX_FILE_BYTES + 1 });
+    const uploadCount = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.length;
+    const base64Read = vi.spyOn(FileReader.prototype, 'readAsDataURL');
+
+    fireEvent.change(fileInput, { target: { files: [oversizedFile] } });
+
+    expect(await screen.findByText(UI_STRINGS.module1.fileTooLarge(10, 10))).toBeInTheDocument();
+    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(uploadCount);
+    expect(base64Read).not.toHaveBeenCalled();
+    base64Read.mockRestore();
+    unmount();
   });
 
   it('handles currency fixing and vendor merging modal flows', async () => {
@@ -625,14 +696,16 @@ describe('Home Page Component', () => {
       fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
     });
     await waitFor(() => expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument());
-    // Trigger onSelectTenant via tenant badge (rejection path)
-    vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
+    // The tenant badge opens the setup modal; wait for its D1 catalog state to settle.
     const tenantBadge = screen.getByTestId('tenant-badge');
     fireEvent.click(tenantBadge);
-
-    // Trigger onSelectTenant via tenant badge (success path)
-    vi.spyOn(apiClient, 'updateTenant').mockResolvedValueOnce(mockTenant);
-    fireEvent.click(tenantBadge);
+    const setupTitle = await screen.findByText(UI_STRINGS.modals.clientSetup.title);
+    const setupDialog = setupTitle.closest('div.fixed.inset-0');
+    expect(setupDialog).not.toBeNull();
+    const setupSubmitButton = within(setupDialog as HTMLElement).getByRole('button', {
+      name: UI_STRINGS.modals.clientSetup.submitBtn
+    });
+    await waitFor(() => expect(setupSubmitButton).toBeEnabled());
   });
 
   it('handles ProCPX and DPS NXT successful deployment flows and API rejections', async () => {
@@ -713,7 +786,8 @@ describe('Home Page Component', () => {
     if (fixInrBtns.length > 0) {
       fireEvent.click(fixInrBtns[0]);
       const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
-      fireEvent.click(applyFxBtn);
+      await waitFor(() => expect(applyFxBtn).toBeEnabled());
+      await clickAndFlushAsyncHandlers(applyFxBtn);
     }
 
     // Merge vendor with rejection
@@ -721,7 +795,7 @@ describe('Home Page Component', () => {
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
       const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
-      fireEvent.click(mapBtn);
+      await clickAndFlushAsyncHandlers(mapBtn);
     }
 
     // Merge item with rejection
@@ -729,19 +803,19 @@ describe('Home Page Component', () => {
     if (mergeItemBtns.length > 0) {
       fireEvent.click(mergeItemBtns[0]);
       const mapItemBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeItem.confirmMerge, 'i') });
-      fireEvent.click(mapItemBtn);
+      await clickAndFlushAsyncHandlers(mapItemBtn);
     }
 
     // Blanket remediation with rejection
     const autoRemediateBtn = screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     if (autoRemediateBtn) {
-      fireEvent.click(autoRemediateBtn);
+      await clickAndFlushAsyncHandlers(autoRemediateBtn);
     }
 
     // Reset with rejection
     const resetBtn = screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.resetAnomalyState, 'i') });
     if (resetBtn) {
-      fireEvent.click(resetBtn);
+      await clickAndFlushAsyncHandlers(resetBtn);
     }
   });
 
@@ -976,7 +1050,7 @@ describe('Home Page Component', () => {
   it('restores dataset from backend API on mount and retains user upload across refresh', async () => {
     const savedDoc = {
       doc_id: 'DOC-SAVED-1',
-      tenant_id: 'USR-TEST-1',
+      tenant_id: 'TNT-TEST-1',
       file_name: 'saved_3_years.xlsx',
       file_type: 'XLSX',
       file_size_mb: 4.5,
@@ -1014,6 +1088,7 @@ describe('Home Page Component', () => {
       queue: [
         {
           doc_id: 'DOC-MINIMAL',
+          tenant_id: 'TNT-TEST-1',
           file_name: 'minimal_file.csv',
           file_type: undefined,
           file_size_mb: undefined,

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import { BACKEND_API_BASE_URL, UI_STRINGS, module2LogisticsPackagingQuerySchema } from '../constants';
 import type { Module2LogisticsPackagingResponse } from '../types/module2Logistics';
 import { logger } from './logger';
@@ -20,7 +21,7 @@ export const loadModule2LogisticsCandidates = async (
   try {
     const query = new URLSearchParams({ assessmentId: parsed.data.assessmentId });
     const token = authApiClient.getStoredToken();
-    const response = await fetch(`${BACKEND_API_BASE_URL}/api/module2/logistics-packaging?${query.toString()}`, {
+    const response = await apiFetch(`${BACKEND_API_BASE_URL}/api/module2/logistics-packaging?${query.toString()}`, {
       headers: token ? { Authorization: 'Bearer ' + token } : {}
     });
     if (!response.ok) throw new Error(UI_STRINGS.module2Logistics.loadFailed(response.status));

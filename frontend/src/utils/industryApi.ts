@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import type { IndustryCatalogResponse } from '../types/industry';
 import { BACKEND_API_BASE_URL, UI_STRINGS } from '../constants';
 import { logger } from './logger';
@@ -13,7 +14,7 @@ const parseIndustryCatalogEnvelope = (payload: unknown): IndustryCatalogResponse
 
 export const loadIndustryCatalog = async (): Promise<IndustryCatalogResponse> => {
   try {
-    const response = await fetch(`${BACKEND_API_BASE_URL}/api/industry-profiles`);
+    const response = await apiFetch(`${BACKEND_API_BASE_URL}/api/industry-profiles`);
     if (!response.ok) throw new Error(UI_STRINGS.module2.industryContext.profileLoadFailed);
     const catalog = parseIndustryCatalogEnvelope(await response.json());
     if (catalog === null) throw new Error(UI_STRINGS.module2.industryContext.profileLoadFailed);

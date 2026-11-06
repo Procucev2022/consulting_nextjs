@@ -1,15 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_DEMO_TENANT_ID, D1_INGESTION_PAGE_SIZE, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_REFERENCE_CACHE_KEYS } from '../src/constants/db';
+import { clearD1ReferenceDataCache } from '../src/services/d1ReferenceDataCache';
+import logger from '../src/utils/logger';
+import { RequestJsonParseError } from '../src/workerHttp';
 import {
-  ensureD1Initialized,
+  requireD1Binding,
   getCanonicalModule1Data,
   getCurrencyRatesFromD1,
   getIngestionDataFromD1,
+  parseStoredDetectedCurrencies,
   getProcurementCategoryMappingsFromD1,
   getTaxonomyFromD1,
   getTenantFromD1,
   handleCryptoRoute,
-  handleSavingsRoute,
+  handleSavingsRoute as handleSavingsRouteImpl,
   lookupTaxonomyRecordFromD1
 } from '../src/workerD1';
 import {
@@ -36,12 +41,20 @@ const BASE_METRICS = {
 
 let fixture: WorkerDatabaseFixture;
 
+const handleSavingsRoute = (
+  db: Parameters<typeof handleSavingsRouteImpl>[0],
+  subPath: Parameters<typeof handleSavingsRouteImpl>[1],
+  request: Parameters<typeof handleSavingsRouteImpl>[2],
+  url: Parameters<typeof handleSavingsRouteImpl>[3]
+) => handleSavingsRouteImpl(db, subPath, request, url, runtimeEnvironment({ REQUEST_TENANT_ID: 'TNT-1' }));
+
 beforeEach(() => {
   fixture = createWorkerDatabase();
 });
 
 afterEach(() => {
   fixture.close();
+  vi.restoreAllMocks();
 });
 
 const jsonPost = (path: string, body: string): Request =>
@@ -62,7 +75,7 @@ const seedMetrics = (overrides: Record<string, number | null> = {}, textMetrics:
 
 describe('workerD1 binding guards', () => {
   it('reports a missing D1 binding before any query runs', async () => {
-    await expect(ensureD1Initialized(undefined)).rejects.toThrow(D1_ROUTE_MESSAGES.missingBinding);
+    expect(() => requireD1Binding(undefined)).toThrow(D1_ROUTE_MESSAGES.missingBinding);
     await expect(getTenantFromD1(undefined)).rejects.toThrow(D1_ROUTE_MESSAGES.missingBinding);
     await expect(getCanonicalModule1Data(undefined)).rejects.toThrow(D1_ROUTE_MESSAGES.missingBinding);
     await expect(
@@ -70,26 +83,68 @@ describe('workerD1 binding guards', () => {
     ).rejects.toThrow(D1_ROUTE_MESSAGES.missingBinding);
   });
 
-  it('resolves when the binding answers the readiness probe', async () => {
-    await expect(ensureD1Initialized(fixture.d1)).resolves.toBeUndefined();
+  it('accepts a configured D1 binding without issuing a redundant readiness query', () => {
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
+    expect(requireD1Binding(fixture.d1)).toBe(fixture.d1);
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it('requires an explicit tenant for canonical dataset reads', async () => {
+    await expect(getCanonicalModule1Data(fixture.d1)).rejects.toThrow(D1_ROUTE_MESSAGES.tenantScopeRequired);
+  });
+
+  it('rejects assessment-scoped savings reads without an authenticated tenant context', async () => {
+    const request = new Request(`${SAVINGS_CONSOLIDATED_URL}?assessmentId=A1`);
+    await expect(handleSavingsRouteImpl(fixture.d1, '/consolidated', request, new URL(request.url)))
+      .resolves.toMatchObject({ status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } });
   });
 });
 
 describe('workerD1 tenant and ingestion reads', () => {
-  it('returns the earliest created tenant', async () => {
+  it('logs malformed stored currency JSON with request and tenant context before using the empty-list fallback', () => {
+    const warning = vi.spyOn(logger, 'warn');
+    const context = { requestId: 'currency-request-1', tenantId: 'TNT-1', documentId: 'DOC-BAD' };
+
+    expect(parseStoredDetectedCurrencies(['INR', 'USD'], context)).toEqual(['INR', 'USD']);
+    expect(parseStoredDetectedCurrencies('["INR"]', context)).toEqual(['INR']);
+    expect(parseStoredDetectedCurrencies(null, context)).toEqual([]);
+    expect(parseStoredDetectedCurrencies('', context)).toEqual([]);
+    expect(parseStoredDetectedCurrencies('not-json', context)).toEqual([]);
+    expect(warning).toHaveBeenLastCalledWith(
+      D1_LOG_MESSAGES.invalidStoredCurrencyMetadata,
+      expect.objectContaining({ ...context, fallback: 'empty-currency-list' }),
+      expect.any(SyntaxError)
+    );
+    expect(parseStoredDetectedCurrencies('{}', context)).toEqual([]);
+    expect(warning).toHaveBeenLastCalledWith(
+      D1_LOG_MESSAGES.invalidStoredCurrencyMetadata,
+      expect.objectContaining({ ...context, fallback: 'empty-currency-list' }),
+      expect.any(TypeError)
+    );
+    expect(parseStoredDetectedCurrencies(1, context)).toEqual([]);
+    expect(warning).toHaveBeenCalledTimes(3);
+    expect(warning).toHaveBeenLastCalledWith(
+      D1_LOG_MESSAGES.invalidStoredCurrencyMetadata,
+      expect.objectContaining({ ...context, fallback: 'empty-currency-list' }),
+      expect.any(TypeError)
+    );
+  });
+
+  it('resolves the explicitly selected tenant instead of guessing the earliest tenant', async () => {
     insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name, created_at, updated_at) VALUES (?, ?, ?, ?)', [
       ['TNT-NEW', 'Newer Enterprise', '2026-03-01T00:00:00Z', '2026-03-01T00:00:00Z'],
       ['TNT-OLD', 'Original Enterprise', '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z']
     ]);
 
-    await expect(getTenantFromD1(fixture.d1)).resolves.toMatchObject({
+    await expect(getTenantFromD1(fixture.d1, 'TNT-OLD')).resolves.toMatchObject({
       tenant_id: 'TNT-OLD',
       enterprise_name: 'Original Enterprise'
     });
   });
 
-  it('fails loudly when the seed contains no tenant', async () => {
-    await expect(getTenantFromD1(fixture.d1)).rejects.toThrow('D1 seed does not contain a tenant record');
+  it('fails closed when no tenant is selected and reports missing assignments', async () => {
+    await expect(getTenantFromD1(fixture.d1)).rejects.toThrow(D1_ROUTE_MESSAGES.tenantScopeRequired);
+    await expect(getTenantFromD1(fixture.d1, 'missing')).rejects.toThrow(D1_ROUTE_MESSAGES.tenantUnavailable('missing'));
   });
 
   it('normalises currency lists and resolved flags, and summarises the validation records', async () => {
@@ -99,36 +154,130 @@ describe('workerD1 tenant and ingestion reads', () => {
       ['DOC-3', 'TNT-1', 'gamma.xlsx', '2026-01-01T00:00:00Z', '{"unexpected":true}', 1],
       ['DOC-4', 'TNT-1', 'delta.xlsx', '2026-04-01T00:00:00Z', null, 0]
     ]);
-    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
-      ['REC-1', 'PO-1', 'Acme', 'Item A', 'Passed Clean', 'Ready', 1, '2026-01-10T00:00:00Z'],
-      ['REC-2', 'PO-2', 'Beta', 'Item B', 'Duplicate PO', 'Review', 0, '2026-01-11T00:00:00Z'],
-      ['REC-3', 'PO-3', 'Gamma', 'Item C', 'Passed Clean', 'Ready', 1, '2026-01-12T00:00:00Z']
+    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      ['REC-1', 'TNT-1', 'PO-1', 'Acme', 'Item A', 'Passed Clean', 'Ready', 1, '2026-01-10T00:00:00Z'],
+      ['REC-2', 'TNT-1', 'PO-2', 'Beta', 'Item B', 'Duplicate PO', 'Review', 0, '2026-01-11T00:00:00Z'],
+      ['REC-3', 'TNT-1', 'PO-3', 'Gamma', 'Item C', 'Passed Clean', 'Ready', 1, '2026-01-12T00:00:00Z']
     ]);
 
-    const data = await getIngestionDataFromD1(fixture.d1);
+    const warning = vi.spyOn(logger, 'warn');
+    const data = await getIngestionDataFromD1(fixture.d1, 'TNT-1', { requestId: 'currency-page-1' });
     const queue = data.queue as Array<Record<string, unknown>>;
     const records = data.validationRecords as Array<Record<string, unknown>>;
 
-    expect(queue.map((row) => row.doc_id)).toEqual(['DOC-4', 'DOC-2', 'DOC-1', 'DOC-3']);
-    expect(queue.map((row) => row.detected_currencies)).toEqual([[], [], ['INR', 'USD'], []]);
+    expect(queue.map((row) => row.doc_id)).toEqual(['DOC-4', 'DOC-1', 'DOC-3']);
+    expect(queue.map((row) => row.detected_currencies)).toEqual([[], ['INR', 'USD'], []]);
+    expect(warning).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.invalidStoredCurrencyMetadata,
+      expect.objectContaining({ requestId: 'currency-page-1', tenantId: 'TNT-1', documentId: 'DOC-3' }),
+      expect.any(TypeError)
+    );
     expect(records.map((row) => row.record_id)).toEqual(['REC-3', 'REC-2', 'REC-1']);
     expect(records.map((row) => row.resolved)).toEqual([true, false, true]);
-    expect(data.summary).toEqual({ totalFiles: 4, totalRecords: 3, cleanCount: 2, anomaliesCount: 1 });
+    expect(data.summary).toMatchObject({ totalFiles: 3, totalRecords: 3, cleanCount: 2, anomaliesCount: 1, allResolvedCount: 2, pendingActionsCount: 1 });
   });
 
-  it('scopes the ingestion queue to one tenant while keeping validation records global', async () => {
+  it('scopes ingestion queue and validation records to the same tenant', async () => {
     insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
       ['DOC-1', 'TNT-1', 'alpha.xlsx', '2026-02-01T00:00:00Z'],
       ['DOC-2', 'TNT-2', 'beta.csv', '2026-03-01T00:00:00Z']
     ]);
-    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, po_number, vendor_name, raw_desc, created_at) VALUES (?, ?, ?, ?, ?)', [
-      ['REC-1', 'PO-1', 'Acme', 'Item A', '2026-01-10T00:00:00Z']
+    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, created_at) VALUES (?, ?, ?, ?, ?, ?)', [
+      ['REC-1', 'TNT-1', 'PO-1', 'Acme', 'Item A', '2026-01-10T00:00:00Z'],
+      ['REC-2', 'TNT-2', 'PO-2', 'Beta', 'Item B', '2026-01-11T00:00:00Z']
     ]);
 
     const data = await getIngestionDataFromD1(fixture.d1, 'TNT-1');
 
     expect((data.queue as Array<Record<string, unknown>>).map((row) => row.doc_id)).toEqual(['DOC-1']);
+    expect((data.validationRecords as Array<Record<string, unknown>>).map((row) => row.record_id)).toEqual(['REC-1']);
     expect(data.summary).toMatchObject({ totalFiles: 1, totalRecords: 1 });
+  });
+
+  it('loads one explicitly selected tenant document without fetching unrelated validation pages', async () => {
+    insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
+      ['DOC-NEW', 'TNT-1', 'new.xlsx', '2026-04-02T00:00:00Z'],
+      ['DOC-OLD', 'TNT-1', 'old.xlsx', '2026-01-01T00:00:00Z'],
+      ['DOC-OTHER', 'TNT-2', 'other.xlsx', '2026-05-01T00:00:00Z']
+    ]);
+    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc) VALUES (?, ?, ?, ?, ?)', [
+      ['REC-1', 'TNT-1', 'PO-1', 'Supplier', 'Item']
+    ]);
+
+    const data = await getIngestionDataFromD1(fixture.d1, 'TNT-1', {
+      queueDocumentId: 'DOC-OLD', includeQueue: true, includeValidationRecords: false, includeSummary: false
+    });
+
+    expect((data.queue as Array<Record<string, unknown>>).map((row) => row.doc_id)).toEqual(['DOC-OLD']);
+    expect(data.validationRecords).toEqual([]);
+    expect(data.summary).toBeUndefined();
+
+    const selectedForWorkspace = await getIngestionDataFromD1(fixture.d1, 'TNT-1', {
+      queueDocumentId: 'DOC-OLD', includeQueue: true, includeValidationRecords: true, includeSummary: true
+    });
+    expect((selectedForWorkspace.queue as Array<Record<string, unknown>>).map((row) => row.doc_id)).toEqual(['DOC-OLD']);
+    expect((selectedForWorkspace.validationRecords as Array<Record<string, unknown>>).map((row) => row.record_id)).toEqual(['REC-1']);
+  });
+
+  it('pages tenant ingestion data by stable composite cursors while summarising every row', async () => {
+    const queueRows = Array.from({ length: D1_INGESTION_PAGE_SIZE + 5 }, (_, index) => [
+      `DOC-${String(index).padStart(3, '0')}`, 'TNT-1', `file-${index}.csv`, '2026-04-01T00:00:00Z'
+    ]);
+    const validationRows = Array.from({ length: D1_INGESTION_PAGE_SIZE * 2 + 5 }, (_, index) => {
+      const clean = index % 2 === 0;
+      return [
+        `REC-${String(index).padStart(3, '0')}`, 'TNT-1', `PO-${index}`, 'Supplier', `Item ${index}`,
+        clean ? 'Passed Clean' : 'Duplicate Item Description', Number(clean), '2026-04-01T00:00:00Z', 0.01, 100000
+      ];
+    });
+    insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', queueRows);
+    insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, issue_flag, resolved, created_at, inr_crores, amount_inr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', validationRows);
+
+    const first = await getIngestionDataFromD1(fixture.d1, 'TNT-1');
+    const firstQueue = first.queue as Array<Record<string, unknown>>;
+    const firstRecords = first.validationRecords as Array<Record<string, unknown>>;
+    const firstPagination = first.pagination as {
+      queue: { hasMore: boolean; nextCursor: { uploadedAt: string; docId: string } | null };
+      validationRecords: { hasMore: boolean; nextCursor: { createdAt: string; recordId: string } | null };
+    };
+
+    expect(firstQueue).toHaveLength(D1_INGESTION_PAGE_SIZE);
+    expect(firstRecords).toHaveLength(D1_INGESTION_PAGE_SIZE);
+    expect(firstPagination.queue.hasMore).toBe(true);
+    expect(firstPagination.validationRecords.hasMore).toBe(true);
+    expect(first.summary).toMatchObject({
+      totalFiles: D1_INGESTION_PAGE_SIZE + 5,
+      totalRecords: D1_INGESTION_PAGE_SIZE * 2 + 5,
+      cleanCount: 103,
+      anomaliesCount: 102,
+      allResolvedCount: 103,
+      pendingActionsCount: 102,
+      itemDuplicationCount: 102,
+      totalSpendCr: 2.05,
+      pendingSpendCr: 1.02
+    });
+    expect(firstRecords[0].record_id).toBe('REC-204');
+    expect(firstRecords.at(-1)?.record_id).toBe('REC-105');
+
+    const second = await getIngestionDataFromD1(fixture.d1, 'TNT-1', {
+      queueCursor: firstPagination.queue.nextCursor || undefined,
+      validationCursor: firstPagination.validationRecords.nextCursor || undefined
+    });
+    const secondRecords = second.validationRecords as Array<Record<string, unknown>>;
+    const secondPagination = second.pagination as typeof firstPagination;
+    expect((second.queue as Array<Record<string, unknown>>).map((row) => row.doc_id)).toHaveLength(5);
+    expect(secondRecords).toHaveLength(D1_INGESTION_PAGE_SIZE);
+    expect(secondRecords[0].record_id).toBe('REC-104');
+    expect(secondRecords.at(-1)?.record_id).toBe('REC-005');
+    expect(secondPagination.validationRecords.hasMore).toBe(true);
+
+    const third = await getIngestionDataFromD1(fixture.d1, 'TNT-1', {
+      validationCursor: secondPagination.validationRecords.nextCursor || undefined
+    });
+    expect((third.validationRecords as Array<Record<string, unknown>>).map((row) => row.record_id)).toEqual([
+      'REC-004', 'REC-003', 'REC-002', 'REC-001', 'REC-000'
+    ]);
+    expect((third.pagination as typeof firstPagination).validationRecords.hasMore).toBe(false);
   });
 });
 
@@ -152,7 +301,7 @@ describe('workerD1 canonical Module 1 dataset', () => {
       ['USD', 70, 70]
     ]);
 
-    const canonical = await getCanonicalModule1Data(fixture.d1);
+    const canonical = await getCanonicalModule1Data(fixture.d1, undefined, D1_DEMO_TENANT_ID);
 
     expect(canonical).toMatchObject({
       validFxNormalizedSpendCr: 100,
@@ -193,7 +342,7 @@ describe('workerD1 canonical Module 1 dataset', () => {
       ['V1', 1, 'Vendor One', 'MV-1', 'Chemicals', 60]
     ]);
 
-    const canonical = await getCanonicalModule1Data(fixture.d1);
+    const canonical = await getCanonicalModule1Data(fixture.d1, undefined, D1_DEMO_TENANT_ID);
 
     expect(canonical.reconciliationStatus).toBe('RECONCILED');
     expect(canonical.top10ConcentrationPct).toBe(0);
@@ -201,7 +350,7 @@ describe('workerD1 canonical Module 1 dataset', () => {
   });
 
   it('fails loudly when no metric rows exist', async () => {
-    await expect(getCanonicalModule1Data(fixture.d1)).rejects.toThrow(
+    await expect(getCanonicalModule1Data(fixture.d1, undefined, D1_DEMO_TENANT_ID)).rejects.toThrow(
       'D1 seed is missing required dataset metric: totalSpendCr'
     );
   });
@@ -209,7 +358,7 @@ describe('workerD1 canonical Module 1 dataset', () => {
   it('fails loudly when a required metric is stored as NULL', async () => {
     seedMetrics({ sourceRowCount: null });
 
-    await expect(getCanonicalModule1Data(fixture.d1)).rejects.toThrow(
+    await expect(getCanonicalModule1Data(fixture.d1, undefined, D1_DEMO_TENANT_ID)).rejects.toThrow(
       'D1 seed is missing required dataset metric: sourceRowCount'
     );
   });
@@ -218,13 +367,13 @@ describe('workerD1 canonical Module 1 dataset', () => {
     seedMetrics();
     fixture.db.prepare('UPDATE DatasetMetricSummary SET metric_value = ? WHERE metric_key = ?').run('abc', 'validRowCount');
 
-    await expect(getCanonicalModule1Data(fixture.d1)).rejects.toThrow(
+    await expect(getCanonicalModule1Data(fixture.d1, undefined, D1_DEMO_TENANT_ID)).rejects.toThrow(
       'D1 seed is missing required dataset metric: validRowCount'
     );
   });
 
   it('reports a missing canonical dataset when an assessment has no stored canonical payload', async () => {
-    await expect(getCanonicalModule1Data(fixture.d1, 'AIC-404')).rejects.toThrow(
+    await expect(getCanonicalModule1Data(fixture.d1, 'AIC-404', D1_DEMO_TENANT_ID)).rejects.toThrow(
       D1_ROUTE_MESSAGES.missingCanonical('AIC-404')
     );
   });
@@ -233,11 +382,11 @@ describe('workerD1 canonical Module 1 dataset', () => {
 describe('workerD1 savings routes', () => {
   it('returns assessment-scoped metrics and never includes global opportunities for another assessment', async () => {
     insertRows(fixture.db, `INSERT INTO AssessmentRecord (
-      assessment_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr,
+      assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr,
       addressable_spend_cr, gross_opportunity_cr, overlap_deductions_cr, net_defensible_opportunity_cr,
       proven_opportunity_cr, potential_savings_cr
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-      ['A1', 'T1', 'Client One', 'Chemicals', 'analyst@example.test', 80, 72, 60, 8, 2, 6, 4, 6]
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+      ['A1', 'TNT-1', 'T1', 'Client One', 'Chemicals', 'analyst@example.test', 80, 72, 60, 8, 2, 6, 4, 6]
     ]);
     insertRows(fixture.db, 'INSERT INTO AssessmentAnalysisRun (analysis_run_id, assessment_id, data_version_id, metrics_json) VALUES (?, ?, ?, ?)', [
       ['RUN-A1', 'A1', 'DV-A1', JSON.stringify({
@@ -268,9 +417,42 @@ describe('workerD1 savings routes', () => {
     }
   });
 
+  it.each([
+    ['malformed JSON', '{invalid', 'SyntaxError'],
+    ['a non-object JSON value', '[]', 'TypeError']
+  ])('logs invalid persisted savings metrics for %s while keeping the empty-data fallback', async (_caseName, metricsJson, errorName) => {
+    insertRows(fixture.db, `INSERT INTO AssessmentRecord (
+      assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner
+    ) VALUES (?, ?, ?, ?, ?, ?)`, [
+      ['A1', 'TNT-1', 'T1', 'Client One', 'Chemicals', 'analyst@example.test']
+    ]);
+    insertRows(fixture.db, `INSERT INTO AssessmentAnalysisRun (
+      analysis_run_id, assessment_id, data_version_id, metrics_json
+    ) VALUES (?, ?, ?, ?)`, [['RUN-BAD', 'A1', 'DV-A1', metricsJson]]);
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', 'test'));
+    const request = new Request(`${SAVINGS_CONSOLIDATED_URL}?assessmentId=A1`, {
+      headers: { 'x-request-id': 'req-savings-corrupt' }
+    });
+
+    const result = await handleSavingsRoute(fixture.d1, '/consolidated', request, new URL(request.url));
+
+    expect(result.data).toMatchObject({
+      dataScope: { assessmentId: 'A1' },
+      opportunities: [], actionPlans: [], overlaps: [],
+      waterfallMetrics: { identified_opportunities_count: 0 }
+    });
+    expect(warn).toHaveBeenCalledWith(
+      'Persisted assessment savings metrics were invalid; returning empty derived collections',
+      expect.objectContaining({
+        requestId: 'req-savings-corrupt', assessmentId: 'A1', analysisRunId: 'RUN-BAD', tenantId: 'TNT-1'
+      }),
+      expect.objectContaining({ name: errorName })
+    );
+  });
+
   it('returns empty scoped collections when no run exists and rejects missing or mismatched scope', async () => {
-    insertRows(fixture.db, 'INSERT INTO AssessmentRecord (assessment_id, customer_id, customer_name, industry, assessment_owner) VALUES (?, ?, ?, ?, ?)', [
-      ['A1', 'T1', 'Client One', 'Chemicals', 'analyst@example.test']
+    insertRows(fixture.db, 'INSERT INTO AssessmentRecord (assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner) VALUES (?, ?, ?, ?, ?, ?)', [
+      ['A1', 'TNT-1', 'T1', 'Client One', 'Chemicals', 'analyst@example.test']
     ]);
     const scoped = new Request(`${SAVINGS_CONSOLIDATED_URL}?assessmentId=A1`);
     expect((await handleSavingsRoute(fixture.d1, '/consolidated', scoped, new URL(scoped.url)).then((result) => result.data)))
@@ -280,11 +462,11 @@ describe('workerD1 savings routes', () => {
       .toMatchObject({ status: 404, data: { success: false } });
     const wrongTenant = new Request(`${SAVINGS_CONSOLIDATED_URL}?assessmentId=A1&tenantId=T2`);
     expect(await handleSavingsRoute(fixture.d1, '/consolidated', wrongTenant, new URL(wrongTenant.url)))
-      .toMatchObject({ status: 404, data: { success: false } });
+      .toMatchObject({ status: 403, data: { success: false } });
   });
 
   it('rejects malformed scope and requires an assessment identifier for a scoped savings request', async () => {
-    const tenantOnly = new Request(`${SAVINGS_CONSOLIDATED_URL}?tenantId=T1`);
+    const tenantOnly = new Request(`${SAVINGS_CONSOLIDATED_URL}?tenantId=TNT-1`);
     expect(await handleSavingsRoute(fixture.d1, '/consolidated', tenantOnly, new URL(tenantOnly.url)))
       .toMatchObject({ status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.savingsAssessmentRequired } });
     const invalid = new Request(`${SAVINGS_CONSOLIDATED_URL}?assessmentId=`);
@@ -292,13 +474,28 @@ describe('workerD1 savings routes', () => {
       .toMatchObject({ status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope } });
   });
   const seedSavings = (): void => {
+    insertRows(fixture.db,
+      'INSERT INTO TenantMaster (tenant_id, enterprise_name, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id) DO NOTHING',
+      [['TNT-1', 'Demo Tenant', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z']]);
     insertRows(fixture.db, 'INSERT INTO SavingsOpportunity (opp_id, category, title, est_savings_inr_cr, status) VALUES (?, ?, ?, ?, ?)', [
       ['OPP-1', 'Logistics', 'Freight consolidation', 1.25, 'Identified'],
       ['OPP-2', 'Packaging', 'Carton standardisation', 2.5, 'Identified']
     ]);
+    insertRows(fixture.db, 'INSERT INTO SavingsOpportunityTenantScope (opp_id, tenant_id) VALUES (?, ?)', [
+      ['OPP-1', 'TNT-1'], ['OPP-2', 'TNT-1']
+    ]);
   };
 
   const seedActionPlans = (): void => {
+    insertRows(fixture.db,
+      'INSERT INTO TenantMaster (tenant_id, enterprise_name, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id) DO NOTHING',
+      [['TNT-1', 'Demo Tenant', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z']]);
+    insertRows(fixture.db, 'INSERT OR IGNORE INTO SavingsOpportunity (opp_id, category) VALUES (?, ?)', [
+      ['OPP-1', 'Logistics'], ['OPP-2', 'Packaging']
+    ]);
+    insertRows(fixture.db, 'INSERT OR IGNORE INTO SavingsOpportunityTenantScope (opp_id, tenant_id) VALUES (?, ?)', [
+      ['OPP-1', 'TNT-1'], ['OPP-2', 'TNT-1']
+    ]);
     insertRows(fixture.db, 'INSERT INTO ActionPlanItem (id, opp_id, title, lever, category, est_savings_inr_cr, owner, quarter, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
       ['ACT-1', 'OPP-1', 'Negotiate freight lanes', 'E-Auctions', 'Logistics', 1.25, 'Procurement', 'Q4 2026', 'PLANNED', '2026-10-01', '2026-10-01'],
       ['ACT-2', 'OPP-2', 'Standardize carton grades', 'Supplier Consolidation', 'Packaging', 2.5, 'SCM', 'Q1 2027', 'IN_PROGRESS', '2026-10-02', '2026-10-02']
@@ -309,9 +506,18 @@ describe('workerD1 savings routes', () => {
     ]);
   };
 
-  it('nets consolidated gross savings against the earliest assessment overlap deduction', async () => {
+  it('keeps consolidated savings inside the tenant scope and does not borrow an unrelated assessment', async () => {
     seedSavings();
     seedActionPlans();
+    insertRows(fixture.db,
+      'INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+      [['TNT-2', 'Other Tenant', '2026-02-01T00:00:00Z', '2026-02-01T00:00:00Z']]);
+    insertRows(fixture.db, 'INSERT INTO SavingsOpportunity (opp_id, category, title, est_savings_inr_cr, status) VALUES (?, ?, ?, ?, ?)', [
+      ['OPP-OTHER', 'Other', 'Other tenant opportunity', 99, 'Identified']
+    ]);
+    insertRows(fixture.db, 'INSERT INTO SavingsOpportunityTenantScope (opp_id, tenant_id) VALUES (?, ?)', [
+      ['OPP-OTHER', 'TNT-2']
+    ]);
     insertRows(fixture.db, 'INSERT INTO AssessmentRecord (assessment_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr, gross_opportunity_cr, addressable_spend_cr, overlap_deductions_cr, net_defensible_opportunity_cr, potential_savings_cr, savings_pct, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
       ['AIC-A', 'CUST-A', 'Alpha', 'Textile', 'analyst', 7.5, 7.5, 3, 7.5, 0.5, 2.5, 2.5, 33.3, 'APPROVED', '2026-01-05T00:00:00Z']
     ]);
@@ -321,15 +527,15 @@ describe('workerD1 savings routes', () => {
     expect(result.status).toBeUndefined();
     expect(result.data).toMatchObject({
       totalGrossSavingsCr: 3.75,
-      overlapDeductionCr: 0.5,
-      netClientSavingsCr: 3.25,
+      overlapDeductionCr: 0,
+      netClientSavingsCr: 3.75,
       actionPlansCount: 2,
       waterfallMetrics: {
-        total_spend_inr_cr: 7.5,
-        addressable_spend_inr_cr: 7.5,
+        total_spend_inr_cr: 0,
+        addressable_spend_inr_cr: 0,
         gross_potential_savings_inr_cr: 3.75,
-        deduplicated_overlap_inr_cr: 0.5,
-        net_potential_savings_inr_cr: 3.25
+        deduplicated_overlap_inr_cr: 0,
+        net_potential_savings_inr_cr: 3.75
       },
       actionPlans: [
         { id: 'ACT-1', status: 'Open', target_date: '2026-12-15', priority: 'HIGH' },
@@ -349,6 +555,7 @@ describe('workerD1 savings routes', () => {
 
   it('updates an opportunity status and returns the refreshed row', async () => {
     seedSavings();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
 
     const result = await handleSavingsRoute(
       fixture.d1,
@@ -358,6 +565,7 @@ describe('workerD1 savings routes', () => {
     );
 
     expect(result.data).toMatchObject({ opp_id: 'OPP-1', status: 'APPROVED' });
+    expect(prepare.mock.calls.some(([sql]) => sql.includes('FROM TenantMaster'))).toBe(false);
     await expect(fixture.d1.prepare('SELECT status FROM SavingsOpportunity WHERE opp_id = ?').bind('OPP-1').first()).resolves.toEqual({ status: 'APPROVED' });
   });
 
@@ -368,6 +576,7 @@ describe('workerD1 savings routes', () => {
     ['a non-string opportunity id', JSON.stringify({ opp_id: 42, status: 'APPROVED' })],
     ['an unsupported status', JSON.stringify({ opp_id: 'OPP-1', status: 'Approved' })]
   ])('rejects a status update with %s', async (_label, body) => {
+    seedSavings();
     const result = await handleSavingsRoute(
       fixture.d1,
       '/opportunity/status',
@@ -378,18 +587,17 @@ describe('workerD1 savings routes', () => {
     expect(result).toMatchObject({ status: 400, data: { success: false, message: 'Opportunity status validation failed.' } });
   });
 
-  it('treats a malformed status-update body as missing fields instead of failing', async () => {
-    const result = await handleSavingsRoute(
+  it('rejects malformed status-update JSON before running the status mutation', async () => {
+    await expect(handleSavingsRoute(
       fixture.d1,
       '/opportunity/status',
       jsonPost(SAVINGS_STATUS_PATH, '{"opp_id":'),
       new URL(`https://edge.example.com${SAVINGS_STATUS_PATH}`)
-    );
-
-    expect(result).toMatchObject({ status: 400, data: { success: false, message: 'Opportunity status validation failed.' } });
+    )).rejects.toBeInstanceOf(RequestJsonParseError);
   });
 
   it('rejects updates for opportunities that are absent from D1', async () => {
+    seedSavings();
     const result = await handleSavingsRoute(
       fixture.d1,
       '/opportunity/status',
@@ -403,6 +611,7 @@ describe('workerD1 savings routes', () => {
   it('updates persisted action-plan owner, status, priority and comments, then returns the refreshed plan', async () => {
     seedSavings();
     seedActionPlans();
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
     const path = '/api/savings/action-plan/update';
 
     const result = await handleSavingsRoute(
@@ -415,6 +624,7 @@ describe('workerD1 savings routes', () => {
     expect(result).toMatchObject({ data: {
       id: 'ACT-1', status: 'Completed', owner: 'Finance', priority: 'LOW', comments: 'Signed off', target_date: '2026-12-15'
     } });
+    expect(prepare.mock.calls.some(([sql]) => sql.includes('FROM TenantMaster'))).toBe(false);
     await expect(fixture.d1.prepare('SELECT status, owner FROM ActionPlanItem WHERE id = ?').bind('ACT-1').first())
       .resolves.toEqual({ status: 'COMPLETED', owner: 'Finance' });
     await expect(fixture.d1.prepare('SELECT priority, comments FROM ActionPlanItemDetails WHERE action_id = ?').bind('ACT-1').first())
@@ -424,8 +634,7 @@ describe('workerD1 savings routes', () => {
   it.each([
     ['invalid fields', JSON.stringify({ actionId: '', owner: 'Unknown' }), 400],
     ['no updates', JSON.stringify({ actionId: 'ACT-1' }), 400],
-    ['unknown plan', JSON.stringify({ actionId: 'ACT-MISSING', status: 'Completed' }), 404],
-    ['malformed JSON', '{"actionId":', 400]
+    ['unknown plan', JSON.stringify({ actionId: 'ACT-MISSING', status: 'Completed' }), 404]
   ])('rejects an action-plan update with %s', async (_label, body, status) => {
     seedActionPlans();
     const path = '/api/savings/action-plan/update';
@@ -433,6 +642,38 @@ describe('workerD1 savings routes', () => {
       fixture.d1, '/action-plan/update', jsonPost(path, body), new URL(`https://edge.example.com${path}`)
     );
     expect(result.status).toBe(status);
+  });
+
+  it('rejects malformed action-plan JSON before attempting the update', async () => {
+    seedActionPlans();
+    const path = '/api/savings/action-plan/update';
+
+    await expect(handleSavingsRoute(
+      fixture.d1, '/action-plan/update', jsonPost(path, '{"actionId":'), new URL(`https://edge.example.com${path}`)
+    )).rejects.toBeInstanceOf(RequestJsonParseError);
+  });
+
+  it('rejects savings mutations without resolved tenant context before querying D1', async () => {
+    const prepare = vi.spyOn(fixture.d1, 'prepare');
+    const actionPlanPath = '/api/savings/action-plan/update';
+    const actionPlanResult = await handleSavingsRouteImpl(
+      fixture.d1,
+      '/action-plan/update',
+      jsonPost(actionPlanPath, JSON.stringify({ actionId: 'ACT-1', status: 'Completed' })),
+      new URL(`https://edge.example.com${actionPlanPath}`),
+      runtimeEnvironment()
+    );
+    const statusResult = await handleSavingsRouteImpl(
+      fixture.d1,
+      '/opportunity/status',
+      jsonPost(SAVINGS_STATUS_PATH, JSON.stringify({ opp_id: 'OPP-1', status: 'APPROVED' })),
+      new URL(`https://edge.example.com${SAVINGS_STATUS_PATH}`),
+      runtimeEnvironment()
+    );
+
+    expect(actionPlanResult).toMatchObject({ status: 403, data: { message: D1_ROUTE_MESSAGES.tenantScopeRequired } });
+    expect(statusResult).toMatchObject({ status: 403, data: { message: D1_ROUTE_MESSAGES.tenantScopeRequired } });
+    expect(prepare).not.toHaveBeenCalled();
   });
 
   it('rejects wrong methods and unknown savings endpoints without claiming successful updates', async () => {
@@ -534,6 +775,7 @@ describe('workerD1 taxonomy catalogue', () => {
 
 describe('workerD1 currency and category reference data', () => {
   it('returns the latest reference rate per currency with a source fallback and zero rate when none exists', async () => {
+    clearD1ReferenceDataCache(fixture.d1, D1_REFERENCE_CACHE_KEYS.CURRENCY_RATES);
     insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
       ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026'],
       ['EUR', 'Euro', 'PARTIAL', 'ECB', 'FX-2026'],
@@ -559,6 +801,7 @@ describe('workerD1 currency and category reference data', () => {
     });
     expect(rates.EUR).toMatchObject({ currentRate: 92, lastUpdated: '2026-01-15', source: 'ECB' });
     expect(rates.GBP).toMatchObject({ currentRate: 0, lastUpdated: null, source: null });
+    expect(await getCurrencyRatesFromD1(fixture.d1)).toEqual(rates);
   });
 
   it('maps procurement material groups to categories with a sorted, de-duplicated category list', async () => {
@@ -589,12 +832,17 @@ describe('workerD1 crypto route', () => {
 
   it.each([
     ['an empty object', '{}'],
-    ['a non-string plaintext', JSON.stringify({ plaintext: 42 })],
-    ['malformed JSON', '{"plaintext": ']
+    ['a non-string plaintext', JSON.stringify({ plaintext: 42 })]
   ])('rejects %s with a 400 and no encryption attempt', async (_label, body) => {
     const result = await handleCryptoRoute(jsonPost('/api/crypto/encrypt', body), new URL(ENCRYPT_URL), runtimeEnvironment());
 
     expect(result).toEqual({ data: { success: false, message: 'plaintext is required' }, status: 400 });
+  });
+
+  it('rejects malformed JSON before attempting encryption', async () => {
+    await expect(handleCryptoRoute(
+      jsonPost('/api/crypto/encrypt', '{"plaintext":'), new URL(ENCRYPT_URL), runtimeEnvironment()
+    )).rejects.toBeInstanceOf(RequestJsonParseError);
   });
 
   it('refuses to encrypt when the configured key is not 32 bytes', async () => {

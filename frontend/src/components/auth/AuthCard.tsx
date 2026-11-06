@@ -80,11 +80,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
         company: registerForm.company_name
       });
       await apiClient.register(registerForm);
-      setSuccessMessage(UI_STRINGS.auth.registrationSuccess);
-
-      setTimeout(() => {
-        router.push('/');
-      }, 700);
+      setSuccessMessage(UI_STRINGS.auth.registrationPending);
+      setActiveTab('LOGIN');
+      setLoginForm((current) => ({ ...current, email: registerForm.email }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
       frontendLogger.warn('Registration failed', { error: msg });

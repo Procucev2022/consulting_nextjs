@@ -9,7 +9,7 @@ import { jobsQuerySchema } from './constants/orchestrationValidation';
 import { jsonOk, parseWithSchema } from './workerD1OrchestrationHttp';
 import { mapAnalysisJob, mapAuditEvent, mapNotification } from './workerD1OrchestrationMapper';
 import { buildJobDetail } from './workerD1OrchestrationJobs';
-import { loadAccessibleJob } from './workerD1OrchestrationAuth';
+import { loadAccessibleJob, requireOrchestrationTenantId } from './workerD1OrchestrationAuth';
 import {
   buildReadiness,
   computeKpis,
@@ -32,45 +32,48 @@ const dataOk = (context: OrchestrationRequestContext, data: unknown): Response =
 const matchesStatus = (status: AnalysisJobStatus, filter: string | undefined): boolean =>
   filter === undefined || filter === 'ALL' || status === filter;
 
-const matchesSearch = (job: AnalysisJob, search: string | undefined): boolean => {
+const matchesSearch = (job: AnalysisJob, search: string | undefined, customerId: string): boolean => {
   if (search === undefined || search.length === 0) return true;
   const needle = search.toLowerCase();
-  return [job.customerName, job.analysisJobId, job.tenantId].some((value) => value.toLowerCase().includes(needle));
+  return [job.customerName, job.analysisJobId, job.tenantId, customerId].some((value) => value.toLowerCase().includes(needle));
 };
 
 export const listJobs: OrchestrationHandler = async (context) => {
   const query = parseWithSchema(jobsQuerySchema, Object.fromEntries(context.url.searchParams));
   const isAdmin = context.actor.role === 'ADMIN';
-  const rows = await listJobRows(context.database, isAdmin ? null : context.actor.userId);
+  const tenantId = requireOrchestrationTenantId(context);
+  const rows = await listJobRows(context.database, tenantId, isAdmin ? null : context.actor.userId);
   const jobs = rows
     .filter((row) => isAdmin || row.current_version_id !== null)
     .map((row) => {
       const status = deriveJobStatus(row);
       const includeReport = isAdmin || isCustomerVisibleState(row.report_state);
-      return { status, job: mapAnalysisJob(row, status, includeReport) };
+      return { status, job: mapAnalysisJob(row, status, includeReport), customerId: row.customer_id };
     })
-    .filter((entry) => matchesStatus(entry.status, query.status) && matchesSearch(entry.job, query.search))
+    .filter((entry) => matchesStatus(entry.status, query.status) && matchesSearch(entry.job, query.search, entry.customerId))
     .map((entry) => entry.job);
   return dataOk(context, jobs);
 };
 
 export const getJob: OrchestrationHandler = async (context) => {
-  const row = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
-  return dataOk(context, await buildJobDetail(context.database, row, context.actor));
+  const row = await loadAccessibleJob(context, context.params.jobId);
+  return dataOk(context, await buildJobDetail(context.database, row, context.actor, context.requestId));
 };
 
 export const getReadiness: OrchestrationHandler = async (context) => {
-  const row = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const row = await loadAccessibleJob(context, context.params.jobId);
+  const tenantId = requireOrchestrationTenantId(context);
   const [openCount, pcbiRows] = await Promise.all([
-    countOpenCorrections(context.database, row.assessment_id),
-    listPcbiGapRows(context.database, row.assessment_id, row.current_version_id)
+    countOpenCorrections(context.database, row.assessment_id, row.tenant_id),
+    listPcbiGapRows(context.database, row.assessment_id, row.current_version_id, tenantId)
   ]);
   return dataOk(context, buildReadiness(readinessInputFromRow(row, openCount, pcbiCoverageFromRows(pcbiRows))));
 };
 
 export const getAdminKpis: OrchestrationHandler = async (context) => {
-  const rows = await listJobRows(context.database, null);
-  const openCount = await countOpenCorrections(context.database, null);
+  const tenantId = requireOrchestrationTenantId(context);
+  const rows = await listJobRows(context.database, tenantId, null);
+  const openCount = await countOpenCorrections(context.database, null, tenantId);
   const jobs = rows.map((row) => ({
     status: deriveJobStatus(row),
     checklistComplete: row.checklist_complete === 1
@@ -79,11 +82,13 @@ export const getAdminKpis: OrchestrationHandler = async (context) => {
 };
 
 export const getNotifications: OrchestrationHandler = async (context) => {
-  const rows = await listRecentNotificationRows(context.database, ORCHESTRATION_LIMITS.notificationListLimit);
+  const tenantId = requireOrchestrationTenantId(context);
+  const rows = await listRecentNotificationRows(context.database, tenantId, ORCHESTRATION_LIMITS.notificationListLimit);
   return dataOk(context, rows.map((row) => mapNotification(row)));
 };
 
 export const getAuditTrail: OrchestrationHandler = async (context) => {
-  const rows = await listRecentAuditRows(context.database, ORCHESTRATION_LIMITS.auditTrailLimit);
-  return dataOk(context, rows.map((row) => mapAuditEvent(row)));
+  const tenantId = requireOrchestrationTenantId(context);
+  const rows = await listRecentAuditRows(context.database, tenantId, ORCHESTRATION_LIMITS.auditTrailLimit);
+  return dataOk(context, rows.map((row) => mapAuditEvent(row, context.requestId)));
 };

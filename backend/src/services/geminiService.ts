@@ -1,4 +1,12 @@
-import { GEMINI_CONFIG, resolveGeminiConfig, GEMINI_INLINE_MIME_TYPES, EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../constants/ai';
+import {
+  AI_LOG_ACTIONS,
+  AI_LOG_MESSAGES,
+  GEMINI_CONFIG,
+  resolveGeminiConfig,
+  GEMINI_INLINE_MIME_TYPES,
+  EXTRACTION_STATUS,
+  EXTRACTION_SYSTEM_PROMPT
+} from '../constants/ai';
 import type { CloudflareEnvironment } from '../types/cloudflare';
 import type {
   ExtractionResult,
@@ -11,6 +19,7 @@ import type {
   GeminiStructuredRequestInput
 } from '../types/ai';
 import logger from '../utils/logger';
+import { logGeminiProviderAttemptFailure } from './geminiProviderLogging';
 import { generateGeminiJson } from './geminiJsonGeneration';
 
 interface GeminiContentPart {
@@ -238,12 +247,7 @@ export class GeminiService {
     };
   }
 
-  public async extractLineItems(input: {
-    documentText?: string;
-    inlineData?: string;
-    mimeType?: string;
-    fileName?: string;
-  } = {}): Promise<ExtractionResult> {
+  public async extractLineItems(input: GeminiRequestDocumentInput = {}): Promise<ExtractionResult> {
     const base: ExtractionResult = {
       status: EXTRACTION_STATUS.SUCCESS,
       items: [],
@@ -255,7 +259,12 @@ export class GeminiService {
     };
 
     if (!this.isConfigured()) {
-      logger.warn('Gemini extraction skipped: GEMINI_API_KEY is not set', {}, new Error('Gemini API key missing'));
+      logger.warn(AI_LOG_MESSAGES.extractionNotConfigured, {
+        action: AI_LOG_ACTIONS.extractionNotConfigured,
+        provider: 'gemini',
+        requestId: input.requestId,
+        status: EXTRACTION_STATUS.NOT_CONFIGURED
+      }, new Error('Gemini API key missing'));
       return { ...base, status: EXTRACTION_STATUS.NOT_CONFIGURED, error: 'GEMINI_API_KEY not configured' };
     }
 
@@ -280,20 +289,32 @@ export class GeminiService {
     const failures: string[] = [];
     const deadline = Date.now() + this.config.TOTAL_BUDGET_MS;
     const keys = this.resolveKeyChain();
+    const models = this.resolveModelChain();
 
-    for (const model of this.resolveModelChain()) {
-      for (const apiKey of keys) {
+    for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+      const model = models[modelIndex];
+      for (let keyIndex = 0; keyIndex < keys.length; keyIndex += 1) {
+        const apiKey = keys[keyIndex];
         const remainingMs = deadline - Date.now();
         if (remainingMs < this.config.MIN_ATTEMPT_MS) break;
 
+        const attemptStartedAt = Date.now();
         try {
           const result = await this.attemptModelExtraction(model, requestBody, remainingMs, input.fileName, apiKey);
           if (result) return result;
         } catch (err: unknown) {
-          const errorObj = err as Error;
-          failures.push(`${model}: ${errorObj.message}`);
-          logger.warn(`Gemini extraction attempt failed on ${model}`, { error: errorObj.message });
-          if (errorObj.message.includes('404')) {
+          const modelNotFound = logGeminiProviderAttemptFailure(err, {
+            model,
+            modelIndex,
+            keyIndex,
+            modelCount: models.length,
+            keyCount: keys.length,
+            requestId: input.requestId,
+            durationMs: Date.now() - attemptStartedAt,
+            action: AI_LOG_ACTIONS.extractionAttempt,
+            message: AI_LOG_MESSAGES.extractionAttemptFailed
+          }, failures);
+          if (modelNotFound) {
             break;
           }
         }

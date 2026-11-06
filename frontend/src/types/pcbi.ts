@@ -85,6 +85,19 @@ export interface PCBIWeeklyIndex {
   updated_at?: string;
 }
 
+export interface PCBIHistoricalObservation {
+  pcbi_id: string;
+  observation_date: string;
+  value_inr: number;
+  original_value: number;
+  original_currency: string;
+  fx_rate: number;
+  unit: string;
+  source: string;
+  status: string;
+  observation_frequency: 'MONTHLY';
+}
+
 export interface PCBIUNSPSCMapping {
   id?: string;
   unspsc_code: string;

@@ -5,6 +5,7 @@ import { apiClient } from '../../../../src/utils/api';
 import { authApiClient } from '../../../../src/utils/authApi';
 import frontendLogger from '../../../../src/utils/logger';
 import type { UserProfile } from '../../../../src/types';
+import { UI_STRINGS } from '../../../../src/constants';
 
 const mockPush = vi.fn();
 // The router must be a stable object: the page's auth/load effect depends on it.
@@ -19,7 +20,6 @@ vi.mock('next/image', async () => {
     default: ({ src, alt }: { src: string; alt: string }) => React.createElement('img', { src, alt })
   };
 });
-
 // Labels and messages that the dashboard defines inline rather than in UI_STRINGS.
 const LOGOUT_LABEL = 'Logout';
 const REFRESH_LABEL = 'Refresh';
@@ -150,6 +150,14 @@ describe('AdminDashboardPage coverage', () => {
     vi.spyOn(apiClient, 'setStoredSession').mockImplementation(() => undefined);
     vi.spyOn(apiClient, 'clearStoredSession').mockImplementation(() => undefined);
     vi.spyOn(apiClient, 'getAdminUsers').mockResolvedValue(directoryResponse(DIRECTORY_USERS) as never);
+    vi.spyOn(apiClient, 'getAdminTenants').mockResolvedValue({
+      success: true,
+      tenants: [{ tenant_id: 'tenant-alpha', enterprise_name: 'Alpha Industries', status: 'ACTIVE' }]
+    });
+    vi.spyOn(apiClient, 'assignAdminUserTenant').mockImplementation(async (id, tenantId) => ({
+      success: true,
+      user: { ...USER_ACTIVE, id, tenant_id: tenantId, status: 'ACTIVE' }
+    }));
     vi.spyOn(apiClient, 'updateAdminUserStatus').mockResolvedValue({ success: true } as never);
     vi.spyOn(apiClient, 'updateAdminUserTier').mockResolvedValue({ success: true } as never);
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(ADMIN_TOKEN);
@@ -340,6 +348,39 @@ describe('AdminDashboardPage coverage', () => {
   });
 
   describe('directory filters and refresh', () => {
+    it('assigns a pending enterprise user to a selected tenant and activates its row', async () => {
+      const pendingUser = buildUser({ id: 'usr-pending', email: 'pending@alpha.example', status: 'PENDING' });
+      vi.mocked(apiClient.getAdminUsers).mockResolvedValueOnce(directoryResponse([USER_ACTIVE, pendingUser]) as never);
+      vi.mocked(apiClient.assignAdminUserTenant).mockImplementationOnce(async (id, tenantId) => ({
+        success: true,
+        user: { ...pendingUser, id, tenant_id: tenantId, status: 'ACTIVE' }
+      }));
+      await renderDashboard();
+
+      fireEvent.change(screen.getByRole('combobox', { name: `${UI_STRINGS.admin.assignTenant}: ${pendingUser.email}` }), {
+        target: { value: 'tenant-alpha' }
+      });
+
+      await waitFor(() => expect(apiClient.assignAdminUserTenant).toHaveBeenCalledWith('usr-pending', 'tenant-alpha'));
+      expect(await screen.findByText(UI_STRINGS.admin.tenantAssigned(pendingUser.email, 'Alpha Industries'))).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: `${UI_STRINGS.admin.assignTenant}: ${pendingUser.email}` })).toHaveValue('tenant-alpha');
+    });
+
+    it('keeps inactive tenants visible for existing assignments but disables new selection', async () => {
+      vi.mocked(apiClient.getAdminTenants).mockResolvedValueOnce({
+        success: true,
+        tenants: [
+          { tenant_id: 'tenant-alpha', enterprise_name: 'Alpha Industries', status: 'ACTIVE' },
+          { tenant_id: 'tenant-paused', enterprise_name: 'Paused Industries', status: 'SUSPENDED' }
+        ]
+      });
+      await renderDashboard();
+
+      const inactiveTenantOptions = screen.getAllByRole('option', { name: `Paused Industries (${UI_STRINGS.admin.inactiveTenant})` });
+      expect(inactiveTenantOptions.length).toBeGreaterThan(0);
+      expect(inactiveTenantOptions.every((option) => (option as HTMLOptionElement).disabled)).toBe(true);
+    });
+
     it('reloads the directory with the search term and each selected filter', async () => {
       await renderDashboard();
 
@@ -462,7 +503,7 @@ describe('AdminDashboardPage coverage', () => {
     it('changes a subscription tier from the row selector and reports the change', async () => {
       await renderDashboard();
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'GOLD' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'GOLD' } });
 
       expect(apiClient.updateAdminUserTier).toHaveBeenCalledWith(USER_BRONZE.id, 'GOLD');
       expect(await screen.findByText(/Subscription tier updated to GOLD/)).toBeInTheDocument();
@@ -472,7 +513,7 @@ describe('AdminDashboardPage coverage', () => {
       vi.mocked(apiClient.updateAdminUserTier).mockResolvedValueOnce({ success: false } as never);
       await renderDashboard();
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'SILVER' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'SILVER' } });
 
       await waitFor(() => expect(apiClient.updateAdminUserTier).toHaveBeenCalled());
       expect(screen.queryByText(/Subscription tier updated/)).not.toBeInTheDocument();
@@ -482,7 +523,7 @@ describe('AdminDashboardPage coverage', () => {
       vi.mocked(apiClient.updateAdminUserTier).mockRejectedValueOnce(new Error('Tier change blocked'));
       await renderDashboard();
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'SILVER' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'SILVER' } });
 
       expect(await screen.findByText('Tier change blocked')).toBeInTheDocument();
     });
@@ -491,7 +532,7 @@ describe('AdminDashboardPage coverage', () => {
       vi.mocked(apiClient.updateAdminUserTier).mockRejectedValueOnce(null);
       await renderDashboard();
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'SILVER' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'SILVER' } });
 
       expect(await screen.findByText('Tier update failed')).toBeInTheDocument();
     });
@@ -534,7 +575,7 @@ describe('AdminDashboardPage coverage', () => {
       fireEvent.click(within(userRow(USER_BRONZE)).getByRole('button', { name: DETAILS_LABEL }));
       await screen.findByRole('button', { name: CLOSE_DETAILS_LABEL });
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'SILVER' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'SILVER' } });
 
       expect(await screen.findByText(/Subscription tier updated to SILVER/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: CLOSE_DETAILS_LABEL })).toBeInTheDocument();
@@ -545,7 +586,7 @@ describe('AdminDashboardPage coverage', () => {
       fireEvent.click(within(userRow(USER_ACTIVE)).getByRole('button', { name: DETAILS_LABEL }));
       await screen.findByRole('button', { name: CLOSE_DETAILS_LABEL });
 
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'SILVER' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'SILVER' } });
 
       expect(await screen.findByText(/Subscription tier updated to SILVER/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: CLOSE_DETAILS_LABEL })).toBeInTheDocument();
@@ -580,7 +621,7 @@ describe('AdminDashboardPage coverage', () => {
       await renderDashboard();
       fireEvent.click(within(userRow(USER_BRONZE)).getByRole('button', { name: DETAILS_LABEL }));
       await screen.findByRole('button', { name: CLOSE_DETAILS_LABEL });
-      fireEvent.change(within(userRow(USER_BRONZE)).getByRole('combobox'), { target: { value: 'GOLD' } });
+      fireEvent.change(within(userRow(USER_BRONZE)).getAllByRole('combobox')[0], { target: { value: 'GOLD' } });
       fireEvent.click(screen.getByRole('button', { name: CLOSE_DETAILS_LABEL }));
 
       resolveTier({ success: true });

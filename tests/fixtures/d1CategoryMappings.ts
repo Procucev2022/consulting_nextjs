@@ -25,7 +25,7 @@ const backendDirectory = path.resolve(fixtureDirectory, '../../backend');
 export const getD1CategoryMappingsFixture = (): Record<string, string> => {
   const database = new DatabaseSync(':memory:');
   try {
-    database.exec(fs.readFileSync(path.join(backendDirectory, 'd1-reference-schema.sql'), 'utf8'));
+    database.exec(fs.readFileSync(path.join(backendDirectory, 'd1-schema.sql'), 'utf8'));
     database.exec(fs.readFileSync(path.join(backendDirectory, 'd1-category-mapping-seed.sql'), 'utf8'));
     const rows = database.prepare(
       'SELECT material_group_code, category_name FROM ProcurementCategoryMapping'

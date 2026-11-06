@@ -30,11 +30,11 @@ import {
   Layers,
   UploadCloud
 } from 'lucide-react';
-import { UI_STRINGS, AICEV_LOGO_SRC } from '../../../constants';
+import { UI_STRINGS, AICEV_LOGO_SRC, AUTH_STATUS } from '../../../constants';
 import { apiClient } from '../../../utils/api';
 import { authApiClient } from '../../../utils/authApi';
 import frontendLogger from '../../../utils/logger';
-import type { UserProfile, UserRole, UserStatus, SubscriptionTier } from '../../../types';
+import type { AdminTenant, UserProfile, UserRole, UserStatus, SubscriptionTier } from '../../../types';
 
 export default function AdminDashboardPage(): React.ReactElement {
   const router = useRouter();
@@ -46,6 +46,7 @@ export default function AdminDashboardPage(): React.ReactElement {
 
   // Users Directory State
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [tenants, setTenants] = useState<AdminTenant[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
@@ -80,12 +81,17 @@ export default function AdminDashboardPage(): React.ReactElement {
       setActionError(null);
       frontendLogger.info('Loading admin user directory', { searchTerm, roleFilter, statusFilter, tierFilter });
 
-      const res = await apiClient.getAdminUsers({
-        search: searchTerm || undefined,
-        role: roleFilter === 'ALL' ? undefined : roleFilter,
-        status: statusFilter === 'ALL' ? undefined : statusFilter,
-        tier: tierFilter === 'ALL' ? undefined : tierFilter
-      });
+      const [res, tenantDirectory] = await Promise.all([
+        apiClient.getAdminUsers({
+          search: searchTerm || undefined,
+          role: roleFilter === 'ALL' ? undefined : roleFilter,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+          tier: tierFilter === 'ALL' ? undefined : tierFilter
+        }),
+        apiClient.getAdminTenants()
+      ]);
+
+      if (tenantDirectory.success && Array.isArray(tenantDirectory.tenants)) setTenants(tenantDirectory.tenants);
 
       if (res.success && Array.isArray(res.users)) {
         setUsers(res.users);
@@ -102,6 +108,24 @@ export default function AdminDashboardPage(): React.ReactElement {
       setRefreshing(false);
     }
   }, [searchTerm, roleFilter, statusFilter, tierFilter]);
+
+  const handleAssignTenant = async (user: UserProfile, tenantId: string): Promise<void> => {
+    if (!tenantId || user.role === 'ADMIN') return;
+    try {
+      setActionError(null);
+      setActionSuccess(null);
+      const response = await apiClient.assignAdminUserTenant(user.id, tenantId);
+      const assignedUser = response.user;
+      const tenant = tenants.find((item) => item.tenant_id === assignedUser.tenant_id);
+      setUsers((current) => current.map((item) => item.id === user.id ? { ...item, ...assignedUser } : item));
+      if (selectedUserForDetails?.id === user.id) setSelectedUserForDetails((current) => current ? { ...current, ...assignedUser } : current);
+      setActionSuccess(UI_STRINGS.admin.tenantAssigned(user.email, tenant?.enterprise_name || tenantId));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : UI_STRINGS.admin.tenantAssignmentInvalid;
+      frontendLogger.error('Administrator tenant assignment failed', { userId: user.id, tenantId, error: message });
+      setActionError(message);
+    }
+  };
 
   // Verify the stored identity against the database-backed authentication API.
   useEffect(() => {
@@ -521,6 +545,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                   <th className="py-3 px-4">Company & Location</th>
                   <th className="py-3 px-4">Contact Details</th>
                   <th className="py-3 px-4">Role & Tier</th>
+                  <th className="py-3 px-4">{UI_STRINGS.admin.colTenant}</th>
                   <th className="py-3 px-4">Account Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -528,14 +553,14 @@ export default function AdminDashboardPage(): React.ReactElement {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500 font-sans text-xs">
+                    <td colSpan={7} className="py-12 text-center text-slate-500 font-sans text-xs">
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto text-cyan-600 mb-2" />
                       Loading enterprise directory...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500 font-sans text-xs">
+                    <td colSpan={7} className="py-12 text-center text-slate-500 font-sans text-xs">
                       No matching user records found.
                     </td>
                   </tr>
@@ -590,6 +615,26 @@ export default function AdminDashboardPage(): React.ReactElement {
                             <option value="GOLD">GOLD</option>
                           </select>
                         </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-sans">
+                        {user.role === 'ADMIN' ? (
+                          <span>{UI_STRINGS.admin.unassignedTenant}</span>
+                        ) : (
+                          <select
+                            aria-label={`${UI_STRINGS.admin.assignTenant}: ${user.email}`}
+                            value={user.tenant_id || ''}
+                            onChange={(event) => void handleAssignTenant(user, event.target.value)}
+                            className="max-w-48 rounded border border-slate-300 bg-white px-2 py-1 text-[11px]"
+                          >
+                            <option value="">{UI_STRINGS.admin.unassignedTenant}</option>
+                            {tenants.map((tenant) => (
+                              <option key={tenant.tenant_id} value={tenant.tenant_id} disabled={tenant.status !== AUTH_STATUS.ACTIVE}>
+                                {tenant.enterprise_name}{tenant.status !== AUTH_STATUS.ACTIVE ? ` (${UI_STRINGS.admin.inactiveTenant})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 font-sans">

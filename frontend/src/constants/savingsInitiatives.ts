@@ -100,6 +100,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
   }
 ];
 
+export const calculateOverallSavingsPct = (savingsInrCr: number, spendInrCr: number): number =>
+  spendInrCr > 0 ? Number(((savingsInrCr / spendInrCr) * 100).toFixed(1)) : 0;
+
 export const calculateDefaultStrategicSavingsMetrics = (): StrategicSavingsSummaryMetrics => {
   const initiatives = DEFAULT_STRATEGIC_SAVINGS_INITIATIVES;
 
@@ -134,9 +137,7 @@ export const calculateDefaultStrategicSavingsMetrics = (): StrategicSavingsSumma
   const grandTotalSavingsInrCr = Number((module2SavingsInrCr + module4SavingsInrCr).toFixed(2));
   const grandTotalSpendInrCr = Number((module2SpendInrCr + module4SpendInrCr).toFixed(2));
 
-  const overallSavingsPct = grandTotalSpendInrCr > 0
-    ? Number(((grandTotalSavingsInrCr / grandTotalSpendInrCr) * 100).toFixed(1))
-    : 0;
+  const overallSavingsPct = calculateOverallSavingsPct(grandTotalSavingsInrCr, grandTotalSpendInrCr);
 
   return {
     grandTotalSpendInrCr,

@@ -1,7 +1,10 @@
+import { expectApiFetchCall } from '../../../utils/apiFetchAssertions';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AdminSubscriptionsPage from '@/app/admin/subscriptions/page';
+import frontendLogger from '@/utils/logger';
+import { API_REQUEST_ID_HEADER } from '@/constants/app';
 import type { SubscriptionRecord, SubscriptionAuditEvent } from '@/types';
 
 describe('AdminSubscriptionsPage Dashboard', () => {
@@ -175,20 +178,14 @@ describe('AdminSubscriptionsPage Dashboard', () => {
     fireEvent.click(suspendBtn);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/subscription/admin/sub-1/status',
-        expect.objectContaining({ method: 'PATCH' })
-      );
+      expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-1/status', expect.objectContaining({ method: 'PATCH' }));
     });
 
     const reactivateBtn = screen.getByRole('button', { name: 'Reactivate' });
     fireEvent.click(reactivateBtn);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/subscription/admin/sub-2/status',
-        expect.objectContaining({ method: 'PATCH' })
-      );
+      expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-2/status', expect.objectContaining({ method: 'PATCH' }));
     });
   });
 
@@ -238,11 +235,119 @@ describe('AdminSubscriptionsPage Dashboard', () => {
   });
 
   it('handles network failure during initial fetch gracefully', async () => {
+    const errorLog = vi.spyOn(frontendLogger, 'error');
     global.fetch = vi.fn().mockRejectedValue(new Error('Network offline'));
     render(<AdminSubscriptionsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('No subscription records found.')).toBeInTheDocument();
     });
+    expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.list',
+        method: 'GET',
+        path: '/api/subscription/admin/list',
+        statusCode: 0
+      }),
+      expect.objectContaining({ message: 'Network offline' })
+    );
+    expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.audit',
+        method: 'GET',
+        path: '/api/subscription/admin/audit-trail',
+        statusCode: 0
+      }),
+      expect.objectContaining({ message: 'Network offline' })
+    );
+  });
+
+  it('logs a status-update network failure with operation and route context', async () => {
+    const errorLog = vi.spyOn(frontendLogger, 'error');
+    render(<AdminSubscriptionsPage />);
+    await waitFor(() => expect(screen.getByText('Corp One')).toBeInTheDocument());
+    global.fetch = vi.fn().mockRejectedValue(new Error('Status update offline'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+
+    await waitFor(() => expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.status.update',
+        method: 'PATCH',
+        path: '/api/subscription/admin/sub-1/status',
+        statusCode: 0
+      }),
+      expect.objectContaining({ message: 'Status update offline' })
+    ));
+  });
+
+  it('keeps the current rows when list, status, and audit endpoints return unsuccessful responses', async () => {
+    const errorLog = vi.spyOn(frontendLogger, 'error');
+    render(<AdminSubscriptionsPage />);
+
+    await waitFor(() => expect(screen.getByText('Corp One')).toBeInTheDocument());
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/status')) return Promise.resolve({
+        ok: false,
+        status: 403,
+        headers: new Headers({ [API_REQUEST_ID_HEADER]: 'request-status-403' }),
+        json: async () => ({ success: false })
+      } as Response);
+      if (url.includes('/audit-trail')) return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ [API_REQUEST_ID_HEADER]: 'request-audit-200' }),
+        json: async () => ({ success: false })
+      } as Response);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ [API_REQUEST_ID_HEADER]: 'request-list-200' }),
+        json: async () => ({ success: false })
+      } as Response);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/sub-1/status', expect.any(Object)));
+    fireEvent.click(screen.getByTestId('refresh-subscriptions-btn'));
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/list', expect.any(Object)));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Audit' })[0]);
+
+    await waitFor(() => expectApiFetchCall(global.fetch, '/api/subscription/admin/audit-trail?subscription_id=sub-1', expect.any(Object)));
+    await waitFor(() => expect(errorLog).toHaveBeenCalledTimes(3));
+    expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.status.update',
+        method: 'PATCH',
+        statusCode: 403,
+        requestId: 'request-status-403'
+      }),
+      expect.objectContaining({ message: expect.stringContaining('HTTP 403') })
+    );
+    expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.list',
+        method: 'GET',
+        statusCode: 200,
+        requestId: 'request-list-200'
+      }),
+      expect.objectContaining({ message: expect.stringContaining('HTTP 200') })
+    );
+    expect(errorLog).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({
+        action: 'subscription.admin.audit',
+        method: 'GET',
+        statusCode: 200,
+        requestId: 'request-audit-200'
+      }),
+      expect.objectContaining({ message: expect.stringContaining('HTTP 200') })
+    );
+    expect(screen.getByText('Corp One')).toBeInTheDocument();
   });
 });

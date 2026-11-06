@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { currencyApiClient } from '../../src/utils/currencyApi';
@@ -39,7 +40,7 @@ describe('currencyApiClient', () => {
     stubFetch(fetchMock);
 
     await expect(currencyApiClient.getCurrencyRates()).resolves.toEqual(ratesPayload.data);
-    expect(fetchMock).toHaveBeenCalledWith('/api/currency');
+    expectApiFetchCall(fetchMock, '/api/currency');
   });
 
   it('reports a server-provided error when the currency catalog request fails', async () => {
@@ -75,7 +76,7 @@ describe('currencyApiClient', () => {
     stubFetch(fetchMock);
 
     await expect(currencyApiClient.getCurrencyConversion('USD', 2, 2026)).resolves.toEqual(conversionPayload.data);
-    expect(fetchMock).toHaveBeenCalledWith('/api/currency?from=USD&amount=2&date=2026');
+    expectApiFetchCall(fetchMock, '/api/currency?from=USD&amount=2&date=2026');
   });
 
   it('rejects invalid conversion responses and reports API errors', async () => {

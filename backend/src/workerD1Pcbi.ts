@@ -2,10 +2,18 @@ import {
   D1_PCBI_CONSTITUENT_FIELDS, D1_PCBI_MASTER_FIELDS, D1_PCBI_UNSPSC_FIELDS,
   D1_PCBI_WEEKLY_FIELDS, D1_ROUTE_MESSAGES, D1_TABLES
 } from './constants/d1';
-import { pcbiReferenceQuerySchema } from './constants/validation';
+import {
+  PCBI_HISTORICAL_ARCHIVE_ONLY,
+  PCBI_HISTORICAL_FREQUENCY,
+  PCBI_HISTORICAL_OBSERVATION_QUERY_FIELDS
+} from './constants/pcbiHistorical';
+import { D1_REFERENCE_CACHE_KEYS } from './constants/db';
+import { pcbiHistoricalObservationsQuerySchema, pcbiReferenceQuerySchema } from './constants/validation';
 import { queryD1Rows, requireWorkerDb } from './services/workerD1Query';
+import { getOrLoadD1ReferenceData } from './services/d1ReferenceDataCache';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
+import type { PCBIHistoricalObservationRecord } from './types/pcbi';
 import logger from './utils/logger';
 import { getPublishedPcbiPayload, mapPcbiImportRow } from './workerD1PcbiAdmin';
 import type { PcbiAdminImportInput } from './types/validation';
@@ -76,19 +84,62 @@ export const handlePcbiRoute = async (
   const { sector, pcbiId, limit } = parsed.data;
   const read = (sql: string, values: unknown[] = []): Promise<D1Record[]> =>
     queryD1Rows(database, sql, values, requestId);
-  const publishedPayload = await getPublishedPcbiPayload(database);
+  if (subPath === '/historical-observations') {
+    const historicalQuery = pcbiHistoricalObservationsQuerySchema.safeParse({
+      pcbiId: url.searchParams.get('pcbiId') ?? pcbiId,
+      startDate: url.searchParams.get('startDate') ?? undefined,
+      endDate: url.searchParams.get('endDate') ?? undefined,
+      limit: url.searchParams.get('limit') ?? undefined
+    });
+    if (!historicalQuery.success) {
+      logger.warn(D1_ROUTE_MESSAGES.invalidQuery, { requestId, errors: historicalQuery.error.issues });
+      return { status: 400, data: {
+        success: false, message: D1_ROUTE_MESSAGES.invalidQuery, errors: historicalQuery.error.issues
+      } };
+    }
+    const filters: string[] = [];
+    const values: unknown[] = [];
+    if (historicalQuery.data.pcbiId) { filters.push('pcbi_id = ?'); values.push(historicalQuery.data.pcbiId); }
+    if (historicalQuery.data.startDate) { filters.push('observation_date >= ?'); values.push(historicalQuery.data.startDate); }
+    if (historicalQuery.data.endDate) { filters.push('observation_date <= ?'); values.push(historicalQuery.data.endDate); }
+    values.push(historicalQuery.data.limit);
+    const where = filters.length > 0 ? ` WHERE ${filters.join(' AND ')}` : '';
+    const observations = await queryD1Rows<PCBIHistoricalObservationRecord>(database,
+      `SELECT ${PCBI_HISTORICAL_OBSERVATION_QUERY_FIELDS.join(', ')} ` +
+      `FROM ${D1_TABLES.pcbiHistoricalObservations}${where} ` +
+      'ORDER BY pcbi_id ASC, observation_date ASC LIMIT ?', values, requestId
+    );
+    return { data: {
+      archiveOnly: PCBI_HISTORICAL_ARCHIVE_ONLY,
+      frequency: PCBI_HISTORICAL_FREQUENCY,
+      count: observations.length,
+      observations
+    } };
+  }
   if (subPath === '/benchmarks' || subPath === '/master/benchmarks') {
-    const rows = publishedPayload
-      ? normalizedImportedBenchmarks(publishedPayload).sort((a, b) =>
-        String(a.category || '').localeCompare(String(b.category || '')) ||
-        String(a.sub_category || '').localeCompare(String(b.sub_category || '')))
-      : await read(`SELECT * FROM ${D1_TABLES.pcbiBenchmarks} WHERE active = 1 ORDER BY category, sub_category`);
-    const benchmarks = rows.map(normalizeBenchmark);
+    const benchmarkResult = await getOrLoadD1ReferenceData<D1Record[]>(
+      database,
+      D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS,
+      async () => {
+        const publishedPayload = await getPublishedPcbiPayload(database, requestId);
+        const rows = publishedPayload
+          ? normalizedImportedBenchmarks(publishedPayload).sort((a, b) =>
+            String(a.category || '').localeCompare(String(b.category || '')) ||
+            String(a.sub_category || '').localeCompare(String(b.sub_category || '')))
+          : await read(`SELECT * FROM ${D1_TABLES.pcbiBenchmarks} WHERE active = 1 ORDER BY category, sub_category`);
+        return rows.map(normalizeBenchmark);
+      }
+    );
+    logger.debug('Resolved PCBI benchmark reference cache', {
+      model: D1_TABLES.pcbiBenchmarks, cacheStatus: benchmarkResult.cacheStatus, requestId
+    });
+    const benchmarks = benchmarkResult.value;
     return { data: sector ? benchmarks.filter((row) =>
       row.sector === sector || row.benchmark_scope === 'GLOBAL' ||
       (Array.isArray(row.applicable_sectors) && row.applicable_sectors.includes(sector))) : benchmarks };
   }
   if (subPath.startsWith('/indices/') || subPath === '/indices' || subPath === '/index-trend') {
+    const publishedPayload = await getPublishedPcbiPayload(database, requestId);
     const seriesId = subPath.startsWith('/indices/') ? decodeURIComponent(subPath.slice('/indices/'.length)) : pcbiId;
     const baseRows = publishedPayload
       ? normalizedImportedWeeklyRows(publishedPayload)
@@ -117,6 +168,7 @@ export const handlePcbiRoute = async (
     return { data: rows };
   }
   if (subPath === '/components' || subPath === '/unspsc-mapping') {
+    const publishedPayload = await getPublishedPcbiPayload(database, requestId);
     if (publishedPayload && subPath === '/components') {
       const benchmarks = new Map(normalizedImportedBenchmarks(publishedPayload).map((benchmark) => [String(benchmark.pcbi_id), benchmark]));
       const rows: D1Record[] = publishedPayload.constituents.map((row, index): D1Record => {

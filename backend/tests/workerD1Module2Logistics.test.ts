@@ -17,18 +17,19 @@ const makeDatabase = (
         bind(...values: unknown[]) { boundValues = values; return statement; },
         async all<T>() { return { results: rows as T[] }; },
         async first<T>() {
-          if (query.includes('FROM User WHERE id = ?')) {
+          if (query.includes('FROM User')) {
             const userId = String(boundValues[0]);
             return {
               id: userId,
               name: 'Logistics User',
               email: userId === 'usr-standard-test' ? 'user@procucev.test' : 'admin@procucev.test',
               role: userId === 'usr-standard-test' ? 'USER' : 'ADMIN',
-              status: 'ACTIVE'
+              status: 'ACTIVE',
+              tenant_id: 'TNT-TEST'
             } as T;
           }
           if (query.includes('FROM AssessmentRecord')) {
-            return assessmentFound ? { customer_id: 'CUSTOMER-1', contact_email: contactEmail } as T : null;
+            return assessmentFound ? { customer_id: 'CUSTOMER-1', tenant_id: 'TNT-TEST', contact_email: contactEmail } as T : null;
           }
           return null as T | null;
         },
@@ -40,7 +41,11 @@ const makeDatabase = (
   return { db, getQuery: () => statementSql, getBindings: () => boundValues };
 };
 
-const testEnvironment = (db: CloudflareD1Database | undefined) => ({ DB: db, AUTH_SECRET: TEST_AUTH_SECRET });
+const testEnvironment = (db: CloudflareD1Database | undefined, tenantId = 'TNT-TEST') => ({
+  DB: db,
+  AUTH_SECRET: TEST_AUTH_SECRET,
+  REQUEST_TENANT_ID: tenantId
+});
 
 const authenticatedRequest = async (token: string, url: URL): Promise<Request> =>
   new Request(url, { headers: { Authorization: 'Bearer ' + token } });
@@ -56,8 +61,8 @@ describe('handleModule2LogisticsPackagingRoute', () => {
     expect(result.data).toMatchObject({
       success: true, count: 2, candidates: [{ candidateId: 'DEMO-LOG-001', isDemo: true }, { candidateId: 'LOG-REAL-001', isDemo: false }]
     });
-    expect(getQuery()).toContain('WHERE assessment_id = ?');
-    expect(getBindings()).toEqual(['AIC-2026-0001']);
+    expect(getQuery()).toContain('WHERE assessment_id = ? AND EXISTS');
+    expect(getBindings()).toEqual(['AIC-2026-0001', 'TNT-TEST']);
   });
 
   it('rejects invalid assessment scope, unsupported methods and missing D1', async () => {
@@ -121,5 +126,16 @@ describe('handleModule2LogisticsPackagingRoute', () => {
       url
     );
     expect(noContact.status).toBe(403);
+  });
+
+  it('rejects an authenticated user whose tenant assignment differs from the selected tenant', async () => {
+    const { db } = makeDatabase([]);
+    const url = new URL('https://example.test/api/module2/logistics-packaging?assessmentId=AIC-2026-0001');
+    const result = await handleModule2LogisticsPackagingRoute(
+      testEnvironment(db, 'TNT-OTHER'),
+      await authenticatedRequest(await userToken(), url),
+      url
+    );
+    expect(result.status).toBe(403);
   });
 });

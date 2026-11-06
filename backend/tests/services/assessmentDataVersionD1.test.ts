@@ -1,9 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
 import type { CloudflareD1Database, CloudflareEnvironment, CloudflareR2Bucket } from '../../src/types/cloudflare';
-import { uploadAssessmentDataVersion, validateAssessmentDataVersion } from '../../src/services/assessmentDataVersionD1';
+import {
+  uploadAssessmentDataVersion as uploadAssessmentDataVersionRaw,
+  validateAssessmentDataVersion as validateAssessmentDataVersionRaw
+} from '../../src/services/assessmentDataVersionD1';
 import { ASSESSMENT_DATA_VERSION_MAX_BYTES } from '../../src/constants/assessmentValidation';
 import * as XLSX from 'xlsx';
+import logger from '../../src/utils/logger';
+import { readAssessmentSnapshot } from '../../src/services/assessmentDataVersionD1Helpers';
+import { ASSESSMENT_D1_LOG_MESSAGES } from '../../src/constants/assessmentD1';
 
 const WORKBOOK_CSV = [
   'PO Number,Supplier Name,Description,Quantity,Net Price,Currency,Transaction Date',
@@ -14,6 +20,7 @@ const WORKBOOK_CSV = [
 
 const toBytes = (value = WORKBOOK_CSV): Uint8Array => new TextEncoder().encode(value);
 const toBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64');
+const TEST_TENANT_ID = 'TNT-UPLOAD-1';
 const sha256 = async (bytes: Uint8Array): Promise<string> => {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
@@ -22,12 +29,26 @@ const sha256 = async (bytes: Uint8Array): Promise<string> => {
 const makeDatabase = () => {
   const fixture = createWorkerDatabase();
   fixture.db.prepare(`INSERT INTO AssessmentRecord (
-    assessment_id, customer_id, customer_name, industry, assessment_owner, data_status, status
-  ) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
-    'AIC-UPLOAD-1', 'CUST-UPLOAD-1', 'Upload Client', 'Manufacturing', 'analyst@example.test', 'NOT_RECEIVED', 'CREATED'
+    assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, data_status, status
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    'AIC-UPLOAD-1', TEST_TENANT_ID, 'CUST-UPLOAD-1', 'Upload Client', 'Manufacturing',
+    'analyst@example.test', 'NOT_RECEIVED', 'CREATED'
   );
   return fixture;
 };
+
+const withTenant = <T extends { environment: CloudflareEnvironment }>(context: T): T => ({
+  ...context,
+  environment: { REQUEST_TENANT_ID: TEST_TENANT_ID, ...context.environment }
+});
+
+const uploadAssessmentDataVersion = (
+  context: Parameters<typeof uploadAssessmentDataVersionRaw>[0]
+) => uploadAssessmentDataVersionRaw(withTenant(context));
+
+const validateAssessmentDataVersion = (
+  context: Parameters<typeof validateAssessmentDataVersionRaw>[0]
+) => validateAssessmentDataVersionRaw(withTenant(context));
 
 const makeBucket = (deleteOverride?: CloudflareR2Bucket['delete']) => {
   const objects = new Map<string, Uint8Array>();
@@ -81,13 +102,88 @@ describe('assessment data version D1 lifecycle', () => {
       });
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction WHERE assessment_id = ?')
         .get('AIC-UPLOAD-1').count).toBe(3);
+      expect(fixture.db.prepare('SELECT DISTINCT tenant_id FROM ProcurementTransaction WHERE assessment_id = ?')
+        .all('AIC-UPLOAD-1')).toEqual([{ tenant_id: TEST_TENANT_ID }]);
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ValidationPreCheckRecord WHERE record_id LIKE ?')
         .get(`REC-${resultData.dataVersion.dataVersionId}-ROW-%`).count).toBe(3);
+      expect(fixture.db.prepare('SELECT DISTINCT tenant_id FROM ValidationPreCheckRecord WHERE record_id LIKE ?')
+        .all(`REC-${resultData.dataVersion.dataVersionId}-ROW-%`)).toEqual([{ tenant_id: TEST_TENANT_ID }]);
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ObjectMetadata WHERE assessment_id = ?')
         .get('AIC-UPLOAD-1').count).toBe(1);
+      expect(fixture.db.prepare('SELECT tenant_id FROM ObjectMetadata WHERE assessment_id = ?')
+        .get('AIC-UPLOAD-1')).toEqual({ tenant_id: TEST_TENANT_ID });
       expect(objects.size).toBe(1);
       expect(Array.from(objects.values())[0]).toEqual(toBytes());
     } finally {
+      fixture.close();
+    }
+  });
+
+  it('rejects uploads and validation reads when the assigned tenant does not own the assessment', async () => {
+    const fixture = makeDatabase();
+    const { bucket, objects } = makeBucket();
+    try {
+      const body = await makeBody();
+      const unauthorizedUpload = await uploadAssessmentDataVersionRaw({
+        db: fixture.d1,
+        environment: { OBJECTS: bucket, REQUEST_TENANT_ID: 'TNT-OTHER' },
+        assessmentId: 'AIC-UPLOAD-1', body
+      });
+      expect(unauthorizedUpload).toMatchObject({
+        status: 404, data: { success: false }
+      });
+      expect(objects.size).toBe(0);
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get().count).toBe(0);
+
+      const unauthorizedValidation = await validateAssessmentDataVersionRaw({
+        db: fixture.d1,
+        environment: { REQUEST_TENANT_ID: 'TNT-OTHER' },
+        assessmentId: 'AIC-UPLOAD-1', body: {}
+      });
+      expect(unauthorizedValidation).toMatchObject({
+        status: 404, data: { success: false }
+      });
+      expect(fixture.db.prepare('SELECT data_status FROM AssessmentRecord WHERE assessment_id = ?')
+        .get('AIC-UPLOAD-1')).toEqual({ data_status: 'NOT_RECEIVED' });
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('keeps another tenant data intact when a failed upload collides on its generated source ID', async () => {
+    const fixture = makeDatabase();
+    const { bucket, objects } = makeBucket();
+    const dataVersionId = 'DV-fixed-upload-version';
+    const sourceRowId = `OTHER-${dataVersionId}`;
+    const validationRecordId = `REC-${dataVersionId}-ROW-2`;
+    fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+      transaction_id, tenant_id, assessment_id, source_document_id, source_row_number,
+      supplier_name, currency, raw_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      sourceRowId, 'TNT-OTHER', 'AIC-OTHER', dataVersionId, 2, 'Other Supplier', 'INR', '{}'
+    );
+    fixture.db.prepare(`INSERT INTO ValidationPreCheckRecord (
+      record_id, tenant_id, po_number, vendor_name, raw_desc
+    ) VALUES (?, ?, ?, ?, ?)`).run(
+      validationRecordId, 'TNT-OTHER', 'PO-OTHER', 'Other Supplier', 'Other tenant data'
+    );
+    const uuidSpy = vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('fixed-upload-version');
+
+    try {
+      await expect(uploadAssessmentDataVersion({
+        db: fixture.d1,
+        environment: { OBJECTS: bucket },
+        assessmentId: 'AIC-UPLOAD-1',
+        body: await makeBody()
+      })).rejects.toThrow();
+
+      expect(fixture.db.prepare('SELECT tenant_id, assessment_id FROM ProcurementTransaction WHERE transaction_id = ?')
+        .get(sourceRowId)).toEqual({ tenant_id: 'TNT-OTHER', assessment_id: 'AIC-OTHER' });
+      expect(fixture.db.prepare('SELECT tenant_id, raw_desc FROM ValidationPreCheckRecord WHERE record_id = ?')
+        .get(validationRecordId)).toEqual({ tenant_id: 'TNT-OTHER', raw_desc: 'Other tenant data' });
+      expect(objects.size).toBe(0);
+    } finally {
+      uuidSpy.mockRestore();
       fixture.close();
     }
   });
@@ -172,13 +268,13 @@ describe('assessment data version D1 lifecycle', () => {
       fixture.db.prepare("UPDATE AssessmentDataVersion SET checksum = '' WHERE data_version_id = ?")
         .run(dataVersionId);
       fixture.db.prepare(`INSERT INTO ValidationPreCheckRecord (
-        record_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-        .run(`REC-${dataVersionId}-ROW-9`, 'PO-X', 'Supplier X', 'Excluded row', 'Excluded by user', 'Excluded', 1);
+        record_id, tenant_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(`REC-${dataVersionId}-ROW-9`, TEST_TENANT_ID, 'PO-X', 'Supplier X', 'Excluded row', 'Excluded by user', 'Excluded', 1);
       fixture.db.prepare(`INSERT INTO ValidationPreCheckRecord (
-        record_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved
-      ) VALUES (?, ?, ?, ?, '', '', 0)`)
-        .run(`REC-${dataVersionId}-ROW-10`, 'PO-Y', 'Supplier Y', 'Unclassified row');
+        record_id, tenant_id, po_number, vendor_name, raw_desc, issue_flag, action_status, resolved
+      ) VALUES (?, ?, ?, ?, ?, '', '', 0)`)
+        .run(`REC-${dataVersionId}-ROW-10`, TEST_TENANT_ID, 'PO-Y', 'Supplier Y', 'Unclassified row');
       const validation = await validateAssessmentDataVersion({
         db: fixture.d1, environment: {}, assessmentId: 'AIC-UPLOAD-1', body: { dataVersionId }
       });
@@ -281,7 +377,10 @@ describe('assessment data version D1 lifecycle', () => {
     try {
       const body = await makeBody();
       const noObjects = await uploadAssessmentDataVersion({
-        db: fixture.d1, environment: {}, assessmentId: 'AIC-UPLOAD-1', body
+        db: fixture.d1, environment: { REQUEST_TENANT_ID: TEST_TENANT_ID }, assessmentId: 'AIC-UPLOAD-1', body
+      });
+      const noTenant = await uploadAssessmentDataVersionRaw({
+        db: fixture.d1, environment: { OBJECTS: bucket }, assessmentId: 'AIC-UPLOAD-1', body
       });
       const noAssessment = await uploadAssessmentDataVersion({
         db: fixture.d1, environment: { OBJECTS: bucket }, assessmentId: 'UNKNOWN', body
@@ -293,14 +392,17 @@ describe('assessment data version D1 lifecycle', () => {
       const invalidAssessment = await validateAssessmentDataVersion({
         db: fixture.d1, environment: {}, assessmentId: 'UNKNOWN', body: {}
       });
+      const noTenantValidation = await validateAssessmentDataVersionRaw({
+        db: fixture.d1, environment: {}, assessmentId: 'AIC-UPLOAD-1', body: {}
+      });
       const invalidVersionId = await validateAssessmentDataVersion({
         db: fixture.d1, environment: {}, assessmentId: 'AIC-UPLOAD-1', body: { dataVersionId: '' }
       });
       const missingVersion = await validateAssessmentDataVersion({
         db: fixture.d1, environment: {}, assessmentId: 'AIC-UPLOAD-1', body: {}
       });
-      expect([noObjects, noAssessment, malformed, invalidAssessment, invalidVersionId, missingVersion]
-        .map((result) => result.status)).toEqual([503, 404, 400, 404, 400, 404]);
+      expect([noObjects, noTenant, noAssessment, malformed, invalidAssessment, noTenantValidation, invalidVersionId, missingVersion]
+        .map((result) => result.status)).toEqual([503, 403, 404, 400, 404, 403, 400, 404]);
     } finally {
       fixture.close();
     }
@@ -406,6 +508,55 @@ describe('assessment data version D1 lifecycle', () => {
       expect(batched.batch).toHaveBeenCalled();
       const snapshot = JSON.parse(fixture.db.prepare("SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = 'assessment'").get().payload_json as string);
       expect(snapshot.currentDataVersionId).toBe(dataOf(result).dataVersion.dataVersionId);
+    } finally {
+      fixture.close();
+    }
+  });
+});
+
+describe('assessment D1 snapshot reads', () => {
+  it('logs malformed stored JSON with request context and keeps the empty-object fallback', async () => {
+    const fixture = makeDatabase();
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
+      entry_type, assessment_id, entry_id, payload_json, source_checksum
+    ) VALUES (?, ?, ?, ?, ?)`).run('assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', '{private snapshot', 'checksum');
+    try {
+      await expect(readAssessmentSnapshot(fixture.d1, 'assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', {
+        requestId: 'req-snapshot-invalid', tenantId: TEST_TENANT_ID
+      })).resolves.toEqual({});
+      expect(warning).toHaveBeenCalledWith(
+        ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotFallback,
+        expect.objectContaining({
+          action: 'assessment.snapshot.read', assessmentId: 'AIC-UPLOAD-1', entryType: 'assessment',
+          entryId: 'AIC-UPLOAD-1', tenantId: TEST_TENANT_ID, requestId: 'req-snapshot-invalid',
+          fallback: 'empty-snapshot-object'
+        }),
+        expect.any(SyntaxError)
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain('private snapshot');
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('logs valid JSON with an invalid snapshot shape and keeps the empty-object fallback', async () => {
+    const fixture = makeDatabase();
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
+      entry_type, assessment_id, entry_id, payload_json, source_checksum
+    ) VALUES (?, ?, ?, ?, ?)`).run('assessment', 'AIC-UPLOAD-1', 'AIC-UPLOAD-1', '["private snapshot"]', 'checksum');
+    try {
+      await expect(readAssessmentSnapshot(fixture.d1, 'assessment', 'AIC-UPLOAD-1')).resolves.toEqual({});
+      expect(warning).toHaveBeenCalledWith(
+        ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotFallback,
+        expect.objectContaining({
+          action: 'assessment.snapshot.read', assessmentId: 'AIC-UPLOAD-1', entryType: 'assessment',
+          entryId: 'AIC-UPLOAD-1', fallback: 'empty-snapshot-object'
+        }),
+        expect.any(TypeError)
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain('private snapshot');
     } finally {
       fixture.close();
     }

@@ -1,18 +1,17 @@
 import { D1_TABLES } from '../constants/d1';
 import { COMMERCIAL_WORKFLOW } from '../constants/commercialWorkflow';
+import { D1_SINGLE_ROW_CHANGE_COUNT } from '../constants/db';
 import {
-  commercialOtpRequestSchema, commercialOtpVerifySchema, upgradeCodeLoginSchema,
-  upgradeRequestQuerySchema, upgradeRequestSchema
+  commercialOtpRequestSchema, commercialOtpVerifySchema, upgradeRequestQuerySchema, upgradeRequestSchema
 } from '../constants/commercialValidation';
-import { AUTH_TOKEN_EXPIRY_SECONDS } from '../constants/auth';
 import type { AuthRouteResult, CloudflareEnvironment } from '../types/cloudflare';
 import type { UpgradeRequestD1Row } from '../types/commercialWorkflow';
-import { createWorkerAuthToken } from '../workerAuth';
 import logger from '../utils/logger';
 import {
   authorizeCommercialAdmin, commercialResult, createOneTimeCode, createOtp, d1ChangedRows,
-  readCommercialBody, secureEquals, sendCommercialEmail, sha256Hex, verifyCommercialOtp
+  readCommercialBody, sendCommercialEmail, sha256Hex, verifyCommercialOtp
 } from './workerCommercialShared';
+import { handleUpgradeCodeLogin } from './workerCommercialUpgradeLogin';
 
 const publicUpgradeColumns = `id, customer_user_id, customer_name, customer_email, customer_phone, company_name,
   company_details, current_tier, requested_tier, requirements_note, status, code_generated_at,
@@ -122,7 +121,7 @@ const issueCustomerUpgradeCode = async (
     COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT, await sha256Hex(code), now, expiresAt, now,
     record.id, COMMERCIAL_WORKFLOW.upgradeStatus.PENDING
   ).run();
-  if (d1ChangedRows(updated) !== 1) return commercialResult({ success: false, message: 'The upgrade request changed while approval was being completed.' }, 409);
+  if (d1ChangedRows(updated) !== D1_SINGLE_ROW_CHANGE_COUNT) return commercialResult({ success: false, message: 'The upgrade request changed while approval was being completed.' }, 409);
   logger.info('Upgrade access code issued to customer', { requestId: record.id, actorId });
   return commercialResult({
     success: true,
@@ -163,65 +162,6 @@ const verifyUpgradeOtpAndSendCode = async (
   return issueCustomerUpgradeCode(environment, db, actor.id, verified);
 };
 
-const findValidUpgradeCode = async (
-  db: NonNullable<CloudflareEnvironment['DB']>, email: string, codeHash: string
-): Promise<UpgradeRequestD1Row | null> => {
-  const record = await db.prepare(`
-    SELECT * FROM ${D1_TABLES.upgradeRequests}
-    WHERE lower(customer_email) = lower(?) AND status = ?
-    ORDER BY created_at DESC LIMIT 1
-  `).bind(email, COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT).first<UpgradeRequestD1Row>();
-  if (!record?.generated_unique_code_hash || !secureEquals(record.generated_unique_code_hash, codeHash) ||
-      !record.code_expires_at || record.code_expires_at <= Date.now()) return null;
-  return record;
-};
-
-const redeemUpgradeCode = async (
-  db: NonNullable<CloudflareEnvironment['DB']>, record: UpgradeRequestD1Row, userId: string, codeHash: string
-): Promise<boolean> => {
-  const now = new Date().toISOString();
-  const updated = await db.prepare(`
-    UPDATE ${D1_TABLES.upgradeRequests} SET status = ?, code_redeemed_at = ?, updated_at = ?
-    WHERE id = ? AND generated_unique_code_hash = ? AND status = ? AND code_expires_at > ?
-  `).bind(
-    COMMERCIAL_WORKFLOW.upgradeStatus.COMPLETED, now, now, record.id, codeHash,
-    COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT, Date.now()
-  ).run();
-  if (d1ChangedRows(updated) !== 1) return false;
-  await db.prepare('UPDATE User SET subscription_tier = ?, updated_at = ? WHERE id = ?')
-    .bind(record.requested_tier, now, userId).run();
-  return true;
-};
-
-const loginWithUpgradeCode = async (
-  request: Request, environment: CloudflareEnvironment
-): Promise<AuthRouteResult> => {
-  if (!environment.DB || !environment.AUTH_SECRET) return commercialResult({ success: false, message: 'D1 and authentication configuration are required.' }, 503);
-  const parsed = upgradeCodeLoginSchema.safeParse(await readCommercialBody(request));
-  if (!parsed.success) return commercialResult({ success: false, message: 'Validation failed', errors: parsed.error.issues }, 400);
-  const codeHash = await sha256Hex(parsed.data.code);
-  const record = await findValidUpgradeCode(environment.DB, parsed.data.email, codeHash);
-  if (!record) return commercialResult({ success: false, message: 'The upgrade code is invalid or expired. Ask the commercial administrator to issue a new code.' }, 401);
-  const user = await environment.DB.prepare(
-    'SELECT id, name, email, role, status, subscription_tier FROM User WHERE lower(email) = lower(?)'
-  ).bind(parsed.data.email).first<Record<string, unknown>>();
-  if (!user?.id || user.status !== 'ACTIVE') {
-    return commercialResult({ success: false, message: 'Register an active account with this email before redeeming the upgrade code.' }, 404);
-  }
-  if (!await redeemUpgradeCode(environment.DB, record, String(user.id), codeHash)) {
-    return commercialResult({ success: false, message: 'The upgrade code was already redeemed or expired.' }, 409);
-  }
-  const upgradedUser = { ...user, subscription_tier: record.requested_tier };
-  logger.info('Customer redeemed subscription upgrade code', { requestId: record.id, customerId: user.id });
-  return commercialResult({
-    success: true,
-    request_id: record.id,
-    user: upgradedUser,
-    token: await createWorkerAuthToken(upgradedUser, environment.AUTH_SECRET),
-    expires_in_seconds: AUTH_TOKEN_EXPIRY_SECONDS
-  }, 200);
-};
-
 const createUpgradeRequest = async (
   request: Request, environment: CloudflareEnvironment
 ): Promise<AuthRouteResult> => {
@@ -257,7 +197,7 @@ export const handleUpgradeRoute = async (
     case 'POST /api/upgrade/request':
       return createUpgradeRequest(request, environment);
     case 'POST /api/upgrade/login-with-code':
-      return loginWithUpgradeCode(request, environment);
+      return handleUpgradeCodeLogin(request, environment);
     case 'GET /api/upgrade/requests':
       return listUpgradeRequests(request, environment, url);
     case 'POST /api/upgrade/generate-otp':

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * PCBI Master Admin API Client Utility
  */
@@ -34,7 +35,7 @@ export class PCBIAdminApiClient {
   }> {
     try {
       frontendLogger.info('Fetching PCBI Master versions list');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions`, { headers: this.getHeaders() });
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/versions`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch PCBI versions: HTTP ${res.status}`);
       }
@@ -50,7 +51,7 @@ export class PCBIAdminApiClient {
   public async getVersion(version: string): Promise<{ success: boolean; version: PCBIVersionRecord }> {
     try {
       frontendLogger.info('Fetching PCBI Master version details', { version });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions/${encodeURIComponent(version)}`, { headers: this.getHeaders() });
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/versions/${encodeURIComponent(version)}`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch version ${version}: HTTP ${res.status}`);
       }
@@ -72,7 +73,7 @@ export class PCBIAdminApiClient {
         recordsCount: payload.validationSummary?.totalRecords
       });
 
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/import`, {
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/import`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(payload)
@@ -98,7 +99,7 @@ export class PCBIAdminApiClient {
   ): Promise<{ success: boolean; activeVersion: string; metrics: PCBIVersionMetrics }> {
     try {
       frontendLogger.info('Publishing PCBI Master version to production', { version, publishedBy });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/publish/${encodeURIComponent(version)}`, {
+      const res = await apiFetch(`${this.baseUrl}/api/admin/pcbi/publish/${encodeURIComponent(version)}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({ published_by: publishedBy })

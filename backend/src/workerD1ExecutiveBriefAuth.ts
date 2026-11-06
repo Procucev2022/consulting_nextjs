@@ -9,11 +9,13 @@ import {
   EXECUTIVE_BRIEF_BEARER_PATTERN,
   EXECUTIVE_BRIEF_HEADER_NAMES,
   EXECUTIVE_BRIEF_HTTP_STATUS,
+  EXECUTIVE_BRIEF_REQUEST_ID_HEADER,
   EXECUTIVE_BRIEF_MESSAGES
 } from './constants/executiveBriefRouteConstants';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import type { ExecutiveBriefAuthOutcome } from './types/executiveBriefRoutes';
 import { EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from './constants/executiveOpportunityBriefConstants';
+import logger from './utils/logger';
 
 
 export const extractBearerToken = (request: Request): string | null => {
@@ -22,10 +24,22 @@ export const extractBearerToken = (request: Request): string | null => {
   return match?.[1] ?? null;
 };
 
-const verifySafely = async (token: string, secret: string): Promise<Record<string, unknown> | null> => {
+const verifySafely = async (
+  token: string,
+  secret: string,
+  request: Request
+): Promise<Record<string, unknown> | null> => {
   try {
     return await verifyToken(token, secret);
-  } catch {
+  } catch (error: unknown) {
+    logger.error('Executive brief token verification failed', {
+      action: 'executive-brief.auth.verify-token',
+      method: request.method,
+      path: new URL(request.url).pathname,
+      requestId: request.headers.get(EXECUTIVE_BRIEF_REQUEST_ID_HEADER) || undefined,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+      fallbackApplied: true
+    }, error);
     return null;
   }
 };
@@ -53,7 +67,7 @@ export const authorizeExecutiveBriefAdmin = async (
   if (token === null) {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED, message: EXECUTIVE_BRIEF_MESSAGES.authRequired };
   }
-  const payload = await verifySafely(token, secret);
+  const payload = await verifySafely(token, secret, request);
   if (payload === null || typeof payload.userId !== 'string') {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED, message: EXECUTIVE_BRIEF_MESSAGES.tokenInvalid };
   }
@@ -78,7 +92,15 @@ export const authorizeExecutiveBriefAdmin = async (
       };
     }
     return { ok: true, userId: authentication.user.id };
-  } catch {
+  } catch (error: unknown) {
+    logger.error('Executive brief administrator account lookup failed', {
+      action: 'executive-brief.auth.account-lookup',
+      method: request.method,
+      path: new URL(request.url).pathname,
+      requestId: request.headers.get(EXECUTIVE_BRIEF_REQUEST_ID_HEADER) || undefined,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      fallbackApplied: true
+    }, error);
     return {
       ok: false,
       status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,

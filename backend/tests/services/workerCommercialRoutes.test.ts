@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { COMMERCIAL_WORKFLOW } from '../../src/constants/commercialWorkflow';
+import { TENANT_DATA_CLASSIFICATION } from '../../src/constants/d1';
 import { handleSubscriptionRoute } from '../../src/services/workerCommercialSubscriptions';
 import { handleUpgradeRoute } from '../../src/services/workerCommercialUpgrade';
 import * as commercialShared from '../../src/services/workerCommercialShared';
+import logger from '../../src/utils/logger';
 import { verifyToken } from '../../src/workerAuth';
 import type { AuthRouteResult, CloudflareD1Database, CloudflareEnvironment } from '../../src/types/cloudflare';
 import {
@@ -36,10 +38,24 @@ const provisionPayload = {
 
 beforeEach(async () => {
   fixture = createWorkerDatabase();
+  fixture.d1.batch = async (statements) => {
+    fixture.db.exec('BEGIN IMMEDIATE');
+    try {
+      const results: unknown[] = [];
+      for (const statement of statements) results.push(await statement.run());
+      fixture.db.exec('COMMIT');
+      return results;
+    } catch (error) {
+      fixture.db.exec('ROLLBACK');
+      throw error;
+    }
+  };
+  fixture.db.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)')
+    .run('tenant-rao', 'Rao Textiles', 'ACTIVE');
   insertRows(fixture.db, `INSERT INTO User (id, name, mobile_number, email, company_name, company_address,
-    password_hash, role, status, subscription_tier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-    ['admin-1', 'Administrator', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD'],
-    ['buyer-1', 'Asha Rao', '+919876543210', 'buyer@example.test', 'Rao Textiles', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE']
+    password_hash, role, status, subscription_tier, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    ['admin-1', 'Administrator', '+910000000001', 'admin@example.test', 'Platform', 'Bengaluru', 'hash', 'ADMIN', 'ACTIVE', 'GOLD', null],
+    ['buyer-1', 'Asha Rao', '+919876543210', 'buyer@example.test', 'Rao Textiles', 'Pune', 'hash', 'USER', 'ACTIVE', 'BRONZE', 'tenant-rao']
   ]);
   adminToken = await issueEvidenceToken({ userId: 'admin-1', role: 'ADMIN' }, WORKER_CORE_SECRET);
 });
@@ -84,9 +100,18 @@ const postUpgrade = async (overrides: Record<string, unknown> = {}): Promise<Aut
 const issueUpgradeOtp = async (requestId: string): Promise<AuthRouteResult> =>
   await call(handleUpgradeRoute, '/api/upgrade/admin/request-otp', 'POST', { request_id: requestId }, adminToken) as Promise<AuthRouteResult>;
 
+const issueApprovedUpgradeCode = async (requestId: string): Promise<string> => {
+  const otp = await issueUpgradeOtp(requestId);
+  const verified = await call(handleUpgradeRoute, '/api/upgrade/admin/verify-otp-and-generate-code', 'POST', {
+    request_id: requestId, otp: otp.body.otp_hint
+  }, adminToken) as AuthRouteResult;
+  return String(verified.body.development_code);
+};
+
 const createCommercialD1Adapter = (options: {
   returnUndefinedForAll?: boolean;
   forceZeroChangesForSql?: (sql: string) => boolean;
+  forcedBatchResults?: unknown[];
 } = {}): CloudflareD1Database => ({
   prepare(sql: string) {
     const statement = fixture.d1.prepare(sql);
@@ -102,7 +127,8 @@ const createCommercialD1Adapter = (options: {
         };
       }
     } as unknown as ReturnType<CloudflareD1Database['prepare']>;
-  }
+  },
+  batch: async (statements) => options.forcedBatchResults ?? Promise.all(statements.map((statement) => statement.run()))
 });
 
 describe('D1 commercial upgrade endpoints', () => {
@@ -152,8 +178,9 @@ describe('D1 commercial upgrade endpoints', () => {
     expect(otpResponse.body.session_id).toBeTruthy();
     expect(wrongOtp?.status).toBe(401);
     expect(codeResponse).toMatchObject({ status: 200, body: { status: 'OTP_VERIFIED_CODE_SENT' } });
-    expect(claims).toMatchObject({ userId: 'buyer-1', tier: 'SILVER' });
+    expect(claims).toMatchObject({ userId: 'buyer-1', tier: 'SILVER', tenantId: 'tenant-rao' });
     expect(login.status).toBe(200);
+    expect(login.body.user).toMatchObject({ id: 'buyer-1', tenant_id: 'tenant-rao', subscription_tier: 'SILVER' });
     expect(replay?.status).toBe(401);
     expect(saved?.subscription_tier).toBe('SILVER');
   });
@@ -236,6 +263,99 @@ describe('D1 commercial upgrade endpoints', () => {
     const invalidLogin = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', { email: 'bad', code: 'short' });
     expect(noDatabase?.status).toBe(503);
     expect(invalidLogin?.status).toBe(400);
+  });
+
+  it('keeps upgrade codes unused when the atomic user update fails', async () => {
+    const request = await postUpgrade();
+    const requestId = String(request.body.request_id);
+    const code = await issueApprovedUpgradeCode(requestId);
+    fixture.db.exec(`CREATE TRIGGER reject_upgrade_tier BEFORE UPDATE OF subscription_tier ON User
+      WHEN NEW.id = 'buyer-1' AND NEW.subscription_tier = 'SILVER'
+      BEGIN SELECT RAISE(ABORT, 'simulated customer update failure'); END;`);
+    const errorLog = vi.spyOn(logger, 'error');
+
+    const result = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', {
+      email: upgradePayload.customer_email, code
+    });
+    const savedRequest = await fixture.d1.prepare('SELECT status FROM UpgradeRequest WHERE id = ?')
+      .bind(requestId).first<{ status: string }>();
+    const savedUser = await fixture.d1.prepare('SELECT subscription_tier FROM User WHERE id = ?')
+      .bind('buyer-1').first<{ subscription_tier: string }>();
+
+    expect(result).toMatchObject({
+      status: 503, body: { message: COMMERCIAL_WORKFLOW.upgradeMessages.atomicBatchUnavailable }
+    });
+    expect(savedRequest?.status).toBe(COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT);
+    expect(savedUser?.subscription_tier).toBe('BRONZE');
+    expect(errorLog).toHaveBeenCalledWith(
+      'Atomic upgrade code redemption failed',
+      expect.objectContaining({ upgradeRequestId: requestId, userId: 'buyer-1', tenantId: 'tenant-rao' }),
+      expect.any(Error)
+    );
+  });
+
+  it('refuses code redemption for administrators and customers without an active tenant', async () => {
+    const adminRequest = await postUpgrade({ customer_email: 'admin@example.test' });
+    const adminCode = await issueApprovedUpgradeCode(String(adminRequest.body.request_id));
+    const administrator = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', {
+      email: 'admin@example.test', code: adminCode
+    });
+    expect(administrator).toMatchObject({
+      status: 403, body: { message: COMMERCIAL_WORKFLOW.upgradeMessages.activeTenantRequired }
+    });
+
+    const buyerRequest = await postUpgrade();
+    const buyerCode = await issueApprovedUpgradeCode(String(buyerRequest.body.request_id));
+    fixture.db.prepare("UPDATE TenantMaster SET status = 'SUSPENDED' WHERE tenant_id = 'tenant-rao'").run();
+    const suspendedTenant = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', {
+      email: upgradePayload.customer_email, code: buyerCode
+    });
+    const savedRequest = await fixture.d1.prepare('SELECT status FROM UpgradeRequest WHERE id = ?')
+      .bind(buyerRequest.body.request_id).first<{ status: string }>();
+
+    expect(suspendedTenant).toMatchObject({
+      status: 403, body: { message: COMMERCIAL_WORKFLOW.upgradeMessages.activeTenantRequired }
+    });
+    expect(savedRequest?.status).toBe(COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT);
+  });
+
+  it('fails closed without D1 batch support and preserves the single-use code', async () => {
+    const request = await postUpgrade();
+    const requestId = String(request.body.request_id);
+    const code = await issueApprovedUpgradeCode(requestId);
+    fixture.d1.batch = undefined;
+
+    const result = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', {
+      email: upgradePayload.customer_email, code
+    });
+
+    expect(result).toMatchObject({
+      status: 503, body: { message: COMMERCIAL_WORKFLOW.upgradeMessages.atomicBatchUnavailable }
+    });
+    await expect(fixture.d1.prepare('SELECT status FROM UpgradeRequest WHERE id = ?')
+      .bind(requestId).first()).resolves.toEqual({ status: COMMERCIAL_WORKFLOW.upgradeStatus.CODE_SENT });
+  });
+
+  it('logs inconsistent batch row counts and rejects the upgrade result', async () => {
+    const request = await postUpgrade();
+    const requestId = String(request.body.request_id);
+    const code = await issueApprovedUpgradeCode(requestId);
+    const errorLog = vi.spyOn(logger, 'error');
+
+    const result = await call(handleUpgradeRoute, '/api/upgrade/login-with-code', 'POST', {
+      email: upgradePayload.customer_email, code
+    }, undefined, {
+      DB: createCommercialD1Adapter({ forcedBatchResults: [{ meta: { changes: 1 } }, { meta: { changes: 0 } }] })
+    });
+
+    expect(result).toMatchObject({
+      status: 500, body: { message: COMMERCIAL_WORKFLOW.upgradeMessages.atomicInvariantFailed }
+    });
+    expect(errorLog).toHaveBeenCalledWith(
+      'Atomic upgrade redemption returned an inconsistent row-change result',
+      expect.objectContaining({ upgradeRequestId: requestId, userId: 'buyer-1', requestChanges: 1, userChanges: 0 }),
+      expect.any(Error)
+    );
   });
 
   it('returns empty lists for an absent D1 result and rejects detached OTP sessions', async () => {
@@ -348,6 +468,15 @@ describe('D1 admin subscription endpoints', () => {
     expect(missingCustomerId?.status).toBe(400);
     expect(wrongCode?.status).toBe(401);
     expect(provisioned).toMatchObject({ status: 201, body: { success: true, subscription: { tier: 'SILVER', payment_confirmed: true } } });
+    expect(await fixture.d1.prepare('SELECT tenant_id, status, subscription_tier FROM User WHERE id = ?')
+      .bind('buyer-1').first()).toEqual({ tenant_id: 'tenant-rao', status: 'ACTIVE', subscription_tier: 'SILVER' });
+    expect(await fixture.d1.prepare('SELECT classification, source_label FROM TenantDataProvenance WHERE tenant_id = ?')
+      .bind('tenant-rao').first()).toEqual({ classification: TENANT_DATA_CLASSIFICATION.customer, source_label: 'SUBSCRIPTION_PROVISION' });
+    fixture.db.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)')
+      .run('tenant-other', 'Other Organization', 'ACTIVE');
+    expect(() => fixture.db.prepare('UPDATE SubscriptionRecord SET tenant_id = ? WHERE id = ?')
+      .run('tenant-other', String(subscription.id)))
+      .toThrow(COMMERCIAL_WORKFLOW.subscriptionCustomerInvariantMarker);
     expect((list?.body.subscriptions as unknown[])).toHaveLength(1);
     expect((audit?.body.audit_events as unknown[])).toHaveLength(1);
     expect((auditOne?.body.audit_events as unknown[])).toHaveLength(1);
@@ -380,6 +509,115 @@ describe('D1 admin subscription endpoints', () => {
     expect(noDatabase?.status).toBe(503);
     expect(notRoute).toBeNull();
     expect(wrongMethod?.status).toBe(404);
+  });
+
+  it('rejects subscription provisioning that would cross tenant ownership or reactivate a suspended customer', async () => {
+    await fixture.d1.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+      .bind('tenant-existing', 'Existing Organization').run();
+    await fixture.d1.prepare('UPDATE User SET tenant_id = ? WHERE id = ?').bind('tenant-existing', 'buyer-1').run();
+    const tenantConflict = await issueProvisionOtp();
+    const conflict = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: tenantConflict.body.session_id, otp_code: tenantConflict.body.otp_hint
+    }, adminToken);
+    await fixture.d1.prepare('UPDATE User SET tenant_id = NULL, status = ? WHERE id = ?').bind('SUSPENDED', 'buyer-1').run();
+    const inactiveOtp = await issueProvisionOtp();
+    const inactive = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: inactiveOtp.body.session_id, otp_code: inactiveOtp.body.otp_hint
+    }, adminToken);
+
+    expect(conflict?.status).toBe(409);
+    expect(inactive?.status).toBe(409);
+    expect(await fixture.d1.prepare('SELECT COUNT(*) AS count FROM SubscriptionRecord').first()).toEqual({ count: 0 });
+  });
+
+  it('allows the existing tenant assignment and rejects an unknown provisioning OTP session', async () => {
+    await fixture.d1.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)')
+      .bind('tenant-rao', 'Rao Textiles', 'ACTIVE').run();
+    await fixture.d1.prepare('UPDATE User SET tenant_id = ? WHERE id = ?').bind('tenant-rao', 'buyer-1').run();
+
+    const missingSession = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: 'otp-not-found', otp_code: '123456'
+    }, adminToken);
+    const otp = await issueProvisionOtp();
+    const provisioned = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: otp.body.session_id, otp_code: otp.body.otp_hint
+    }, adminToken);
+
+    expect(missingSession?.status).toBe(401);
+    expect(provisioned?.status).toBe(201);
+  });
+
+  it('rolls back provisioning if customer tenant ownership changes before the atomic batch', async () => {
+    fixture.db.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)')
+      .run('tenant-other', 'Other Organization', 'ACTIVE');
+    const otp = await issueProvisionOtp();
+    const atomicBatch = fixture.d1.batch;
+    fixture.d1.batch = async (statements) => {
+      fixture.db.prepare('UPDATE User SET tenant_id = ? WHERE id = ?').run('tenant-other', 'buyer-1');
+      if (!atomicBatch) throw new Error('Atomic SQLite D1 fixture batch is unavailable');
+      return atomicBatch(statements);
+    };
+    const warning = vi.spyOn(logger, 'warn');
+    const result = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: otp.body.session_id, otp_code: otp.body.otp_hint
+    }, adminToken);
+
+    expect(result?.status).toBe(409);
+    expect(result?.body.message).toBe(COMMERCIAL_WORKFLOW.provisionMessages.concurrentChange);
+    expect(await fixture.d1.prepare('SELECT tenant_id FROM User WHERE id = ?').bind('buyer-1').first())
+      .toEqual({ tenant_id: 'tenant-other' });
+    expect(await fixture.d1.prepare('SELECT COUNT(*) AS count FROM SubscriptionRecord').first()).toEqual({ count: 0 });
+    expect(await fixture.d1.prepare('SELECT COUNT(*) AS count FROM TenantDataProvenance WHERE tenant_id = ?')
+      .bind('tenant-rao').first()).toEqual({ count: 0 });
+    expect(warning).toHaveBeenCalledWith(
+      'Subscription provisioning rolled back after a concurrent customer or tenant change',
+      expect.objectContaining({ customerId: 'buyer-1', tenantId: 'tenant-rao' }),
+      expect.any(Error)
+    );
+  });
+
+  it('requires atomic D1 batching for paid subscription provisioning', async () => {
+    const otp = await issueProvisionOtp();
+    const warning = vi.spyOn(logger, 'warn');
+    const result = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: otp.body.session_id, otp_code: otp.body.otp_hint
+    }, adminToken, { DB: { ...fixture.d1, batch: undefined } });
+
+    expect(result).toMatchObject({ status: 503, body: { message: COMMERCIAL_WORKFLOW.provisionMessages.atomicBatchUnavailable } });
+    expect(warning).toHaveBeenCalledWith(
+      'Subscription provisioning rejected because atomic D1 batching is unavailable', expect.objectContaining({ actorId: 'admin-1' })
+    );
+    expect(await fixture.d1.prepare('SELECT COUNT(*) AS count FROM SubscriptionRecord').first()).toEqual({ count: 0 });
+  });
+
+  it('propagates unexpected database batch failures for centralized error logging', async () => {
+    const otp = await issueProvisionOtp();
+    fixture.d1.batch = async () => { throw new Error('unexpected D1 batch failure'); };
+
+    await expect(call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: otp.body.session_id, otp_code: otp.body.otp_hint
+    }, adminToken)).rejects.toThrow('unexpected D1 batch failure');
+  });
+
+  it('rejects paid provisioning for administrators and demo-only tenants', async () => {
+    await fixture.d1.prepare('INSERT INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+      .bind('tenant-demo', 'Demo Organization').run();
+    await fixture.d1.prepare('INSERT INTO TenantDataProvenance (tenant_id, classification, source_label) VALUES (?, ?, ?)')
+      .bind('tenant-demo', TENANT_DATA_CLASSIFICATION.demo, 'TEST_DEMO').run();
+    await fixture.d1.prepare('UPDATE User SET role = ? WHERE id = ?').bind('ADMIN', 'buyer-1').run();
+    const adminTarget = await issueProvisionOtp();
+    const adminResult = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, otp_session_id: adminTarget.body.session_id, otp_code: adminTarget.body.otp_hint
+    }, adminToken);
+    await fixture.d1.prepare('UPDATE User SET role = ? WHERE id = ?').bind('USER', 'buyer-1').run();
+    const demoOtp = await issueProvisionOtp();
+    const demoResult = await call(handleSubscriptionRoute, '/api/subscription/admin/provision', 'POST', {
+      ...provisionPayload, tenant_id: 'tenant-demo', otp_session_id: demoOtp.body.session_id, otp_code: demoOtp.body.otp_hint
+    }, adminToken);
+
+    expect(adminResult?.status).toBe(409);
+    expect(demoResult?.status).toBe(409);
+    expect(await fixture.d1.prepare('SELECT COUNT(*) AS count FROM SubscriptionRecord').first()).toEqual({ count: 0 });
   });
 
   it('fails closed if production email credentials are unavailable', async () => {

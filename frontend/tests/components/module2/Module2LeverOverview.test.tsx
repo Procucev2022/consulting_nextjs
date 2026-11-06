@@ -23,18 +23,18 @@ describe('Module2LeverOverview Component', () => {
     // Verify all 10 levers are listed
     for (const lever of TEN_LEVERS_OVERVIEW_CONFIG) {
       expect(screen.getByText(lever.code)).toBeInTheDocument();
-      expect(screen.getByText(lever.name)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2LeversOverview.levers[lever.id - 1].name)).toBeInTheDocument();
     }
 
     // Levers 1-6: Implemented & Audited
     const implementedAuditedBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusImplemented);
     expect(implementedAuditedBadges).toHaveLength(6);
-    expect(screen.getByText('₹17.12 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2LeversOverview.formatOpportunity(17.1155))).toBeInTheDocument();
 
     // Specific Phase / Sourcing Badges
-    expect(screen.getByText('IMPLEMENTED (PHASE 1)')).toBeInTheDocument();
-    expect(screen.getByText('IMPLEMENTED (CONTROL & AUDIT)')).toBeInTheDocument();
-    const vendorStatusLabel = TEN_LEVERS_OVERVIEW_CONFIG.find((lever) => lever.id === 3)?.statusLabel ?? '';
+    expect(screen.getByText(UI_STRINGS.module2LeversOverview.levers[7].statusLabel)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2LeversOverview.levers[8].statusLabel)).toBeInTheDocument();
+    const vendorStatusLabel = UI_STRINGS.module2LeversOverview.levers[2].statusLabel;
     expect(screen.getAllByText(vendorStatusLabel).length).toBeGreaterThan(0);
 
     const openBtns = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnOpenAnalysis);
@@ -94,20 +94,21 @@ describe('Module2LeverOverview Component', () => {
     );
 
     // By default, detailed methodology is collapsed
-    expect(screen.queryByText(/Annual lowest comparable historical unit price methodology/)).not.toBeInTheDocument();
+    const methodology = UI_STRINGS.module2LeversOverview.levers[0].methodologySummary;
+    expect(screen.queryByText(methodology)).not.toBeInTheDocument();
 
     // Click toggle on Lever 1
     const toggles = screen.getAllByText(UI_STRINGS.module2LeversOverview.collapsibleToggle);
     fireEvent.click(toggles[0]);
 
     // Now methodology and required fields are visible
-    expect(screen.getByText(/Annual lowest comparable historical unit price methodology/)).toBeInTheDocument();
+    expect(screen.getByText(methodology)).toBeInTheDocument();
     expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.requiredFieldsTitle).length).toBeGreaterThan(0);
     expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.preconditionsTitle).length).toBeGreaterThan(0);
 
     // Click again to collapse
     fireEvent.click(toggles[0]);
-    expect(screen.queryByText(/Annual lowest comparable historical unit price methodology/)).not.toBeInTheDocument();
+    expect(screen.queryByText(methodology)).not.toBeInTheDocument();
   });
 
   it('does not invent a direct-price opportunity when the D1-backed value is absent', () => {

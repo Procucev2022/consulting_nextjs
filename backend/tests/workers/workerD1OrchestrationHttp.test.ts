@@ -96,9 +96,16 @@ describe('readJsonBody', () => {
     expect(await readJsonBody(jsonRequest('   \n'))).toEqual({});
   });
 
-  it('returns parsed JSON values', async () => {
+  it('returns JSON objects and rejects non-object values', async () => {
     expect(await readJsonBody(jsonRequest('{"reportVersionId":"RPT-1"}'))).toEqual({ reportVersionId: 'RPT-1' });
-    expect(await readJsonBody(jsonRequest('null'))).toBeNull();
+    await expect(readJsonBody(jsonRequest('null'))).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('rejects oversized orchestration bodies with a 413 validation error', async () => {
+    await expect(readJsonBody(jsonRequest('{"x":1}'), 3)).rejects.toMatchObject({
+      statusCode: 413,
+      message: expect.stringContaining('3-byte limit')
+    });
   });
 
   it('rejects malformed JSON with a 400 validation error', async () => {

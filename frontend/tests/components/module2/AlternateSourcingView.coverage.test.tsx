@@ -91,7 +91,9 @@ describe('AlternateSourcingView coverage', () => {
     expect(requestedUrl).not.toContain('preferredState=');
     expect(requestedUrl).not.toContain('preferredCity=');
     expect(requestedUrl).not.toContain('matchType=');
-    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), { headers: {} });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(new Headers(init?.headers).has('Authorization')).toBe(false);
+    expect(new Headers(init?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
     expect(screen.getByTestId('opportunity-card-OPP-ALT-STL-002')).toBeInTheDocument();
   });
 
@@ -100,9 +102,9 @@ describe('AlternateSourcingView coverage', () => {
     const fetchMock = stubFetch();
     await renderLoadedView();
 
-    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), {
-      headers: { Authorization: 'Bearer steel-session-token' }
-    });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer steel-session-token');
+    expect(new Headers(init?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it('refetches with the chosen geographic preference and match type, then clears the match type', async () => {

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import type { D1CurrencyConversionResponse, D1CurrencyRate } from '../types';
 import { d1CurrencyConversionResponseSchema, d1CurrencyRatesResponseSchema } from '../constants/validation';
 import { UI_STRINGS } from '../constants/uiStrings';
@@ -22,7 +23,7 @@ const ensureOkResponse = (response: Response, payload: unknown): void => {
 export const currencyApiClient = {
   async getCurrencyRates(): Promise<Record<string, D1CurrencyRate>> {
     frontendLogger.debug('Fetching D1 currency reference catalog');
-    const response = await fetch(`${API_BASE}/api/currency`);
+    const response = await apiFetch(`${API_BASE}/api/currency`);
     const payload = await readCurrencyPayload(response);
     ensureOkResponse(response, payload);
     const parsed = d1CurrencyRatesResponseSchema.safeParse(payload);
@@ -43,7 +44,7 @@ export const currencyApiClient = {
       amount: String(amount),
       ...(dateOrYear ? { date: String(dateOrYear) } : {})
     });
-    const response = await fetch(`${API_BASE}/api/currency?${query.toString()}`);
+    const response = await apiFetch(`${API_BASE}/api/currency?${query.toString()}`);
     const payload = await readCurrencyPayload(response);
     ensureOkResponse(response, payload);
     const parsed = d1CurrencyConversionResponseSchema.safeParse(payload);

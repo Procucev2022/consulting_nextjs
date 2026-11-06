@@ -16,6 +16,8 @@ describe('Frontend GraphQL Constants', () => {
     expect(DASHBOARD_OVERVIEW_QUERY).toContain('categories');
     expect(DASHBOARD_OVERVIEW_QUERY).toContain('opportunities');
     expect(DASHBOARD_OVERVIEW_QUERY).toContain('funnelStages');
+    expect(DASHBOARD_OVERVIEW_QUERY).toContain('items');
+    expect(DASHBOARD_OVERVIEW_QUERY).toContain('pageInfo');
 
     expect(GET_TENANT_QUERY).toContain('tenant');
     expect(UPDATE_TENANT_MUTATION).toContain('updateTenant');

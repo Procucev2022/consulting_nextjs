@@ -66,6 +66,7 @@ export type FoundOrchestrationRoute = Extract<OrchestrationRouteMatch, { kind: '
 export interface OrchestrationActor {
   userId: string;
   userName: string;
+  tenantId: string | null;
   role: OrchestrationActorRole;
 }
 
@@ -108,6 +109,7 @@ export type OrchestrationHandler = (context: OrchestrationRequestContext) => Pro
 
 export interface AssessmentJobRow {
   assessment_id: string;
+  tenant_id: string;
   customer_id: string;
   customer_name: string;
   customer_contact_email?: string | null;
@@ -251,8 +253,10 @@ export interface AuditRow {
 export interface UserRow {
   id: string;
   name: string;
+  email: string;
   role: string;
   status: string;
+  tenant_id: string | null;
 }
 
 export interface CountRow {

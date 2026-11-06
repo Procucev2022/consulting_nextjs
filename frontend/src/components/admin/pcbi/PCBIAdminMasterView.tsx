@@ -28,6 +28,7 @@ import { PCBIVersionsTab } from './PCBIVersionsTab';
 import { PCBIPublishModal } from './PCBIPublishModal';
 import { PCBIBreadcrumb } from './PCBIBreadcrumb';
 import { PCBIModuleWarningBanner } from './PCBIModuleWarningBanner';
+import { PCBIHistoricalObservationsPanel } from './PCBIHistoricalObservationsPanel';
 import type {
   PCBIWorksheetDetection,
   PCBIColumnMapping,
@@ -293,11 +294,14 @@ export const PCBIAdminMasterView: React.FC = () => {
 
       {/* Sub-Tab Views */}
       {activeTab === 'DASHBOARD' && (
-        <PCBIDashboardTab
-          activeVersion={activeVersion}
-          onNavigateToUpload={() => setActiveTab('UPLOAD')}
-          onNavigateToVersions={() => setActiveTab('VERSIONS')}
-        />
+        <>
+          <PCBIDashboardTab
+            activeVersion={activeVersion}
+            onNavigateToUpload={() => setActiveTab('UPLOAD')}
+            onNavigateToVersions={() => setActiveTab('VERSIONS')}
+          />
+          <PCBIHistoricalObservationsPanel />
+        </>
       )}
 
       {activeTab === 'UPLOAD' && (

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeminiService, geminiService } from '../../src/services/geminiService';
-import { EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../../src/constants/ai';
+import {
+  AI_LOG_ACTIONS,
+  AI_LOG_MESSAGES,
+  EXTRACTION_STATUS,
+  EXTRACTION_SYSTEM_PROMPT
+} from '../../src/constants/ai';
 import type { CloudflareEnvironment } from '../../src/types/cloudflare';
 import type { GeminiConfig } from '../../src/types/ai';
 import logger from '../../src/utils/logger';
@@ -451,7 +456,11 @@ describe('GeminiService configured behaviour', () => {
     it('should return NOT_CONFIGURED with a warning and no model call when no key exists', async () => {
       const service = configuredService({ GEMINI_API_KEY: undefined, GEMINI_BACKUP_KEYS: undefined });
 
-      const result = await service.generateJson({ prompt: 'Summarize', label: 'empty-config' });
+      const result = await service.generateJson({
+        prompt: 'Summarize',
+        label: 'empty-config',
+        requestId: 'missing-key-report'
+      });
 
       expect(result).toEqual({
         status: EXTRACTION_STATUS.NOT_CONFIGURED,
@@ -460,9 +469,15 @@ describe('GeminiService configured behaviour', () => {
         error: 'GEMINI_API_KEY not set'
       });
       expect(logger.warn).toHaveBeenCalledWith(
-        'Gemini empty-config skipped: GEMINI_API_KEY is not set',
-        { label: 'empty-config' },
-        expect.any(Error)
+        AI_LOG_MESSAGES.jsonGenerationNotConfigured,
+        expect.objectContaining({
+          action: AI_LOG_ACTIONS.jsonGenerationNotConfigured,
+          provider: 'gemini',
+          label: 'empty-config',
+          requestId: 'missing-key-report',
+          status: EXTRACTION_STATUS.NOT_CONFIGURED
+        }),
+        expect.objectContaining({ name: 'Error', message: 'Gemini key missing', stack: expect.any(String) })
       );
       expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -484,7 +499,11 @@ describe('GeminiService configured behaviour', () => {
         .mockResolvedValueOnce(geminiErrorResponse(500, 'Busy'))
         .mockResolvedValueOnce(geminiOkResponse('{"status":"done"}'));
 
-      const result = await configuredService().generateJson({ prompt: 'Summarize', label: 'report' });
+      const result = await configuredService().generateJson({
+        prompt: 'Summarize',
+        label: 'report',
+        requestId: 'report-request-1'
+      });
 
       expect(result).toEqual({
         status: EXTRACTION_STATUS.SUCCESS,
@@ -492,12 +511,28 @@ describe('GeminiService configured behaviour', () => {
         model: 'model-primary',
         error: null
       });
-      expect(logger.warn).toHaveBeenCalledWith('Gemini report attempt failed on model-primary', {
-        error: 'Gemini model-primary responded 500: Busy'
-      });
-      expect(logger.info).toHaveBeenCalledWith('Gemini model-primary completed report successfully', {
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.jsonGenerationAttemptFailed, expect.objectContaining({
+        action: AI_LOG_ACTIONS.jsonGenerationAttempt,
+        provider: 'gemini',
         model: 'model-primary',
-        label: 'report'
+        label: 'report',
+        requestId: 'report-request-1',
+        statusCode: 500,
+        durationMs: expect.any(Number),
+        fallbackAttemptConfigured: true,
+        error: 'Gemini model-primary responded 500: Busy'
+      }), expect.objectContaining({
+        name: 'Error',
+        message: 'Gemini model-primary responded 500: Busy',
+        stack: expect.any(String)
+      }));
+      expect(logger.info).toHaveBeenCalledWith(AI_LOG_MESSAGES.jsonGenerationSucceeded, {
+        action: AI_LOG_ACTIONS.jsonGenerationSucceeded,
+        provider: 'gemini',
+        model: 'model-primary',
+        label: 'report',
+        requestId: 'report-request-1',
+        durationMs: expect.any(Number)
       });
     });
 
@@ -633,13 +668,18 @@ describe('GeminiService configured behaviour', () => {
     it('should return NOT_CONFIGURED with a warning and no model call when no key exists', async () => {
       const service = configuredService({ GEMINI_API_KEY: undefined, GEMINI_BACKUP_KEYS: undefined });
 
-      const result = await service.extractLineItems({ documentText: 'Text' });
+      const result = await service.extractLineItems({ documentText: 'Text', requestId: 'missing-key-extract' });
 
       expect(result).toMatchObject({ status: EXTRACTION_STATUS.NOT_CONFIGURED, error: 'GEMINI_API_KEY not configured' });
       expect(logger.warn).toHaveBeenCalledWith(
-        'Gemini extraction skipped: GEMINI_API_KEY is not set',
-        {},
-        expect.any(Error)
+        AI_LOG_MESSAGES.extractionNotConfigured,
+        expect.objectContaining({
+          action: AI_LOG_ACTIONS.extractionNotConfigured,
+          provider: 'gemini',
+          requestId: 'missing-key-extract',
+          status: EXTRACTION_STATUS.NOT_CONFIGURED
+        }),
+        expect.objectContaining({ name: 'Error', message: 'Gemini API key missing', stack: expect.any(String) })
       );
       expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -658,15 +698,63 @@ describe('GeminiService configured behaviour', () => {
         .mockResolvedValueOnce(geminiErrorResponse(500, 'Server busy'))
         .mockResolvedValueOnce(geminiOkResponse('{"items":[{"itemDescription":"Gasket","totalAmount":7}]}'));
 
-      const result = await configuredService().extractLineItems({ documentText: 'Gasket 7' });
+      const result = await configuredService().extractLineItems({
+        documentText: 'Gasket 7',
+        requestId: 'extract-request-1'
+      });
 
       expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
       expect(result.model).toBe('model-primary');
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(fetchMock.mock.calls[1][1]?.headers).toMatchObject({ 'x-goog-api-key': 'backup-key-1' });
-      expect(logger.warn).toHaveBeenCalledWith('Gemini extraction attempt failed on model-primary', {
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.extractionAttemptFailed, expect.objectContaining({
+        action: AI_LOG_ACTIONS.extractionAttempt,
+        provider: 'gemini',
+        model: 'model-primary',
+        requestId: 'extract-request-1',
+        statusCode: 500,
+        durationMs: expect.any(Number),
+        fallbackAttemptConfigured: true,
         error: 'Gemini model-primary responded 500: Server busy'
+      }), expect.objectContaining({
+        name: 'Error',
+        message: 'Gemini model-primary responded 500: Server busy',
+        stack: expect.any(String)
+      }));
+    });
+
+    it('logs non-Error provider failures and continues through the fallback chain', async () => {
+      fetchMock.mockRejectedValueOnce('network unavailable')
+        .mockResolvedValueOnce(geminiOkResponse('{"items":[{"itemDescription":"Gasket","totalAmount":7}]}'));
+
+      const result = await configuredService().extractLineItems({ documentText: 'Gasket 7' });
+
+      expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.extractionAttemptFailed, expect.objectContaining({
+        model: 'model-primary',
+        error: 'network unavailable',
+        fallbackAttemptConfigured: true
+      }), 'network unavailable');
+    });
+
+    it('logs when a provider failure has no backup key or model available', async () => {
+      fetchMock.mockResolvedValueOnce(geminiErrorResponse(500, 'Unavailable'));
+      const service = configuredService();
+      overrideConfig(service, {
+        PRIMARY_MODEL: 'model-only',
+        FALLBACK_MODELS: [],
+        BACKUP_KEYS: []
       });
+
+      const result = await service.extractLineItems({ documentText: 'Gasket 7' });
+
+      expect(result.status).toBe(EXTRACTION_STATUS.AI_FAILED);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.extractionAttemptFailed, expect.objectContaining({
+        model: 'model-only',
+        statusCode: 500,
+        fallbackAttemptConfigured: false
+      }), expect.any(Error));
     });
 
     it('should move to the next model after a 404 and report that model', async () => {
@@ -679,6 +767,24 @@ describe('GeminiService configured behaviour', () => {
       expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
       expect(result.model).toBe('model-fallback-1');
       expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(logger.warn).toHaveBeenCalledWith(AI_LOG_MESSAGES.extractionAttemptFailed, expect.objectContaining({
+        statusCode: 404,
+        fallbackAttemptConfigured: true
+      }), expect.objectContaining({ message: 'Gemini model-primary responded 404: Gone' }));
+    });
+
+    it('logs when a missing provider model has no fallback model left', async () => {
+      fetchMock.mockResolvedValue(geminiErrorResponse(404, 'Gone'));
+
+      const result = await configuredService().extractLineItems({ documentText: 'Line text' });
+
+      expect(result.status).toBe(EXTRACTION_STATUS.AI_FAILED);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(logger.warn).toHaveBeenLastCalledWith(AI_LOG_MESSAGES.extractionAttemptFailed, expect.objectContaining({
+        model: 'model-fallback-2',
+        statusCode: 404,
+        fallbackAttemptConfigured: false
+      }), expect.any(Error));
     });
 
     it('should use the file name as the document title when the model returns a non-text title', async () => {

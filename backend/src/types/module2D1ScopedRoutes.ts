@@ -28,3 +28,7 @@ export type ScopedModule2ScopeResult =
   | { kind: 'none' }
   | { kind: 'invalid'; error: WorkerD1Result }
   | { kind: 'valid'; scope: ProcurementTransactionScope };
+
+export type ScopedModule2TrustedScopeResult =
+  | { error: WorkerD1Result; scope?: never }
+  | { scope: ProcurementTransactionScope; customerName: string; error?: never };

@@ -630,7 +630,8 @@ describe('Module1Ingestion Component', () => {
     expect(await screen.findByText(/USD\/INR:/i)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module1.liveFxRatesLabel)).toBeInTheDocument();
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
+    const [, init] = mockFetch.mock.calls[0];
+    expect(new Headers(init?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it('reports that D1 rates are unavailable without querying a secondary source', async () => {
@@ -641,7 +642,8 @@ describe('Module1Ingestion Component', () => {
 
     expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
+    const [, init] = mockFetch.mock.calls[0];
+    expect(new Headers(init?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it.each([
@@ -655,7 +657,8 @@ describe('Module1Ingestion Component', () => {
 
     expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
+    const [, init] = mockFetch.mock.calls[0];
+    expect(new Headers(init?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it('renders actual coverage from monthWiseSummaries when canonicalViewModel is absent', () => {

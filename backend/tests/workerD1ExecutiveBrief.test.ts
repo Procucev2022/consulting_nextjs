@@ -47,16 +47,22 @@ const d1OpportunityDb = (options: {
     const statement = {
       bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
       first: async <T>() => {
-        if (query.includes('FROM User WHERE id = ?')) {
+        if (query.includes('FROM User')) {
           return {
             id: values[0],
             name: 'D1 Test Admin',
             email: 'admin@example.test',
             role: 'ADMIN',
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            tenant_id: 'TEN-1'
           } as T;
         }
         if (options.fail) throw new Error('D1 query failed');
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant) {
+          const tenantId = String(values[0]);
+          return ((options.tenants ?? [{ tenant_id: 'TEN-1', enterprise_name: 'D1 Enterprise' }])
+            .find((tenant) => tenant.tenant_id === tenantId) ?? null) as T | null;
+        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return {
             transaction_count: options.transactionCount ?? 12,
@@ -79,9 +85,6 @@ const d1OpportunityDb = (options: {
       },
       all: async <T>() => {
         if (options.fail) throw new Error('D1 query failed');
-        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants) {
-          return { results: options.tenants ?? [{ tenant_id: 'TEN-1', enterprise_name: 'D1 Enterprise' }] as T[] };
-        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) {
           return { results: [{
             opp_id: 'OPP-1', category: 'Packaging', title: 'Packaging sourcing', current_spend_cr: 50,
@@ -261,12 +264,18 @@ describe('executive brief routing', () => {
     }));
     expect(noBindingDownload.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
 
-    const ambiguous = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+    const selectedTenantReport = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
       env: testEnvironment({ DB: d1OpportunityDb({ tenants: [
         { tenant_id: 'A', enterprise_name: 'A' }, { tenant_id: 'B', enterprise_name: 'B' }
-      ] }) })
+      ] }), REQUEST_TENANT_ID: 'B' })
     }));
-    expect(ambiguous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
+    expect(selectedTenantReport.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+    expect(((await selectedTenantReport.json()) as { data: { tenant: { tenantId: string } } }).data.tenant.tenantId).toBe('B');
+
+    const missingScope = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb(), REQUEST_TENANT_ID: undefined })
+    }));
+    expect(missingScope.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
 
     const empty = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
       env: testEnvironment({ DB: d1OpportunityDb({ transactionCount: 0 }) })

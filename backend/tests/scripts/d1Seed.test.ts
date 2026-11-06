@@ -6,10 +6,21 @@ import type { D1SeedManifest } from '../../src/types/d1Seed';
 import type { D1SchemaTableRow } from '../../src/types/d1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import { loadCanonicalAssessmentFromD1 } from '../../src/services/workerD1Canonical';
+import { D1_DEMO_TENANT_ID } from '../../src/constants/d1';
 
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require('node:sqlite');
-const { splitSqlStatements, splitSeedParts, verifySeedManifest, shouldSeedDatabase } = require('../../scripts/d1-seed-tools');
+const {
+  splitSqlStatements,
+  splitSeedParts,
+  verifySeedManifest,
+  shouldSeedDatabase,
+  getSeedFileLedgerReadSql,
+  getSeedFileLedgerWriteSql,
+  getWranglerSqlInputArgs,
+  parseWranglerJsonOutput,
+  isSeedFileApplied
+} = require('../../scripts/d1-seed-tools');
 const backendRoot = path.resolve(__dirname, '../..');
 
 describe('durable D1 migration', () => {
@@ -17,6 +28,32 @@ describe('durable D1 migration', () => {
     expect(shouldSeedDatabase(['node', 'db-push.js'])).toBe(false);
     expect(shouldSeedDatabase(['node', 'db-push.js', '--seed'])).toBe(true);
     expect(shouldSeedDatabase(['node', 'db-push.js', '--seed-all'])).toBe(true);
+  });
+
+  it('uses the complete manifest seed for the documented seed commands and selects the dev Worker locally', () => {
+    const backendPackage = JSON.parse(fs.readFileSync(path.join(backendRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    expect(backendPackage.scripts['cloudflare:dev']).toContain('--env dev');
+    expect(backendPackage.scripts['cloudflare:dev']).toContain('--persist-to .wrangler/state');
+    expect(backendPackage.scripts['db:seed:d1']).toContain('--seed-all');
+    expect(backendPackage.scripts['db:seed:d1:remote']).toContain('--seed-all');
+    expect(backendPackage.scripts['db:seed:d1:remote']).toContain('--remote');
+    expect(backendPackage.scripts['db:seed:d1:base']).toContain('--seed');
+    expect(backendPackage.scripts['db:seed:d1:base']).not.toContain('--seed-all');
+    expect(backendPackage.scripts['db:drift']).toContain('d1-drift-check.js');
+    expect(backendPackage.scripts['db:drift:remote']).toContain('--remote');
+  });
+
+  it('keeps one canonical D1 schema source and avoids an extra reference-schema deployment call', () => {
+    const referenceSchema = fs.readFileSync(path.join(backendRoot, 'd1-reference-schema.sql'), 'utf8');
+    const migrationScript = fs.readFileSync(path.join(backendRoot, 'scripts/db-push.js'), 'utf8');
+
+    expect(splitSqlStatements(referenceSchema)).toEqual([]);
+    expect(migrationScript).toContain("executeSqlFile('d1-schema.sql');");
+    expect(migrationScript).not.toContain("executeSqlFile('d1-reference-schema.sql');");
+    expect(migrationScript).toContain("executeGeneratedSeedInParts('d1-seed.sql', seedManifest.files['d1-seed.sql']);");
+    expect(migrationScript).not.toContain("executeSqlFile('d1-seed.sql');");
   });
 
   it('splits SQL without changing quoted customer text or comments', () => {
@@ -40,6 +77,64 @@ describe('durable D1 migration', () => {
     expect(() => splitSeedParts('SELECT 1;', 5)).toThrow(/exceeds/);
   });
 
+  it('uses a checksum ledger to skip completed seed files and safely reapply changed checksums', () => {
+    expect(getSeedFileLedgerReadSql("fixture's-seed.sql")).toBe(
+      "SELECT/**/source_checksum/**/FROM/**/D1SeedFileLedger/**/WHERE/**/seed_file='fixture''s-seed.sql';"
+    );
+    expect(getSeedFileLedgerReadSql('fixture.sql')).not.toMatch(/\s/u);
+    expect(getSeedFileLedgerWriteSql('fixture.sql', 'abc123')).toContain(
+      "ON CONFLICT(seed_file) DO UPDATE SET source_checksum = excluded.source_checksum"
+    );
+    expect(isSeedFileApplied([{ source_checksum: 'abc123' }], 'abc123')).toBe(true);
+    expect(isSeedFileApplied([{ source_checksum: 'older' }], 'abc123')).toBe(false);
+    expect(isSeedFileApplied([], 'abc123')).toBe(false);
+    expect(isSeedFileApplied(null, 'abc123')).toBe(false);
+
+    const output = JSON.stringify([{ success: true, results: [{ source_checksum: 'abc123' }] }]);
+    const rows = parseWranglerJsonOutput(output);
+    expect(rows).toEqual([{ source_checksum: 'abc123' }]);
+    expect(parseWranglerJsonOutput(
+      'Wrangler progress output\r\n🌀 Executed 1 query\r\n' + output
+    )).toEqual([{ source_checksum: 'abc123' }]);
+    expect(isSeedFileApplied(rows, 'abc123')).toBe(true);
+    expect(parseWranglerJsonOutput('[{"success":true,"results":[]}]')).toEqual([]);
+    expect(parseWranglerJsonOutput('[]')).toEqual([]);
+    expect(getWranglerSqlInputArgs('SELECT name FROM sqlite_master;', 'query.sql', true)).toEqual([
+      '--command', 'SELECT name FROM sqlite_master;'
+    ]);
+    expect(getWranglerSqlInputArgs('ALTER TABLE x ADD COLUMN y TEXT;', 'migration.sql', false)).toEqual([
+      '--file=migration.sql'
+    ]);
+    expect(() => parseWranglerJsonOutput('not-json')).toThrow(/valid JSON/);
+    expect(() => parseWranglerJsonOutput('{}')).toThrow(/invalid result set/);
+    expect(() => parseWranglerJsonOutput('[{"success":false,"results":[]}]')).toThrow(/unsuccessful/);
+    expect(() => parseWranglerJsonOutput('[{"success":true}]')).toThrow(/unsuccessful/);
+  });
+
+  it('records seed file checksums in a dedicated D1 table without mixing them into application entries', () => {
+    const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
+    expect(manifest.tables.D1SeedFileLedger).toBe(0);
+    const database = new DatabaseSync(':memory:');
+    try {
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
+      const initial = database.prepare(getSeedFileLedgerReadSql('d1-reference-seed.sql')).all();
+      expect(initial).toEqual([]);
+
+      const appliedSql = getSeedFileLedgerWriteSql('d1-reference-seed.sql', 'seed-checksum-1');
+      database.exec(appliedSql);
+      const appliedRows = database.prepare(getSeedFileLedgerReadSql('d1-reference-seed.sql')).all();
+      expect(isSeedFileApplied(appliedRows, 'seed-checksum-1')).toBe(true);
+
+      database.exec(getSeedFileLedgerWriteSql('d1-reference-seed.sql', 'seed-checksum-2'));
+      const changedRows = database.prepare(getSeedFileLedgerReadSql('d1-reference-seed.sql')).all();
+      expect(isSeedFileApplied(changedRows, 'seed-checksum-1')).toBe(false);
+      expect(isSeedFileApplied(changedRows, 'seed-checksum-2')).toBe(true);
+      expect(database.prepare('SELECT COUNT(*) AS count FROM AssessmentStoreEntry').get().count).toBe(0);
+    } finally {
+      database.close();
+    }
+  });
+
   it('rejects modified migration content and invalid manifest paths before seeding', () => {
     const read = vi.spyOn(fs, 'readFileSync');
     read.mockReturnValueOnce(JSON.stringify({ seedFiles: ['seed.sql'], files: { 'seed.sql': 'wrong-hash' } }));
@@ -60,7 +155,8 @@ describe('durable D1 migration', () => {
       splitSqlStatements(fs.readFileSync(path.join(backendRoot, file), 'utf8'))
     );
     const liveSeedStatements = [
-      statements.find((statement) => /\bINSERT OR IGNORE INTO User\b/iu.test(statement)),
+      statements.find((statement) => /\bINSERT OR IGNORE INTO TenantMaster\b/iu.test(statement)),
+      statements.find((statement) => /\bINSERT INTO User\b/iu.test(statement)),
       statements.find((statement) => /\bINSERT OR IGNORE INTO MaterialMappingRegister\b/iu.test(statement)),
       statements.find((statement) => /\bINSERT INTO ProcurementTransaction\b/iu.test(statement))
     ];
@@ -172,6 +268,8 @@ describe('durable D1 migration', () => {
     const database = new DatabaseSync(':memory:');
     try {
       database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
+      database.prepare('INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name) VALUES (?, ?)')
+        .run(D1_DEMO_TENANT_ID, 'Demo Enterprise');
       for (const assessmentId of ['AIC-2026-0001', 'AIC-2026-0002', 'AIC-2026-0003']) {
         database.prepare(`INSERT INTO AssessmentRecord (
           assessment_id, customer_id, customer_name, industry, assessment_owner
@@ -212,6 +310,15 @@ describe('durable D1 migration', () => {
         database.exec(fs.readFileSync(path.join(backendRoot, file), 'utf8'));
       }
       importAllSeeds();
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-002'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-admin-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
+      expect(database.prepare("SELECT COUNT(*) AS count FROM User WHERE role = 'ADMIN' AND tenant_id = 'TNT-GLOBAL-8902'").get()).toEqual({ count: 3 });
+
+      database.prepare("UPDATE User SET status = 'PENDING', tenant_id = NULL WHERE id = 'usr-user-001'").run();
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-seed.sql'), 'utf8'));
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
+
       const schemaTables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as D1SchemaTableRow[];
       expect(schemaTables.map((row) => row.name)).toEqual(Object.keys(manifest.tables).sort());
       for (const [table, expected] of Object.entries(manifest.tables)) {
@@ -230,11 +337,32 @@ describe('durable D1 migration', () => {
         expect(sourceRow.sourceRaw).toBeDefined();
         expect(sourceRow.sourceChecksum).toBe(upload.sourceChecksum);
       }
+
+      const keyedTransaction = database.prepare(`SELECT tenant_id, assessment_id, source_document_id, source_row_number
+        FROM ProcurementTransaction WHERE assessment_id IS NOT NULL AND source_document_id IS NOT NULL
+          AND source_row_number IS NOT NULL LIMIT 1`).get() as {
+        tenant_id: string; assessment_id: string; source_document_id: string; source_row_number: number;
+      };
+      expect(keyedTransaction).toBeDefined();
+      const insertTransaction = database.prepare(`INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, source_document_id, source_row_number,
+        supplier_name, currency, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+      expect(() => insertTransaction.run('TX-UNIQUE-KEY-DUPLICATE', keyedTransaction.tenant_id,
+        keyedTransaction.assessment_id, keyedTransaction.source_document_id, keyedTransaction.source_row_number,
+        'Regression duplicate', 'INR', '{}')).toThrow(/UNIQUE constraint failed/u);
+      expect(() => {
+        insertTransaction.run('TX-UNIQUE-KEY-INCOMPLETE-1', keyedTransaction.tenant_id,
+          keyedTransaction.assessment_id, null, keyedTransaction.source_row_number, 'Incomplete source 1', 'INR', '{}');
+        insertTransaction.run('TX-UNIQUE-KEY-INCOMPLETE-2', keyedTransaction.tenant_id,
+          keyedTransaction.assessment_id, null, keyedTransaction.source_row_number, 'Incomplete source 2', 'INR', '{}');
+      }).not.toThrow();
+
       const d1 = { prepare: (sql: string) => ({
         bind: (...values: unknown[]) => ({ all: async () => ({ results: database.prepare(sql).all(...values) }) }),
         all: async () => ({ results: database.prepare(sql).all() })
       }) } as unknown as CloudflareD1Database;
-      expect(await loadCanonicalAssessmentFromD1(d1, 'AIC-2026-0001')).toMatchObject({
+      expect(await loadCanonicalAssessmentFromD1(d1, 'AIC-2026-0001', D1_DEMO_TENANT_ID)).toMatchObject({
         assessmentId: 'AIC-2026-0001', dataVersionId: 'DV-001', sourceRowCount: 20505,
         validRowCount: 20241, excludedRowCount: 252, anomalyRowCount: 12,
         validFxNormalizedSpendInr: 40738306838.0198

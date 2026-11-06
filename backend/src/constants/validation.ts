@@ -9,6 +9,27 @@ import { z } from 'zod';
 import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from './d1';
 import { MODULE2_D1_EAUCTION } from './module2D1Scoped';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from './module2VendorConsolidationD1';
+import {
+  CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_STACK_LENGTH
+} from './clientErrorTelemetry';
+import { PCBI_HISTORICAL_QUERY_DEFAULT_LIMIT, PCBI_HISTORICAL_QUERY_MAX_LIMIT } from './pcbiHistorical';
+
+export const WORKER_JSON_BODY_MAX_BYTES = 1024 * 1024;
+
+export const clientErrorReportSchema = z.object({
+  level: z.enum(['warn', 'error']),
+  source: z.enum(['logger', 'window', 'unhandledrejection', 'react-boundary']),
+  errorName: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH),
+  message: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH),
+  stack: z.string().max(CLIENT_ERROR_REPORT_MAX_STACK_LENGTH).optional(),
+  route: z.string().regex(/^\/(?!\/)[^?#]*$/).max(CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH),
+  occurredAt: z.string().datetime(),
+  clientRequestId: z.string().min(1).max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH).optional()
+}).strict();
 export { alternateSourcingQuerySchema } from './module2AlternateSourcingD1';
 export {
   eAuctionPlanningAssumptionSchema,
@@ -23,11 +44,29 @@ export { assignPcbiResearchSchema } from './pcbiDataLabValidation';
 export { directPriceQuerySchema } from './module2D1Validation';
 export * from './commercialValidation';
 export { pcbiAdminImportSchema, pcbiAdminPublishSchema, pcbiReferenceQuerySchema } from './pcbiAdminValidation';
+export const pcbiHistoricalObservationsQuerySchema = z.object({
+  pcbiId: z.string().trim().min(1).max(120).optional(),
+  startDate: z.iso.date().optional(),
+  endDate: z.iso.date().optional(),
+  limit: z.coerce.number().int().min(1).max(PCBI_HISTORICAL_QUERY_MAX_LIMIT)
+    .default(PCBI_HISTORICAL_QUERY_DEFAULT_LIMIT)
+}).superRefine((input, context) => {
+  if (input.startDate && input.endDate && input.startDate > input.endDate) {
+    context.addIssue({ code: 'custom', path: ['endDate'], message: 'End date must not be earlier than start date.' });
+  }
+});
 
 export const d1DatasetScopeSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120).optional(),
   tenantId: z.string().trim().min(1).max(120).optional(),
   limit: z.coerce.number().int().min(1).max(D1_REPORTING.maxDatasetLimit).default(D1_REPORTING.datasetLimit)
+});
+
+export const tenantScopeSelectionSchema = z.object({
+  tenantId: z.string().trim().min(1).max(120).optional(),
+  tenant_id: z.string().trim().min(1).max(120).optional(),
+  buyerId: z.string().trim().min(1).max(120).optional(),
+  buyer_id: z.string().trim().min(1).max(120).optional()
 });
 
 export const industryProfileQuerySchema = z.object({
@@ -58,48 +97,24 @@ export const vendorConsolidationQuerySchema = z.object({
 });
 
 export const requestHeadersSchema = z.object({
-  'x-request-id': z.string().optional(),
+  'x-request-id': z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/u).optional(),
   'content-type': z.string().optional(),
   authorization: z.string().optional()
 }).passthrough();
 
 // Tenant Update Body Schema
 export const tenantUpdateSchema = z.object({
-  enterprise_name: z.string().min(1).optional(),
-  region: z.string().min(1).optional(),
-  base_currency: z.string().min(1).optional(),
-  financial_year: z.string().min(1).optional(),
-  total_spend_evaluated: z.number().nonnegative().optional(),
-  total_spend_evaluated_inr: z.number().nonnegative().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional(),
-  erp_source: z.string().optional(),
-  refresh_cycle: z.string().optional(),
-  major_sector: z.string().min(1).optional(),
-  minor_sector: z.string().min(1).optional(),
-  status: z.string().optional()
-}).refine((data) => Object.keys(data).length > 0, {
+  enterprise_name: z.string().trim().min(1).nullable().optional(),
+  region: z.string().trim().min(1).nullable().optional(),
+  base_currency: z.string().trim().regex(/^[A-Z]{3}$/u).nullable().optional(),
+  total_spend_evaluated: z.number().finite().nonnegative().nullable().optional(),
+  total_spend_evaluated_inr: z.number().finite().nonnegative().nullable().optional(),
+  major_sector: z.string().trim().min(1).nullable().optional(),
+  minor_sector: z.string().trim().min(1).nullable().optional(),
+  status: z.string().trim().min(1).nullable().optional()
+}).strict().refine((data) => Object.values(data).some((value) => value !== undefined && value !== null), {
   message: 'At least one field to update must be provided'
 });
-
-// Ingestion Add File Body Schema
-export const addIngestionFileSchema = z.object({
-  doc_id: z.string().optional(),
-  tenant_id: z.string().optional(),
-  file_name: z.string().min(1, 'File name is required'),
-  file_type: z.string().min(1, 'File type is required'),
-  file_size_mb: z.number().positive('File size must be positive'),
-  ocr_status: z.enum(['Completed', 'Parsing OCR', 'Pending', 'Error']).optional().default('Completed'),
-  progress: z.number().min(0).max(100).optional().default(100),
-  uploaded_at: z.string().optional(),
-  records_count: z.number().int().nonnegative('Records count must be non-negative').optional().default(0),
-  detected_currencies: z.array(z.string()).optional().default(['INR']),
-  converted_inr_crores: z.number().nonnegative().optional().default(0),
-  unique_items_count: z.number().int().nonnegative().optional(),
-  unique_vendors_count: z.number().int().nonnegative().optional(),
-  material_groups_count: z.number().int().nonnegative().optional(),
-  plants_count: z.number().int().nonnegative().optional()
-});
-
 
 // Ingestion Update Validation Record Body Schema
 export const updateValidationRecordSchema = z.object({
@@ -245,7 +260,11 @@ export const adminUserQuerySchema = z.object({
 });
 
 export const adminUpdateUserStatusSchema = z.object({
-  status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING'])
+  status: z.enum(['ACTIVE', 'SUSPENDED'])
+});
+
+export const adminAssignUserTenantSchema = z.object({
+  tenant_id: z.string().trim().min(1).max(120)
 });
 
 // AI Service Validation Schemas
@@ -303,3 +322,4 @@ export const aiAnalyzeAnomaliesSchema = z.object({
 });
 
 export * from './validationWorkflow';
+export * from './ingestionValidation';

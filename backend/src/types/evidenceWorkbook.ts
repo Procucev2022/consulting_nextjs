@@ -125,6 +125,7 @@ export type EvidenceLedgerGroupColumn = 'supplier_name' | 'plant' | 'material_gr
 
 export interface EvidenceUserRecord {
   userId: string;
+  tenantId: string | null;
   name: string;
   email: string;
   role: string;
@@ -133,6 +134,7 @@ export interface EvidenceUserRecord {
 
 export interface EvidenceJobAccessRecord {
   assessmentId: string;
+  tenantId: string;
   customerName: string;
   status: string;
   totalSpendCr: number | null;

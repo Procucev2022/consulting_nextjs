@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetch as workerFetch } from '../src/worker';
 import { getTaxonomyFromD1 } from '../src/workerD1';
-import { D1_SCHEMA_COLUMNS_QUERY, D1_SCHEMA_TABLES_QUERY } from '../src/constants/d1';
-import type { CloudflareD1Database, CloudflareExecutionContext } from '../src/types/cloudflare';
+import { D1_SCHEMA_QUERY } from '../src/constants/d1';
+import type { CloudflareD1Database, CloudflareEnvironment, CloudflareExecutionContext } from '../src/types/cloudflare';
+
+vi.mock('../src/services/workerTenantAccess', () => ({
+  authorizeTenantRequest: vi.fn(async (request: Request, environment: CloudflareEnvironment) => ({ request, environment }))
+}));
 
 const context: CloudflareExecutionContext = { waitUntil: vi.fn(), passThroughOnException: vi.fn() };
 const row = {
@@ -73,14 +77,17 @@ describe('D1 commodity catalog and live schema routes', () => {
   });
 
   it('renders actual SQLite table definitions and columns from D1', async () => {
-    const schema = [{ name: 'PersistedOnly', sql: 'CREATE TABLE PersistedOnly (id TEXT, payload TEXT)' }];
-    const all = vi.fn().mockResolvedValue({ results: [{ name: 'id' }, { name: 'payload' }] });
-    const bind = vi.fn().mockReturnValue({ all });
-    const prepare = vi.fn((sql: string) => sql === D1_SCHEMA_TABLES_QUERY ? { all: vi.fn().mockResolvedValue({ results: schema }) } : { bind, first: vi.fn().mockResolvedValue({ ok: 1 }) });
+    const schemaRows = [
+      { table_name: 'PersistedOnly', table_sql: 'CREATE TABLE PersistedOnly (id TEXT, payload TEXT)', column_name: 'id', column_cid: 0 },
+      { table_name: 'PersistedOnly', table_sql: 'CREATE TABLE PersistedOnly (id TEXT, payload TEXT)', column_name: 'payload', column_cid: 1 }
+    ];
+    const all = vi.fn().mockResolvedValue({ results: schemaRows });
+    const first = vi.fn().mockResolvedValue({ ok: 1 });
+    const prepare = vi.fn(() => ({ all, first }));
     const response = await workerFetch(new Request('https://edge.example/api/db/schema'), { DB: { prepare } as unknown as CloudflareD1Database }, context);
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(prepare).toHaveBeenCalledWith(D1_SCHEMA_COLUMNS_QUERY);
-    expect(bind).toHaveBeenCalledWith(schema[0].name);
-    await expect(response.json()).resolves.toMatchObject({ success: true, data: [{ entity_name: schema[0].name, primary_attributes: 'id, payload', ddl: schema[0].sql, sample_records: [] }] });
+    expect(prepare.mock.calls.filter(([query]) => query === D1_SCHEMA_QUERY)).toHaveLength(1);
+    expect(prepare).toHaveBeenCalledWith(D1_SCHEMA_QUERY);
+    await expect(response.json()).resolves.toMatchObject({ success: true, data: [{ entity_name: 'PersistedOnly', primary_attributes: 'id, payload', ddl: schemaRows[0].table_sql, sample_records: [] }] });
   });
 });

@@ -92,8 +92,20 @@ export class FrontendLogger {
     for (const listener of this.listeners) {
       try {
         listener(entry);
-      } catch {
-        // Prevent listener failures from breaking application flow
+      } catch (error: unknown) {
+        const failure = this.createLogEntry('error', 'Frontend logger listener failed', {
+          action: 'logger.listener.notify'
+        }, error);
+        this.history.push(failure);
+        if (this.history.length > this.maxHistory) this.history.shift();
+        if (this.shouldLog('error')) {
+          const formatted = `[${failure.timestamp}] [ERROR] [${this.service}]: ${failure.message}`;
+          try {
+            this.dispatchConsole('error', formatted, failure);
+          } catch {
+            // The diagnostic remains in memory if the browser console itself is unavailable.
+          }
+        }
       }
     }
   }

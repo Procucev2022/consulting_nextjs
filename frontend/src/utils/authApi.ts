@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Dedicated Authentication & Admin API Service (Frontend)
  */
@@ -9,6 +10,7 @@ import type {
   LoginFormData,
   AdminUserQuery,
   AdminUsersResponse,
+  AdminTenantsResponse,
   UserStatus,
   SubscriptionTier
 } from '../types';
@@ -18,10 +20,14 @@ import {
   registerFormSchema,
   loginFormSchema,
   adminUserQuerySchema,
-  adminUpdateUserTierSchema
+  adminUpdateUserTierSchema,
+  adminAssignUserTenantSchema,
+  adminTenantsResponseSchema
 } from '../constants/validation';
 import { AUTH_STORAGE_KEYS, AUTH_API_ENDPOINTS } from '../constants/auth';
 import { getApiBaseUrl } from './apiBase';
+import { UI_STRINGS } from '../constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../constants/app';
 
 const setFilterParam = (params: URLSearchParams, key: string, value?: string): void => {
   if (value && value !== 'ALL') {
@@ -45,28 +51,27 @@ export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchPara
   return params;
 };
 
-async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
-  let json: Record<string, unknown> | null = null;
-  if (typeof res.text === 'function') {
-    const text = await res.text();
-    try {
-      json = JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      if (!res.ok) {
-        throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
-      }
-      throw new Error('Invalid response received from server');
+const parseAuthResponseBody = async <T>(res: Response, operation: string): Promise<T | null> => {
+  try {
+    if (typeof res.text === 'function') return JSON.parse(await res.text()) as T;
+    if (typeof res.json === 'function') return await res.json() as T;
+    return null;
+  } catch (error: unknown) {
+    frontendLogger.error('Authentication API response body could not be parsed', {
+      action: 'auth.response.parse',
+      operation,
+      statusCode: res.status,
+      requestId: res.headers?.get(API_REQUEST_ID_HEADER) || undefined
+    }, error);
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
     }
-  } else if (typeof res.json === 'function') {
-    try {
-      json = (await res.json()) as Record<string, unknown>;
-    } catch {
-      if (!res.ok) {
-        throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
-      }
-      throw new Error('Invalid response received from server');
-    }
+    throw new Error('Invalid response received from server');
   }
+};
+
+async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
+  const json = await parseAuthResponseBody<Record<string, unknown>>(res, fallbackError);
 
   if (!res.ok) {
     const errorMsg = typeof json?.message === 'string' ? json.message : fallbackError;
@@ -89,7 +94,11 @@ export const authApiClient = {
     if (!raw) return null;
     try {
       return JSON.parse(raw);
-    } catch {
+    } catch (error: unknown) {
+      frontendLogger.warn('Cached authentication profile was malformed and ignored', {
+        action: 'auth.session.user.parse',
+        storageKey: AUTH_STORAGE_KEYS.CURRENT_USER
+      }, error);
       return null;
     }
   },
@@ -108,8 +117,10 @@ export const authApiClient = {
     try {
       sessionStorage.removeItem('procucev_uploaded_dataset');
       sessionStorage.removeItem('procucev_autofill_active_doc');
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      frontendLogger.warn('Optional session data could not be cleared; authentication session cleanup continued', {
+        action: 'auth.session.optional-storage.clear'
+      }, error);
     }
   },
 
@@ -139,7 +150,7 @@ export const authApiClient = {
       throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.REGISTER}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.REGISTER}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -169,7 +180,7 @@ export const authApiClient = {
       throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.LOGIN}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.LOGIN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -190,7 +201,7 @@ export const authApiClient = {
       throw new Error('No authentication token found');
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ME}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ME}`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
 
@@ -208,7 +219,7 @@ export const authApiClient = {
       throw new Error('Authentication required: please log in again');
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CHANGE_PASSWORD}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CHANGE_PASSWORD}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -232,8 +243,41 @@ export const authApiClient = {
       headers.Authorization = `Bearer ${authToken}`;
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
     return await parseResponseJson<AdminUsersResponse>(res, 'Failed to load user directory');
+  },
+
+  async getAdminTenants(token?: string): Promise<AdminTenantsResponse> {
+    frontendLogger.info('Fetching tenant choices for administrator provisioning');
+    const authToken = token || authApiClient.getStoredToken();
+    const headers: Record<string, string> = {};
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+    const res = await apiFetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ADMIN_TENANTS}`, { headers });
+    const json = await parseResponseJson<Record<string, unknown>>(res, 'Failed to load tenant directory');
+    const parsed = adminTenantsResponseSchema.safeParse(json);
+    if (!parsed.success) {
+      frontendLogger.error('Administrator tenant directory response failed schema validation', { errors: parsed.error.issues });
+      throw new Error(UI_STRINGS.admin.tenantListInvalid);
+    }
+    return parsed.data;
+  },
+
+  async assignAdminUserTenant(
+    id: string,
+    tenantId: string,
+    token?: string
+  ): Promise<{ success: boolean; user: UserProfile }> {
+    frontendLogger.info('Assigning enterprise account to a tenant', { id, tenantId });
+    const validation = validateInput(adminAssignUserTenantSchema, { tenant_id: tenantId });
+    if (!validation.success) throw new Error(`Tenant assignment failed validation: ${JSON.stringify(validation.errors)}`);
+    const authToken = token || authApiClient.getStoredToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+    const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_TENANT(encodeURIComponent(id));
+    const res = await apiFetch(`${getApiBaseUrl()}${endpoint}`, {
+      method: 'PATCH', headers, body: JSON.stringify(validation.data)
+    });
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to assign tenant');
   },
 
   // Admin: Update User Status
@@ -250,7 +294,7 @@ export const authApiClient = {
     }
 
     const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_STATUS(id);
-    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ status })
@@ -278,7 +322,7 @@ export const authApiClient = {
     }
 
     const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_TIER(id);
-    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(validation.data)

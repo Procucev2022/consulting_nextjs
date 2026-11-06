@@ -13,14 +13,14 @@ export const EVIDENCE_LEDGER_GROUP_COLUMNS = {
 } as const;
 
 export const EVIDENCE_SQL = {
-  tenant: 'SELECT tenant_id FROM TenantMaster ORDER BY created_at ASC, tenant_id ASC LIMIT 1',
-  userById: 'SELECT id, name, email, role, status FROM User WHERE id = ? LIMIT 1',
+  tenant: 'SELECT tenant_id FROM TenantMaster WHERE tenant_id = ? LIMIT 1',
+  userById: 'SELECT id, name, email, role, status, tenant_id FROM User WHERE id = ? LIMIT 1',
   jobAccess:
-    'SELECT a.assessment_id, a.customer_name, a.status, a.total_spend_cr, a.validated_spend_cr, ' +
+    'SELECT a.assessment_id, a.tenant_id, a.customer_name, a.status, a.total_spend_cr, a.validated_spend_cr, ' +
     'a.gross_opportunity_cr, a.overlap_deductions_cr, a.net_defensible_opportunity_cr, ' +
     'a.potential_savings_cr, a.savings_pct, c.contact_email AS customer_contact_email ' +
     'FROM AssessmentRecord a LEFT JOIN CustomerRecord c ON c.customer_id = a.customer_id ' +
-    'WHERE a.assessment_id = ? LIMIT 1',
+    'WHERE a.assessment_id = ? AND a.tenant_id = ? LIMIT 1',
   runs:
     'SELECT analysis_run_id, data_version_id, status, total_spend_cr, validated_spend_cr, ' +
     'gross_opportunity_cr, overlap_deductions_cr, net_defensible_opportunity_cr, potential_savings_cr, ' +

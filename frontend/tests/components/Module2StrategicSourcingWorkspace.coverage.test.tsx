@@ -130,7 +130,8 @@ vi.mock('../../src/components/module2/StrategicSourcingCategoryTable', () => ({
     onExportAudit: () => void;
     onOpenHowCalculated: (profile?: CategoryStrategicSourcingProfile | null) => void;
   }) => (
-    <section data-testid="stub-category-table" data-selected-category={selectedCategoryName ?? ''}>
+    <section data-testid="stub-category-table" data-selected-category={selectedCategoryName ?? ''}
+      data-profile-ids={profiles.map((profile) => profile.categoryId).join(',')}>
       {profiles.map((profile, index) => (
         <button
           key={profile.categoryId}
@@ -343,9 +344,50 @@ describe('Module2StrategicSourcingWorkspace coverage', () => {
       await renderWorkspace({ assessmentId: ASSESSMENT_ID });
       openStrategyTab();
 
-      expect(logger.error).toHaveBeenCalledWith(expect.any(String), {}, expect.any(Error));
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ assessmentId: ASSESSMENT_ID, feature: undefined }),
+        expect.any(Error)
+      );
+      expect(screen.getByRole('alert')).toHaveTextContent(UI_STRINGS.module2Sourcing.loadFailureUnexpected);
+      expect(screen.getByRole('alert')).toHaveTextContent(UI_STRINGS.module2Sourcing.loadFailureNextStep);
       expect(screen.queryByTestId('stub-dashboard-cards')).not.toBeInTheDocument();
       expect(screen.getByTestId('stub-category-table')).toBeInTheDocument();
+    });
+
+    it('shows the backend request ID and keeps category data when the summary endpoint fails', async () => {
+      const failure = Object.assign(new Error('HTTP 503: Service Unavailable'), {
+        feature: 'dashboard',
+        statusCode: 503,
+        requestId: 'req-module2-503'
+      });
+      vi.mocked(Module2StrategicSourcingApi.getDashboardSummary).mockRejectedValue(failure);
+
+      await renderWorkspace({ assessmentId: ASSESSMENT_ID });
+      openStrategyTab();
+
+      expect(screen.getByRole('alert')).toHaveTextContent(UI_STRINGS.module2Sourcing.loadFailureHttp(503));
+      expect(screen.getByRole('alert')).toHaveTextContent(UI_STRINGS.module2Sourcing.loadFailureRequestId('req-module2-503'));
+      expect(screen.getByTestId('stub-category-table')).toHaveAttribute('data-profile-ids', PROFILE.categoryId);
+      expect(logger.error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        statusCode: 503,
+        requestId: 'req-module2-503',
+        feature: 'dashboard'
+      }), failure);
+    });
+
+    it('shows network guidance and clears the failure after a successful retry', async () => {
+      vi.mocked(Module2StrategicSourcingApi.getDashboardSummary)
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(SUMMARY);
+
+      await renderWorkspace({ assessmentId: ASSESSMENT_ID });
+      expect(screen.getByRole('alert')).toHaveTextContent(UI_STRINGS.module2Sourcing.loadFailureNetwork);
+
+      fireEvent.click(getRefreshButton());
+      await flushPromises();
+
+      expect(screen.queryByText(UI_STRINGS.module2Sourcing.loadFailureNetwork)).not.toBeInTheDocument();
     });
 
     it('omits the dashboard and categories when both API calls return nothing', async () => {
@@ -375,6 +417,46 @@ describe('Module2StrategicSourcingWorkspace coverage', () => {
       await flushPromises();
 
       expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('discards a slow previous-assessment response after the newer assessment has loaded', async () => {
+      const previousSummary = createDeferred<Module2StrategicSourcingDashboardSummary | null>();
+      const previousProfiles = createDeferred<CategoryStrategicSourcingProfile[]>();
+      vi.mocked(Module2StrategicSourcingApi.getDashboardSummary).mockImplementation((_refresh, assessmentId) =>
+        assessmentId === ASSESSMENT_ID ? previousSummary.promise : Promise.resolve(SUMMARY)
+      );
+      vi.mocked(Module2StrategicSourcingApi.getCategoryProfiles).mockImplementation((_refresh, assessmentId) =>
+        assessmentId === ASSESSMENT_ID ? previousProfiles.promise : Promise.resolve([SECOND_PROFILE])
+      );
+
+      const view = render(<Module2StrategicSourcingWorkspace assessmentId={ASSESSMENT_ID} />);
+      openStrategyTab();
+      view.rerender(<Module2StrategicSourcingWorkspace assessmentId="AIC-2026-0004" />);
+      await waitFor(() => expect(screen.getByTestId('stub-category-table'))
+        .toHaveAttribute('data-profile-ids', SECOND_PROFILE.categoryId));
+      await act(async () => {
+        previousSummary.resolve(SUMMARY);
+        previousProfiles.resolve([PROFILE]);
+      });
+      await flushPromises();
+
+      expect(screen.getByTestId('stub-category-table')).toHaveAttribute('data-profile-ids', SECOND_PROFILE.categoryId);
+    });
+
+    it('clears data from the old assessment before loading a newly selected one', async () => {
+      const nextProfiles = createDeferred<CategoryStrategicSourcingProfile[]>();
+      vi.mocked(Module2StrategicSourcingApi.getCategoryProfiles).mockImplementation((_refresh, assessmentId) =>
+        assessmentId === 'AIC-2026-0004' ? nextProfiles.promise : Promise.resolve([PROFILE])
+      );
+      const view = await renderWorkspace({ assessmentId: ASSESSMENT_ID });
+      openStrategyTab();
+
+      view.rerender(<Module2StrategicSourcingWorkspace assessmentId="AIC-2026-0004" />);
+
+      expect(screen.getByTestId('stub-category-table')).toHaveAttribute('data-profile-ids', '');
+      await act(async () => nextProfiles.resolve([SECOND_PROFILE]));
+      await flushPromises();
+      expect(screen.getByTestId('stub-category-table')).toHaveAttribute('data-profile-ids', SECOND_PROFILE.categoryId);
     });
 
     it('ignores a load failure that arrives after unmount', async () => {

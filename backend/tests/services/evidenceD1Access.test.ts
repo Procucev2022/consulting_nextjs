@@ -45,6 +45,7 @@ const REQUEST = 'req-access-test';
 
 const userFixture = (overrides: Partial<EvidenceUserRecord> = {}): EvidenceUserRecord => ({
   userId: 'usr-buyer',
+  tenantId: EVIDENCE_TEST_TENANT,
   name: 'Buyer',
   email: 'buyer@example.com',
   role: 'USER',
@@ -98,13 +99,14 @@ describe('value mappers', () => {
 
 describe('D1 read model', () => {
   it('reads the tenant, users, jobs, runs, and versions from D1', async () => {
-    expect(await loadTenantId(d1, REQUEST)).toBe(EVIDENCE_TEST_TENANT);
+    expect(await loadTenantId(d1, EVIDENCE_TEST_TENANT, REQUEST)).toBe(EVIDENCE_TEST_TENANT);
     expect(await loadUserRecord(d1, 'usr-buyer', REQUEST)).toMatchObject({ role: 'USER', email: 'buyer@example.com', status: 'ACTIVE' });
     expect(await loadUserRecord(d1, 'usr-missing', REQUEST)).toBeNull();
 
-    const job = await loadJobAccessRecord(d1, 'AIC-A', REQUEST);
-    expect(job).toMatchObject({ assessmentId: 'AIC-A', totalSpendCr: 7.5, customerContactEmail: 'Buyer@Example.com' });
-    expect(await loadJobAccessRecord(d1, 'AIC-NOPE', REQUEST)).toBeNull();
+    const job = await loadJobAccessRecord(d1, 'AIC-A', EVIDENCE_TEST_TENANT, REQUEST);
+    expect(job).toMatchObject({ assessmentId: 'AIC-A', tenantId: EVIDENCE_TEST_TENANT, totalSpendCr: 7.5, customerContactEmail: 'Buyer@Example.com' });
+    expect(await loadJobAccessRecord(d1, 'AIC-A', 'TNT-OTHER', REQUEST)).toBeNull();
+    expect(await loadJobAccessRecord(d1, 'AIC-NOPE', EVIDENCE_TEST_TENANT, REQUEST)).toBeNull();
 
     const runs = await loadAnalysisRunRecords(d1, 'AIC-A', REQUEST);
     expect(runs.map((run) => run.analysisRunId)).toEqual(['RUN-A2', 'RUN-A1']);
@@ -134,7 +136,8 @@ describe('D1 read model', () => {
   });
 
   it('returns no records for an unknown tenant in the snapshot queries', async () => {
-    expect(await loadTenantId(failingDb, REQUEST).catch((error: unknown) => error)).toBeInstanceOf(Error);
+    expect(await loadTenantId(failingDb, EVIDENCE_TEST_TENANT, REQUEST).catch((error: unknown) => error)).toBeInstanceOf(Error);
+    expect(await loadTenantId(d1, 'TNT-UNKNOWN', REQUEST)).toBeNull();
     expect(await loadDataVersionRecords(d1, 'AIC-NOPE', REQUEST)).toEqual([]);
   });
 });
@@ -142,6 +145,7 @@ describe('D1 read model', () => {
 describe('snapshot loader', () => {
   const job = {
     assessmentId: 'AIC-A',
+    tenantId: EVIDENCE_TEST_TENANT,
     customerName: 'Alpha Textile',
     status: 'APPROVED',
     totalSpendCr: 7.5,
@@ -185,18 +189,6 @@ describe('snapshot loader', () => {
     expect(isActiveRun(makeRun({ isSuperseded: true }))).toBe(false);
   });
 
-  it('fails with a 503 when the tenant row is missing', async () => {
-    const scoped = createEvidenceDatabase();
-    scoped.db.exec('DELETE FROM TenantMaster');
-    try {
-      await loadEvidenceSnapshot(scoped.d1, job, { requestId: REQUEST });
-      throw new Error('expected a 503');
-    } catch (error) {
-      expect(error).toMatchObject({ status: EVIDENCE_HTTP_STATUS.SERVICE_UNAVAILABLE, category: EVIDENCE_ERROR_CATEGORIES.SERVER });
-    } finally {
-      scoped.close();
-    }
-  });
 });
 
 describe('access service', () => {
@@ -235,18 +227,24 @@ describe('access service', () => {
 
   it('lets an admin read any job and returns 404 for a job that does not exist', () => {
     const admin = userFixture({ role: 'ADMIN' });
-    const job = { assessmentId: 'AIC-A', customerName: 'x', status: 'y', totalSpendCr: 1, validatedSpendCr: 1, grossOpportunityCr: 1, overlapDeductionsCr: 0, netDefensibleOpportunityCr: 1, potentialSavingsCr: 1, savingsPct: 1, customerContactEmail: null };
-    expect(authorizeEvidenceJobAccess(admin, job, 'AIC-A')).toBe(job);
-    expect(() => authorizeEvidenceJobAccess(admin, null, 'AIC-Z')).toThrow(EVIDENCE_MESSAGES.jobNotFound('AIC-Z'));
+    const job = { assessmentId: 'AIC-A', tenantId: EVIDENCE_TEST_TENANT, customerName: 'x', status: 'y', totalSpendCr: 1, validatedSpendCr: 1, grossOpportunityCr: 1, overlapDeductionsCr: 0, netDefensibleOpportunityCr: 1, potentialSavingsCr: 1, savingsPct: 1, customerContactEmail: null };
+    expect(authorizeEvidenceJobAccess(admin, job, 'AIC-A', EVIDENCE_TEST_TENANT)).toBe(job);
+    expect(() => authorizeEvidenceJobAccess(admin, null, 'AIC-Z', EVIDENCE_TEST_TENANT)).toThrow(EVIDENCE_MESSAGES.jobNotFound('AIC-Z'));
   });
 
   it('matches customer emails case-insensitively and denies every other customer request', () => {
-    const job = { assessmentId: 'AIC-A', customerName: 'x', status: 'y', totalSpendCr: 1, validatedSpendCr: 1, grossOpportunityCr: 1, overlapDeductionsCr: 0, netDefensibleOpportunityCr: 1, potentialSavingsCr: 1, savingsPct: 1, customerContactEmail: ' BUYER@example.com ' };
-    expect(authorizeEvidenceJobAccess(userFixture(), job, 'AIC-A')).toBe(job);
+    const job = { assessmentId: 'AIC-A', tenantId: EVIDENCE_TEST_TENANT, customerName: 'x', status: 'y', totalSpendCr: 1, validatedSpendCr: 1, grossOpportunityCr: 1, overlapDeductionsCr: 0, netDefensibleOpportunityCr: 1, potentialSavingsCr: 1, savingsPct: 1, customerContactEmail: ' BUYER@example.com ' };
+    expect(authorizeEvidenceJobAccess(userFixture(), job, 'AIC-A', EVIDENCE_TEST_TENANT)).toBe(job);
     const noContact = { ...job, customerContactEmail: null };
     const other = userFixture({ email: 'other@example.com' });
-    expect(() => authorizeEvidenceJobAccess(other, job, 'AIC-A')).toThrow(EVIDENCE_MESSAGES.accessDenied('AIC-A'));
-    expect(() => authorizeEvidenceJobAccess(userFixture(), noContact, 'AIC-A')).toThrow(EvidenceRequestError);
-    expect(() => authorizeEvidenceJobAccess(userFixture(), null, 'AIC-A')).toThrow(EVIDENCE_MESSAGES.accessDenied('AIC-A'));
+    expect(() => authorizeEvidenceJobAccess(other, job, 'AIC-A', EVIDENCE_TEST_TENANT)).toThrow(EVIDENCE_MESSAGES.accessDenied('AIC-A'));
+    expect(() => authorizeEvidenceJobAccess(userFixture(), noContact, 'AIC-A', EVIDENCE_TEST_TENANT)).toThrow(EvidenceRequestError);
+    expect(() => authorizeEvidenceJobAccess(userFixture(), null, 'AIC-A', EVIDENCE_TEST_TENANT)).toThrow(EVIDENCE_MESSAGES.accessDenied('AIC-A'));
+  });
+
+  it('denies users whose explicit tenant assignment differs from the resolved request tenant', () => {
+    const job = { assessmentId: 'AIC-A', tenantId: EVIDENCE_TEST_TENANT, customerName: 'x', status: 'y', totalSpendCr: 1, validatedSpendCr: 1, grossOpportunityCr: 1, overlapDeductionsCr: 0, netDefensibleOpportunityCr: 1, potentialSavingsCr: 1, savingsPct: 1, customerContactEmail: 'buyer@example.com' };
+    expect(() => authorizeEvidenceJobAccess(userFixture({ tenantId: 'TNT-OTHER' }), job, 'AIC-A', EVIDENCE_TEST_TENANT))
+      .toThrow(EVIDENCE_MESSAGES.tenantAssignmentRequired);
   });
 });

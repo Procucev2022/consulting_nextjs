@@ -1,5 +1,6 @@
 import type { COMMERCIAL_WORKFLOW } from '../constants/commercialWorkflow';
 import type { AuthRouteResult, CloudflareD1Database } from './cloudflare';
+import type { SubscriptionProvisionInput } from './validation';
 
 export type CommercialUpgradeStatus = typeof COMMERCIAL_WORKFLOW.upgradeStatus[
   keyof typeof COMMERCIAL_WORKFLOW.upgradeStatus
@@ -28,6 +29,19 @@ export interface UpgradeRequestD1Row {
   created_at: string;
   updated_at: string;
 }
+
+export interface UpgradeCodeLoginUser extends Record<string, unknown> {
+  id: string;
+  tenant_id: string;
+}
+
+export type UpgradeCodeLoginPreflight =
+  | { ok: true; record: UpgradeRequestD1Row; user: UpgradeCodeLoginUser; codeHash: string }
+  | { ok: false; result: AuthRouteResult };
+
+export type UpgradeRedemptionOutcome = typeof COMMERCIAL_WORKFLOW.upgradeRedemption[
+  keyof typeof COMMERCIAL_WORKFLOW.upgradeRedemption
+];
 
 export interface AdminOtpSessionD1Row {
   id: string;
@@ -63,6 +77,10 @@ export interface SubscriptionRecordD1Row {
   created_at: string;
   updated_at: string;
 }
+
+export type SubscriptionProvisionPreflight =
+  | { ok: true; input: SubscriptionProvisionInput; customer: Record<string, unknown> }
+  | { ok: false; result: AuthRouteResult };
 
 export interface CommercialActor {
   id: string;

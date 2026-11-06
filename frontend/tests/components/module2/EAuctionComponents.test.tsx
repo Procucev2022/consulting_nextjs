@@ -756,15 +756,23 @@ describe('EAuctionDynamicBiddingView Component', () => {
     expect(fySelect()).toHaveValue('ALL');
   });
 
-  it('does not request candidates when no assessment is selected', () => {
+  it('does not request candidates when no assessment is selected', async () => {
     render(<EAuctionDynamicBiddingView assessmentId="" />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
     expect(screen.getByText(strings.pageTitle)).toBeInTheDocument();
     expect(Module2StrategicSourcingApi.getEAuctionDynamicBidding).not.toHaveBeenCalled();
     expect(screen.queryByText(strings.cardTotalSpendReviewed)).not.toBeInTheDocument();
   });
 
-  it('treats an undefined assessment prop as no selection', () => {
+  it('treats an undefined assessment prop as no selection', async () => {
     render(<EAuctionDynamicBiddingView assessmentId={undefined} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
     expect(Module2StrategicSourcingApi.getEAuctionDynamicBidding).not.toHaveBeenCalled();
     expect(screen.queryByText(strings.cardTotalSpendReviewed)).not.toBeInTheDocument();
   });

@@ -28,10 +28,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24 LTS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: "npm"
 
       - name: Install Dependencies
@@ -73,10 +73,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24 LTS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: "npm"
 
       - name: Install Dependencies
@@ -124,10 +124,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24 LTS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Download Backend Coverage
         uses: actions/download-artifact@v8
@@ -145,7 +145,6 @@ jobs:
 
       - name: Post PR Summary Comment
         if: github.event_name == 'pull_request'
-        continue-on-error: true
         uses: actions/github-script@v9
         env:
           BACKEND_GATE_RESULT: ${{ needs.backend-gate.result }}
@@ -162,10 +161,11 @@ jobs:
               const summaryScript = path.resolve('scripts/generate-ci-summary.js');
               summaryMarkdown = execSync(`node ${summaryScript}`, { encoding: 'utf8' });
             } catch (err) {
-              summaryMarkdown = '## 🚀 Quality Gate Execution Completed';
+              core.error(`Unable to generate the detailed quality summary: ${err.message}`);
+              throw err;
             }
             try {
-              core.summary.addRaw(summaryMarkdown).write();
+              await core.summary.addRaw(summaryMarkdown).write();
             } catch (summaryErr) {
               console.warn('Unable to write to step summary:', summaryErr);
             }
@@ -174,10 +174,11 @@ jobs:
             const body = `${botCommentIdentifier}\n${summaryMarkdown}`;
 
             try {
-              const { data: comments } = await github.rest.issues.listComments({
+              const comments = await github.paginate(github.rest.issues.listComments, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
+                per_page: 100,
               });
 
               const existingComment = comments.find((c) => c.body && c.body.includes(botCommentIdentifier));
@@ -197,14 +198,15 @@ jobs:
                 });
               }
             } catch (commentErr) {
-              core.warning(`Unable to post/update PR comment: ${commentErr.message}. Ensure GitHub Actions has Read and write permissions in Repository Settings > Actions > General.`);
+              core.error(`Unable to post/update the required PR summary: ${commentErr.message}. Ensure GitHub Actions has Read and write permissions in Repository Settings > Actions > General.`);
+              throw commentErr;
             }
 
       - name: Require All Quality Gates To Pass
         if: always() && (needs.backend-gate.result != 'success' || needs.frontend-gate.result != 'success')
         run: exit 1
-  deploy:
-    name: Deploy to Cloudflare
+  deploy-config-check:
+    name: Validate Cloudflare Deployment Configuration
     needs: [backend-gate, frontend-gate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -214,10 +216,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24 LTS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install Dependencies
         run: |
@@ -226,19 +228,13 @@ jobs:
           npm ci --prefix backend --legacy-peer-deps
 
       - name: Build Frontend (OpenNext / Vinext)
-        run: npm run build:vinext || npm run cloudflare:build
+        run: npm run cloudflare:build
         working-directory: frontend
 
-      - name: Deploy to Cloudflare
-        run: npx wrangler deploy
+      - name: Validate Production Frontend Worker Bundle
+        run: npx wrangler deploy --dry-run --env prod
         working-directory: frontend
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy Enterprise Backend Worker
-        run: npx wrangler deploy
+      - name: Validate Production Backend Worker Bundle
+        run: npx wrangler deploy --dry-run --env prod
         working-directory: backend
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

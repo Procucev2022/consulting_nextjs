@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UI_STRINGS, VENDOR_CONSOLIDATION_UI_CONFIG } from '../../src/constants';
 import type { MaterialMappingEntry } from '../../src/types/module2MaterialMapping';
@@ -66,7 +67,7 @@ describe('Module 2 D1 mapping API', () => {
     const fetchMock = vi.fn().mockResolvedValue(successfulResponse());
     vi.stubGlobal('fetch', fetchMock);
     await expect(saveModule2MaterialMappings('ASM-1', [validMapping])).resolves.toHaveLength(1);
-    expect(fetchMock).toHaveBeenCalledWith(
+    expectApiFetchCall(fetchMock,
       expect.stringContaining(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_UPDATE_ENDPOINT),
       expect.objectContaining({
         method: 'POST',

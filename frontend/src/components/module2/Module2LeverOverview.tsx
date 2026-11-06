@@ -74,7 +74,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
       <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
-            MODULE 2 TAXONOMY
+            {strings.sectionBadge}
           </span>
           <span className="text-xs text-slate-500 font-mono">{assessmentId}</span>
         </div>
@@ -98,14 +98,14 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/30 text-blue-200 border border-blue-400/30">
-                PART F SAVINGS CONTROL
+                {strings.savingsControlBadge}
               </span>
               <span className="text-xs font-semibold text-slate-300">
-                Cross-Lever Deduplication Engine Active
+                {strings.deduplicationEngineActive}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Consolidated single source of truth across Levers 1–10. Prevents double-counting and establishes the maximum defensible net savings opportunity.
+              {strings.consolidatedSavingsDescription}
             </p>
           </div>
           {onSelectLever && (
@@ -114,7 +114,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
               onClick={() => onSelectLever('consolidatedSavings')}
               className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
             >
-              <span>View Consolidated Savings</span>
+              <span>{strings.btnViewConsolidatedSavings}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
@@ -127,7 +127,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
           const isImplemented = lever.implementationStatus === 'IMPLEMENTED';
           const isExpanded = !!expandedDiagnostics[lever.id];
           const histOppText = lever.id === 1 && directPriceOppCr !== undefined
-            ? `₹${directPriceOppCr.toFixed(2)} Cr`
+            ? strings.formatOpportunity(directPriceOppCr)
             : strings.unquantifiedNotice;
 
           return (
@@ -184,7 +184,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                       {strings.lblValidatedSavings}
                     </div>
                     <div className="text-base font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                      ₹0.00 Cr
+                      {strings.zeroValidatedSavings}
                     </div>
                   </div>
 
@@ -205,7 +205,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                         disabled
                         data-testid={`lever-coming-soon-btn-${lever.id}`}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 text-xs font-semibold cursor-not-allowed"
-                        title="Lever 7: Logistics & Packaging Specifications is coming soon"
+                        title={strings.comingSoonTitle}
                       >
                         <Clock className="w-3 h-3" />
                         <span>{strings.btnComingSoon}</span>
@@ -245,7 +245,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
               {isExpanded && (
                 <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-xs space-y-3 animate-in fade-in duration-150">
                   <div>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Methodology Summary:</span>{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{strings.methodologySummaryTitle}</span>{' '}
                     <span className="text-slate-600 dark:text-slate-400">{lever.methodologySummary}</span>
                   </div>
 

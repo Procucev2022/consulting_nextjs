@@ -34,6 +34,21 @@ export const adminUpdateUserTierSchema = z.object({
   tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
 });
 
+export const adminAssignUserTenantSchema = z.object({
+  tenant_id: z.string().trim().min(1).max(120)
+}).strict();
+
+export const adminTenantSchema = z.object({
+  tenant_id: z.string().trim().min(1).max(120),
+  enterprise_name: z.string().trim().min(1).max(160),
+  status: z.string().trim().min(1).max(40)
+});
+
+export const adminTenantsResponseSchema = z.object({
+  success: z.boolean(),
+  tenants: z.array(adminTenantSchema)
+});
+
 export const updateActionPlanSchema = z.object({
   actionId: z.string().min(1, 'actionId is required'),
   status: z.enum(['Open', 'In Progress', 'Completed', 'Deferred']).optional(),

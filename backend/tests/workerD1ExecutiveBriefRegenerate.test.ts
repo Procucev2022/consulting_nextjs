@@ -1,13 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
+import { handleExecutiveBriefRegenerate } from '../src/workerD1ExecutiveBriefRegenerate';
 import { extractBearerToken, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
 import { AUTH_MESSAGES } from '../src/constants/auth';
-import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from '../src/constants/executiveBriefRouteConstants';
+import {
+  EXECUTIVE_BRIEF_HTTP_STATUS,
+  EXECUTIVE_BRIEF_MESSAGES,
+  EXECUTIVE_BRIEF_ROUTE_BASE
+} from '../src/constants/executiveBriefRouteConstants';
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
 } from '../src/constants/executiveOpportunityBriefConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
+import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
+import logger from '../src/utils/logger';
+import * as workerAuth from '../src/workerAuth';
 import {
   TEST_AUTH_SECRET,
   adminToken,
@@ -61,15 +69,34 @@ const regenerationDatabase = (
             name: 'D1 Admin',
             email: 'admin@example.test',
             role: user.role ?? (userId === 'usr-standard-test' ? 'USER' : 'ADMIN'),
-            status: user.status ?? 'ACTIVE'
+            status: user.status ?? 'ACTIVE',
+            tenant_id: 'TEN-1'
           } as T;
         }
         if (failBriefQuery) throw new Error('D1 report query failed');
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant) {
+          return (tenants.find((tenant) => tenant.tenant_id === values[0]) ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
+          return {
+            transaction_count: 1,
+            total_spend_cr: 1,
+            supplier_count: 1,
+            material_count: 1,
+            plant_count: 1,
+            purchase_order_count: 1,
+            first_transaction_date: '2026-01-01',
+            last_transaction_date: '2026-01-01'
+          } as T;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunityMetrics) {
+          return { opportunity_count: 0, estimated_savings_cr: 0, average_confidence: 0 } as T;
+        }
         return null;
       },
       all: async <T>() => {
         if (failBriefQuery) throw new Error('D1 report query failed');
-        return { results: (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants ? tenants : []) as T[] };
+        return { results: [] as T[] };
       },
       run: async () => ({ success: true })
     };
@@ -176,6 +203,69 @@ describe('executive brief regeneration authorization', () => {
     expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.tokenInvalid);
   });
 
+  it('logs token verifier exceptions without logging the bearer token', async () => {
+    const failure = new Error('Web Crypto verification unavailable');
+    vi.spyOn(workerAuth, 'verifyToken').mockRejectedValueOnce(failure);
+    const request = briefRequest('POST', REGENERATE_PATH, {
+      headers: {
+        Authorization: 'Bearer sensitive-test-token',
+        'X-Request-Id': 'req-executive-auth-verify'
+      }
+    });
+
+    const outcome = await authorizeExecutiveBriefAdmin(request, testEnvironment());
+
+    expect(outcome).toEqual({
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+      message: EXECUTIVE_BRIEF_MESSAGES.tokenInvalid
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Executive brief token verification failed',
+      expect.objectContaining({
+        action: 'executive-brief.auth.verify-token',
+        method: 'POST',
+        path: `${EXECUTIVE_BRIEF_ROUTE_BASE}${REGENERATE_PATH}`,
+        requestId: 'req-executive-auth-verify',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+        fallbackApplied: true
+      }),
+      failure
+    );
+    expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain('sensitive-test-token');
+  });
+
+  it('logs account lookup exceptions while preserving the service-unavailable fallback', async () => {
+    const failure = new Error('D1 current-user lookup failed');
+    vi.spyOn(workerAuth, 'authenticateWorkerUser').mockRejectedValueOnce(failure);
+    const request = briefRequest('POST', REGENERATE_PATH, {
+      headers: {
+        Authorization: `Bearer ${await adminToken()}`,
+        'X-Request-Id': 'req-executive-auth-d1'
+      }
+    });
+
+    const outcome = await authorizeExecutiveBriefAdmin(request, testEnvironment());
+
+    expect(outcome).toEqual({
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Executive brief administrator account lookup failed',
+      expect.objectContaining({
+        action: 'executive-brief.auth.account-lookup',
+        method: 'POST',
+        path: `${EXECUTIVE_BRIEF_ROUTE_BASE}${REGENERATE_PATH}`,
+        requestId: 'req-executive-auth-d1',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+        fallbackApplied: true
+      }),
+      failure
+    );
+  });
+
   it('uses the active account lookup result to enforce current admin access', async () => {
     const response = await regenerate({
       token: await adminToken(),
@@ -253,6 +343,57 @@ describe('executive brief regeneration', () => {
     expect(numericBody.errors[0].path).toBe('client');
   });
 
+  it('rejects oversized regeneration JSON before loading the D1 report', async () => {
+    const oversized = await regenerate({
+      token: await adminToken(),
+      body: JSON.stringify({ client: 'x'.repeat(WORKER_JSON_BODY_MAX_BYTES) })
+    });
+
+    expect(oversized.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.PAYLOAD_TOO_LARGE);
+    expect(((await oversized.json()) as { message: string }).message)
+      .toContain(String(WORKER_JSON_BODY_MAX_BYTES));
+  });
+
+  it('logs and rethrows unexpected request stream failures', async () => {
+    const token = await adminToken();
+    const request = briefRequest('POST', REGENERATE_PATH, {
+      headers: { Authorization: `Bearer ${token}` }, body: '{}'
+    });
+    const stream = request.body;
+    if (!stream) throw new Error('Expected a request body stream');
+    vi.spyOn(stream, 'getReader').mockImplementation(() => {
+      throw new Error('Request body stream is unavailable');
+    });
+
+    await expect(handleExecutiveBriefRegenerate(request, testEnvironment()))
+      .rejects.toThrow('Request body stream is unavailable');
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Failed to read D1 executive brief regeneration body',
+      expect.objectContaining({ action: 'regenerate.readBody', requestId: expect.any(String) }),
+      expect.objectContaining({ message: 'Request body stream is unavailable' })
+    );
+  });
+
+  it('returns a D1 unavailable response if the binding disappears after authorization', async () => {
+    const database = regenerationDatabase([{ tenant_id: 'TEN-1', enterprise_name: 'D1 Enterprise' }]);
+    const base = testEnvironment({ DB: database });
+    let databaseReads = 0;
+    const environment = new Proxy(base, {
+      get(target, property, receiver) {
+        if (property === 'DB') {
+          databaseReads += 1;
+          return databaseReads <= 3 ? database : undefined;
+        }
+        return Reflect.get(target, property, receiver);
+      }
+    }) as CloudflareEnvironment;
+    const response = await regenerate({ token: await adminToken(), env: environment });
+
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable);
+  });
+
   it('returns 404 for a client that does not match the active D1 tenant', async () => {
     const response = await regenerate({ token: await adminToken(), body: '{"client":"ABC Textile Ltd"}' });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
@@ -289,7 +430,7 @@ describe('executive brief regeneration', () => {
       .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable);
   });
 
-  it('reports missing and ambiguous tenant scopes from D1 without publishing artifacts', async () => {
+  it('reports missing tenant data and uses the explicitly selected tenant without cross-tenant ambiguity', async () => {
     const missing = await regenerate({
       token: await adminToken(),
       env: testEnvironment({ DB: regenerationDatabase([]) })
@@ -297,15 +438,23 @@ describe('executive brief regeneration', () => {
     expect(missing.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
     expect(((await missing.json()) as { reason: string }).reason).toBe('no-tenant');
 
-    const ambiguous = await regenerate({
+    const selectedTenant = await regenerate({
       token: await adminToken(),
       env: testEnvironment({ DB: regenerationDatabase([
         { tenant_id: 'TEN-1', enterprise_name: 'One' },
         { tenant_id: 'TEN-2', enterprise_name: 'Two' }
-      ]) })
+      ]), REQUEST_TENANT_ID: 'TEN-2' })
     });
-    expect(ambiguous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
-    expect(((await ambiguous.json()) as { reason: string }).reason).toBe('ambiguous-tenant');
+    expect(selectedTenant.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+  });
+
+  it('rejects regeneration when there is no trusted tenant scope', async () => {
+    const response = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([{ tenant_id: 'TEN-1', enterprise_name: 'One' }]), REQUEST_TENANT_ID: undefined })
+    });
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+    expect(((await response.json()) as { reason: string }).reason).toBe('tenant-scope-required');
   });
 
   it('returns a request-correlated failure when D1 throws while loading the report', async () => {

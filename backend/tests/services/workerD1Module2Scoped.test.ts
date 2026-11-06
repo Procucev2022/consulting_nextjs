@@ -1,6 +1,8 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { clearScopedModule2Cache, handleScopedModule2Route } from '../../src/services/workerD1Module2Scoped';
-import { DEFAULT_CACHE_TTL_MS } from '../../src/constants/db';
+import {
+  DEFAULT_CACHE_TTL_MS, D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES, D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS
+} from '../../src/constants/db';
 import {
   MODULE2_D1_PENDING_ROUTES, MODULE2_D1_PROFILE_LIST_BUDGET_BYTES, MODULE2_D1_SCOPED_MESSAGES
 } from '../../src/constants/module2D1Scoped';
@@ -19,6 +21,9 @@ import { Module2CompactSourcingEngine } from '../../src/services/module2CompactS
 import { buildCategorySpecialisationFromD1 } from '../../src/services/workerD1CategorySpecialisation';
 import { MODULE2_D1_CATEGORY_SPECIALISATION } from '../../src/constants/module2CategorySpecialisationD1';
 import { handleScopedSpecialRoute } from '../../src/services/workerD1Module2ScopedSpecialRoutes';
+import { getOrLoadScopedModule2Analysis, getScopedModule2Cache } from '../../src/services/workerD1Module2Cache';
+import { createD1RequestMetrics, getD1RuntimeMetrics, instrumentD1Database } from '../../src/services/d1QueryTelemetry';
+import type { ScopedModule2Analysis } from '../../src/types/module2D1Scoped';
 
 const categoryMappings = getD1CategoryMappingsFixture();
 
@@ -42,16 +47,36 @@ const database = (datasets: Record<string, D1Record[]> = {
     material_group_code, category_name
   }));
   const all = vi.fn();
-  const bind = vi.fn().mockImplementation((...values: string[]) => ({
-    all: () => { all(...values); return Promise.resolve({ results: datasets[values[0]] || [] }); }
+  const bind = vi.fn();
+  const prepare = vi.fn((sql: string) => ({
+    bind: (...values: string[]) => {
+      bind(...values);
+      return {
+        all: () => {
+          if (sql.includes('SELECT assessment_id, customer_name FROM AssessmentRecord')) {
+            return Promise.resolve({ results: datasets[values[0]]
+              ? [{ assessment_id: values[0], customer_name: `Customer ${values[0]}` }]
+              : [] });
+          }
+          all(...values);
+          return Promise.resolve({ results: datasets[values[0]] || [] });
+        }
+      };
+    },
+    all: () => Promise.resolve({ results: categoryMappingRows })
   }));
-  const prepare = vi.fn().mockReturnValue({ bind, all: () => Promise.resolve({ results: categoryMappingRows }) });
   return { db: { prepare } as unknown as CloudflareD1Database, prepare, bind, all };
 };
 
 const call = (db: CloudflareD1Database, path: string, query = '?assessmentId=A1', headers = {}) => {
   const url = new URL(`https://edge.test/api/module2/sourcing${path}${query}`);
-  return handleScopedModule2Route(db, path, new Request(url, { headers }), url);
+  const requestHeaders = new Headers(headers);
+  const scopeRequested = url.searchParams.has('assessmentId') || url.searchParams.has('tenantId') ||
+    requestHeaders.has('x-assessment-id') || requestHeaders.has('x-tenant-id');
+  const tenantId = url.searchParams.get('tenantId') || requestHeaders.get('x-tenant-id') ||
+    (scopeRequested ? 'T1' : undefined);
+  if (tenantId) requestHeaders.set('x-resolved-tenant-id', tenantId);
+  return handleScopedModule2Route(db, path, new Request(url, { headers: requestHeaders }), url);
 };
 
 describe('assessment-scoped D1 sourcing adapter', () => {
@@ -70,6 +95,9 @@ describe('assessment-scoped D1 sourcing adapter', () => {
           JSON.stringify({ inclusionStatus, lineSpendInr: 40, inrUnitPrice: 20, transactionDate: '2026-01-01' }));
       }
       insert.run('LEGACY-INR', 'T1', 'A1', 'Vendor', 'Paper', 'Packing', 1, 'KG', 10, 'INR', 10, '{}');
+      fixture.db.prepare(`INSERT INTO AssessmentRecord (
+        assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner
+      ) VALUES (?, ?, ?, ?, ?, ?)`).run('A1', 'T1', 'CUSTOMER-A1', 'Test customer', 'Manufacturing', 'test@example.test');
       expect((await call(fixture.d1, '/dashboard'))?.data).toMatchObject({ totalSpendAnalyzedInr: 50 });
       expect(analyze.mock.calls[0][0]).toEqual([
         expect.objectContaining({ id: 'VALID-USD', unit_price: 20, total_spend_inr: 40, po_date: '2026-01-01' }),
@@ -112,6 +140,13 @@ describe('assessment-scoped D1 sourcing adapter', () => {
       status: 409, data: { success: false }
     });
     expect(fixture.prepare).not.toHaveBeenCalled();
+  });
+
+  it('returns a not found response for an unsupported assessment-scoped route', async () => {
+    const fixture = database();
+    expect(await call(fixture.db, '/misspelled-analysis')).toMatchObject({
+      status: 404, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unknownRoute }
+    });
   });
 
   it('supports selected profiles, exact category ids, category names and missing-category responses', async () => {
@@ -386,6 +421,117 @@ describe('assessment-scoped D1 sourcing adapter', () => {
     expect((await call(different.db, '/dashboard'))?.data).toMatchObject({ totalSpendAnalyzedInr: 1 });
   });
 
+  it('shares cached analysis across request proxies and invalidates only the changed tenant dataset', async () => {
+    const fixture = database();
+    const firstRequest = instrumentD1Database(fixture.db, 'module2-cache-one', createD1RequestMetrics());
+    const secondRequest = instrumentD1Database(fixture.db, 'module2-cache-two', createD1RequestMetrics());
+    await call(firstRequest, '/dashboard');
+    await call(secondRequest, '/dashboard');
+    expect(fixture.all).toHaveBeenCalledTimes(1);
+    expect(getD1RuntimeMetrics(fixture.db)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
+
+    clearScopedModule2Cache(secondRequest, 'T1', 'A1');
+    await call(secondRequest, '/dashboard');
+    expect(fixture.all).toHaveBeenCalledTimes(2);
+  });
+
+  it('validates assessment ownership and resolves its customer name with one D1 lookup', async () => {
+    const fixture = database();
+    const result = await call(fixture.db, '/vendor-consolidation');
+    const assessmentReads = fixture.prepare.mock.calls.filter(([sql]) =>
+      String(sql).includes('FROM AssessmentRecord'));
+
+    expect(assessmentReads).toHaveLength(1);
+    expect(assessmentReads[0][0]).toContain('SELECT assessment_id, customer_name');
+    expect(result?.data).toMatchObject({ customerName: 'Customer A1' });
+  });
+
+  it('bounds cache entries and keeps the current tenant dataset', async () => {
+    const fixture = database();
+    const cache = getScopedModule2Cache(fixture.db);
+    const value = Promise.resolve({ transactions: [], analysis: {} } as unknown as ScopedModule2Analysis);
+    for (let index = 0; index < D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES; index += 1) {
+      cache.set(JSON.stringify(['T1', `seed-${index}`]), {
+        expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 1, value
+      });
+    }
+    const oldestKey = JSON.stringify(['T1', 'seed-0']);
+    await call(fixture.db, '/dashboard');
+    expect(cache.size).toBe(D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES);
+    expect(cache.has(oldestKey)).toBe(false);
+    expect(cache.has(JSON.stringify(['T1', 'A1']))).toBe(true);
+    expect(Array.from(cache.values()).every((entry) => entry.expiresAt > Date.now())).toBe(true);
+  });
+
+  it('evicts old tenant datasets to stay within the cached transaction row budget', async () => {
+    const fixture = database();
+    const cache = getScopedModule2Cache(fixture.db);
+    const value = Promise.resolve({ transactions: [], analysis: {} } as unknown as ScopedModule2Analysis);
+    const oldKey = JSON.stringify(['T1', 'large-old-assessment']);
+    cache.set(oldKey, {
+      expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS - 1, value
+    });
+
+    await call(fixture.db, '/dashboard');
+
+    expect(cache.has(oldKey)).toBe(false);
+    expect(cache.has(JSON.stringify(['T1', 'A1']))).toBe(true);
+    expect([...cache.values()].reduce((total, entry) => total + entry.rowCount, 0))
+      .toBeLessThanOrEqual(D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS);
+  });
+
+  it('does not cache an oversized analysis when tenant scope is omitted', async () => {
+    const db = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const scope = { assessmentId: 'A1' } as ProcurementTransactionScope;
+    const oversized: ScopedModule2Analysis = {
+      transactions: new Array(D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS + 1)
+        .fill({} as ScopedModule2Analysis['transactions'][number]),
+      analysis: {} as ScopedModule2Analysis['analysis']
+    };
+
+    await expect(getOrLoadScopedModule2Analysis(
+      db, scope, false, 'oversized-analysis', async () => oversized
+    )).resolves.toBe(oversized);
+
+    expect(getScopedModule2Cache(db).has(JSON.stringify(['', 'A1']))).toBe(false);
+  });
+
+  it('does not repopulate cache after an in-flight analysis was invalidated', async () => {
+    const db = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const scope = { tenantId: 'T1', assessmentId: 'A1' } as ProcurementTransactionScope;
+    const result: ScopedModule2Analysis = { transactions: [], analysis: {} as ScopedModule2Analysis['analysis'] };
+    let resolveLoad: ((value: ScopedModule2Analysis) => void) | undefined;
+    const pending = getOrLoadScopedModule2Analysis(
+      db, scope, false, 'invalidated-analysis', () => new Promise((resolve) => { resolveLoad = resolve; })
+    );
+    await Promise.resolve();
+    clearScopedModule2Cache(db, 'T1', 'A1');
+    resolveLoad?.(result);
+    await expect(pending).resolves.toBe(result);
+
+    expect(getScopedModule2Cache(db).has(JSON.stringify(['T1', 'A1']))).toBe(false);
+  });
+
+  it('clears the scoped cache by database, tenant, dataset, and globally', () => {
+    const database = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const instrumented = instrumentD1Database(database, 'module2-cache-clear', createD1RequestMetrics());
+    const cache = getScopedModule2Cache(database);
+    const value = Promise.resolve({ transactions: [], analysis: {} } as unknown as ScopedModule2Analysis);
+    cache.set(JSON.stringify(['T1', 'A1']), { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 0, value });
+    cache.set(JSON.stringify(['T1', 'A2']), { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 0, value });
+    cache.set(JSON.stringify(['T2', 'A1']), { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 0, value });
+
+    clearScopedModule2Cache(instrumented, 'T1', 'A1');
+    expect(cache.has(JSON.stringify(['T1', 'A1']))).toBe(false);
+    clearScopedModule2Cache(database, 'T1');
+    expect([...cache.keys()]).toEqual([JSON.stringify(['T2', 'A1'])]);
+    clearScopedModule2Cache(instrumented);
+    expect(cache.size).toBe(0);
+    clearScopedModule2Cache({ prepare: vi.fn() } as unknown as CloudflareD1Database, 'missing');
+    clearScopedModule2Cache();
+    expect(getScopedModule2Cache(database)).not.toBe(cache);
+  });
+
   it('evicts failures and propagates invalid input rows rather than reusing another assessment', async () => {
     const fixture = database({ A1: [{ id: 'bad' }] });
     await expect(call(fixture.db, '/dashboard')).rejects.toThrow();
@@ -401,7 +547,7 @@ describe('assessment-scoped D1 sourcing adapter', () => {
       all: async () => ({ results: sqlite.prepare(sql).all() })
     }) } as unknown as CloudflareD1Database;
     try {
-      const result = await call(binding, '/categories', '?assessmentId=AIC-2026-0002');
+      const result = await call(binding, '/categories', '?assessmentId=AIC-2026-0002&tenantId=TNT-GLOBAL-8902');
       const profiles = (result?.data as any).profiles;
       const count = profiles.reduce((total: number, profile: any) => total + profile.transactionCount, 0);
       expect(count).toBe(23570);

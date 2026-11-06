@@ -205,7 +205,7 @@ describe('SpecificationRationalisationView coverage paths', () => {
     render(<SpecificationRationalisationView assessmentId={ASSESSMENT_ID} onNavigateBack={onNavigateBack} />);
     await screen.findByText(SPECIFICATION_UI_STRINGS.TITLE);
 
-    expect(fetchMock).toHaveBeenCalledWith(LOAD_URL);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(LOAD_URL);
 
     expect(screen.getByText(SPECIFICATION_UI_STRINGS.KPI_ASSESSED_MATERIALS)).toBeInTheDocument();
     expect(screen.getByText('150')).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import frontendLogger from './logger';
 import type {
   ExtractionResult,
@@ -16,7 +17,7 @@ export const aiApiClient = {
     fallbackModels: string[];
   }> {
     frontendLogger.debug('Checking Gemini AI configuration');
-    const res = await fetch(`${API_BASE}/api/ai/config`);
+    const res = await apiFetch(`${API_BASE}/api/ai/config`);
     return await res.json();
   },
 
@@ -27,7 +28,7 @@ export const aiApiClient = {
     fileName?: string;
   }): Promise<ExtractionResult> {
     frontendLogger.info('Invoking Gemini document AI extraction', { fileName: payload.fileName });
-    const res = await fetch(`${API_BASE}/api/ai/extract`, {
+    const res = await apiFetch(`${API_BASE}/api/ai/extract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -41,7 +42,7 @@ export const aiApiClient = {
     amount?: number;
   }>): Promise<CategorizationResult> {
     frontendLogger.info('Invoking Gemini UNSPSC AI categorization', { itemCount: items.length });
-    const res = await fetch(`${API_BASE}/api/ai/categorize`, {
+    const res = await apiFetch(`${API_BASE}/api/ai/categorize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items })
@@ -57,7 +58,7 @@ export const aiApiClient = {
     currency?: string;
   }): Promise<ExecutiveReportResult> {
     frontendLogger.info('Generating AI executive strategic report via Gemini');
-    const res = await fetch(`${API_BASE}/api/ai/executive-summary`, {
+    const res = await apiFetch(`${API_BASE}/api/ai/executive-summary`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -75,7 +76,7 @@ export const aiApiClient = {
     issueFlag?: string;
   }>): Promise<AnomalyAnalysisResult> {
     frontendLogger.info('Running Gemini pre-check anomaly detection', { recordCount: records.length });
-    const res = await fetch(`${API_BASE}/api/ai/analyze-anomalies`, {
+    const res = await apiFetch(`${API_BASE}/api/ai/analyze-anomalies`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ records })

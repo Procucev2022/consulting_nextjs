@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 import type {
   ConsolidatedSavingsData,
   ActionPlanItem,
@@ -68,7 +69,7 @@ export const savingsApiClient = {
     if (!validation.success) {
       throw new Error(`Invalid deploy payload: ${JSON.stringify(validation.errors)}`);
     }
-    const response = await fetch(`${API_BASE}/api/savings`, {
+    const response = await apiFetch(`${API_BASE}/api/savings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -79,7 +80,7 @@ export const savingsApiClient = {
   async getConsolidatedSavings(assessmentId?: string): Promise<ConsolidatedSavingsData> {
     frontendLogger.debug('Fetching consolidated savings with overlap de-duplication', { assessmentId });
     const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
-    const res = await fetch(`${API_BASE}/api/savings/consolidated${query}`);
+    const res = await apiFetch(`${API_BASE}/api/savings/consolidated${query}`);
     return readSavingsResponse<ConsolidatedSavingsData>(res, UI_STRINGS.module4.apiOperations.load);
   },
 
@@ -99,7 +100,7 @@ export const savingsApiClient = {
       throw new Error(`Invalid action plan update: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${API_BASE}/api/savings/action-plan/update`, {
+    const res = await apiFetch(`${API_BASE}/api/savings/action-plan/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -118,7 +119,7 @@ export const savingsApiClient = {
       throw new Error(`Invalid opportunity status update: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${API_BASE}/api/savings/opportunity/status`, {
+    const res = await apiFetch(`${API_BASE}/api/savings/opportunity/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)

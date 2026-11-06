@@ -37,11 +37,12 @@ export class Module2CommercialExcellenceEngine {
       INSUFFICIENT_DATA: 'Insufficient Data'
     };
 
+    const resolvedStatus: CommercialDimensionStatus = confidence === 'LOW' ? 'INSUFFICIENT_DATA' : status;
     return {
       dimensionKey: key,
       dimensionLabel: COMMERCIAL_DIMENSION_LABELS[key],
-      status,
-      statusLabel: statusLabels[status],
+      status: resolvedStatus,
+      statusLabel: statusLabels[resolvedStatus],
       currentCondition,
       observedEvidence,
       potentialImplication,
@@ -216,9 +217,9 @@ export class Module2CommercialExcellenceEngine {
     const optimizedCount = dimensions.filter(d => d.status === 'OPTIMIZED').length;
     const insufficientCount = dimensions.filter(d => d.status === 'INSUFFICIENT_DATA').length;
 
-    let overallStatus: CommercialDimensionStatus = 'PARTIALLY_OPTIMIZED';
-    if (opportunityCount >= 4) overallStatus = 'OPPORTUNITY_IDENTIFIED';
-    else if (optimizedCount >= 8) overallStatus = 'OPTIMIZED';
+    const overallStatus: CommercialDimensionStatus = insufficientCount === dimensions.length
+      ? 'INSUFFICIENT_DATA'
+      : 'OPPORTUNITY_IDENTIFIED';
 
     const statusLabels: Record<CommercialDimensionStatus, string> = {
       OPTIMIZED: 'Commercial Terms Optimized',

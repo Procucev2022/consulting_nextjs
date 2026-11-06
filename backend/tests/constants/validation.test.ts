@@ -3,6 +3,12 @@ import {
   requestHeadersSchema,
   tenantUpdateSchema,
   addIngestionFileSchema,
+  uploadIngestionFileSchema,
+  WORKER_JSON_BODY_MAX_BYTES,
+  INGESTION_UPLOAD_MAX_FILE_BYTES,
+  INGESTION_UPLOAD_MAX_BASE64_LENGTH,
+  INGESTION_UPLOAD_JSON_MAX_BYTES,
+  AI_EXTRACT_JSON_MAX_BYTES,
   updateValidationRecordSchema,
   mergeVendorSchema,
   deployOpportunitySchema,
@@ -21,6 +27,9 @@ import {
   adminUpdateUserTierSchema,
   pcbiReferenceQuerySchema,
   d1DatasetScopeSchema,
+  ingestionDataQuerySchema,
+  graphqlIngestionPageArgsSchema,
+  graphqlIngestionCursorSchema,
   changePasswordSchema,
   aiExtractSchema,
   aiCategorizeSchema,
@@ -41,8 +50,15 @@ import {
   eAuctionPlanningAssumptionSchema,
   materialMappingBulkUpdateSchema,
   pcbiAdminImportSchema,
-  pcbiAdminPublishSchema
+  pcbiAdminPublishSchema,
+  pcbiHistoricalObservationsQuerySchema
 } from '../../src/constants/validation';
+import {
+  D1_GRAPHQL_CURSOR_MAX_LENGTH,
+  D1_GRAPHQL_CURSOR_VERSION,
+  D1_INGESTION_CURSOR_ID_MAX_LENGTH,
+  D1_INGESTION_PAGE_SIZE
+} from '../../src/constants/d1';
 import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from '../../src/constants/d1';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from '../../src/constants/module2VendorConsolidationD1';
 
@@ -71,6 +87,13 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
       const result = requestHeadersSchema.safeParse({});
       expect(result.success).toBe(true);
     });
+
+    it('rejects blank, oversized, and unsafe request correlation IDs', () => {
+      expect(requestHeadersSchema.safeParse({ 'x-request-id': '   ' }).success).toBe(false);
+      expect(requestHeadersSchema.safeParse({ 'x-request-id': 'x'.repeat(129) }).success).toBe(false);
+      expect(requestHeadersSchema.safeParse({ 'x-request-id': 'bad id' }).success).toBe(false);
+      expect(requestHeadersSchema.safeParse({ 'x-request-id': 'req:worker-1.2_test' }).success).toBe(true);
+    });
   });
 
   describe('tenantUpdateSchema', () => {
@@ -79,12 +102,16 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
         enterprise_name: 'Test Corp',
         region: 'APAC',
         base_currency: 'INR',
-        financial_year: 'FY25-26',
+        total_spend_evaluated: 500,
         total_spend_evaluated_inr: 500,
-        target_savings_rate_pct: 10.5
+        major_sector: 'Chemicals',
+        minor_sector: 'Specialty chemicals',
+        status: 'ACTIVE'
       };
       const result = tenantUpdateSchema.safeParse(valid);
       expect(result.success).toBe(true);
+      expect(tenantUpdateSchema.safeParse({ enterprise_name: 'Test Corp', region: null }).success).toBe(true);
+      expect(tenantUpdateSchema.safeParse({ region: null }).success).toBe(false);
     });
 
     it('should reject empty update object', () => {
@@ -94,6 +121,11 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
 
     it('should reject invalid types', () => {
       const result = tenantUpdateSchema.safeParse({ total_spend_evaluated_inr: -10 });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject fields that are not persisted by the tenant table', () => {
+      const result = tenantUpdateSchema.safeParse({ financial_year: 'FY25-26' });
       expect(result.success).toBe(false);
     });
   });
@@ -137,6 +169,37 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
       expect(addIngestionFileSchema.safeParse({ file_name: '', file_type: 'CSV', file_size_mb: 2, records_count: 10 }).success).toBe(false);
       expect(addIngestionFileSchema.safeParse({ file_name: 'test.csv', file_type: 'CSV', file_size_mb: -1, records_count: 10 }).success).toBe(false);
       expect(addIngestionFileSchema.safeParse({ file_name: 'test.csv', file_type: 'CSV', file_size_mb: 1, records_count: -5 }).success).toBe(false);
+    });
+  });
+
+  describe('bounded request-body and ingestion upload validation', () => {
+    it('defines bounded default, upload, and AI extraction request sizes', () => {
+      expect(WORKER_JSON_BODY_MAX_BYTES).toBe(1024 * 1024);
+      expect(INGESTION_UPLOAD_MAX_FILE_BYTES).toBe(10 * 1024 * 1024);
+      expect(INGESTION_UPLOAD_MAX_BASE64_LENGTH).toBe(Math.ceil(INGESTION_UPLOAD_MAX_FILE_BYTES / 3) * 4);
+      expect(INGESTION_UPLOAD_JSON_MAX_BYTES).toBeGreaterThan(INGESTION_UPLOAD_MAX_BASE64_LENGTH);
+      expect(AI_EXTRACT_JSON_MAX_BYTES).toBe(INGESTION_UPLOAD_JSON_MAX_BYTES);
+    });
+
+    it('accepts valid bounded binary upload payloads and strips unrelated tenant input', () => {
+      expect(uploadIngestionFileSchema.safeParse({
+        fileName: 'ledger.xlsx', fileType: 'XLSX', fileBase64: 'aGVsbG8=',
+        fileSizeMb: 0.01, parseTransactions: true, tenant_id: 'untrusted-tenant'
+      })).toMatchObject({ success: true });
+      expect(uploadIngestionFileSchema.parse({ fileName: 'ledger.csv', fileBase64: 'data:application/octet-stream;base64,aGVs\nbG8=' }).fileBase64)
+        .toBe('data:application/octet-stream;base64,aGVsbG8=');
+      expect(uploadIngestionFileSchema.parse({ fileName: 'ledger.xlsx', tenant_id: 'untrusted-tenant' }))
+        .not.toHaveProperty('tenant_id');
+    });
+
+    it('rejects missing filenames, unsupported file types, malformed base64, and files above the payload cap', () => {
+      expect(uploadIngestionFileSchema.safeParse({}).success).toBe(false);
+      expect(uploadIngestionFileSchema.safeParse({ fileName: 'x', fileType: 'EXE' }).success).toBe(false);
+      expect(uploadIngestionFileSchema.safeParse({ fileName: 'x', fileBase64: 'not base64' }).success).toBe(false);
+      expect(uploadIngestionFileSchema.safeParse({ fileName: 'x', fileBase64: 'aGVsbG8=', fileSizeMb: 10.01 }).success).toBe(false);
+      expect(uploadIngestionFileSchema.safeParse({
+        fileName: 'x', fileBase64: 'A'.repeat(INGESTION_UPLOAD_MAX_BASE64_LENGTH + 1)
+      }).success).toBe(false);
     });
   });
 
@@ -361,6 +424,23 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
 });
 
 describe('Backend Validation Schemas: remaining schemas (constants/validation.ts)', () => {
+  describe('pcbiHistoricalObservationsQuerySchema', () => {
+    it('defaults bounded limits and accepts a valid archive date range', () => {
+      expect(pcbiHistoricalObservationsQuerySchema.parse({})).toMatchObject({ limit: 100 });
+      expect(pcbiHistoricalObservationsQuerySchema.parse({
+        pcbiId: 'PCBI-STEEL', startDate: '2021-01-01', endDate: '2022-12-31', limit: 500
+      })).toMatchObject({ pcbiId: 'PCBI-STEEL', limit: 500 });
+    });
+
+    it('rejects invalid dates, reversed periods, and limits beyond the scan bound', () => {
+      expect(pcbiHistoricalObservationsQuerySchema.safeParse({ startDate: 'bad-date' }).success).toBe(false);
+      expect(pcbiHistoricalObservationsQuerySchema.safeParse({
+        startDate: '2022-01-01', endDate: '2021-01-01'
+      }).success).toBe(false);
+      expect(pcbiHistoricalObservationsQuerySchema.safeParse({ limit: 501 }).success).toBe(false);
+    });
+  });
+
   describe('pcbiReferenceQuerySchema', () => {
     it('should apply the weekly index limit by default and trim text filters', () => {
       const result = pcbiReferenceQuerySchema.safeParse({ sector: '  Metals  ', pcbiId: 'PCBI-1', limit: '25' });
@@ -401,6 +481,23 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
     it('should reject dataset limits above the maximum and blank identifiers', () => {
       expect(d1DatasetScopeSchema.safeParse({ limit: D1_REPORTING.maxDatasetLimit + 1 }).success).toBe(false);
       expect(d1DatasetScopeSchema.safeParse({ assessmentId: '   ' }).success).toBe(false);
+    });
+  });
+
+  describe('ingestionDataQuerySchema', () => {
+    it('accepts complete pagination cursors and a request for the first page', () => {
+      expect(ingestionDataQuerySchema.safeParse({}).success).toBe(true);
+      expect(ingestionDataQuerySchema.safeParse({
+        queueAfterUploadedAt: '2026-04-01T00:00:00Z', queueAfterDocId: 'DOC-1',
+        validationAfterCreatedAt: '2026-04-01T00:00:00Z', validationAfterRecordId: 'REC-1'
+      }).success).toBe(true);
+    });
+
+    it('rejects incomplete, blank, and oversized cursors', () => {
+      expect(ingestionDataQuerySchema.safeParse({ queueAfterUploadedAt: '2026-04-01T00:00:00Z' }).success).toBe(false);
+      expect(ingestionDataQuerySchema.safeParse({ validationAfterRecordId: 'REC-1' }).success).toBe(false);
+      expect(ingestionDataQuerySchema.safeParse({ queueAfterUploadedAt: ' ', queueAfterDocId: 'DOC-1' }).success).toBe(false);
+      expect(ingestionDataQuerySchema.safeParse({ queueAfterUploadedAt: 'x'.repeat(81), queueAfterDocId: 'DOC-1' }).success).toBe(false);
     });
   });
 
@@ -548,8 +645,9 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
       expect(adminUserQuerySchema.safeParse({ status: 'DELETED' }).success).toBe(false);
     });
 
-    it('should accept only ACTIVE, SUSPENDED, or PENDING for status updates', () => {
+    it('should accept only ACTIVE or SUSPENDED for status updates', () => {
       expect(adminUpdateUserStatusSchema.safeParse({ status: 'SUSPENDED' }).success).toBe(true);
+      expect(adminUpdateUserStatusSchema.safeParse({ status: 'PENDING' }).success).toBe(false);
       expect(adminUpdateUserStatusSchema.safeParse({ status: 'DELETED' }).success).toBe(false);
     });
   });
@@ -817,5 +915,36 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
       }).success).toBe(false);
       expect(pcbiAdminPublishSchema.safeParse({ published_by: '' }).success).toBe(false);
     });
+  });
+});
+
+describe('GraphQL ingestion pagination schemas', () => {
+  it('defaults to a bounded page and accepts valid cursor arguments', () => {
+    expect(graphqlIngestionPageArgsSchema.parse({})).toEqual({ first: D1_INGESTION_PAGE_SIZE });
+    expect(graphqlIngestionPageArgsSchema.safeParse({ first: 25, after: 'cursor-token' }).success).toBe(true);
+  });
+
+  it('rejects non-positive, fractional, and oversized page sizes and blank cursors', () => {
+    expect(graphqlIngestionPageArgsSchema.safeParse({ first: 0 }).success).toBe(false);
+    expect(graphqlIngestionPageArgsSchema.safeParse({ first: 1.5 }).success).toBe(false);
+    expect(graphqlIngestionPageArgsSchema.safeParse({ first: D1_INGESTION_PAGE_SIZE + 1 }).success).toBe(false);
+    expect(graphqlIngestionPageArgsSchema.safeParse({ after: ' ' }).success).toBe(false);
+    expect(graphqlIngestionPageArgsSchema.safeParse({ after: 'x'.repeat(D1_GRAPHQL_CURSOR_MAX_LENGTH + 1) }).success).toBe(false);
+  });
+
+  it('accepts only versioned, typed, bounded keyset cursor payloads', () => {
+    expect(graphqlIngestionCursorSchema.safeParse({
+      version: D1_GRAPHQL_CURSOR_VERSION, kind: 'ingestionQueue', tenantId: 'TNT-1', timestamp: '2026-01-01', id: 'DOC-1'
+    }).success).toBe(true);
+    expect(graphqlIngestionCursorSchema.safeParse({
+      version: D1_GRAPHQL_CURSOR_VERSION + 1, kind: 'ingestionQueue', tenantId: 'TNT-1', timestamp: '2026-01-01', id: 'DOC-1'
+    }).success).toBe(false);
+    expect(graphqlIngestionCursorSchema.safeParse({
+      version: D1_GRAPHQL_CURSOR_VERSION, kind: 'unknown', tenantId: 'TNT-1', timestamp: '2026-01-01', id: 'DOC-1'
+    }).success).toBe(false);
+    expect(graphqlIngestionCursorSchema.safeParse({
+      version: D1_GRAPHQL_CURSOR_VERSION, kind: 'validationRecords', tenantId: 'TNT-1', timestamp: '2026-01-01',
+      id: 'x'.repeat(D1_INGESTION_CURSOR_ID_MAX_LENGTH + 1)
+    }).success).toBe(false);
   });
 });

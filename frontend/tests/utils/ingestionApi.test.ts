@@ -1,5 +1,7 @@
+import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ingestionApiClient } from '../../src/utils/ingestionApi';
+import frontendLogger from '../../src/utils/logger';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('ingestionApiClient', () => {
@@ -12,24 +14,75 @@ describe('ingestionApiClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('getIngestionData fetches queue and validation records with or without buyerId', async () => {
+  it('getIngestionData fetches queue and validation records with or without tenantId', async () => {
     const mockData = { queue: [], validationRecords: [] };
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
 
     const res1 = await ingestionApiClient.getIngestionData();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion');
+    expectApiFetchCall(global.fetch, '/api/ingestion');
     expect(res1).toEqual(mockData);
 
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockData })
     });
-    const res2 = await ingestionApiClient.getIngestionData('BUYER-100');
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion?buyerId=BUYER-100');
+    const res2 = await ingestionApiClient.getIngestionData('TENANT-100');
+    expectApiFetchCall(global.fetch, '/api/ingestion?tenantId=TENANT-100');
     expect(res2).toEqual(mockData);
+  });
+
+  it('encodes tenant-scoped keyset cursors when loading the next validation page', async () => {
+    const mockData = { queue: [], validationRecords: [], pagination: {}, summary: {} };
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
+      json: async () => ({ success: true, data: mockData })
+    });
+
+    const res = await ingestionApiClient.getIngestionData('TENANT-100', {
+      validationCursor: { createdAt: '2026-04-01 00:00:00', recordId: 'REC/101' }
+    });
+
+    expectApiFetchCall(global.fetch,
+      '/api/ingestion?tenantId=TENANT-100&validationAfterCreatedAt=2026-04-01+00%3A00%3A00&validationAfterRecordId=REC%2F101');
+    expect(res).toEqual(mockData);
+  });
+
+  it('encodes a directly selected document identifier into the tenant-scoped ingestion request', async () => {
+    const mockData = { queue: [], validationRecords: [], pagination: {}, summary: {} };
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
+      json: async () => ({ success: true, data: mockData })
+    });
+
+    await ingestionApiClient.getIngestionData('TENANT-100', { queueDocumentId: 'DOC/OLD-1' });
+
+    expectApiFetchCall(global.fetch, '/api/ingestion?tenantId=TENANT-100&queueDocumentId=DOC%2FOLD-1');
+  });
+
+  it('logs and exposes correlated ingestion queue failures', async () => {
+    const log = vi.spyOn(frontendLogger, 'error');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      headers: new Headers({ 'x-request-id': 'REQ-INGESTION-403' }),
+      json: async () => ({ message: 'Tenant assignment pending' })
+    });
+
+    await expect(ingestionApiClient.getIngestionData('TENANT-100')).rejects.toThrow(
+      UI_STRINGS.module4.apiRequestFailed(
+        UI_STRINGS.module4.apiOperations.ingestion, 403, 'Tenant assignment pending', 'REQ-INGESTION-403'
+      )
+    );
+    expect(log).toHaveBeenCalledWith('Tenant ingestion queue request failed', expect.objectContaining({
+      tenantId: 'TENANT-100', status: 403, requestId: 'REQ-INGESTION-403'
+    }));
   });
 
   it('getCanonicalModule1 fetches canonical model with query params and headers', async () => {
@@ -40,10 +93,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.getCanonicalModule1('data/spend.xlsx', 'ASS-101');
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion/canonical?filePath=data%2Fspend.xlsx&assessmentId=ASS-101',
-      { headers: { 'x-assessment-id': 'ASS-101' } }
-    );
+    expectApiFetchCall(global.fetch, '/api/ingestion/canonical?filePath=data%2Fspend.xlsx&assessmentId=ASS-101', { headers: { 'x-assessment-id': 'ASS-101' } });
     expect(res).toEqual(mockModel);
   });
 
@@ -54,7 +104,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.getCanonicalModule1();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/canonical', { headers: {} });
+    expectApiFetchCall(global.fetch, '/api/ingestion/canonical', { headers: {} });
     expect(res).toBeNull();
   });
 
@@ -69,7 +119,7 @@ describe('ingestionApiClient', () => {
       file_name: 'spend.xlsx',
       file_type: 'xlsx'
     });
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion', expect.objectContaining({
       method: 'POST'
     }));
     expect(res).toEqual(mockRes);
@@ -91,7 +141,7 @@ describe('ingestionApiClient', () => {
       fileName: 'test.csv',
       fileType: 'csv'
     });
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/upload-object', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/upload-object', expect.objectContaining({
       method: 'POST'
     }));
     expect(res).toEqual(mockRes);
@@ -105,7 +155,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.deleteIngestionFile('DOC-1');
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/document/DOC-1', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/document/DOC-1', expect.objectContaining({
       method: 'DELETE'
     }));
     expect(res).toEqual(mockRes);
@@ -135,7 +185,7 @@ describe('ingestionApiClient', () => {
     const res = await ingestionApiClient.updateValidationRecord('REC-1', {
       vendor_name: 'Acme Corp'
     });
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion', expect.objectContaining({
       method: 'PATCH'
     }));
     expect(res).toEqual(mockRes);
@@ -203,7 +253,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.applyBlanketRemediation();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/remediate', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/remediate', expect.objectContaining({
       method: 'POST'
     }));
     expect(res).toEqual(mockRes);
@@ -245,7 +295,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.resetValidationRecords();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/validation-records', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/validation-records', expect.objectContaining({
       method: 'DELETE'
     }));
     expect(res).toEqual(mockRes);
@@ -277,14 +327,14 @@ describe('ingestionApiClient', () => {
       .rejects.toThrow(UI_STRINGS.module4.apiRequestFailed('reset validation records', 503, 'D1 is unavailable', UI_STRINGS.common.notAvailable));
   });
 
-  it('deleteIngestionDocument handles docId and buyerId query variations', async () => {
+  it('deleteIngestionDocument handles document and tenant query variations', async () => {
     const mockRes = [];
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, data: mockRes })
     });
-    await ingestionApiClient.deleteIngestionDocument('DOC-99', 'BUYER-1');
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/document/DOC-99?buyerId=BUYER-1', expect.objectContaining({
+    await ingestionApiClient.deleteIngestionDocument('DOC-99', 'TENANT-1');
+    expectApiFetchCall(global.fetch, '/api/ingestion/document/DOC-99?tenantId=TENANT-1', expect.objectContaining({
       method: 'DELETE'
     }));
 
@@ -292,8 +342,8 @@ describe('ingestionApiClient', () => {
       ok: true,
       json: async () => ({ success: true, data: mockRes })
     });
-    await ingestionApiClient.deleteIngestionDocument(undefined, 'BUYER-2');
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/document?buyerId=BUYER-2', expect.objectContaining({
+    await ingestionApiClient.deleteIngestionDocument(undefined, 'TENANT-2');
+    expectApiFetchCall(global.fetch, '/api/ingestion/document?tenantId=TENANT-2', expect.objectContaining({
       method: 'DELETE'
     }));
 
@@ -302,7 +352,7 @@ describe('ingestionApiClient', () => {
       json: async () => ({ success: true, data: mockRes })
     });
     await ingestionApiClient.deleteIngestionDocument();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/document', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/document', expect.objectContaining({
       method: 'DELETE'
     }));
   });
@@ -329,7 +379,7 @@ describe('ingestionApiClient', () => {
     });
 
     const res = await ingestionApiClient.resetBlanketData();
-    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/reset', expect.objectContaining({
+    expectApiFetchCall(global.fetch, '/api/ingestion/reset', expect.objectContaining({
       method: 'POST'
     }));
     expect(res).toEqual(mockRes);

@@ -136,7 +136,11 @@ vi.mock('@/components/Module1Ingestion', async () => {
     Module1Ingestion: (componentProps: Record<string, unknown>) => {
       mocks.props.module1 = componentProps;
       // The summary anchor lets the refresh handler exercise its scroll-into-view branch.
-      return createElement('section', { id: 'document-summary-section', 'data-testid': 'harness-module1' });
+      return createElement('section', {
+        id: 'document-summary-section',
+        'data-testid': 'harness-module1',
+        ref: componentProps.summarySectionRef
+      });
     }
   };
 });
@@ -269,6 +273,7 @@ const BUYER_USER = {
   role: 'BUYER',
   status: 'ACTIVE',
   tier: 'GOLD',
+  tenant_id: 'TNT-TEST-1',
   full_name: 'Test Buyer',
   company_name: BUYER_COMPANY,
   phone: '+1234567890',
@@ -318,7 +323,7 @@ const ALWAYS_MOUNTED_HARNESSES = [
 
 const buildDocument = (overrides: Partial<RawDocumentIngestion> = {}): RawDocumentIngestion => ({
   doc_id: 'DOC-PAGE-001',
-  tenant_id: 'USR-TEST-1',
+  tenant_id: 'TNT-TEST-1',
   file_name: 'test_dataset.xlsx',
   file_type: 'XLSX',
   file_size_mb: 1.5,
@@ -644,7 +649,7 @@ async function settle(): Promise<void> {
   });
 }
 
-async function renderPage(): Promise<void> {
+async function renderPage(options: { expectOrchestration?: boolean } = {}): Promise<void> {
   render(<Home />);
   await waitFor(
     () => {
@@ -654,9 +659,11 @@ async function renderPage(): Promise<void> {
     },
     { timeout: 4000 }
   );
-  await waitFor(() => {
-    expect(orchestrationApi.getJobs).toHaveBeenCalled();
-  });
+  if (options.expectOrchestration !== false) {
+    await waitFor(() => {
+      expect(orchestrationApi.getJobs).toHaveBeenCalled();
+    });
+  }
   await settle();
 }
 
@@ -890,6 +897,17 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(mocks.routerPush).not.toHaveBeenCalled();
   });
 
+  it('uses the location fallback when the router hook returns no router', async () => {
+    mocks.useRouter.mockReturnValueOnce(null);
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
+    vi.mocked(authApiClient.getStoredToken).mockReturnValue(null);
+    const fakeLocation = stubLocation();
+
+    render(<Home />);
+
+    await waitFor(() => expect(fakeLocation.href).toBe('/login'));
+  });
+
   it('does not invent a D1 document when required database identifiers are missing', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(apiClient.getStoredUser).mockReturnValue(null);
@@ -900,10 +918,10 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
       })
     );
 
-    await renderPage();
+    await renderPage({ expectOrchestration: false });
 
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
-    expect(readProp<TenantMaster>('header', 'tenant').enterprise_name).toBe(mockTenant.enterprise_name);
+    expect(readProp<TenantMaster>('header', 'tenant').enterprise_name).toBe(UI_STRINGS.header.noActiveCustomer);
   });
 
   it('prioritizes the requested D1 document from the documentId query parameter', async () => {
@@ -919,6 +937,99 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([selectedDocument]);
   });
 
+  it('loads the next validation page and merges records by stable record ID', async () => {
+    const firstRecord = buildRecord('VAL-FIRST');
+    const secondRecord = buildRecord('VAL-SECOND');
+    const cursor = { createdAt: '2026-04-01T00:00:00Z', recordId: 'VAL-FIRST' };
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce(asIngestion({
+        ...defaultIngestion(),
+        validationRecords: [firstRecord],
+        pagination: { validationRecords: { hasMore: true, nextCursor: cursor } },
+        summary: {
+          totalFiles: 1, totalRecords: 2, cleanCount: 0, anomaliesCount: 2, allResolvedCount: 0,
+          pendingActionsCount: 2, conversionCount: 2, vendorDuplicationCount: 0, itemDuplicationCount: 0,
+          totalSpendCr: 0.42, pendingSpendCr: 0.42
+        }
+      }))
+      .mockResolvedValueOnce(asIngestion({
+        queue: [], validationRecords: [secondRecord],
+        pagination: { validationRecords: { hasMore: false, nextCursor: null } }
+      }));
+
+    await renderPage();
+    await runProp('module1', 'onLoadMoreValidationRecords');
+
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(BUYER_USER.tenant_id, { validationCursor: cursor });
+    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords').map((record) => record.record_id))
+      .toEqual(['VAL-FIRST', 'VAL-SECOND']);
+    expect(readProp<boolean>('module1', 'hasMoreValidationRecords')).toBe(false);
+  });
+
+  it('does not request a validation page when the server cursor is missing', async () => {
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      ...defaultIngestion(),
+      pagination: { validationRecords: { hasMore: true, nextCursor: null } }
+    }));
+
+    await renderPage();
+    await runProp('module1', 'onLoadMoreValidationRecords');
+
+    expect(apiClient.getIngestionData).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports missing requested documents and optional D1 analytics failures', async () => {
+    window.history.replaceState(null, '', '/?documentId=DOC-MISSING');
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [buildDocument({ doc_id: 'DOC-AVAILABLE' })]
+    }));
+    vi.mocked(apiClient.getCategories).mockRejectedValue(new Error('category read failed'));
+    vi.mocked(apiClient.getVendors).mockRejectedValue(new Error('vendor read failed'));
+    vi.mocked(apiClient.getSavingsOpportunities).mockRejectedValue(new Error('savings read failed'));
+
+    await renderPage();
+
+    expect(screen.getByText(UI_STRINGS.documentSummary.selectedDocumentUnavailable)).toBeInTheDocument();
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Dashboard loaded with unavailable datasets',
+      expect.objectContaining({
+        action: 'dashboard.initial_hydration',
+        tenantId: BUYER_USER.tenant_id,
+        failedOperations: [
+          UI_STRINGS.databaseData.apiOperations.categories,
+          UI_STRINGS.databaseData.apiOperations.vendors,
+          UI_STRINGS.databaseData.apiOperations.savings
+        ]
+      }),
+      expect.any(Error)
+    );
+    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toEqual([]);
+    await switchTab('module2', 'module2');
+    expect(readProp<unknown[]>('module2', 'categories')).toEqual([]);
+    await switchTab('module3', 'module3');
+    expect(readProp<unknown[]>('module3', 'vendorRankings')).toEqual([]);
+    await switchTab('module4', 'module4');
+    expect(readProp<unknown[]>('module4', 'opportunities')).toEqual([]);
+  });
+
+  it('displays non-Error dashboard failures with actionable recovery guidance', async () => {
+    vi.mocked(apiClient.getCategories).mockRejectedValue('D1 connection refused');
+
+    await renderPage();
+
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Dashboard loaded with unavailable datasets',
+      expect.objectContaining({
+        failedOperations: [UI_STRINGS.databaseData.apiOperations.categories]
+      }),
+      'D1 connection refused'
+    );
+    expect(screen.getByText(UI_STRINGS.databaseData.dashboardPartialLoadFailed(
+      UI_STRINGS.databaseData.apiOperations.categories,
+      'D1 connection refused'
+    ))).toBeInTheDocument();
+  });
+
   it('drops ingestion documents that belong to another tenant', async () => {
     vi.mocked(apiClient.getIngestionData).mockResolvedValue(
       asIngestion({
@@ -932,6 +1043,38 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
     expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toEqual([]);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(0);
+  });
+
+  it('hydrates only the tenant explicitly assigned to the authenticated user', async () => {
+    const assignedTenantDocument = buildDocument({ doc_id: 'DOC-ASSIGNED-TENANT', tenant_id: 'TNT-TEST-1' });
+    const otherTenantDocument = buildDocument({ doc_id: 'DOC-OTHER-TENANT', tenant_id: 'TNT-OTHER' });
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [assignedTenantDocument, otherTenantDocument],
+      validationRecords: []
+    }));
+
+    await renderPage();
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([assignedTenantDocument]);
+  });
+
+  it('fails closed for a buyer without an explicit tenant assignment', async () => {
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...BUYER_USER, tenant_id: null });
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [buildDocument({ tenant_id: 'TNT-TEST-1' })],
+      validationRecords: [buildRecord('VAL-UNASSIGNED')]
+    }));
+
+    await renderPage({ expectOrchestration: false });
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
+    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toEqual([]);
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
+    expect(apiClient.getCategories).not.toHaveBeenCalled();
+    expect(apiClient.getVendors).not.toHaveBeenCalled();
+    expect(apiClient.getSavingsOpportunities).not.toHaveBeenCalled();
+    expect(orchestrationApi.getJobs).not.toHaveBeenCalled();
   });
 
   it('keeps the current state when tenant and analytics requests reject', async () => {
@@ -1361,10 +1504,52 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
 
     await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
 
-    expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith('DOC-PAGE-001');
+    expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith('DOC-PAGE-001', 'TNT-TEST-1');
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(0);
     expect(readProp<number | undefined>('module1', 'uniqueItemsCount')).toBeUndefined();
+  });
+
+  it('filters documents returned after deletion to the assigned tenant', async () => {
+    vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([
+      buildDocument({ doc_id: 'DOC-RETAINED' }),
+      buildDocument({ doc_id: 'DOC-FOREIGN', tenant_id: 'TNT-OTHER' })
+    ]);
+    await renderPage();
+
+    await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([
+      buildDocument({ doc_id: 'DOC-RETAINED' })
+    ]);
+  });
+
+  it('does not submit document deletion when the document id is absent', async () => {
+    await renderPage();
+
+    await runProp('module1', 'onDeleteDocument');
+
+    expect(apiClient.deleteIngestionDocument).not.toHaveBeenCalled();
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Document deletion skipped because the document identifier is missing',
+      expect.objectContaining({ action: 'ingestion.document.delete', userId: BUYER_USER.id })
+    );
+  });
+
+  it('blocks document deletion when the user has no assigned tenant', async () => {
+    const unassignedUser = { ...BUYER_USER, tenant_id: null };
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(unassignedUser);
+    vi.mocked(apiClient.getStoredUser).mockReturnValue(unassignedUser);
+    await renderPage({ expectOrchestration: false });
+
+    await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
+
+    expect(apiClient.deleteIngestionDocument).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.auth.tenantAssignmentRequired)).toBeInTheDocument();
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Document deletion skipped because the user has no assigned tenant',
+      expect.objectContaining({ action: 'ingestion.document.delete', userId: BUYER_USER.id, documentId: 'DOC-PAGE-001' })
+    );
   });
 
   it('falls back to zero analysis metrics when no document is loaded', async () => {
@@ -1382,11 +1567,33 @@ describe('Home page: batch upload pipeline', () => {
   it('requires a signed-in user before parsing an upload', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(apiClient.getStoredUser).mockReturnValue(null);
-    await renderPage();
+    await renderPage({ expectOrchestration: false });
 
     await uploadFile(makeTextFile('signed-out.csv', 'PO\n1\n', 'text/csv'));
 
     expect(mocks.routerPush).toHaveBeenCalledWith('/login');
+    expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
+  });
+
+  it('blocks uploads until the account has an assigned tenant', async () => {
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...BUYER_USER, tenant_id: null });
+    vi.mocked(apiClient.getStoredUser).mockReturnValue({ ...BUYER_USER, tenant_id: null });
+    await renderPage({ expectOrchestration: false });
+
+    await uploadFile(makeTextFile('unassigned.csv', 'PO\n1\n', 'text/csv'));
+
+    expect(screen.getByText(UI_STRINGS.auth.tenantAssignmentRequired)).toBeInTheDocument();
+    expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
+  });
+
+  it('blocks uploads until the account has an assigned tenant', async () => {
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...BUYER_USER, tenant_id: null });
+    vi.mocked(apiClient.getStoredUser).mockReturnValue({ ...BUYER_USER, tenant_id: null });
+    await renderPage({ expectOrchestration: false });
+
+    await uploadFile(makeTextFile('unassigned.csv', 'PO\n1\n', 'text/csv'));
+
+    expect(screen.getByText(UI_STRINGS.auth.tenantAssignmentRequired)).toBeInTheDocument();
     expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
   });
 
@@ -1424,7 +1631,8 @@ describe('Home page: batch upload pipeline', () => {
         fileName: 'spend_detail.xlsx',
         fileType: 'XLSX',
         recordsCount: RICH_ROWS.length,
-        buyer_id: 'USR-TEST-1'
+        buyer_id: 'TNT-TEST-1',
+        tenant_id: 'TNT-TEST-1'
       })
     );
     const [queueDoc] = readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue');
@@ -1454,7 +1662,7 @@ describe('Home page: batch upload pipeline', () => {
     await uploadFile(makeTextFile('spend.csv', 'PO,Vendor\n1,Acme\n2,Beta\n', 'text/csv'));
 
     expect(apiClient.getIngestionData).toHaveBeenCalledTimes(2);
-    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith('USR-TEST-1');
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith('TNT-TEST-1');
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([d1Document]);
     expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toHaveLength(1);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(3.25);
@@ -1614,6 +1822,17 @@ describe('Home page: batch upload outcomes', () => {
 });
 
 describe('Home page: Module 2 categorization', () => {
+  it('requires an assessment for categorization and a material code for reassignment', async () => {
+    await renderPage();
+    await switchTab('module2', 'module2');
+
+    await runProp('module2', 'onStartAICategorization');
+    expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
+
+    await runProp('reassign', 'onSave', 'MISSING-MAPPING', '31161500', 'Bolts', 'Direct Materials');
+    expect(screen.getByText(UI_STRINGS.toasts.module2MaterialCodeRequired)).toBeInTheDocument();
+  });
+
   it('confirms a line item mapping and reassigns another through the reassign modal', async () => {
     await seedModule2();
     const [first, second] = readProp<LineItemMapping[]>('module2', 'lineItems');
@@ -1781,6 +2000,21 @@ describe('Home page: Modules 4 and 5, pipeline navigation', () => {
     await expect(runProp('dpsNXT', 'onSuccess', dpsOpportunity.opp_id)).rejects.toBe(deploymentError);
     expect(apiClient.deployOpportunity).toHaveBeenLastCalledWith(dpsOpportunity.opp_id, 'DPS NXT');
     expect(screen.queryByText(UI_STRINGS.toasts.deployedToDPSNXT(dpsOpportunity.opp_id))).not.toBeInTheDocument();
+
+    vi.mocked(apiClient.deployOpportunity).mockResolvedValueOnce({
+      ...dpsOpportunity,
+      status: 'Pushed to DPS NXT'
+    });
+    await runProp('dpsNXT', 'onSuccess', dpsOpportunity.opp_id);
+    expect(readProp<SavingsOpportunity[]>('module4', 'opportunities').find(
+      (opportunity) => opportunity.opp_id === dpsOpportunity.opp_id
+    )?.status).toBe('Pushed to DPS NXT');
+
+    vi.mocked(apiClient.deployOpportunity).mockResolvedValueOnce(dpsOpportunity);
+    await runProp('dpsNXT', 'onSuccess', 'OPP-NOT-IN-STATE');
+    expect(readProp<SavingsOpportunity[]>('module4', 'opportunities').some(
+      (opportunity) => opportunity.opp_id === 'OPP-NOT-IN-STATE'
+    )).toBe(false);
     await runProp('dpsNXT', 'onClose');
   });
 
@@ -2046,16 +2280,13 @@ describe('Home page: executive brief downloads', () => {
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.opportunityBrief.downloadNetworkFailed('PDF'))).toBeInTheDocument();
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      '/api/reports/executive-brief/download/opportunity-brief/pdf',
-      { headers: { Authorization: 'Bearer ' + 'token-123' } }
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      '/api/reports/executive-brief/download/opportunity-brief/pptx',
-      { headers: { Authorization: 'Bearer ' + 'token-123' } }
-    );
+    const [pdfUrl, pdfInit] = fetchMock.mock.calls[0];
+    expect(pdfUrl).toBe('/api/reports/executive-brief/download/opportunity-brief/pdf');
+    expect(new Headers(pdfInit?.headers).get('Authorization')).toBe('Bearer token-123');
+    expect(new Headers(pdfInit?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
+    const [pptxUrl, pptxInit] = fetchMock.mock.calls[2];
+    expect(pptxUrl).toBe('/api/reports/executive-brief/download/opportunity-brief/pptx');
+    expect(new Headers(pptxInit?.headers).get('Authorization')).toBe('Bearer token-123');
     // Unmount while the URL stubs still exist, so the payload cleanup can revoke the object URL.
     cleanup();
   });
@@ -2743,5 +2974,76 @@ describe('Home page: Module 5 counts and supplier spend defaults', () => {
       'paretoSpendData'
     );
     expect(pareto.vendorHierarchy[0]).toMatchObject({ name: 'Delta', totalSpendCr: 0, sharePct: 0 });
+  });
+});
+
+describe('Home page: FX and tenant mapping edge cases', () => {
+  it('logs malformed FX reference data and keeps the workbook import fallback available', async () => {
+    await renderPage();
+    vi.mocked(apiClient.getCurrencyRates).mockResolvedValue({
+      USD: { currencyCode: 'USD', name: 'US Dollar', currentRate: 0, lastUpdated: '2026-11-04' }
+    });
+
+    await uploadFile(makeBinaryFile(
+      'invalid_fx.xlsx',
+      buildWorkbookBytes([{ Description: 'Paper', Department: 'Packaging', Supplier: 'Paper Co', Currency: 'USD', Qty: 2, Cost: 5 }]),
+      XLSX_MIME
+    ));
+
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      'Could not parse xlsx rows',
+      expect.objectContaining({ error: expect.any(Error) })
+    );
+  });
+
+  it('uses the active assessment INR currency when an uploaded row has no currency', async () => {
+    await renderPage();
+    await attachAssessment(buildAssessment({
+      assessmentId: 'ASM-INR-FALLBACK',
+      activeDataVersionId: 'DV-INR-FALLBACK',
+      currency: 'INR'
+    }));
+    await switchTab('module1', 'module1');
+    await uploadFile(makeBinaryFile(
+      'missing_currency.xlsx',
+      buildWorkbookBytes([{ Description: 'Steel Bolt', Department: 'Direct', Supplier: 'Bolt Co', Currency: '', Qty: 2, Cost: 5 }]),
+      XLSX_MIME
+    ));
+
+    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')[0].raw_currency).toBe('INR');
+  });
+
+  it('rejects a mapping decision when uploaded rows have no active assessment', async () => {
+    await renderPage();
+    await uploadFile(makeBinaryFile(
+      'unassigned_assessment.xlsx',
+      buildWorkbookBytes([{ Description: 'Steel Bolt', Material: 'MAT-NO-ASSESSMENT', Department: 'Direct', Supplier: 'Bolt Co', Currency: 'INR', Qty: 2, Cost: 5 }]),
+      XLSX_MIME
+    ));
+    await switchTab('module2', 'module2');
+
+    const [item] = readProp<LineItemMapping[]>('module2', 'lineItems');
+    expect(item.material_code).toBe('MAT-NO-ASSESSMENT');
+    await runProp('module2', 'onConfirmMapping', item.mapping_id);
+
+    expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
+    expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
+  });
+
+  it('persists only one taxonomy decision for duplicate source material identifiers', async () => {
+    const duplicateMaterialItems = [
+      buildLineItem('MAP-DUPLICATE-1', 'Steel Bolt', { material_code: 'MAT-SHARED' }),
+      buildLineItem('MAP-DUPLICATE-2', 'Cardboard', { material_code: 'MAT-SHARED' })
+    ];
+    await seedModule2(duplicateMaterialItems);
+    vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(
+      asCategorizeResult({ success: true, mappings: [] })
+    );
+
+    await runProp('module2', 'onStartAICategorization');
+
+    const [, savedMappings] = vi.mocked(mocks.saveModule2MaterialMappings).mock.lastCall ?? [];
+    expect(savedMappings).toHaveLength(1);
+    expect(savedMappings?.[0].sourceMaterialId).toBe('MAT-SHARED');
   });
 });

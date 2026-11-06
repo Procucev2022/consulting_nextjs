@@ -46,7 +46,7 @@ import {
 /** Records the first customer view of a submitted report. Repeat views succeed without changing state. */
 export const recordCustomerView: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(reportReferenceSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   if (VIEWED_REPORT_STATES.some((state) => state === report.workflow_state)) {
     return jsonOk({ success: true, message: ORCHESTRATION_MESSAGES.viewAlreadyRecorded }, context.request);
@@ -60,7 +60,7 @@ export const recordCustomerView: OrchestrationHandler = async (context) => {
   if (!viewed) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   await runAtomically(context.database, [
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'CUSTOMER',
@@ -104,7 +104,7 @@ const buildAcknowledgement = (
   acknowledgement_id: context.runtime.createId(ORCHESTRATION_ID_PREFIX.ACKNOWLEDGEMENT),
   report_version_id: reportVersionId,
   assessment_id: job.assessment_id,
-  tenant_id: job.customer_id,
+  tenant_id: job.tenant_id,
   user_id: context.actor.userId,
   user_name: context.actor.userName,
   notes: notes ?? null,
@@ -114,7 +114,7 @@ const buildAcknowledgement = (
 /** Records one acknowledgement for a viewed report. The database rejects a second one for the same report. */
 export const acknowledgeReport: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(acknowledgeReportSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   assertAcknowledgeable(report);
   const acknowledged = await compareAndSet(
@@ -125,7 +125,7 @@ export const acknowledgeReport: OrchestrationHandler = async (context) => {
   await runAtomically(context.database, [
     insertAcknowledgementStatement(context.database, acknowledgement),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'CUSTOMER',
@@ -160,7 +160,7 @@ const buildCorrectionRequest = (
 ): CorrectionRow => ({
   request_id: context.runtime.createId(ORCHESTRATION_ID_PREFIX.CORRECTION),
   assessment_id: job.assessment_id,
-  tenant_id: job.customer_id,
+  tenant_id: job.tenant_id,
   user_id: context.actor.userId,
   category: body.category,
   description: body.description,
@@ -174,11 +174,11 @@ const buildCorrectionRequest = (
 /** Stores a correction request as OPEN and notifies the administrators. */
 export const requestCorrection: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(correctionRequestSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const request = buildCorrectionRequest(context, job, body);
   const notification = buildNotificationRow(buildNotificationInput(context.runtime, {
     recipientType: 'ADMIN',
-    tenantId: job.customer_id,
+    tenantId: job.tenant_id,
     assessmentId: job.assessment_id,
     reportVersionId: null,
     title: ORCHESTRATION_MESSAGES.notificationCorrectionTitle,
@@ -191,7 +191,7 @@ export const requestCorrection: OrchestrationHandler = async (context) => {
     insertCorrectionStatement(context.database, request),
     insertNotificationStatement(context.database, notification),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'CUSTOMER',

@@ -6,6 +6,7 @@ import { UI_STRINGS } from '../../../../src/constants';
 import { PCBI_TARGET_FIELDS } from '../../../../src/constants/pcbiAdmin';
 import { pcbiAdminApi } from '../../../../src/utils/pcbiAdminApi';
 import { pcbiCommodityDataLabApi } from '../../../../src/utils/pcbiCommodityDataLabApi';
+import { pcbiApiClient } from '../../../../src/utils/pcbiApi';
 import { validatePCBIUpload } from '../../../../src/utils/pcbiValidator';
 import frontendLogger from '../../../../src/utils/logger';
 import type {
@@ -161,6 +162,10 @@ const openPublishModalFromImport = (): void => {
 
 describe('PCBIAdminMasterView coverage', () => {
   beforeEach(() => {
+    vi.spyOn(pcbiApiClient, 'getPCBIHistoricalObservations').mockResolvedValue({
+      success: true,
+      data: { archiveOnly: true, frequency: 'MONTHLY', count: 0, observations: [] }
+    });
     vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValue({
       success: true,
       detection: {
@@ -240,6 +245,7 @@ describe('PCBIAdminMasterView coverage', () => {
       expect.objectContaining({ version: IMPORT_RESULT.version, file_name: WORKBOOK_FILE_NAME })
     );
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.pcbiAdmin.viewImportedMaster }));
+    await screen.findByText(UI_STRINGS.pcbiAdmin.historicalObservationsEmpty);
     expect(screen.getByRole('button', { name: UI_STRINGS.pcbiAdmin.uploadButton })).toBeInTheDocument();
   });
 

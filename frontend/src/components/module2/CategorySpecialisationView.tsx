@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { CategorySpecialisationResult } from '../../types/module2CategorySpecialisation';
@@ -7,6 +8,7 @@ import { CategorySpecialisationOverviewTab } from './CategorySpecialisationOverv
 import { CategorySpecialisationCategoriesTab } from './CategorySpecialisationCategoriesTab';
 import { CategorySpecialisationOpportunitiesTab } from './CategorySpecialisationOpportunitiesTab';
 import { CategorySpecialisationOverlapTab } from './CategorySpecialisationOverlapTab';
+import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 interface CategorySpecialisationViewProps {
   assessmentId: string;
@@ -22,33 +24,39 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'categories' | 'opportunities' | 'overlaps'>('overview');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
+    const requestId = beginRequest();
     setLoading(true);
     setError(null);
+    setData(null);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/module2/sourcing/category-specialisation?assessmentId=${encodeURIComponent(assessmentId)}`
       );
       if (!res.ok) {
         throw new Error(`Failed to fetch Lever 6 Category Specialisation analysis (HTTP ${res.status})`);
       }
       const json = await res.json();
+      if (!isCurrentRequest(requestId)) return;
       if (!json.success || !json.data) {
         throw new Error(json.message || 'Invalid API response payload');
       }
       setData(json.data);
     } catch (err: unknown) {
+      if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    void fetchData();
+    return invalidateRequests;
+  }, [fetchData, invalidateRequests]);
 
   const handleSelectCategoryFromOverview = (catName: string) => {
     setSelectedCategory(catName);

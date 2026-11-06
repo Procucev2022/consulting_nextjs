@@ -169,6 +169,20 @@ describe('Module 2 Opportunity Intelligence V2.0 Engine Suite', () => {
       expect(profile.keyFindings.length).toBeGreaterThan(0);
       expect(profile.strategicActionSummary).toContain('payment terms');
     });
+
+    it('marks a low-confidence commercial profile and each dimension as insufficient data', () => {
+      const profile = Module2CommercialExcellenceEngine.analyzeCategory({
+        totalSpendInr: 0,
+        supplierCount: 0,
+        activeMonthsCount: 0,
+        isRecurring: false,
+        confidence: 'LOW'
+      });
+
+      expect(profile.overallStatus).toBe('INSUFFICIENT_DATA');
+      expect(profile.insufficientDataCount).toBe(12);
+      expect(profile.dimensions.every((dimension) => dimension.status === 'INSUFFICIENT_DATA')).toBe(true);
+    });
   });
 
   describe('Module2ProcurementMaturityEngine', () => {

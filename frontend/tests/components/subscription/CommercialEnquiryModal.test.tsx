@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommercialEnquiryModal } from '@/components/subscription/CommercialEnquiryModal';
 
@@ -62,6 +62,16 @@ describe('CommercialEnquiryModal Component', () => {
   });
 
   it('submits upgrade request successfully and triggers timer close', async () => {
+    const onClose = vi.fn();
+    const originalSetTimeout = window.setTimeout;
+    const completionCallbacks: Array<() => void> = [];
+    const timeoutSpy = vi.spyOn(window, 'setTimeout').mockImplementation(((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (timeout === 2000 && typeof handler === 'function') {
+        completionCallbacks.push(handler as () => void);
+        return 1;
+      }
+      return originalSetTimeout(handler, timeout, ...args);
+    }) as typeof window.setTimeout);
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -70,7 +80,7 @@ describe('CommercialEnquiryModal Component', () => {
       })
     } as unknown as Response);
 
-    render(<CommercialEnquiryModal {...defaultProps} />);
+    render(<CommercialEnquiryModal {...defaultProps} onClose={onClose} />);
 
     const submitBtn = screen.getByTestId('submit-commercial-enquiry-btn');
     fireEvent.submit(submitBtn.closest('form')!);
@@ -80,6 +90,10 @@ describe('CommercialEnquiryModal Component', () => {
     });
 
     expect(screen.getByText(/Commercial Request Dispatched/i)).toBeInTheDocument();
+    await act(async () => completionCallbacks[0]?.());
+    expect(screen.queryByTestId('enquiry-success')).not.toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledOnce();
+    timeoutSpy.mockRestore();
   });
 
   it('displays error message when upgrade API request fails or throws non-Error', async () => {
@@ -106,6 +120,15 @@ describe('CommercialEnquiryModal Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Network drop exception')).toBeInTheDocument();
+    });
+
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: false, message: 'Enquiry was rejected by the commercial service' })
+    } as unknown as Response);
+    fireEvent.submit(submitBtn.closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByText('Enquiry was rejected by the commercial service')).toBeInTheDocument();
     });
   });
 });

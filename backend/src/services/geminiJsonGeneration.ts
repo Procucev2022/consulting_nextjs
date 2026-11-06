@@ -1,4 +1,4 @@
-import { EXTRACTION_STATUS } from '../constants/ai';
+import { AI_LOG_ACTIONS, AI_LOG_MESSAGES, EXTRACTION_STATUS } from '../constants/ai';
 import type {
   GeminiInputValidationResult,
   GeminiJsonGenerationDependencies,
@@ -6,6 +6,7 @@ import type {
   GeminiJsonGenerationResult
 } from '../types/ai';
 import logger from '../utils/logger';
+import { logGeminiProviderAttemptFailure } from './geminiProviderLogging';
 
 const invalidGenerationInput = <T>(
   input: GeminiJsonGenerationInput,
@@ -13,7 +14,13 @@ const invalidGenerationInput = <T>(
 ): GeminiJsonGenerationResult<T> | null => {
   const label = input.label || 'generation';
   if (!dependencies.isConfigured()) {
-    logger.warn(`Gemini ${label} skipped: GEMINI_API_KEY is not set`, { label }, new Error('Gemini key missing'));
+    logger.warn(AI_LOG_MESSAGES.jsonGenerationNotConfigured, {
+      action: AI_LOG_ACTIONS.jsonGenerationNotConfigured,
+      provider: 'gemini',
+      label,
+      requestId: input.requestId,
+      status: EXTRACTION_STATUS.NOT_CONFIGURED
+    }, new Error('Gemini key missing'));
     return { status: EXTRACTION_STATUS.NOT_CONFIGURED, data: null, model: null, error: 'GEMINI_API_KEY not set' };
   }
   if (typeof input.prompt !== 'string' || input.prompt.trim() === '') {
@@ -53,10 +60,15 @@ export const generateGeminiJson = async <T = unknown>(
   });
   const failures: string[] = [];
   const deadline = Date.now() + dependencies.config.TOTAL_BUDGET_MS;
-  for (const model of dependencies.resolveModelChain()) {
-    for (const apiKey of dependencies.resolveKeyChain()) {
+  const models = dependencies.resolveModelChain();
+  const keys = dependencies.resolveKeyChain();
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+    const model = models[modelIndex];
+    for (let keyIndex = 0; keyIndex < keys.length; keyIndex += 1) {
+      const apiKey = keys[keyIndex];
       const remainingMs = deadline - Date.now();
       if (remainingMs < dependencies.config.MIN_ATTEMPT_MS) break;
+      const attemptStartedAt = Date.now();
       try {
         const data = await dependencies.callModel<T>(
           model,
@@ -64,13 +76,29 @@ export const generateGeminiJson = async <T = unknown>(
           Math.min(dependencies.config.REQUEST_TIMEOUT_MS, remainingMs),
           apiKey
         );
-        logger.info(`Gemini ${model} completed ${label} successfully`, { model, label });
+        logger.info(AI_LOG_MESSAGES.jsonGenerationSucceeded, {
+          action: AI_LOG_ACTIONS.jsonGenerationSucceeded,
+          provider: 'gemini',
+          model,
+          label,
+          requestId: input.requestId,
+          durationMs: Date.now() - attemptStartedAt
+        });
         return { status: EXTRACTION_STATUS.SUCCESS, data, model, error: null };
       } catch (error: unknown) {
-        const failure = error as Error;
-        failures.push(`${model}: ${failure.message}`);
-        logger.warn(`Gemini ${label} attempt failed on ${model}`, { error: failure.message });
-        if (failure.message.includes('404')) break;
+        const modelNotFound = logGeminiProviderAttemptFailure(error, {
+          model,
+          modelIndex,
+          keyIndex,
+          modelCount: models.length,
+          keyCount: keys.length,
+          requestId: input.requestId,
+          durationMs: Date.now() - attemptStartedAt,
+          action: AI_LOG_ACTIONS.jsonGenerationAttempt,
+          message: AI_LOG_MESSAGES.jsonGenerationAttemptFailed,
+          label
+        }, failures);
+        if (modelNotFound) break;
       }
     }
   }

@@ -8,11 +8,8 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     globalSetup: ['./tests/setupD1.mjs'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
-    },
+    maxWorkers: 1,
+    isolate: true,
     testTimeout: 10000,
     hookTimeout: 10000,
     teardownTimeout: 30000,
@@ -34,12 +31,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html'],
-      all: true,
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
-        'src/types/**',
-        'src/utils/pdfCanvasTypes.ts'
+        'src/types/**'
       ],
       thresholds: {
         lines: 90,

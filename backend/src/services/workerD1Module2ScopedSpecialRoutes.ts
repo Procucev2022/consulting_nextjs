@@ -33,7 +33,9 @@ const handleVendorConsolidationRoute = async (
   if (!scope.assessmentId) return scopeRequired();
   const result = await loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const customerName = await loaders.loadCustomerName(db, scope, path, requestId);
-  const mappingOverrides = await loadAssessmentMaterialMappings(db, scope.assessmentId);
+  const mappingOverrides = await loadAssessmentMaterialMappings(db, scope.assessmentId, {
+    requestId, tenantId: scope.tenantId
+  });
   return { data: buildVendorConsolidationResult(
     scope.assessmentId, customerName, result.transactions, options, mappingOverrides
   ) };

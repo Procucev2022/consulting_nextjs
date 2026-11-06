@@ -50,22 +50,34 @@ export const DASHBOARD_OVERVIEW_QUERY = `
         status
       }
       ingestionQueue {
-        doc_id
-        file_name
-        file_type
-        file_size_mb
-        ocr_status
-        progress
-        records_count
+        items {
+          doc_id
+          file_name
+          file_type
+          file_size_mb
+          ocr_status
+          progress
+          records_count
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
       }
       validationRecords {
-        record_id
-        po_number
-        vendor_name
-        amount
-        issue_flag
-        action_status
-        resolved
+        items {
+          record_id
+          po_number
+          vendor_name
+          amount
+          issue_flag
+          action_status
+          resolved
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
       }
       queryMetrics {
         totalQueries

@@ -20,6 +20,8 @@ import type {
   DocumentSpendCurrency,
   MonthGraphViewMode
 } from './models';
+import type { IngestionDataResponse } from './ingestion';
+import type { Ref } from 'react';
 import type { HeaderCurrency } from './currency';
 import type { CoreBucket, UNSPSCCommodityRecord } from './taxonomy';
 import type { ParetoSpendData } from './pareto';
@@ -81,6 +83,10 @@ export interface Module1IngestionProps {
   onUpdateTenant: (tenant: TenantMaster) => void;
   ingestionQueue: RawDocumentIngestion[];
   validationRecords: ValidationPreCheckRecord[];
+  validationDataSummary?: IngestionDataResponse['summary'];
+  hasMoreValidationRecords?: boolean;
+  isLoadingMoreValidationRecords?: boolean;
+  onLoadMoreValidationRecords?: () => void;
   onFixCurrency: (record: ValidationPreCheckRecord) => void;
   onMergeVendor: (record: ValidationPreCheckRecord) => void;
   onMergeItem?: (record: ValidationPreCheckRecord) => void;
@@ -102,10 +108,15 @@ export interface Module1IngestionProps {
   onUpgrade?: (tier: SubscriptionTier) => void;
   canonicalViewModel?: Module1CanonicalViewModel | null;
   onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
+  summarySectionRef?: Ref<HTMLDivElement>;
 }
 
 export interface ValidationPreCheckSectionProps {
   validationRecords: ValidationPreCheckRecord[];
+  validationDataSummary?: IngestionDataResponse['summary'];
+  hasMoreValidationRecords?: boolean;
+  isLoadingMoreValidationRecords?: boolean;
+  onLoadMoreValidationRecords?: () => void;
   onFixCurrency: (record: ValidationPreCheckRecord) => void;
   onMergeVendor: (record: ValidationPreCheckRecord) => void;
   onMergeItem?: (record: ValidationPreCheckRecord) => void;
@@ -182,6 +193,7 @@ export interface DocumentSummaryViewProps {
   onNavigateToCategorization?: () => void;
   periodMetadata?: VgtPeriodMetadata;
   canonicalViewModel?: Module1CanonicalViewModel | null;
+  summarySectionRef?: Ref<HTMLDivElement>;
 }
 
 export interface MonthWiseTrendChartProps {

@@ -45,6 +45,30 @@ export const CLASSIFICATION_STATUS = {
   NO_CONTENT: 'NO_CONTENT'
 } as const;
 
+export const AI_LOG_MESSAGES = {
+  requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
+  invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
+  fallbackReturned: 'AI request failed; structured fallback response returned',
+  extractionAttemptFailed: 'Gemini extraction attempt failed',
+  jsonGenerationAttemptFailed: 'Gemini JSON generation attempt failed',
+  jsonGenerationSucceeded: 'Gemini JSON generation completed successfully',
+  extractionNotConfigured: 'Gemini extraction could not start because the API key is not configured',
+  jsonGenerationNotConfigured: 'Gemini JSON generation could not start because the API key is not configured'
+} as const;
+
+export const AI_LOG_ACTIONS = {
+  extractionAttempt: 'ai.gemini.extract.attempt',
+  extractionNotConfigured: 'ai.gemini.extract.not_configured',
+  jsonGenerationAttempt: 'ai.gemini.generate_json.attempt',
+  jsonGenerationNotConfigured: 'ai.gemini.generate_json.not_configured',
+  jsonGenerationSucceeded: 'ai.gemini.generate_json.success',
+  categorizationFallback: 'ai.categorization.deterministic_fallback',
+  anomalyFallback: 'ai.anomaly.heuristic_fallback',
+  reportFallback: 'ai.report.deterministic_fallback'
+} as const;
+
+export const GEMINI_PROVIDER_STATUS_CODE_PATTERN = /responded\s+(\d{3})\s*:/i;
+
 export const NEW_CATEGORY_SENTINEL = 'NEW_CATEGORY_SUGGESTION';
 
 export const AI_MAX_LINE_ITEMS_IN_PROMPT = 150;

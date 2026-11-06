@@ -11,12 +11,12 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.header.logoAlt).toBe('aiCEV by Procucev');
     expect(UI_STRINGS.header.themeToggleDark).toBe('Switch to Dark Mode');
     expect(UI_STRINGS.header.themeToggleLight).toBe('Switch to Light Mode');
+    expect(UI_STRINGS.header.slaText).toBe('D1 Query Monitoring');
   });
 
   it('should correctly format parameterized header templates', () => {
     expect(UI_STRINGS.header.docRef('TEST-REF-123')).toBe('DOC REF: TEST-REF-123');
     expect(UI_STRINGS.header.authorFormatted('Alice', 'Lead Partner')).toBe('Author: Alice (Lead Partner)');
-    expect(UI_STRINGS.header.slaQuery(500)).toBe('SLA: <500ms Query');
     expect(UI_STRINGS.header.currencyTitle('USD')).toBe('USD Base');
   });
 
@@ -31,6 +31,9 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.module1.summaryCards.validRecords(80)).toBe('80 Clean Records');
     expect(UI_STRINGS.module1.summaryCards.flaggedRecords(20)).toBe('20 Anomalies Detected');
     expect(UI_STRINGS.module1.summaryCards.remediatedPct(95)).toBe('95% Remediation Rate');
+    expect(UI_STRINGS.module1.fileTooLarge(12.5, 10)).toBe(
+      'This 12.5 MiB file exceeds the 10 MiB upload limit. Split it into smaller files and retry.'
+    );
   });
 
   it('should correctly format module2 confidence scores and vendorSupply templates', () => {
@@ -188,6 +191,9 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(auth.statDirectEbitda).toBe('Spend Visibility');
     expect(auth.statSavingsUnlocked).toBe('Opportunity Identification');
     expect(auth.loggedInAs('Rajesh', 'USER')).toBe('Logged in as Rajesh (USER)');
+    expect(auth.tenantAssignmentRequired).toContain('Ask an administrator to assign your tenant');
+    expect(UI_STRINGS.module4.apiOperations.tenant).toBe('load the assigned organization');
+    expect(UI_STRINGS.module4.apiOperations.ingestion).toContain('tenant ingestion queue');
 
     const admin = UI_STRINGS.admin;
     expect(admin.pageTitle).toBe('Admin Portal — User & Organization Directory');
@@ -271,6 +277,12 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(partialFy).toContain('FY2024-25');
     expect(partialFy).toContain('9');
     expect(partialFy).toContain('Apr');
+  });
+
+  it('should provide actionable orchestration API failure messages', () => {
+    const operation = UI_STRINGS.orchestration.apiOperations.listJobs;
+    expect(UI_STRINGS.orchestration.apiNetworkFailure(operation, 'offline')).toContain('Check the network and retry');
+    expect(UI_STRINGS.orchestration.apiInvalidResponse(operation, 'req-123')).toContain('req-123');
   });
 });
 

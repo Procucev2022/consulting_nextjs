@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +28,7 @@ export default function ExecutiveBriefPage(): React.ReactElement {
     setDownloadError(null);
     try {
       const token = authApiClient.getStoredToken();
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         headers: token ? { Authorization: 'Bearer ' + token } : {}
       });
       if (!response.ok) {

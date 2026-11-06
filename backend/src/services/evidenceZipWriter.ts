@@ -137,6 +137,12 @@ const concatBytes = (parts: readonly Uint8Array[]): Uint8Array => {
   return output;
 };
 
+export const assertZipOffsetWithinLimit = (offset: number): void => {
+  if (offset > ZIP_MAX_OFFSET) {
+    throw new RangeError('ZIP archive exceeds the 4 GiB offset limit of the STORE format');
+  }
+};
+
 export const buildStoredZip = (entries: readonly EvidenceZipEntry[], modifiedAt: Date): Uint8Array => {
   if (entries.length > ZIP_MAX_ENTRIES) {
     throw new RangeError(`ZIP archive supports at most ${ZIP_MAX_ENTRIES} entries, received ${entries.length}`);
@@ -153,9 +159,7 @@ export const buildStoredZip = (entries: readonly EvidenceZipEntry[], modifiedAt:
     centralParts.push(buildCentralHeader(name, entry, crc, stamp, offset));
     localParts.push(local, entry.bytes);
     offset += local.length + entry.bytes.length;
-    if (offset > ZIP_MAX_OFFSET) {
-      throw new RangeError('ZIP archive exceeds the 4 GiB offset limit of the STORE format');
-    }
+    assertZipOffsetWithinLimit(offset);
   }
   const centralDirectory = concatBytes(centralParts);
   const endRecord = buildEndRecord(entries.length, centralDirectory.length, offset);

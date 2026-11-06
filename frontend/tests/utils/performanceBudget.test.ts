@@ -10,6 +10,8 @@ import {
 } from '../../src/utils/performanceBudget';
 import { PERFORMANCE_BUDGETS } from '../../src/constants/performance';
 
+const { loadBuildManifest } = require('../../scripts/check-budget.js');
+
 describe('Performance Budget Utility (utils/performanceBudget.ts)', () => {
   const tempDir = path.resolve(__dirname, '../../test-temp-budget');
 
@@ -75,6 +77,37 @@ describe('Performance Budget Utility (utils/performanceBudget.ts)', () => {
     expect(result.success).toBe(false);
     expect(result.violations.length).toBeGreaterThan(0);
     expect(result.summary).toContain('manifest missing');
+  });
+
+  it('loads the Next App Router client manifest used by current production builds', () => {
+    const mockBaseDir = path.join(tempDir, 'next-app-router-build');
+    const nextDir = path.join(mockBaseDir, '.next');
+    const appDir = path.join(nextDir, 'server/app');
+    fs.mkdirSync(appDir, { recursive: true });
+    fs.writeFileSync(path.join(nextDir, 'build-manifest.json'), JSON.stringify({ pagesChunkGroupBootstrapParams: {} }));
+    const appManifest = {
+      entryJSFiles: {
+        '[project]/src/app/layout': ['static/chunks/runtime.js', 'static/chunks/shared.js'],
+        '[project]/src/app/page': ['static/chunks/runtime.js', 'static/chunks/shared.js', 'static/chunks/home.js']
+      },
+      entryCSSFiles: {
+        '[project]/src/app/layout': [{ path: 'static/chunks/site.css', inlined: false }]
+      }
+    };
+    fs.writeFileSync(
+      path.join(appDir, 'page_client-reference-manifest.js'),
+      `globalThis.__RSC_MANIFEST["/page"] = ${JSON.stringify(appManifest)};`
+    );
+
+    const manifest = loadBuildManifest(mockBaseDir);
+
+    expect(manifest.pages['/layout']).toEqual(['static/chunks/site.css']);
+    expect(manifest.pages['/_not-found/page']).toEqual(appManifest.entryJSFiles['[project]/src/app/layout']);
+    expect(manifest.pages['/page']).toEqual([
+      'static/chunks/runtime.js',
+      'static/chunks/shared.js',
+      'static/chunks/home.js'
+    ]);
   });
 
   it('evaluates performance budgets cleanly with mock build manifest and assets', () => {
@@ -185,6 +218,28 @@ describe('Performance Budget Utility (utils/performanceBudget.ts)', () => {
 
     expect(result.criticalCssGzipKb).toBeGreaterThan(0);
     expect(result.assetMetrics.some(m => m.filePath.includes('global-fallback.css'))).toBe(true);
+  });
+
+  it('treats absent CSS directories and missing manifest assets as zero measured bytes', () => {
+    const mockBaseDir = path.join(tempDir, 'missing-assets-app');
+    fs.mkdirSync(path.join(mockBaseDir, '.next'), { recursive: true });
+
+    const result = evaluatePerformanceBudgets({
+      baseDir: mockBaseDir,
+      manifestOverride: {
+        pages: {
+          '/layout': [],
+          '/_not-found/page': ['static/chunks/missing-shared.js'],
+          '/page': ['static/chunks/missing-page.js']
+        }
+      }
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.assetMetrics).toEqual([]);
+    expect(result.criticalCssGzipKb).toBe(0);
+    expect(result.totalSharedJsGzipKb).toBe(0);
+    expect(result.totalPageJsGzipKb).toBe(0);
   });
 
   it('reads manifest from file system and handles malformed JSON in app-build-manifest.json', () => {

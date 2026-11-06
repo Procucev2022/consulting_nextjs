@@ -4,6 +4,9 @@ import {
   GEMINI_INLINE_MIME_TYPES,
   EXTRACTION_STATUS,
   CLASSIFICATION_STATUS,
+  AI_LOG_ACTIONS,
+  AI_LOG_MESSAGES,
+  GEMINI_PROVIDER_STATUS_CODE_PATTERN,
   NEW_CATEGORY_SENTINEL,
   AI_MAX_LINE_ITEMS_IN_PROMPT,
   AI_MAX_CATEGORIES_IN_PROMPT,
@@ -41,6 +44,31 @@ describe('AI Constants and Prompts', () => {
     expect(EXTRACTION_STATUS.AI_FAILED).toBe('AI_FAILED');
     expect(CLASSIFICATION_STATUS.SUCCESS).toBe('SUCCESS');
     expect(NEW_CATEGORY_SENTINEL).toBe('NEW_CATEGORY_SUGGESTION');
+  });
+
+  it('should define detailed AI request and fallback log messages', () => {
+    expect(AI_LOG_MESSAGES).toEqual({
+      requestBodyTooLarge: 'AI endpoint rejected an oversized JSON request body',
+      invalidJsonBody: 'AI endpoint rejected an invalid JSON request body',
+      fallbackReturned: 'AI request failed; structured fallback response returned',
+      extractionAttemptFailed: 'Gemini extraction attempt failed',
+      jsonGenerationAttemptFailed: 'Gemini JSON generation attempt failed',
+      jsonGenerationSucceeded: 'Gemini JSON generation completed successfully',
+      extractionNotConfigured: 'Gemini extraction could not start because the API key is not configured',
+      jsonGenerationNotConfigured: 'Gemini JSON generation could not start because the API key is not configured'
+    });
+    expect(AI_LOG_ACTIONS).toMatchObject({
+      extractionAttempt: 'ai.gemini.extract.attempt',
+      extractionNotConfigured: 'ai.gemini.extract.not_configured',
+      jsonGenerationAttempt: 'ai.gemini.generate_json.attempt',
+      jsonGenerationNotConfigured: 'ai.gemini.generate_json.not_configured',
+      jsonGenerationSucceeded: 'ai.gemini.generate_json.success',
+      categorizationFallback: 'ai.categorization.deterministic_fallback',
+      anomalyFallback: 'ai.anomaly.heuristic_fallback',
+      reportFallback: 'ai.report.deterministic_fallback'
+    });
+    expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('Gemini model responded 503: busy')?.[1]).toBe('503');
+    expect(GEMINI_PROVIDER_STATUS_CODE_PATTERN.exec('network unavailable')).toBeNull();
   });
 
   it('should define limits and non-empty prompt templates', () => {

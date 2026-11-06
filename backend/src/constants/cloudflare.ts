@@ -5,3 +5,4 @@ export const CLOUDFLARE_ALLOWED_HEADERS = 'Content-Type,Authorization,X-Request-
 export const CLOUDFLARE_EXPOSED_HEADERS = 'X-Request-Id';
 export const CLOUDFLARE_MAX_AGE_SECONDS = '86400';
 export const CLOUDFLARE_SERVICE_NAME = 'consulting-nextjs-backend';
+export const CLOUDFLARE_CLIENT_ERROR_PATH = `${CLOUDFLARE_API_PREFIX}/telemetry/client-error`;

@@ -1,3 +1,4 @@
+import { expectApiFetchCall } from '../utils/apiFetchAssertions';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -56,10 +57,7 @@ describe('ExecutiveBriefPage', () => {
     fireEvent.click(screen.getByTestId('download-pdf'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/reports/executive-brief/download/opportunity-brief/pdf',
-        { headers: { Authorization: 'Bearer ' + 'session-token' } }
-      );
+      expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pdf', { headers: { Authorization: 'Bearer ' + 'session-token' } });
       expect(window.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
     });
@@ -77,10 +75,7 @@ describe('ExecutiveBriefPage', () => {
     fireEvent.click(screen.getByTestId('download-pptx'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/reports/executive-brief/download/opportunity-brief/pptx',
-        { headers: {} }
-      );
+      expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pptx', { headers: {} });
       expect(window.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
     });

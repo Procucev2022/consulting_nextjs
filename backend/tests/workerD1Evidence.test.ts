@@ -212,16 +212,22 @@ describe('Evidence job scope', () => {
     expect(body.message).toBe(EVIDENCE_MESSAGES.jobNotFound('AIC-NOPE'));
   });
 
-  it('returns 503 when TenantMaster has no tenant row', async () => {
-    const scoped = createEvidenceDatabase();
-    scoped.db.exec('DELETE FROM TenantMaster');
+  it('returns 503 when the resolved tenant has no TenantMaster row', async () => {
     const { status, body } = await callJson(`/api/evidence/jobs/${JOB_READY}/inventory`, {
       token: adminToken,
-      env: testEnvironment(scoped.d1)
+      env: { ...testEnvironment(fixture.d1), REQUEST_TENANT_ID: 'TNT-UNKNOWN' }
     });
-    scoped.close();
     expect(status).toBe(503);
     expect(body.message).toBe(EVIDENCE_MESSAGES.tenantMissing);
+  });
+
+  it('requires trusted tenant scope even when authentication succeeds', async () => {
+    const { status, body } = await callJson(`/api/evidence/jobs/${JOB_READY}/inventory`, {
+      token: adminToken,
+      env: { ...testEnvironment(fixture.d1), REQUEST_TENANT_ID: undefined }
+    });
+    expect(status).toBe(403);
+    expect(body.message).toBe(EVIDENCE_MESSAGES.tenantAssignmentRequired);
   });
 });
 

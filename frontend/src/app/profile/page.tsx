@@ -34,7 +34,7 @@ import {
 import { authApiClient } from '../../utils/authApi';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
-import type { UserProfile, TenantMaster, RawDocumentIngestion } from '../../types';
+import type { UserProfile, TenantMaster, RawDocumentIngestion, IngestionQueuePageCursor } from '../../types';
 import { AICEV_LOGO_SRC, UI_STRINGS } from '../../constants';
 
 export default function ProfilePage(): React.ReactElement {
@@ -42,6 +42,11 @@ export default function ProfilePage(): React.ReactElement {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tenant, setTenant] = useState<TenantMaster | null>(null);
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
+  const [queueCursor, setQueueCursor] = useState<IngestionQueuePageCursor | null>(null);
+  const [hasMoreIngestionDocuments, setHasMoreIngestionDocuments] = useState(false);
+  const [isLoadingMoreIngestionDocuments, setIsLoadingMoreIngestionDocuments] = useState(false);
+  const [totalIngestionDocuments, setTotalIngestionDocuments] = useState(0);
+  const [profileLoadWarnings, setProfileLoadWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(false);
 
@@ -101,6 +106,7 @@ export default function ProfilePage(): React.ReactElement {
 
     const loadProfileData = async () => {
       try {
+        const loadWarnings: string[] = [];
         const storedUser = authApiClient.getStoredUser();
         const storedToken = authApiClient.getStoredToken();
 
@@ -116,7 +122,22 @@ export default function ProfilePage(): React.ReactElement {
           return;
         }
 
-        const meRes = storedToken ? await authApiClient.getMe(storedToken).catch(() => null) : null;
+        let meRes = null;
+        if (storedToken) {
+          try {
+            meRes = await authApiClient.getMe(storedToken);
+          } catch (error: unknown) {
+            frontendLogger.warn('Profile refresh failed; evaluating the saved profile fallback', {
+              action: 'profile.auth.refresh',
+              userId: storedUser?.id,
+              fallback: storedUser ? 'saved-profile' : 'login-redirect'
+            }, error);
+            if (storedUser) {
+              const reason = error instanceof Error ? error.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+              loadWarnings.push(UI_STRINGS.header.userProfile.profileRefreshFailed(reason));
+            }
+          }
+        }
 
         if (!isMounted) return;
 
@@ -139,26 +160,61 @@ export default function ProfilePage(): React.ReactElement {
         setUser(activeUser);
         if (meRes?.user && storedToken) authApiClient.setStoredSession(storedToken, meRes.user);
 
-        const activeBuyerId = activeUser.id;
-        const [tRes, ingRes] = await Promise.all([
-          apiClient.getTenant().catch(() => null),
-          apiClient.getIngestionData(activeBuyerId).catch(() => null)
+        const activeTenantId = activeUser.tenant_id || undefined;
+        if (!activeTenantId) {
+          frontendLogger.warn('Profile data loading skipped because the verified user has no assigned tenant', {
+            action: 'profile.tenant_assignment',
+            userId: activeUser.id,
+            role: activeUser.role
+          });
+          setTenant(null);
+          setIngestionQueue([]);
+          setQueueCursor(null);
+          setHasMoreIngestionDocuments(false);
+          setTotalIngestionDocuments(0);
+          setProfileLoadWarnings(loadWarnings);
+          return;
+        }
+
+        const [tenantResult, ingestionResult] = await Promise.allSettled([
+          apiClient.getTenant(activeTenantId),
+          apiClient.getIngestionData(activeTenantId)
         ]);
 
         if (!isMounted) return;
 
-        if (tRes) {
-          setTenant(tRes);
+        if (tenantResult.status === 'fulfilled') {
+          setTenant(tenantResult.value);
+        } else {
+          frontendLogger.error('Profile organization details failed to load', {
+            action: 'profile.tenant.load',
+            tenantId: activeTenantId,
+            fallback: 'keep-profile-without-organization-details'
+          }, tenantResult.reason);
+          const reason = tenantResult.reason instanceof Error
+            ? tenantResult.reason.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+          loadWarnings.push(UI_STRINGS.header.userProfile.tenantLoadFailed(reason));
         }
 
-        if (ingRes?.queue) {
-          const buyerDocs = activeBuyerId
-            ? ingRes.queue.filter(
-                (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === activeUser.email
-              )
-            : ingRes.queue;
-          setIngestionQueue(buyerDocs);
+        if (ingestionResult.status === 'fulfilled') {
+          const ingRes = ingestionResult.value;
+          if (ingRes.queue) setIngestionQueue(ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId));
+          if (ingRes.pagination?.queue) {
+            setQueueCursor(ingRes.pagination.queue.nextCursor);
+            setHasMoreIngestionDocuments(ingRes.pagination.queue.hasMore);
+          }
+          if (ingRes.summary) setTotalIngestionDocuments(ingRes.summary.totalFiles);
+        } else {
+          frontendLogger.error('Profile ingestion documents failed to load', {
+            action: 'profile.ingestion.load',
+            tenantId: activeTenantId,
+            fallback: 'keep-profile-without-ingestion-documents'
+          }, ingestionResult.reason);
+          const reason = ingestionResult.reason instanceof Error
+            ? ingestionResult.reason.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+          loadWarnings.push(UI_STRINGS.header.userProfile.ingestionLoadFailed(reason));
         }
+        setProfileLoadWarnings(loadWarnings);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -172,6 +228,29 @@ export default function ProfilePage(): React.ReactElement {
       isMounted = false;
     };
   }, [router]);
+
+  const handleLoadMoreIngestionDocuments = async (): Promise<void> => {
+    if (!queueCursor || !hasMoreIngestionDocuments || isLoadingMoreIngestionDocuments || !user?.tenant_id) return;
+    setIsLoadingMoreIngestionDocuments(true);
+    try {
+      const nextPage = await apiClient.getIngestionData(user.tenant_id, { queueCursor });
+      setIngestionQueue((current) => {
+        const documentsById = new Map(current.map((document) => [document.doc_id, document]));
+        nextPage.queue.forEach((document) => documentsById.set(document.doc_id, document));
+        return [...documentsById.values()];
+      });
+      setQueueCursor(nextPage.pagination.queue.nextCursor);
+      setHasMoreIngestionDocuments(nextPage.pagination.queue.hasMore);
+      if (nextPage.summary) setTotalIngestionDocuments(nextPage.summary.totalFiles);
+    } catch (error: unknown) {
+      frontendLogger.warn('Could not load the next D1 ingestion-document page', {
+        action: 'profile.ingestion.loadMore', tenantId: user.tenant_id, cursor: queueCursor
+      }, error);
+      setDocActionMessage(error instanceof Error ? error.message : UI_STRINGS.module1.loadMoreIngestionDocumentsFailed);
+    } finally {
+      setIsLoadingMoreIngestionDocuments(false);
+    }
+  };
 
   const handleCopyBuyerId = () => {
     if (!user?.id) return;
@@ -223,11 +302,13 @@ export default function ProfilePage(): React.ReactElement {
     setDeletingDocId(docId);
     setDocActionMessage(null);
     try {
-      const activeBuyerId = user?.id || authApiClient.getStoredUser()?.id;
-      const updatedQueue = await apiClient.deleteIngestionDocument(docId, activeBuyerId);
-      const buyerDocs = (updatedQueue || []).filter(
-        (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === user?.email
-      );
+      const activeTenantId = user?.tenant_id || authApiClient.getStoredUser()?.tenant_id || undefined;
+      if (!activeTenantId) {
+        setDocActionMessage(UI_STRINGS.auth.tenantAssignmentRequired);
+        return;
+      }
+      const updatedQueue = await apiClient.deleteIngestionDocument(docId, activeTenantId);
+      const buyerDocs = (updatedQueue || []).filter((doc) => doc.tenant_id === activeTenantId);
       setIngestionQueue(buyerDocs);
       setDocActionMessage('Document successfully removed from repository.');
       setTimeout(() => setDocActionMessage(null), 3000);
@@ -354,6 +435,12 @@ export default function ProfilePage(): React.ReactElement {
 
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        {profileLoadWarnings.length > 0 && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{profileLoadWarnings.join(' ')}</p>
+          </div>
+        )}
         {/* Profile Hero Header Card */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-cyan-950/40 border border-sky-100 dark:border-cyan-500/20 p-6 sm:p-8 shadow-sm dark:shadow-xl">
           <div className="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -692,6 +779,9 @@ export default function ProfilePage(): React.ReactElement {
             </div>
           ) : (
             <div className="space-y-3">
+              <p className="text-xs text-slate-500" aria-live="polite">
+                {UI_STRINGS.module1.showingIngestionDocuments(ingestionQueue.length, totalIngestionDocuments)}
+              </p>
               {ingestionQueue.map((item) => (
                 <div
                   key={item.doc_id || item.file_name}
@@ -756,6 +846,20 @@ export default function ProfilePage(): React.ReactElement {
                   </div>
                 </div>
               ))}
+              {hasMoreIngestionDocuments && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreIngestionDocuments}
+                    disabled={isLoadingMoreIngestionDocuments}
+                    className="px-4 py-2 text-xs font-semibold text-cyan-800 bg-cyan-50 hover:bg-cyan-100 disabled:opacity-60 rounded-lg border border-cyan-200 transition-colors"
+                  >
+                    {isLoadingMoreIngestionDocuments
+                      ? UI_STRINGS.module1.loadingMoreIngestionDocuments
+                      : UI_STRINGS.module1.loadMoreIngestionDocuments}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

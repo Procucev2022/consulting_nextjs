@@ -88,4 +88,38 @@ describe('FixCurrencyModal Component', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.module1.fxReferenceUnavailable);
     expect(screen.getByRole('button', { name: UI_STRINGS.modals.fixCurrency.applyConversion })).toBeDisabled();
   });
+
+  it('reports historical conversion failures for Error and non-Error rejections', async () => {
+    vi.mocked(apiClient.getCurrencyConversion).mockRejectedValueOnce(new Error('Historical rate unavailable'));
+    const first = render(<FixCurrencyModal record={sampleRec} isOpen onClose={vi.fn()} onFix={vi.fn()} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Historical rate unavailable');
+    first.unmount();
+
+    vi.mocked(apiClient.getCurrencyConversion).mockRejectedValueOnce('D1 returned no conversion');
+    render(<FixCurrencyModal record={sampleRec} isOpen onClose={vi.fn()} onFix={vi.fn()} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.module1.fxReferenceUnavailable);
+  });
+
+  it('handles an empty D1 currency catalog and refuses an invalid converted amount', async () => {
+    vi.mocked(apiClient.getCurrencyRates).mockResolvedValueOnce({});
+    const { unmount } = render(<FixCurrencyModal record={sampleRec} isOpen onClose={vi.fn()} onFix={vi.fn()} />);
+    expect(await screen.findByText(`${UI_STRINGS.modals.fixCurrency.currencyUnavailable} / INR`)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'INR' })).not.toBeInTheDocument();
+    unmount();
+
+    const onFix = vi.fn();
+    vi.mocked(apiClient.getCurrencyConversion).mockResolvedValueOnce({
+      amount: 50000,
+      fromCurrency: 'USD',
+      amountINR: -1,
+      exchangeRate: 1,
+      rateDate: null
+    } as never);
+    render(<FixCurrencyModal record={sampleRec} isOpen onClose={vi.fn()} onFix={onFix} />);
+    const applyButton = await screen.findByRole('button', { name: UI_STRINGS.modals.fixCurrency.applyConversion });
+    await waitFor(() => expect(applyButton).toBeEnabled());
+    fireEvent.click(applyButton);
+
+    expect(onFix).not.toHaveBeenCalled();
+  });
 });

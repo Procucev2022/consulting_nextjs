@@ -15,9 +15,13 @@ interface TestDbOptions {
 
 const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
   prepare(query: string) {
+    let tenantId: unknown;
     const statement = {
-      bind: (_tenantId: unknown) => statement,
+      bind: (value: unknown) => { tenantId = value; return statement; },
       async first<T>(): Promise<T | null> {
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant) {
+          return (options.tenants ?? []).find((tenant) => tenant.tenant_id === tenantId) as T | undefined ?? null;
+        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return (options.transaction ?? null) as T | null;
         }
@@ -27,7 +31,6 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
         return (options.opportunityMetrics ?? null) as T | null;
       },
       async all<T>(): Promise<{ results: T[] }> {
-        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants) return { results: (options.tenants ?? []) as T[] };
         if (options.undefinedResults) return { results: undefined as unknown as T[] };
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) return { results: (options.opportunities ?? []) as T[] };
         return { results: (options.groups ?? []) as T[] };
@@ -44,20 +47,17 @@ const defaultTransaction = (): Record<string, unknown> => ({
 });
 
 describe('loadExecutiveOpportunityBriefFromD1', () => {
-  it('requires a single tenant and a non-empty procurement baseline', async () => {
-    expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({ tenants: [] }))).toEqual({ ok: false, reason: 'no-tenant' });
-    expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({ tenants: [{}, {}] }))).toEqual({
-      ok: false,
-      reason: 'ambiguous-tenant'
-    });
+  it('requires an explicit tenant and a non-empty procurement baseline', async () => {
+    expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({ tenants: [] }), '')).toEqual({ ok: false, reason: 'tenant-scope-required' });
+    expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({ tenants: [] }), 'T1')).toEqual({ ok: false, reason: 'no-tenant' });
     expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
       transaction: null
-    }))).toEqual({ ok: false, reason: 'no-transactions' });
+    }), 'T1')).toEqual({ ok: false, reason: 'no-transactions' });
     expect(await loadExecutiveOpportunityBriefFromD1(makeDatabase({
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
       transaction: { ...defaultTransaction(), transaction_count: '0' }
-    }))).toEqual({ ok: false, reason: 'no-transactions' });
+    }), 'T1')).toEqual({ ok: false, reason: 'no-transactions' });
   });
 
   it('normalizes D1 numeric values and nullable opportunity fields into a report', async () => {
@@ -73,7 +73,7 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
         lever: ' ', recommended_action: null, status: null, risk_level: null, confidence_score: null
       }],
       groups: [{ label: ' ', record_count: 'invalid', estimated_savings_cr: '3.5' }]
-    }), new Date('2026-10-30T00:00:00.000Z'));
+    }), 'T1', new Date('2026-10-30T00:00:00.000Z'));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -97,7 +97,7 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
       transaction: defaultTransaction(),
       undefinedResults: true
-    }));
+    }), 'T1');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.report.metrics.opportunityCount).toBe(0);
@@ -113,12 +113,12 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
       transaction: defaultTransaction(),
       provenance: { classification: 'MIXED' }
-    }));
+    }), 'T1');
     const unknown = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
       transaction: defaultTransaction(),
       provenance: { classification: 'INVALID' }
-    }));
+    }), 'T1');
     expect(mixed.ok && mixed.report.scopeDescription).toContain('both demo seed data');
     expect(unknown.ok && unknown.report).toMatchObject({ dataClassification: 'CUSTOMER_DATA' });
   });

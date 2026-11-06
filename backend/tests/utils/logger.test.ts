@@ -22,6 +22,7 @@ describe('Logger Utility Suite', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     cleanDir();
   });
 
@@ -48,16 +49,25 @@ describe('Logger Utility Suite', () => {
       expect(logger).toBeDefined();
     });
 
-    it('falls back gracefully if mkdirSync fails', () => {
+    it('captures a structured console fallback if mkdirSync fails', () => {
       const spy = vi.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => {
         throw new Error('Permission denied');
       });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const logger = new Logger({
         logDir: testLogDir,
-        enableFilePersistence: true
+        enableFilePersistence: true,
+        enableConsole: false
       });
       expect(logger).toBeDefined();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('logger.ensure-log-directory'));
+      expect(logger.searchLogs({ level: 'error' })).toContainEqual(expect.objectContaining({
+        message: 'Logger internal operation failed',
+        context: expect.objectContaining({ action: 'logger.ensure-log-directory' }),
+        error: expect.objectContaining({ message: 'Permission denied' })
+      }));
       spy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -187,22 +197,48 @@ describe('Logger Utility Suite', () => {
       expect(errorContent).toContain('Error test log');
     });
 
-    it('handles file write error gracefully without throwing', () => {
+    it('captures a structured console fallback when file persistence fails', () => {
       const logger = new Logger({
         logDir: testLogDir,
         enableConsole: false,
         enableFilePersistence: true
       });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const appendSpy = vi.spyOn(fs, 'appendFileSync').mockImplementation(() => {
         throw new Error('Disk full');
       });
 
       expect(() => {
-        logger.info('Safe log');
+        logger.info('Safe log', { requestId: 'req-log-write' });
       }).not.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('logger.persist-log-entry'));
+      expect(logger.searchLogs({ level: 'error', keyword: 'Disk full', requestId: 'req-log-write' })).toContainEqual(
+        expect.objectContaining({
+          requestId: 'req-log-write',
+          context: expect.objectContaining({ action: 'logger.persist-log-entry', requestId: 'req-log-write' }),
+          error: expect.objectContaining({ message: 'Disk full', stack: expect.any(String) })
+        })
+      );
 
       appendSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('keeps the application operation alive if the logger console fallback also fails', () => {
+      const logger = new Logger({
+        logDir: testLogDir,
+        enableConsole: false,
+        enableFilePersistence: true
+      });
+      const appendSpy = vi.spyOn(fs, 'appendFileSync').mockImplementation(() => { throw new Error('Disk full'); });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { throw new Error('Console unavailable'); });
+
+      expect(() => logger.info('Application operation remains safe')).not.toThrow();
+
+      appendSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+      expect(logger.searchLogs({ level: 'error', keyword: 'Disk full' })).toHaveLength(1);
     });
   });
 
@@ -268,10 +304,17 @@ describe('Logger Utility Suite', () => {
         enableFilePersistence: true
       });
 
-      const logs = logger.searchLogs();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logs = logger.searchLogs({ level: 'info' });
       expect(logs.length).toBe(2);
       expect(logs[0].message).toBe('Valid 2');
       expect(logs[1].message).toBe('Valid 1');
+      expect(logger.searchLogs({ level: 'error' })).toContainEqual(expect.objectContaining({
+        context: expect.objectContaining({ action: 'logger.parse-app-log', malformedLineCount: 1 }),
+        error: expect.objectContaining({ name: 'SyntaxError' })
+      }));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('logger.parse-app-log'));
+      consoleErrorSpy.mockRestore();
     });
 
     it('handles readFileSync error gracefully', () => {
@@ -285,10 +328,17 @@ describe('Logger Utility Suite', () => {
       const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementationOnce(() => {
         throw new Error('EACCES');
       });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const results = logger.searchLogs();
+      const results = logger.searchLogs({ level: 'info' });
       expect(results.length).toBe(1);
+      expect(logger.searchLogs({ level: 'error' })).toContainEqual(expect.objectContaining({
+        context: expect.objectContaining({ action: 'logger.read-app-log' }),
+        error: expect.objectContaining({ message: 'EACCES' })
+      }));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('logger.read-app-log'));
       readSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -1,6 +1,6 @@
 import { geminiService } from './geminiService';
 import {
-  CATEGORIZATION_SYSTEM_PROMPT, EXTRACTION_STATUS, CLASSIFICATION_STATUS,
+  AI_LOG_ACTIONS, CATEGORIZATION_SYSTEM_PROMPT, EXTRACTION_STATUS, CLASSIFICATION_STATUS,
   AI_MAX_LINE_ITEMS_IN_PROMPT, AI_TAXONOMY_LOOKUP_UNAVAILABLE
 } from '../constants/ai';
 import type {
@@ -15,7 +15,7 @@ export class AiCategorizationService {
     this.taxonomyLookup = lookup;
   }
 
-  public async categorizeLineItems(items: AiCategorizationItem[]): Promise<CategorizationResult> {
+  public async categorizeLineItems(items: AiCategorizationItem[], requestId?: string): Promise<CategorizationResult> {
     if (!Array.isArray(items) || items.length === 0) {
       return {
         status: CLASSIFICATION_STATUS.NO_CONTENT,
@@ -39,7 +39,8 @@ export class AiCategorizationService {
 
     const result = await geminiService.generateJson<{ mappings: RawAiMapping[] }>({
       prompt,
-      label: 'UNSPSC AI Categorization'
+      label: 'UNSPSC AI Categorization',
+      requestId
     });
 
     const hasValidMappings = result.status === EXTRACTION_STATUS.SUCCESS &&
@@ -48,12 +49,18 @@ export class AiCategorizationService {
     if (!hasValidMappings) {
       const taxonomyLookup = this.taxonomyLookup;
       if (!taxonomyLookup) {
-        logger.error('Database taxonomy lookup is not configured', { itemCount: items.length });
+        logger.error('Database taxonomy lookup is not configured', {
+          action: AI_LOG_ACTIONS.categorizationFallback,
+          itemCount: items.length,
+          requestId
+        });
         throw new Error(AI_TAXONOMY_LOOKUP_UNAVAILABLE);
       }
       logger.info('Using high-precision UNSPSC Taxonomy engine fallback for categorization', {
+        action: AI_LOG_ACTIONS.categorizationFallback,
         itemCount: items.length,
-        geminiError: result.error
+        geminiError: result.error,
+        requestId
       });
 
       const fallbackMappings: AiCategorizationMapping[] = await Promise.all(items.map(async (item) => {

@@ -27,6 +27,19 @@ describe('Frontend Validation Utilities (utils/validation.ts)', () => {
         expect(errorMap.root).toBe('Root failure');
       }
     });
+
+    it('keeps the first error when several issues share the same field path', () => {
+      const duplicatePathSchema = z.object({ username: z.string() }).superRefine((_value, context) => {
+        context.addIssue({ code: 'custom', path: ['username'], message: 'First issue' });
+        context.addIssue({ code: 'custom', path: ['username'], message: 'Second issue' });
+      });
+      const result = duplicatePathSchema.safeParse({ username: 'valid' });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(formatFrontendZodErrors(result.error).username).toBe('First issue');
+      }
+    });
   });
 
   describe('validateInput', () => {

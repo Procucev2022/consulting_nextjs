@@ -206,7 +206,7 @@ describe('ProcurementComplianceView coverage paths', () => {
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(SESSION_TOKEN);
     const { createUrlMock, revokeUrlMock } = stubBlobUrlApi();
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-    const fetchMock = vi.fn((url: string) => {
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
       if (url.includes(EXPORT_URL_PART)) {
         return Promise.resolve({ ok: true, blob: async () => new Blob(['xlsx-bytes']) });
       }
@@ -219,17 +219,19 @@ describe('ProcurementComplianceView coverage paths', () => {
 
     render(<ProcurementComplianceView assessmentId={ASSESSMENT_ID} />);
     await waitFor(() => expect(screen.getByText(COMPLIANCE_UI_STRINGS.TITLE)).toBeInTheDocument());
-    expect(fetchMock).toHaveBeenCalledWith(LOAD_URL, { headers: { Authorization: `Bearer ${SESSION_TOKEN}` } });
+    const [, loadInit] = fetchMock.mock.calls.find(([url]) => url === LOAD_URL) as [string, RequestInit];
+    expect(new Headers(loadInit.headers).get('Authorization')).toBe(`Bearer ${SESSION_TOKEN}`);
+    expect(new Headers(loadInit.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
 
     await openReviewModalAndSubmit(AWAITING_ID, 'Price gap confirmed against PO history');
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(REVIEW_URL, expect.objectContaining({ method: 'POST' })));
-    expect(fetchMock).toHaveBeenCalledWith(
-      REVIEW_URL,
-      expect.objectContaining({
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SESSION_TOKEN}` }
-      })
-    );
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url === REVIEW_URL)).toBe(true));
+    const [, reviewInit] = fetchMock.mock.calls.find(([url]) => url === REVIEW_URL) as [string, RequestInit];
+    const reviewHeaders = new Headers(reviewInit.headers);
+    expect(reviewInit.method).toBe('POST');
+    expect(reviewHeaders.get('Content-Type')).toBe('application/json');
+    expect(reviewHeaders.get('Authorization')).toBe(`Bearer ${SESSION_TOKEN}`);
+    expect(reviewHeaders.get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
     await waitFor(() => {
       const loadCalls = fetchMock.mock.calls.filter(([url]) => url === LOAD_URL);
       expect(loadCalls).toHaveLength(2);
@@ -239,9 +241,10 @@ describe('ProcurementComplianceView coverage paths', () => {
     fireEvent.click(screen.getByTestId('compliance-export-excel-btn'));
 
     await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1));
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining(EXPORT_URL_PART), {
-      headers: { Authorization: `Bearer ${SESSION_TOKEN}` }
-    });
+    const [exportUrl, exportInit] = fetchMock.mock.calls.find(([url]) => url.includes(EXPORT_URL_PART)) as [string, RequestInit];
+    expect(exportUrl).toContain(EXPORT_URL_PART);
+    expect(new Headers(exportInit.headers).get('Authorization')).toBe(`Bearer ${SESSION_TOKEN}`);
+    expect(new Headers(exportInit.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
     expect(createUrlMock).toHaveBeenCalledTimes(1);
     expect(revokeUrlMock).toHaveBeenCalledWith(BLOB_URL);
   });
@@ -290,7 +293,11 @@ describe('ProcurementComplianceView coverage paths', () => {
     await waitFor(() =>
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ payload: expect.any(Object) }),
+        expect.objectContaining({
+          payload: expect.any(Object),
+          assessmentId: ASSESSMENT_ID,
+          staleRequest: false
+        }),
         expect.objectContaining({ message: 'Review lock held by another reviewer' })
       )
     );

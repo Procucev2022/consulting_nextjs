@@ -15,6 +15,7 @@ import type {
   IngestionWorkbookResult,
   IngestionWorkbookRow
 } from '../types/ingestionWorkbook';
+import { clearScopedModule2Cache } from './workerD1Module2Cache';
 
 const TRANSACTION_INSERT_SQL = `
   INSERT INTO ProcurementTransaction (
@@ -28,10 +29,10 @@ const TRANSACTION_INSERT_SQL = `
 
 const VALIDATION_INSERT_SQL = `
   INSERT INTO ValidationPreCheckRecord (
-    record_id, po_number, vendor_name, raw_desc, order_quantity, net_price, subtotal_raw, amount,
+    record_id, tenant_id, po_number, vendor_name, raw_desc, order_quantity, net_price, subtotal_raw, amount,
     raw_currency, amount_inr, inr_crores, fx_rate_applied, spend_year, transaction_date,
     issue_flag, action_status, resolved
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 const valueFor = (row: IngestionWorkbookRow, key?: string): unknown => key ? row[key] : undefined;
@@ -101,14 +102,21 @@ const getFxRate = async (
 
 const runInBatches = async (
   db: IngestionWorkbookInput['db'],
-  statements: CloudflareD1PreparedStatement[]
+  statements: CloudflareD1PreparedStatement[],
+  afterBatch: () => void
 ): Promise<void> => {
   const statementLimit = INGESTION_WORKBOOK_BATCH_ROWS * 2;
   for (let offset = 0; offset < statements.length; offset += statementLimit) {
     const batch = statements.slice(offset, offset + statementLimit);
-    if (db.batch) await db.batch(batch);
+    if (db.batch) {
+      await db.batch(batch);
+      afterBatch();
+    }
     else {
-      for (const statement of batch) await statement.run();
+      for (const statement of batch) {
+        await statement.run();
+        afterBatch();
+      }
     }
   }
 };
@@ -241,7 +249,7 @@ const prepareSourceRow = async (
       JSON.stringify(row)
     ),
     validationStatement: input.db.prepare(VALIDATION_INSERT_SQL).bind(
-      recordId, source.poNumber, source.supplierName || 'Unmapped Supplier', source.description, source.quantity,
+      recordId, input.tenantId, source.poNumber, source.supplierName || 'Unmapped Supplier', source.description, source.quantity,
       source.netPrice, source.amount, source.amount, source.currency || '', amountInr, inrCrores, fxRate,
       source.transactionDate ? Number(source.transactionDate.slice(0, 4)) : null,
       source.transactionDate, status.issueFlag, status.actionStatus, status.resolved
@@ -272,7 +280,8 @@ export const importIngestionWorkbook = async (input: IngestionWorkbookInput): Pr
     statements.push(prepared.transactionStatement, prepared.validationStatement);
   }
 
-  await runInBatches(input.db, statements);
+  await runInBatches(input.db, statements, () =>
+    clearScopedModule2Cache(input.db, input.tenantId, input.assessmentId));
   return {
     importedCount: rows.length,
     validationCount: rows.length,

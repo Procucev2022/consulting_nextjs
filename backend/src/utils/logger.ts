@@ -5,13 +5,15 @@ import type {
   LogEntry,
   LogFilter,
   PurgeResult,
-  LoggerOptions
+  LoggerOptions,
+  LoggerDiagnosticReporter
 } from '../types';
 import {
   LEVEL_PRIORITY,
   DEFAULT_SERVICE_NAME,
   DEFAULT_RETENTION_DAYS,
-  DEFAULT_MIN_LEVEL
+  DEFAULT_MIN_LEVEL,
+  DEFAULT_MAX_MEMORY_LOGS
 } from '../constants/logger';
 import {
   resolveLoggerConfig,
@@ -20,7 +22,7 @@ import {
   searchAndFilterLogs
 } from './loggerHelpers';
 
-export type { LogLevel, LogEntry, LogFilter, PurgeResult, LoggerOptions };
+export type { LogLevel, LogEntry, LogFilter, PurgeResult, LoggerOptions, LoggerDiagnosticReporter };
 export { LEVEL_PRIORITY, DEFAULT_SERVICE_NAME, DEFAULT_RETENTION_DAYS, DEFAULT_MIN_LEVEL };
 
 export class Logger {
@@ -31,7 +33,7 @@ export class Logger {
   private enableFilePersistence: boolean;
   private retentionDays: number;
   private recentLogs: LogEntry[] = [];
-  private maxMemoryLogs: number = 200;
+  private maxMemoryLogs: number = DEFAULT_MAX_MEMORY_LOGS;
 
   constructor(options: LoggerOptions = {}) {
     const config = resolveLoggerConfig(options);
@@ -50,13 +52,34 @@ export class Logger {
     }
   }
 
-  private ensureLogDir(): void {
+  private addRecentLog(entry: LogEntry): void {
+    this.recentLogs.push(entry);
+    if (this.recentLogs.length > this.maxMemoryLogs) this.recentLogs.shift();
+  }
+
+  private reportInternalFailure(action: string, error: unknown, context?: Record<string, unknown>): void {
+    const entry = this.formatEntry('error', 'Logger internal operation failed', {
+      ...context,
+      action,
+      logDir: this.logDir
+    }, error);
+    this.addRecentLog(entry);
+    try {
+      console.error(JSON.stringify(entry));
+    } catch {
+      // The original application operation must continue if even the logging fallback is unavailable.
+    }
+  }
+
+  private ensureLogDir(context?: Record<string, unknown>): boolean {
     try {
       if (!fs.existsSync(this.logDir)) {
         fs.mkdirSync(this.logDir, { recursive: true });
       }
-    } catch {
-      // Graceful fallback
+      return true;
+    } catch (error: unknown) {
+      this.reportInternalFailure('logger.ensure-log-directory', error, context);
+      return false;
     }
   }
 
@@ -110,7 +133,7 @@ export class Logger {
     if (!this.enableFilePersistence) return;
 
     try {
-      this.ensureLogDir();
+      if (!this.ensureLogDir(entry.context)) return;
       const line = JSON.stringify(entry) + '\n';
       const dateStr = entry.timestamp.split('T')[0];
 
@@ -121,8 +144,8 @@ export class Logger {
         fs.appendFileSync(path.join(this.logDir, 'error.log'), line);
         fs.appendFileSync(path.join(this.logDir, `error-${dateStr}.log`), line);
       }
-    } catch {
-      // Fail silently to avoid breaking execution
+    } catch (error: unknown) {
+      this.reportInternalFailure('logger.persist-log-entry', error, entry.context);
     }
   }
 
@@ -134,10 +157,7 @@ export class Logger {
   ): LogEntry {
     const entry = this.formatEntry(level, message, context, error);
 
-    this.recentLogs.push(entry);
-    if (this.recentLogs.length > this.maxMemoryLogs) {
-      this.recentLogs.shift();
-    }
+    this.addRecentLog(entry);
 
     if (this.shouldLog(level)) {
       if (this.enableConsole) {
@@ -174,16 +194,22 @@ export class Logger {
   }
 
   public searchLogs(filter: LogFilter = {}): LogEntry[] {
-    return searchAndFilterLogs(this.recentLogs, this.logDir, this.enableFilePersistence, filter);
+    return searchAndFilterLogs(
+      this.recentLogs,
+      this.logDir,
+      this.enableFilePersistence,
+      filter,
+      this.reportInternalFailure.bind(this)
+    );
   }
 
   public purgeOldLogs(retentionDays?: number): PurgeResult {
     const daysToRetain = retentionDays ?? this.retentionDays;
-    return purgeOldLogFiles(this.logDir, daysToRetain);
+    return purgeOldLogFiles(this.logDir, daysToRetain, this.reportInternalFailure.bind(this));
   }
 
   public getLogStats(): { totalFiles: number; totalSizeBytes: number; retentionDays: number; logDir: string } {
-    return computeLogStats(this.logDir, this.retentionDays);
+    return computeLogStats(this.logDir, this.retentionDays, this.reportInternalFailure.bind(this));
   }
 
 }

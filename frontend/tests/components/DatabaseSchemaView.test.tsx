@@ -24,8 +24,14 @@ describe('DatabaseSchemaView Component', () => {
     expect(screen.getByText(UI_STRINGS.schema.bannerTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.schema.entitiesHeader)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.schema.slaCards.performanceTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.queryTelemetry)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.readCache)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.schema.slaCards.securityTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.encryptionDescription)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.complianceDescription)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.schema.slaCards.uptimeTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.availabilityDescription)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.slaCards.recoveryDescription)).toBeInTheDocument();
   });
 
   it('cycles through all entities and updates displayed DDL, attributes, and preview', async () => {

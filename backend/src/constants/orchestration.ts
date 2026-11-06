@@ -140,6 +140,7 @@ export const ORCHESTRATION_HTTP_STATUS = {
   NOT_FOUND: 404,
   METHOD_NOT_ALLOWED: 405,
   CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
   INTERNAL_ERROR: 500,
   NOT_IMPLEMENTED: 501,
   SERVICE_UNAVAILABLE: 503
@@ -174,6 +175,16 @@ export const ORCHESTRATION_EVENT_TYPES = {
   CORRECTION_REQUESTED: 'CORRECTION_REQUESTED',
   DATASET_CORRECTED: 'DATASET_CORRECTED',
   PCBI_GAP_RESOLVED: 'PCBI_GAP_RESOLVED'
+} as const;
+
+export const ORCHESTRATION_LOG_ACTIONS = {
+  invalidStoredChecklist: 'orchestration.checklist.stored_json_invalid',
+  invalidAuditMetadata: 'orchestration.audit.metadata_invalid'
+} as const;
+
+export const ORCHESTRATION_LOG_MESSAGES = {
+  invalidStoredChecklist: 'Stored analysis quality checklist is invalid; the checklist was omitted',
+  invalidAuditMetadata: 'Stored analysis audit metadata is invalid; metadata was omitted'
 } as const;
 
 export const ORCHESTRATION_ENTITY_TYPES = {

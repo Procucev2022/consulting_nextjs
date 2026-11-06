@@ -3,6 +3,7 @@ import type { DatasetDownloadRow, OrchestrationDatabase, OrchestrationHandler } 
 import type { CloudflareR2Object } from './types/cloudflare';
 import { ORCHESTRATION_EVENT_TYPES, ORCHESTRATION_ENTITY_TYPES } from './constants/orchestration';
 import { D1_TABLES } from './constants/d1';
+import { ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES } from './constants/assessmentValidation';
 import { pcbiGapResolutionSchema, uploadCorrectedDatasetSchema } from './constants/orchestrationValidation';
 import { ORCHESTRATION_MESSAGES } from './constants/orchestrationMessages';
 import { uploadAssessmentDataVersion } from './services/assessmentDataVersionD1';
@@ -26,11 +27,11 @@ import logger from './utils/logger';
 
 export const resolvePcbiGap: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(pcbiGapResolutionSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   if (job.current_version_id === null) {
     throw conflictError(ORCHESTRATION_MESSAGES.readinessPcbiEvidenceUnavailable);
   }
-  const rows = await listPcbiGapRows(context.database, job.assessment_id, job.current_version_id);
+  const rows = await listPcbiGapRows(context.database, job.assessment_id, job.current_version_id, job.tenant_id);
   const gaps = await Promise.all(rows.map((row) => mapPcbiGap(row, job.customer_id)));
   const gapIndex = gaps.findIndex((gap) => gap.gapId === context.params.gapId);
   const source = rows[gapIndex];
@@ -61,7 +62,7 @@ export const resolvePcbiGap: OrchestrationHandler = async (context) => {
       resolvedAt
     ]),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',
@@ -79,7 +80,7 @@ export const resolvePcbiGap: OrchestrationHandler = async (context) => {
       }
     }))
   ]);
-  const updatedRows = await listPcbiGapRows(context.database, job.assessment_id, job.current_version_id);
+  const updatedRows = await listPcbiGapRows(context.database, job.assessment_id, job.current_version_id, job.tenant_id);
   const updatedSource = updatedRows.find((row) => row.category_key === source.category_key);
   if (!updatedSource) throw serviceUnavailableError(ORCHESTRATION_MESSAGES.pcbiGapNotFound(context.params.gapId));
   const gap = await mapPcbiGap(updatedSource, job.customer_id);
@@ -95,13 +96,19 @@ export const resolvePcbiGap: OrchestrationHandler = async (context) => {
 };
 
 export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
-  const body = parseWithSchema(uploadCorrectedDatasetSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const body = parseWithSchema(
+    uploadCorrectedDatasetSchema,
+    await readJsonBody(context.request, ASSESSMENT_DATA_VERSION_JSON_MAX_BYTES)
+  );
+  const job = await loadAccessibleJob(context, context.params.jobId);
   if (!context.objects) throw serviceUnavailableError(ORCHESTRATION_MESSAGES.datasetStorageNotConfigured);
 
   const upload = await uploadAssessmentDataVersion({
     db: context.database,
-    environment: { DB: context.database, OBJECTS: context.objects, R2_BUCKET: context.bucketName },
+    environment: {
+      DB: context.database, OBJECTS: context.objects, R2_BUCKET: context.bucketName,
+      REQUEST_TENANT_ID: job.tenant_id
+    },
     assessmentId: job.assessment_id,
     body: {
       fileName: body.fileName,
@@ -137,7 +144,7 @@ export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
     ) VALUES (?, ?, ?, ?, ?, ?)`)
       .bind(dataVersionId, job.assessment_id, job.current_version_id, body.reason, context.actor.userName, timestamp),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',
@@ -155,7 +162,10 @@ export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
   try {
     const analysis = await runAssessmentAnalysisFromD1({
       db: context.database,
-      environment: { DB: context.database, OBJECTS: context.objects, R2_BUCKET: context.bucketName },
+      environment: {
+        DB: context.database, OBJECTS: context.objects, R2_BUCKET: context.bucketName,
+        REQUEST_TENANT_ID: job.tenant_id
+      },
       assessmentId: job.assessment_id,
       body: { dataVersionId },
       requestId: context.requestId,
@@ -177,9 +187,9 @@ export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
   }
 
   const [updatedJob, versions, stats] = await Promise.all([
-    findJobRow(context.database, job.assessment_id),
-    listVersionRows(context.database, job.assessment_id),
-    listProcurementStats(context.database, job.assessment_id)
+    findJobRow(context.database, job.assessment_id, job.tenant_id),
+    listVersionRows(context.database, job.assessment_id, job.tenant_id),
+    listProcurementStats(context.database, job.assessment_id, job.tenant_id)
   ]);
   const currentJob = updatedJob ?? job;
   const latestRunSucceeded = currentJob.run_version_id === dataVersionId;
@@ -252,7 +262,7 @@ const createDatasetResponse = (
 };
 
 export const downloadDataset: OrchestrationHandler = async (context) => {
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const versionId = context.params.versionId;
   const row = await findDatasetDownloadRow(context.database, job.assessment_id, versionId);
   if (!row) throw notFoundError(ORCHESTRATION_MESSAGES.datasetVersionNotFound(versionId));

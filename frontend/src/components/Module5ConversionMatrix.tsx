@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../utils/apiFetch';
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -90,7 +91,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
         setEmailStatus({ success: false, message: UI_STRINGS.errors.auth.sessionExpired });
         return;
       }
-      const res = await fetch(`${backendUrl}${EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT}`, {
+      const res = await apiFetch(`${backendUrl}${EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({

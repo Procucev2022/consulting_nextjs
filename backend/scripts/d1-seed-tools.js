@@ -171,4 +171,59 @@ const verifySeedManifest = (backendRoot) => {
 
 const shouldSeedDatabase = (args) => args.includes('--seed') || args.includes('--seed-all');
 
-module.exports = { splitSqlStatements, splitSeedParts, verifySeedManifest, shouldSeedDatabase };
+const quoteSqlLiteral = (value) => `'${String(value).replaceAll("'", "''")}'`;
+
+const getSeedFileLedgerReadSql = (fileName) =>
+  `SELECT/**/source_checksum/**/FROM/**/D1SeedFileLedger/**/WHERE/**/seed_file=${quoteSqlLiteral(fileName)};`;
+
+const getSeedFileLedgerWriteSql = (fileName, checksum) =>
+  `INSERT INTO D1SeedFileLedger (seed_file, source_checksum) VALUES ` +
+  `(${quoteSqlLiteral(fileName)}, ${quoteSqlLiteral(checksum)}) ` +
+  'ON CONFLICT(seed_file) DO UPDATE SET source_checksum = excluded.source_checksum, applied_at = CURRENT_TIMESTAMP;';
+
+const getWranglerSqlInputArgs = (sql, filePath, jsonOutput) =>
+  jsonOutput ? ['--command', sql] : [`--file=${filePath}`];
+
+const parseWranglerJsonOutput = (stdout) => {
+  const output = String(stdout).trim();
+  const starts = [...output.matchAll(/\[/gu)].map((match) => match.index).reverse();
+  let foundArray = false;
+  for (const start of starts) {
+    let candidate;
+    try {
+      candidate = JSON.parse(output.slice(start));
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(candidate)) continue;
+    foundArray = true;
+    if (candidate.every((result) => result && result.success === true && Array.isArray(result.results))) {
+      return candidate.flatMap((result) => result.results);
+    }
+  }
+
+  if (foundArray) throw new Error('Wrangler D1 query returned an unsuccessful result');
+  try {
+    const result = JSON.parse(output);
+    if (!Array.isArray(result)) throw new Error('Wrangler D1 query returned an invalid result set');
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Wrangler D1 query returned an invalid result set') throw error;
+    throw new Error('Wrangler D1 query did not return valid JSON');
+  }
+  throw new Error('Wrangler D1 query returned an unsuccessful result');
+};
+
+const isSeedFileApplied = (rows, checksum) =>
+  Array.isArray(rows) && rows.some((row) => row && row.source_checksum === checksum);
+
+module.exports = {
+  splitSqlStatements,
+  splitSeedParts,
+  verifySeedManifest,
+  shouldSeedDatabase,
+  getSeedFileLedgerReadSql,
+  getSeedFileLedgerWriteSql,
+  getWranglerSqlInputArgs,
+  parseWranglerJsonOutput,
+  isSeedFileApplied
+};

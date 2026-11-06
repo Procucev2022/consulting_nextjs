@@ -131,6 +131,35 @@ describe('PCBI Validation & Quality Checks (frontend/src/utils/pcbiValidator.ts)
     expect(summary.constituentTotals?.[0]?.differenceFrom100).toBe(-30);
   });
 
+  it('validates mapped source, constituent, and UNSPSC reference rows', () => {
+    const referenceMapping = (excelColumn: string, mappedField: string): PCBIColumnMapping => ({
+      excelColumn,
+      mappedField,
+      fieldLabel: mappedField,
+      isRequired: true,
+      confidence: 100,
+      status: 'MAPPED',
+      sampleValues: []
+    });
+    const summary = validatePCBIUpload({
+      PCBI_MASTER: [],
+      WEEKLY_INDEX: [],
+      CONSTITUENTS: [{ 'PCBI ID': 'PCBI-1', Driver: 'Iron Ore', Weight: 60 }],
+      SOURCES: [{ 'Source ID': 'SRC-1', 'Source Name': 'Exchange', Frequency: 'WEEKLY' }],
+      UNSPSC_MAPPING: [{ 'UNSPSC Code': '30100000', 'PCBI ID': 'PCBI-1' }]
+    }, {
+      PCBI_MASTER: masterMappings,
+      WEEKLY_INDEX: weeklyMappings,
+      CONSTITUENTS: [referenceMapping('PCBI ID', 'pcbi_id'), referenceMapping('Driver', 'constituent_name')],
+      SOURCES: [referenceMapping('Source ID', 'source_id'), referenceMapping('Source Name', 'source_name')],
+      UNSPSC_MAPPING: [referenceMapping('UNSPSC Code', 'unspsc_code'), referenceMapping('PCBI ID', 'pcbi_id')]
+    });
+
+    expect(summary.constituentRecordsCount).toBe(1);
+    expect(summary.sourceRecordsCount).toBe(1);
+    expect(summary.unspscRecordsCount).toBe(1);
+  });
+
   it('should generate JSON validation report and CSV error export', () => {
     const summary = validatePCBIUpload(
       {

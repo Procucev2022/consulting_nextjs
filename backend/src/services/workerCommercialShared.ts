@@ -2,19 +2,17 @@ import type { AuthRouteResult, CloudflareEnvironment } from '../types/cloudflare
 import type { CommercialAdminAuthorization, ResendEmailResponse } from '../types/commercialWorkflow';
 import type { CloudflareD1Database } from '../types/cloudflare';
 import { COMMERCIAL_WORKFLOW } from '../constants/commercialWorkflow';
+import { D1_SINGLE_ROW_CHANGE_COUNT } from '../constants/db';
 import { D1_TABLES } from '../constants/d1';
 import { authenticateWorkerUser } from '../workerAuth';
+import { d1ChangedRows } from '../utils/d1Result';
+import { readJson } from '../workerHttp';
+
+export { d1ChangedRows } from '../utils/d1Result';
 
 export const commercialResult = (body: Record<string, unknown>, status: number): AuthRouteResult => ({ body, status });
 
-export const readCommercialBody = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const value: unknown = await request.json();
-    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-  } catch {
-    return {};
-  }
-};
+export const readCommercialBody = async (request: Request): Promise<Record<string, unknown>> => readJson(request);
 
 export const authorizeCommercialAdmin = async (
   request: Request, environment: CloudflareEnvironment
@@ -114,15 +112,8 @@ export const verifyCommercialOtp = async (
   `).bind(
     otpHash, verifiedAt, sessionId, purpose, Date.now(), COMMERCIAL_WORKFLOW.otpMaxAttempts
   ).run();
-  if (d1ChangedRows(updated) !== 1) return false;
+  if (d1ChangedRows(updated) !== D1_SINGLE_ROW_CHANGE_COUNT) return false;
   const row = await db.prepare(`SELECT verified_at FROM ${D1_TABLES.adminOtpSessions} WHERE id = ?`)
     .bind(sessionId).first<{ verified_at: string | null }>();
   return Boolean(row?.verified_at);
-};
-
-export const d1ChangedRows = (result: unknown): number | null => {
-  if (!result || typeof result !== 'object') return null;
-  const candidate = result as { changes?: unknown; meta?: { changes?: unknown } };
-  const changes = candidate.meta?.changes ?? candidate.changes;
-  return typeof changes === 'number' && Number.isFinite(changes) ? changes : null;
 };

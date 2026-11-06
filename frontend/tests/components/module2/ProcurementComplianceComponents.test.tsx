@@ -1,5 +1,6 @@
+import { expectApiFetchCall } from '../../utils/apiFetchAssertions';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProcurementComplianceView } from '../../../src/components/module2/ProcurementComplianceView';
 import { ProcurementComplianceTable } from '../../../src/components/module2/ProcurementComplianceTable';
@@ -144,6 +145,14 @@ const mockResult: ProcurementComplianceResult = {
   contractComplianceNotice: COMPLIANCE_DISCLOSURES.CONTRACT_COMPLIANCE_NOTICE
 };
 
+function createDeferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 describe('ProcurementComplianceView Component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -173,6 +182,78 @@ describe('ProcurementComplianceView Component', () => {
     await waitFor(() => {
       expect(screen.getByText(COMPLIANCE_UI_STRINGS.TITLE)).toBeInTheDocument();
     });
+  });
+
+  it('ignores a slow response after the selected assessment changes', async () => {
+    const previousResponse = createDeferred<Response>();
+    const currentResult: ProcurementComplianceResult = {
+      ...mockResult,
+      assessmentId: 'AIC-2026-0003',
+      exceptions: [{ ...mockExceptions[0], exceptionId: 'CURRENT-ASSESSMENT-EXCEPTION' }]
+    };
+    const currentResponse: Response = {
+      ok: true,
+      json: async () => ({ success: true, data: currentResult })
+    } as Response;
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) =>
+      String(input).includes('AIC-2026-0002') ? previousResponse.promise : Promise.resolve(currentResponse)
+    ));
+    const view = render(<ProcurementComplianceView assessmentId="AIC-2026-0002" />);
+
+    view.rerender(<ProcurementComplianceView assessmentId="AIC-2026-0003" />);
+    expect(await screen.findByText('CURRENT-ASSESSMENT-EXCEPTION')).toBeInTheDocument();
+
+    const staleResult: ProcurementComplianceResult = {
+      ...mockResult,
+      exceptions: [{ ...mockExceptions[0], exceptionId: 'STALE-ASSESSMENT-EXCEPTION' }]
+    };
+    await act(async () => {
+      previousResponse.resolve({
+        ok: true,
+        json: async () => ({ success: true, data: staleResult })
+      } as Response);
+    });
+
+    expect(screen.getByText('CURRENT-ASSESSMENT-EXCEPTION')).toBeInTheDocument();
+    expect(screen.queryByText('STALE-ASSESSMENT-EXCEPTION')).not.toBeInTheDocument();
+  });
+
+  it('does not reload the previous assessment after an in-flight review completes', async () => {
+    const reviewResponse = createDeferred<Response>();
+    const previousResult: ProcurementComplianceResult = {
+      ...mockResult,
+      exceptions: [{ ...mockExceptions[0], exceptionId: 'PREVIOUS-ASSESSMENT-EXCEPTION' }]
+    };
+    const currentResult: ProcurementComplianceResult = {
+      ...mockResult,
+      assessmentId: 'AIC-2026-0003',
+      exceptions: [{ ...mockExceptions[0], exceptionId: 'CURRENT-ASSESSMENT-EXCEPTION' }]
+    };
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/review')) return reviewResponse.promise;
+      const data = url.includes('AIC-2026-0003') ? currentResult : previousResult;
+      return Promise.resolve({ ok: true, json: async () => ({ success: true, data }) } as Response);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const view = render(<ProcurementComplianceView assessmentId="AIC-2026-0002" />);
+    expect(await screen.findByText('PREVIOUS-ASSESSMENT-EXCEPTION')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('compliance-review-btn-PREVIOUS-ASSESSMENT-EXCEPTION'));
+    fireEvent.change(screen.getByTestId('compliance-input-reviewer-name'), { target: { value: 'Officer Jane' } });
+    fireEvent.change(screen.getByTestId('compliance-input-justification'), { target: { value: 'Reviewed record' } });
+    fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
+    await waitFor(() => expectApiFetchCall(fetchMock, '/api/module2/sourcing/procurement-compliance/review', expect.any(Object)));
+
+    view.rerender(<ProcurementComplianceView assessmentId="AIC-2026-0003" />);
+    expect(await screen.findByText('CURRENT-ASSESSMENT-EXCEPTION')).toBeInTheDocument();
+    await act(async () => {
+      reviewResponse.resolve({ ok: true } as Response);
+    });
+
+    expect(screen.getByText('CURRENT-ASSESSMENT-EXCEPTION')).toBeInTheDocument();
+    expect(screen.queryByText('PREVIOUS-ASSESSMENT-EXCEPTION')).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).includes('AIC-2026-0002'))).toHaveLength(1);
   });
 
   it('renders header, governance banner, KPIs, checks, table, and triggers back and export', async () => {
@@ -213,10 +294,7 @@ describe('ProcurementComplianceView Component', () => {
 
     fireEvent.click(screen.getByTestId('compliance-export-excel-btn'));
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/module2/sourcing/procurement-compliance/export-excel'),
-        expect.any(Object)
-      );
+      expectApiFetchCall(mockFetch, expect.stringContaining('/api/module2/sourcing/procurement-compliance/export-excel'), expect.any(Object));
       expect(createUrlSpy).toHaveBeenCalled();
     });
   });
@@ -282,10 +360,7 @@ describe('ProcurementComplianceView Component', () => {
     fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        '/api/module2/sourcing/procurement-compliance/review',
-        expect.any(Object)
-      );
+      expectApiFetchCall(fetchMock, '/api/module2/sourcing/procurement-compliance/review', expect.any(Object));
     });
 
     // 2. Open and test review failure
@@ -333,5 +408,12 @@ describe('ProcurementComplianceTable Component', () => {
 
     fireEvent.click(screen.getByTestId('compliance-review-btn-EXC-AIC-2026-0002-0001'));
     expect(handleSelect).toHaveBeenCalledWith(mockExceptions[0]);
+  });
+
+  it('shows the received review status when the status has no configured label', () => {
+    const unrecognized = { ...mockExceptions[0], reviewStatus: 'LEGACY_REVIEW_STATE' } as unknown as ProcurementComplianceExceptionItem;
+    render(<ProcurementComplianceTable exceptions={[unrecognized]} onSelectException={vi.fn()} />);
+
+    expect(screen.getByText('LEGACY_REVIEW_STATE')).toBeInTheDocument();
   });
 });

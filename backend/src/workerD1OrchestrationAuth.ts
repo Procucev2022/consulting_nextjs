@@ -7,6 +7,7 @@ import type { CloudflareEnvironment } from './types/cloudflare';
 import type {
   OrchestrationActor,
   OrchestrationDatabase,
+  OrchestrationRequestContext,
   OrchestrationRouteAccess
 } from './types/orchestrationD1';
 import type { AssessmentJobRow, UserRow } from './types/orchestrationD1';
@@ -46,8 +47,11 @@ export const authenticateOrchestrationActor = async (
 
 const toActor = (user: UserRow): OrchestrationActor => {
   if (user.status !== AUTH_STATUS.ACTIVE) throw forbiddenError(ORCHESTRATION_MESSAGES.accountInactive);
-  if (user.role === AUTH_ROLES.ADMIN) return { userId: user.id, userName: user.name, role: 'ADMIN' };
-  if (user.role === AUTH_ROLES.USER) return { userId: user.id, userName: user.name, role: 'USER' };
+  if (user.role === AUTH_ROLES.ADMIN) return { userId: user.id, userName: user.name, tenantId: user.tenant_id, role: 'ADMIN' };
+  if (user.role === AUTH_ROLES.USER) {
+    if (!user.tenant_id) throw forbiddenError(ORCHESTRATION_MESSAGES.tenantAssignmentRequired);
+    return { userId: user.id, userName: user.name, tenantId: user.tenant_id, role: 'USER' };
+  }
   throw forbiddenError(ORCHESTRATION_MESSAGES.unknownRole);
 };
 
@@ -57,20 +61,34 @@ export const assertRouteAccess = (actor: OrchestrationActor, access: Orchestrati
   if (access === 'CUSTOMER' && actor.role !== 'USER') throw forbiddenError(ORCHESTRATION_MESSAGES.customerRequired);
 };
 
+export const requireOrchestrationTenantId = (
+  context: Pick<OrchestrationRequestContext, 'environment' | 'actor'>
+): string => {
+  const tenantId = context.environment.REQUEST_TENANT_ID;
+  if (!tenantId) throw forbiddenError(ORCHESTRATION_MESSAGES.tenantAssignmentRequired);
+  if (context.actor.role !== 'ADMIN' && context.actor.tenantId !== tenantId) {
+    throw forbiddenError(ORCHESTRATION_MESSAGES.jobOutOfScope);
+  }
+  return tenantId;
+};
+
 /**
  * Loads an analysis job the actor may access. Administrators may access any job. A customer may access only jobs
  * whose customer_id equals their user id, and only after the job has a data version (first-upload guard).
  * Jobs outside the customer's scope return 403. Unknown jobs and customer jobs without data return 404.
  */
 export const loadAccessibleJob = async (
-  database: OrchestrationDatabase,
-  actor: OrchestrationActor,
+  context: Pick<OrchestrationRequestContext, 'database' | 'actor' | 'environment'>,
   assessmentId: string
 ): Promise<AssessmentJobRow> => {
-  const row = await findJobRow(database, assessmentId);
+  const tenantId = requireOrchestrationTenantId(context);
+  if (context.actor.role !== 'ADMIN' && context.actor.tenantId !== tenantId) {
+    throw forbiddenError(ORCHESTRATION_MESSAGES.jobOutOfScope);
+  }
+  const row = await findJobRow(context.database, assessmentId, tenantId);
   if (!row) throw notFoundError(ORCHESTRATION_MESSAGES.jobNotFound(assessmentId));
-  if (actor.role === 'ADMIN') return row;
-  if (row.customer_id !== actor.userId) throw forbiddenError(ORCHESTRATION_MESSAGES.jobOutOfScope);
+  if (context.actor.role === 'ADMIN') return row;
+  if (row.customer_id !== context.actor.userId) throw forbiddenError(ORCHESTRATION_MESSAGES.jobOutOfScope);
   if (row.current_version_id === null) throw notFoundError(ORCHESTRATION_MESSAGES.jobNotFound(assessmentId));
   return row;
 };

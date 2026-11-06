@@ -4,137 +4,144 @@
  */
 
 import type { LeverOverviewItem } from '../types/module2Components';
+import { UI_STRINGS } from './uiStrings';
+
+const LEVER_STRINGS = UI_STRINGS.module2LeversOverview.levers.map((lever) => ({
+  ...lever,
+  requiredFields: [...lever.requiredFields],
+  preconditions: [...lever.preconditions]
+}));
 
 export const TEN_LEVERS_OVERVIEW_CONFIG: LeverOverviewItem[] = [
   {
     id: 1,
     code: 'LEV-01',
-    name: 'Direct Price Improvement',
-    purpose: 'Identifies historical purchase rate disparities and unit price dispersion across facilities and purchase orders for identical materials, establishing lowest achieved historical unit rate as benchmark.',
+    name: LEVER_STRINGS[0].name,
+    purpose: LEVER_STRINGS[0].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[0].statusLabel,
     historicalOpportunityCr: null, // Populated dynamically from calculation engine
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Annual lowest comparable historical unit price methodology grouped by FY, clean material code, UOM, and currency. Arithmetically reconciled against underlying transactions.',
-    requiredFields: ['material_code', 'uom', 'currency', 'unit_price', 'quantity', 'po_date', 'po_number', 'vendor_code'],
-    preconditions: ['Clean material code matching', 'Identical UOM & currency', 'Supplier quote verification', 'Contractual price amendment']
+    methodologySummary: LEVER_STRINGS[0].methodologySummary,
+    requiredFields: LEVER_STRINGS[0].requiredFields,
+    preconditions: LEVER_STRINGS[0].preconditions
   },
   {
     id: 2,
     code: 'LEV-02',
-    name: 'E-Auction / Dynamic Bidding',
-    purpose: 'Introduces real-time competitive market tension through reverse electronic bidding and dynamic lot auctions across pre-qualified suppliers for liquid spend categories.',
+    name: LEVER_STRINGS[1].name,
+    purpose: LEVER_STRINGS[1].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[1].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Evaluates repeat purchases, multi-supplier history, and price dispersion across SAP purchase history to identify candidate categories and materials for competitive dynamic bidding.',
-    requiredFields: ['spend_category', 'material_code', 'total_spend_inr', 'po_number', 'vendor_code'],
-    preconditions: ['Supplier auction participation agreement', 'Specification comparability review', 'Binding electronic bid confirmation']
+    methodologySummary: LEVER_STRINGS[1].methodologySummary,
+    requiredFields: LEVER_STRINGS[1].requiredFields,
+    preconditions: LEVER_STRINGS[1].preconditions
   },
   {
     id: 3,
     code: 'LEV-03',
-    name: 'Vendor Base Consolidation',
-    purpose: 'Consolidates fractured vendor tail-spend within material categories to primary strategic suppliers to eliminate administrative overhead and capture volume tier discounts.',
+    name: LEVER_STRINGS[2].name,
+    purpose: LEVER_STRINGS[2].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[2].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Evaluates supplier count per category, supplier shift capacity (<= 30% reallocation limit), and verified lower unit price.',
-    requiredFields: ['vendor_code', 'vendor_name', 'spend_category', 'material_code', 'unit_price', 'quantity'],
-    preconditions: ['Supplier capacity audit', 'Supply continuity approval', 'Quality certification for target supplier']
+    methodologySummary: LEVER_STRINGS[2].methodologySummary,
+    requiredFields: LEVER_STRINGS[2].requiredFields,
+    preconditions: LEVER_STRINGS[2].preconditions
   },
 
   {
     id: 4,
     code: 'LEV-04',
-    name: 'Volume Aggregation',
-    purpose: 'Aggregates fragmented purchasing volume across business units, regional hubs, and operational quarters into institutional procurement lots.',
+    name: LEVER_STRINGS[3].name,
+    purpose: LEVER_STRINGS[3].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[3].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Multi-facility volume aggregation modeling with strict separation of Tier 1 Identical, Tier 2 Comparable, and Tier 3 Category opportunities.',
-    requiredFields: ['plant', 'division', 'material_code', 'quantity', 'uom', 'total_spend_inr'],
-    preconditions: ['Documented technical validation for Tier 2', 'Verified density for cross-dimensional UOM', 'Inter-plant logistics harmonization']
+    methodologySummary: LEVER_STRINGS[3].methodologySummary,
+    requiredFields: LEVER_STRINGS[3].requiredFields,
+    preconditions: LEVER_STRINGS[3].preconditions
   },
   {
     id: 5,
     code: 'LEV-05',
-    name: 'Payment Terms Optimisation',
-    purpose: 'Harmonizes disparate credit terms and payment windows across suppliers to improve operating working capital and capture early-payment cash discounts.',
+    name: LEVER_STRINGS[4].name,
+    purpose: LEVER_STRINGS[4].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[4].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Procucev standard 1.5% linear financing rate per 30 days of credit extension and working capital modeling. Strict data availability transparency and segregation.',
-    requiredFields: ['payment_terms', 'vendor_code', 'vendor_name', 'total_spend_inr', 'po_number', 'po_date'],
-    preconditions: ['Verified source ERP payment terms extract', 'Approved commercial credit extension scenario']
+    methodologySummary: LEVER_STRINGS[4].methodologySummary,
+    requiredFields: LEVER_STRINGS[4].requiredFields,
+    preconditions: LEVER_STRINGS[4].preconditions
   },
   {
     id: 6,
     code: 'LEV-06',
-    name: 'Category Specialisation',
-    purpose: 'Identifies procurement categories requiring specialised category management, models 10 planning opportunity heads, and prioritises procurement resourcing.',
+    name: LEVER_STRINGS[5].name,
+    purpose: LEVER_STRINGS[5].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED & AUDITED',
+    statusLabel: LEVER_STRINGS[5].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Multi-dimensional category assessment (Priority A/B/C), 10 opportunity head assumptions, resource planning, and mandatory cross-lever deduplication controls.',
-    requiredFields: ['spend_category', 'vendor_name', 'material_desc', 'total_spend_inr', 'plant', 'po_number'],
-    preconditions: ['Documented category governance charter', 'Authorised planning assumptions', 'Cross-lever deduplication review']
+    methodologySummary: LEVER_STRINGS[5].methodologySummary,
+    requiredFields: LEVER_STRINGS[5].requiredFields,
+    preconditions: LEVER_STRINGS[5].preconditions
   },
   {
     id: 7,
     code: 'LEV-07',
-    name: 'Logistics & Packaging Specifications',
-    purpose: 'Reviews assessment-scoped shipment lanes, freight cost references, incoterms, packaging specifications, and container utilization from D1.',
+    name: LEVER_STRINGS[6].name,
+    purpose: LEVER_STRINGS[6].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'D1 DATA VIEW',
+    statusLabel: LEVER_STRINGS[6].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Displays stored freight and packaging inputs for analyst review. The data view does not calculate or certify savings; demo-only records are labeled and must not be used as carrier quotes or approved baselines.',
-    requiredFields: ['freight_cost', 'shipping_mode', 'incoterms', 'packaging_spec', 'container_fill_pct'],
-    preconditions: ['Verified carrier rate sheet or quote', 'Approved packaging dimensions', 'Assessment owner review before any commercial action']
+    methodologySummary: LEVER_STRINGS[6].methodologySummary,
+    requiredFields: LEVER_STRINGS[6].requiredFields,
+    preconditions: LEVER_STRINGS[6].preconditions
   },
   {
     id: 8,
     code: 'LEV-08',
-    name: 'Specification Rationalisation',
-    purpose: 'Identifies potentially duplicate, redundant, non-standard, or unnecessarily varied material specifications across facilities and routes candidates for authorised technical review.',
+    name: LEVER_STRINGS[7].name,
+    purpose: LEVER_STRINGS[7].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED (PHASE 1)',
+    statusLabel: LEVER_STRINGS[7].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Staged description normalisation, technical attribute extraction (dimensions, grades, ratings), attribute comparison matrix with critical vs non-critical flags, and authorised technical review workflows. Financial savings deferred to Phase 2.',
-    requiredFields: ['material_code', 'material_desc', 'spend_category', 'plant', 'quantity', 'total_spend_inr'],
-    preconditions: ['Authorised technical review & engineering sign-off', 'Inter-plant specification harmonisation approval', 'No automated commercial assumptions in Phase 1']
+    methodologySummary: LEVER_STRINGS[7].methodologySummary,
+    requiredFields: LEVER_STRINGS[7].requiredFields,
+    preconditions: LEVER_STRINGS[7].preconditions
   },
   {
     id: 9,
     code: 'LEV-09',
-    name: 'Procurement Compliance & Control',
-    purpose: 'Identifies potential procurement-control gaps, transaction anomalies, price inconsistencies, and purchasing exceptions from available customer data without falsely claiming contractual violations or realised savings.',
+    name: LEVER_STRINGS[8].name,
+    purpose: LEVER_STRINGS[8].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED (CONTROL & AUDIT)',
+    statusLabel: LEVER_STRINGS[8].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Defensible transaction auditing, price inconsistency detection across identical items/UOM, deterministic duplicate transaction matching, and formal review workflows. Contract-document integration deferred.',
-    requiredFields: ['po_number', 'vendor_name', 'material_code', 'material_desc', 'quantity', 'total_spend_inr'],
-    preconditions: ['Deterministic data matching validation', 'Authorised audit review & governance sign-off', 'No assumed contractual breaches']
+    methodologySummary: LEVER_STRINGS[8].methodologySummary,
+    requiredFields: LEVER_STRINGS[8].requiredFields,
+    preconditions: LEVER_STRINGS[8].preconditions
   },
   {
     id: 10,
     code: 'LEV-10',
-    name: 'New-Vendor Development & Alternate Sourcing',
-    purpose: 'Matches assessment materials to exact D1 directory categories and shows aggregate supplier location and contact counts. Supplier identities and qualification are unavailable.',
+    name: LEVER_STRINGS[9].name,
+    purpose: LEVER_STRINGS[9].purpose,
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED (AGGREGATE CATEGORY DISCOVERY)',
+    statusLabel: LEVER_STRINGS[9].statusLabel,
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Exact normalized category joins against D1 aggregate profiles. Hierarchy matching, incumbent exclusion, and preferred-region deduplication require directory identity and location records. No savings or qualification is inferred.',
-    requiredFields: ['material_code', 'spend_category', 'customer_plant', 'current_supplier_count', 'relevant_spend_inr'],
-    preconditions: ['Assessment-linked transaction evidence', 'Exact category alignment', 'Alternate vendor aggregates seeded in D1']
+    methodologySummary: LEVER_STRINGS[9].methodologySummary,
+    requiredFields: LEVER_STRINGS[9].requiredFields,
+    preconditions: LEVER_STRINGS[9].preconditions
   }
 ];

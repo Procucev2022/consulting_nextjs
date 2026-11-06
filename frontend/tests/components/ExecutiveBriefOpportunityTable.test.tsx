@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ExecutiveBriefOpportunityTable } from '../../src/components/executiveBrief/ExecutiveBriefOpportunityTable';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { fetchExecutiveOpportunityBriefReport } from '../../src/utils/executiveOpportunityBriefApi';
@@ -84,5 +84,34 @@ describe('ExecutiveBriefOpportunityTable', () => {
     vi.mocked(fetchExecutiveOpportunityBriefReport).mockRejectedValueOnce(new Error('offline'));
     render(<ExecutiveBriefOpportunityTable />);
     expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportUnavailableNetwork);
+  });
+
+  it('uses the request-id fallback when the server omits its correlation id', async () => {
+    vi.mocked(fetchExecutiveOpportunityBriefReport).mockResolvedValueOnce({
+      ok: false,
+      statusCode: 502,
+      requestId: null
+    });
+    render(<ExecutiveBriefOpportunityTable />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportUnavailable(502, UI_STRINGS.opportunityBrief.requestIdNotReturned)
+    );
+  });
+
+  it('ignores a report response that arrives after the panel unmounts', async () => {
+    let resolveReport: ((result: typeof successfulResult) => void) | undefined;
+    vi.mocked(fetchExecutiveOpportunityBriefReport).mockImplementationOnce(() => new Promise((resolve) => {
+      resolveReport = resolve as (result: typeof successfulResult) => void;
+    }));
+    const view = render(<ExecutiveBriefOpportunityTable />);
+    view.unmount();
+
+    await act(async () => {
+      resolveReport?.(successfulResult);
+      await Promise.resolve();
+    });
+
+    expect(fetchExecutiveOpportunityBriefReport).toHaveBeenCalledTimes(2);
   });
 });

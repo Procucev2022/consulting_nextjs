@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { LogEntry, LogFilter, PurgeResult, LoggerOptions, LogLevel } from '../types';
+import type { LogEntry, LogFilter, PurgeResult, LoggerOptions, LogLevel, LoggerDiagnosticReporter } from '../types';
 import {
   DEFAULT_SERVICE_NAME,
   DEFAULT_RETENTION_DAYS,
@@ -25,7 +25,29 @@ const resolveMinLogLevel = (level?: LogLevel): LogLevel => {
 
 const resolveFilePersistence = (enable?: boolean): boolean => {
   if (enable !== undefined) return enable;
-  return process.env.LOG_PERSISTENCE === 'true' || process.env.NODE_ENV !== 'production';
+  const configuredPersistence = process.env.LOG_PERSISTENCE?.trim().toLowerCase();
+  if (configuredPersistence === 'true') return true;
+  if (configuredPersistence === 'false') return false;
+  return process.env.NODE_ENV !== 'production';
+};
+
+const reportHelperFailure: LoggerDiagnosticReporter = (action, error, context = {}): void => {
+  const serializedError = error instanceof Error
+    ? { name: error.name, message: error.message, stack: error.stack }
+    : { name: 'UnknownError', message: String(error) };
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    service: DEFAULT_SERVICE_NAME,
+    message: 'Logger helper operation failed',
+    context: { ...context, action },
+    error: serializedError
+  };
+  try {
+    console.error(JSON.stringify(entry));
+  } catch {
+    // Keep log inspection and cleanup fallbacks from interrupting application work.
+  }
 };
 
 export function resolveLoggerConfig(options: LoggerOptions = {}): ResolvedLoggerConfig {
@@ -48,18 +70,19 @@ export function resolveLoggerConfig(options: LoggerOptions = {}): ResolvedLogger
   };
 }
 
-export function purgeOldLogFiles(logDir: string, daysToRetain: number): PurgeResult {
+export function purgeOldLogFiles(
+  logDir: string,
+  daysToRetain: number,
+  reportFailure: LoggerDiagnosticReporter = reportHelperFailure
+): PurgeResult {
   const result: PurgeResult = {
     purgedFiles: [],
     bytesFreed: 0,
     retentionDays: daysToRetain
   };
 
-  if (!fs.existsSync(logDir)) {
-    return result;
-  }
-
   try {
+    if (!fs.existsSync(logDir)) return result;
     const files = fs.readdirSync(logDir);
     const now = Date.now();
     const cutoffTime = now - daysToRetain * 24 * 60 * 60 * 1000;
@@ -84,12 +107,12 @@ export function purgeOldLogFiles(logDir: string, daysToRetain: number): PurgeRes
           result.purgedFiles.push(file);
           result.bytesFreed += fileSize;
         }
-      } catch {
-        // Ignore single file error
+      } catch (error: unknown) {
+        reportFailure('logger.purge-file', error, { fileName: file });
       }
     }
-  } catch {
-    // Handled gracefully
+  } catch (error: unknown) {
+    reportFailure('logger.purge-directory', error);
   }
 
   return result;
@@ -97,13 +120,14 @@ export function purgeOldLogFiles(logDir: string, daysToRetain: number): PurgeRes
 
 export function computeLogStats(
   logDir: string,
-  retentionDays: number
+  retentionDays: number,
+  reportFailure: LoggerDiagnosticReporter = reportHelperFailure
 ): { totalFiles: number; totalSizeBytes: number; retentionDays: number; logDir: string } {
   let totalFiles = 0;
   let totalSizeBytes = 0;
 
-  if (fs.existsSync(logDir)) {
-    try {
+  try {
+    if (fs.existsSync(logDir)) {
       const files = fs.readdirSync(logDir);
       for (const file of files) {
         const filePath = path.join(logDir, file);
@@ -113,13 +137,13 @@ export function computeLogStats(
             totalFiles++;
             totalSizeBytes += stats.size;
           }
-        } catch {
-          // Ignore individual stat failures
+        } catch (error: unknown) {
+          reportFailure('logger.stat-file', error, { fileName: file });
         }
       }
-    } catch {
-      // Handled gracefully
     }
+  } catch (error: unknown) {
+    reportFailure('logger.read-directory-stats', error);
   }
 
   return {
@@ -151,7 +175,8 @@ export function searchAndFilterLogs(
   recentLogs: LogEntry[],
   logDir: string,
   enableFilePersistence: boolean,
-  filter: LogFilter = {}
+  filter: LogFilter = {},
+  reportFailure: LoggerDiagnosticReporter = reportHelperFailure
 ): LogEntry[] {
   const matchedEntries: LogEntry[] = [];
   const seenTimestamps = new Set<string>();
@@ -164,29 +189,43 @@ export function searchAndFilterLogs(
     matchedEntries.push(entry);
   };
 
-  if (enableFilePersistence && fs.existsSync(logDir)) {
+  if (enableFilePersistence) {
     try {
-      const appLogPath = path.join(logDir, 'app.log');
-      if (fs.existsSync(appLogPath)) {
-        const content = fs.readFileSync(appLogPath, 'utf8');
-        const lines = content.split('\n');
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const entry = JSON.parse(line) as LogEntry;
-            checkAndAdd(entry);
-          } catch {
-            // Ignore malformed lines
+      if (fs.existsSync(logDir)) {
+        const appLogPath = path.join(logDir, 'app.log');
+        if (fs.existsSync(appLogPath)) {
+          const content = fs.readFileSync(appLogPath, 'utf8');
+          const lines = content.split('\n');
+          let malformedLineCount = 0;
+          let firstMalformedLineError: unknown;
+          lines.forEach((line) => {
+            if (!line.trim()) return;
+            try {
+              const entry = JSON.parse(line) as LogEntry;
+              checkAndAdd(entry);
+            } catch (error: unknown) {
+              malformedLineCount++;
+              firstMalformedLineError ??= error;
+            }
+          });
+          if (malformedLineCount > 0) {
+            reportFailure('logger.parse-app-log', firstMalformedLineError, {
+              fileName: 'app.log', malformedLineCount
+            });
           }
         }
       }
-    } catch {
-      // Fallback
+    } catch (error: unknown) {
+      reportFailure('logger.read-app-log', error, { fileName: 'app.log' });
     }
   }
 
   for (const entry of recentLogs) {
-    checkAndAdd(entry);
+    try {
+      checkAndAdd(entry);
+    } catch (error: unknown) {
+      reportFailure('logger.filter-memory-entry', error, { timestamp: entry.timestamp });
+    }
   }
 
   matchedEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

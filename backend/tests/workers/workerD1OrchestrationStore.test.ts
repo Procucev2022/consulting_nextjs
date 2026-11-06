@@ -17,6 +17,7 @@ import {
 import {
   createHarness,
   seedStandardFixtures,
+  TEST_TENANT_ID,
   type OrchestrationHarness
 } from './orchestrationTestHarness';
 
@@ -104,15 +105,15 @@ describe('runAtomically', () => {
 describe('count and sequence defaults', () => {
   it('returns zero open corrections and sequence one when the query returns no row', async () => {
     const empty = fakeDatabase(fakeStatement().statement, false);
-    expect(await countOpenCorrections(empty, null)).toBe(0);
-    expect(await countOpenCorrections(empty, 'AIC-1')).toBe(0);
-    expect(await nextReportSequence(empty, 'AIC-1')).toBe(1);
+    expect(await countOpenCorrections(empty, null, TEST_TENANT_ID)).toBe(0);
+    expect(await countOpenCorrections(empty, 'AIC-1', TEST_TENANT_ID)).toBe(0);
+    expect(await nextReportSequence(empty, 'AIC-1', TEST_TENANT_ID)).toBe(1);
   });
 
   it('reads the open correction count and next sequence from the returned row', async () => {
     const counted = fakeDatabase(fakeStatement({ first: { open_count: 4, next_sequence: 3 } }).statement, false);
-    expect(await countOpenCorrections(counted, null)).toBe(4);
-    expect(await nextReportSequence(counted, 'AIC-1')).toBe(3);
+    expect(await countOpenCorrections(counted, null, TEST_TENANT_ID)).toBe(4);
+    expect(await nextReportSequence(counted, 'AIC-1', TEST_TENANT_ID)).toBe(3);
   });
 });
 
@@ -163,11 +164,11 @@ describe('reads against the SQLite schema', () => {
     harness = createHarness();
     seedStandardFixtures(harness.sqlite);
     try {
-      expect(await listJobRows(harness.database, null)).toHaveLength(8);
-      expect(await listJobRows(harness.database, 'cust-user-b')).toHaveLength(1);
-      expect(await findJobRow(harness.database, 'AIC-ZZZ')).toBeNull();
-      expect(await findJobRow(harness.database, 'AIC-A1')).toMatchObject({ customer_id: 'cust-user-a' });
-      expect(await listCorrectionRows(harness.database, 'AIC-A1')).toEqual([]);
+      expect(await listJobRows(harness.database, TEST_TENANT_ID, null)).toHaveLength(8);
+      expect(await listJobRows(harness.database, TEST_TENANT_ID, 'cust-user-b')).toHaveLength(1);
+      expect(await findJobRow(harness.database, 'AIC-ZZZ', TEST_TENANT_ID)).toBeNull();
+      expect(await findJobRow(harness.database, 'AIC-A1', TEST_TENANT_ID)).toMatchObject({ customer_id: 'cust-user-a', tenant_id: TEST_TENANT_ID });
+      expect(await listCorrectionRows(harness.database, 'AIC-A1', TEST_TENANT_ID)).toEqual([]);
     } finally {
       harness.close();
     }

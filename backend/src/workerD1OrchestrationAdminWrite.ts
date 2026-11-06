@@ -51,7 +51,7 @@ const qualityGateMessage = (reportId: string | null, unconfirmedCount: number): 
 /** Stores the checklist exactly as received. It counts as confirmed only when every item is true. */
 export const recordQualityGate: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(qualityGateChecklistSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const reportId = job.report_state === 'ADMIN_REVIEW' ? job.report_id : null;
   const unconfirmedCount = countUnconfirmedItems(body);
   const complete = unconfirmedCount === 0;
@@ -69,7 +69,7 @@ export const recordQualityGate: OrchestrationHandler = async (context) => {
       created_at: now
     }),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',
@@ -126,10 +126,10 @@ const buildGeneratedReport = (
 /** Creates a report in ADMIN_REVIEW from the latest analysis run. Only one active report may exist per job. */
 export const generateReport: OrchestrationHandler = async (context) => {
   parseWithSchema(emptyBodySchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const [openCount, pcbiRows] = await Promise.all([
-    countOpenCorrections(context.database, job.assessment_id),
-    listPcbiGapRows(context.database, job.assessment_id, job.current_version_id)
+    countOpenCorrections(context.database, job.assessment_id, job.tenant_id),
+    listPcbiGapRows(context.database, job.assessment_id, job.current_version_id, job.tenant_id)
   ]);
   const readiness = buildReadiness(readinessInputFromRow(job, openCount, pcbiCoverageFromRows(pcbiRows)));
   if (readiness.overallReadiness !== 'READY_TO_GENERATE' || job.run_id === null || job.run_version_id === null) {
@@ -140,12 +140,12 @@ export const generateReport: OrchestrationHandler = async (context) => {
   if (job.report_id !== null && isActiveReportState(job.report_state)) {
     throw conflictError(ORCHESTRATION_MESSAGES.reportAlreadyActive(job.report_id, job.report_state));
   }
-  const sequence = await nextReportSequence(context.database, job.assessment_id);
+  const sequence = await nextReportSequence(context.database, job.assessment_id, job.tenant_id);
   const report = buildGeneratedReport(context, job.assessment_id, sequence, job.run_id, job.run_version_id);
   await runAtomically(context.database, [
     insertReportStatement(context.database, report),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',
@@ -173,7 +173,7 @@ export const generateReport: OrchestrationHandler = async (context) => {
 /** Ends a report's life. The job returns to ready-for-generation unless another report is active. */
 export const supersedeReport: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(supersedeReportSchema, await readJsonBody(context.request));
-  const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
+  const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   if (report.workflow_state === 'SUPERSEDED') {
     throw conflictError(ORCHESTRATION_MESSAGES.reportAlreadySuperseded(report.report_version_id));
@@ -188,7 +188,7 @@ export const supersedeReport: OrchestrationHandler = async (context) => {
   if (!superseded) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   await runAtomically(context.database, [
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.customer_id,
+      tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
       actorRole: 'ADMIN',

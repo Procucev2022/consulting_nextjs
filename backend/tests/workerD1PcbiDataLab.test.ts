@@ -10,6 +10,7 @@ import type {
   PCBICommoditySourceRow,
   PCBICommoditySpendByUnspscRow
 } from '../src/types/pcbiDataLabStorage';
+import logger from '../src/utils/logger';
 import { handlePcbiRoute } from '../src/workerD1Pcbi';
 import { handlePcbiDataLabRoute } from '../src/workerD1PcbiDataLab';
 
@@ -48,6 +49,13 @@ class LabStatement implements CloudflareD1PreparedStatement {
     return null;
   }
   async all<T>(): Promise<{ results: T[] }> {
+    if (this.sql.includes('PCBIMasterVersion') && this.sql.includes("status = 'PUBLISHED'")) {
+      return {
+        results: this.database.publishedPayload
+          ? ([{ payload_json: JSON.stringify(this.database.publishedPayload) }] as T[])
+          : []
+      };
+    }
     if (this.sql.includes('FROM ProcurementTransaction tx')) return { results: [...this.database.spendRows] as T[] };
     if (this.sql.includes('PCBIUNSPSCMapping')) return { results: [...this.database.unspscMappings] as T[] };
     if (this.sql.includes('PCBIBenchmarkMaster')) return { results: [this.database.benchmark as T] };
@@ -90,6 +98,10 @@ class LabStatement implements CloudflareD1PreparedStatement {
         approval_status, extracted_observations_count
       } as PCBICommoditySourceRow);
     } else if (this.sql.includes('INSERT INTO PCBICommodityObservation')) {
+      this.database.observationInsertAttempts += 1;
+      if (this.database.failObservationInsertAt === this.database.observationInsertAttempts) {
+        throw this.database.observationInsertFailure;
+      }
       const [observation_id, source_id, pcbi_id, observation_date, raw_value, raw_unit, raw_currency,
         normalized_value, normalized_unit, normalized_currency, frequency, status, payload_json] = this.values;
       this.database.observations.unshift({
@@ -97,6 +109,14 @@ class LabStatement implements CloudflareD1PreparedStatement {
         normalized_value, normalized_unit, normalized_currency, frequency, status, payload_json,
         observationId: observation_id, sourceId: source_id, sourceDate: observation_date
       } as PCBICommodityObservationRow);
+    } else if (this.sql.includes('DELETE FROM PCBICommodityObservation')) {
+      if (this.database.failCompensatingDelete) throw this.database.rollbackFailure;
+      const remaining = this.database.observations.filter((row) => row.source_id !== this.values[0]);
+      this.database.observations.splice(0, this.database.observations.length, ...remaining);
+    } else if (this.sql.includes('DELETE FROM PCBICommoditySource')) {
+      if (this.database.failCompensatingDelete) throw this.database.rollbackFailure;
+      const remaining = this.database.sources.filter((row) => row.source_id !== this.values[0]);
+      this.database.sources.splice(0, this.database.sources.length, ...remaining);
     } else if (this.sql.includes('INSERT INTO PCBICommodityPromotion')) {
       const [promotion_id, catalog_version_id, source_id, commodity_id, pcbi_id, approver_name, comments, promoted_at, observation_count] = this.values;
       this.database.promotions.unshift({ promotion_id, catalog_version_id, source_id, commodity_id, pcbi_id, approver_name, comments, promoted_at, observation_count } as PCBICommodityPromotionRow);
@@ -134,9 +154,26 @@ class LabDatabase implements CloudflareD1Database {
   readonly spendRows: PCBICommoditySpendByUnspscRow[] = [];
   readonly unspscMappings: Record<string, unknown>[] = [];
   publishedPayload: Record<string, unknown> | null = null;
+  observationInsertAttempts = 0;
+  failObservationInsertAt: number | null = null;
+  failCompensatingDelete = false;
+  readonly observationInsertFailure = new Error('D1 observation insert failed');
+  readonly rollbackFailure = new Error('D1 compensation failed');
+  batchCalls = 0;
   readonly batch?: CloudflareD1Database['batch'];
   constructor(withBatch = true) {
-    if (withBatch) this.batch = async (statements) => Promise.all(statements.map((statement) => statement.run()));
+    if (withBatch) this.batch = async (statements) => {
+      this.batchCalls += 1;
+      const sourcesBefore = [...this.sources];
+      const observationsBefore = [...this.observations];
+      try {
+        return await Promise.all(statements.map((statement) => statement.run()));
+      } catch (error: unknown) {
+        this.sources.splice(0, this.sources.length, ...sourcesBefore);
+        this.observations.splice(0, this.observations.length, ...observationsBefore);
+        throw error;
+      }
+    };
   }
   prepare(sql: string): CloudflareD1PreparedStatement { return new LabStatement(this, sql); }
 }
@@ -381,6 +418,7 @@ describe('D1 Commodity Data Lab', () => {
     const env = environment(db);
     const upload = await route(env, '/upload-source', 'POST', validUpload());
     expect(upload.data).toMatchObject({ success: true, source: { extractionStatus: 'EXTRACTED', validationStatus: 'VALIDATED', extractedObservationsCount: 1 } });
+    expect(db.batchCalls).toBe(1);
     expect(env.OBJECTS?.put).toHaveBeenCalledWith(expect.stringContaining('pcbi/commodities/PCBI-STEEL-1'), expect.any(Uint8Array), expect.any(Object));
     expect(db.sources).toHaveLength(1);
     expect(db.observations).toHaveLength(1);
@@ -462,10 +500,20 @@ describe('D1 Commodity Data Lab', () => {
     const db = new LabDatabase(false);
     const env = environment(db);
     expect(await route(env, '/upload-source', 'POST', validUpload({ pcbiId: 'UNKNOWN-PCBI' }))).toMatchObject({ status: 404 });
+    vi.mocked(logger.warn).mockClear();
     const malformedJson = await route(env, '/upload-source', 'POST', validUpload({
       fileType: 'JSON', fileBase64: Buffer.from('{ invalid').toString('base64')
     }));
-    expect(malformedJson.data).toMatchObject({ source: { extractionStatus: 'FAILED', validationStatus: 'ISSUES_DETECTED' } });
+    expect(malformedJson.data).toMatchObject({
+      source: { extractionStatus: 'FAILED', validationStatus: 'ISSUES_DETECTED' },
+      banner: 'SOURCE_STAGED_WITH_ISSUES',
+      message: D1_ROUTE_MESSAGES.pcbiDataLabFileInvalid
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'PCBI structured research source could not be parsed; source will be staged for review',
+      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id, fileType: 'JSON' }),
+      expect.objectContaining({ name: 'SyntaxError' })
+    );
 
     const failedR2 = environment(new LabDatabase());
     failedR2.OBJECTS = { put: vi.fn().mockRejectedValue(new Error('R2 offline')), get: vi.fn(), delete: vi.fn() };
@@ -476,6 +524,60 @@ describe('D1 Commodity Data Lab', () => {
     const approved = await route(env, '/approve', 'POST', { commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin' });
     expect(approved.data).toMatchObject({ result: { success: true } });
     expect(db.sources[0]).toMatchObject({ approval_status: 'ADMIN_APPROVED' });
+  });
+
+  it('atomically batches source rows and compensates partial D1 and R2 writes on failure', async () => {
+    const atomicDb = new LabDatabase();
+    atomicDb.failObservationInsertAt = 1;
+    const atomicEnvironment = environment(atomicDb);
+    const atomicObjectDelete = vi.fn().mockResolvedValue(undefined);
+    atomicEnvironment.OBJECTS = { put: vi.fn().mockResolvedValue(undefined), get: vi.fn(), delete: atomicObjectDelete };
+    const atomicFailure = await route(atomicEnvironment, '/upload-source', 'POST', validUpload());
+    expect(atomicFailure).toMatchObject({ status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } });
+    expect(atomicDb.batchCalls).toBe(1);
+    expect(atomicDb.sources).toHaveLength(0);
+    expect(atomicDb.observations).toHaveLength(0);
+    expect(atomicObjectDelete).toHaveBeenCalledWith(expect.stringContaining('pcbi/commodities/PCBI-STEEL-1'));
+
+    const recoveryDb = new LabDatabase(false);
+    recoveryDb.failObservationInsertAt = 1;
+    const recoveryEnvironment = environment(recoveryDb);
+    const recoveryObjectDelete = vi.fn().mockResolvedValue(undefined);
+    recoveryEnvironment.OBJECTS = { put: vi.fn().mockResolvedValue(undefined), get: vi.fn(), delete: recoveryObjectDelete };
+    vi.mocked(logger.error).mockClear();
+    const recovered = await route(recoveryEnvironment, '/upload-source', 'POST', validUpload());
+    expect(recovered).toMatchObject({ status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } });
+    expect(recoveryDb.sources).toHaveLength(0);
+    expect(recoveryDb.observations).toHaveLength(0);
+    expect(recoveryObjectDelete).toHaveBeenCalledOnce();
+    expect(logger.error).toHaveBeenCalledWith(
+      'PCBI commodity source D1 persistence failed; cleanup was attempted',
+      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id, observationCount: 1 }),
+      recoveryDb.observationInsertFailure
+    );
+
+    const cleanupFailureDb = new LabDatabase(false);
+    cleanupFailureDb.failObservationInsertAt = 1;
+    cleanupFailureDb.failCompensatingDelete = true;
+    const cleanupFailureEnvironment = environment(cleanupFailureDb);
+    const objectCleanupFailure = new Error('R2 cleanup failed');
+    cleanupFailureEnvironment.OBJECTS = {
+      put: vi.fn().mockResolvedValue(undefined), get: vi.fn(), delete: vi.fn().mockRejectedValue(objectCleanupFailure)
+    };
+    const cleanupFailure = await route(cleanupFailureEnvironment, '/upload-source', 'POST', validUpload());
+    expect(cleanupFailure).toMatchObject({ status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } });
+    expect(cleanupFailureDb.sources).toHaveLength(1);
+    expect(cleanupFailureDb.observations).toHaveLength(0);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to roll back partially persisted PCBI source rows',
+      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id }),
+      cleanupFailureDb.rollbackFailure
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to remove PCBI evidence object after D1 persistence failure',
+      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id }),
+      objectCleanupFailure
+    );
   });
 
   it('blocks catalog promotion when source metadata or observation review status fails validation', async () => {
@@ -582,7 +684,7 @@ describe('D1 Commodity Data Lab', () => {
     expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: ' ' }))).toMatchObject({ status: 400 });
     expect(await route({ DB: env.DB }, '/upload-source', 'POST', validUpload())).toMatchObject({ status: 503 });
     expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: '💥' }))).toMatchObject({ status: 400 });
-    expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: 'A'.repeat(15_000_000) }))).toMatchObject({ status: 400 });
+    expect(await route(env, '/upload-source', 'POST', validUpload({ fileBase64: 'A'.repeat(15_000_000) }))).toMatchObject({ status: 413 });
     expect(await route(env, '/unknown')).toMatchObject({ status: 404 });
     expect(await route(env, '/queue', 'POST')).toMatchObject({ status: 405 });
     expect(await route(env, '/approve', 'GET')).toMatchObject({ status: 405 });

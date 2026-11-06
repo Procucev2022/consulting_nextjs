@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   mapD1Customer, mapD1Assessment, mapD1DataVersion, mapD1AnalysisRun, mapD1AuditLog,
-  loadAssessmentSnapshots, mapD1SnapshotCollection
+  loadAssessmentSnapshots, loadAssessmentSnapshotsForIds, mapD1SnapshotCollection
 } from '../../src/services/assessmentD1Mappers';
-import { ASSESSMENT_SNAPSHOT_SQL } from '../../src/constants/assessmentD1';
+import {
+  ASSESSMENT_D1_FALLBACKS, ASSESSMENT_D1_LOG_ACTIONS, ASSESSMENT_D1_LOG_MESSAGES,
+  ASSESSMENT_SNAPSHOT_SQL
+} from '../../src/constants/assessmentD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
+import logger from '../../src/utils/logger';
 
 describe('assessment D1 API serialization', () => {
   it('maps customer fields and serialized website profiles into the frontend contract', () => {
@@ -77,8 +81,44 @@ describe('assessment D1 API serialization', () => {
     await loadAssessmentSnapshots(database, 'customer');
     expect(prepare).toHaveBeenLastCalledWith(ASSESSMENT_SNAPSHOT_SQL.byType);
     expect(bind).toHaveBeenLastCalledWith('customer');
-    all.mockResolvedValueOnce({ results: [{ entry_id: 'bad', payload_json: 'invalid' }] });
-    await expect(loadAssessmentSnapshots(database, 'run', 'A1')).rejects.toThrow();
+    all.mockResolvedValueOnce({ results: [{ assessment_id: 'A1', entry_id: 'bad', payload_json: '{private snapshot' }] });
+    const errorLog = vi.spyOn(logger, 'error').mockImplementation(() => logger.formatEntry('error', ''));
+    await expect(loadAssessmentSnapshots(database, 'run', 'A1', {
+      requestId: 'req-snapshot-collection', tenantId: 'T1'
+    })).rejects.toThrow();
+    expect(errorLog).toHaveBeenCalledWith(
+      ASSESSMENT_D1_LOG_MESSAGES.invalidSnapshotCollection,
+      expect.objectContaining({
+        action: ASSESSMENT_D1_LOG_ACTIONS.snapshotCollectionRead,
+        requestId: 'req-snapshot-collection', tenantId: 'T1', assessmentId: 'A1',
+        entryType: 'run', entryId: 'bad', fallback: ASSESSMENT_D1_FALLBACKS.REJECT_SNAPSHOT_RESPONSE
+      }),
+      expect.any(SyntaxError)
+    );
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain('private snapshot');
+  });
+
+  it('loads snapshots for multiple scoped records in one statement and skips empty scopes', async () => {
+    const all = vi.fn().mockResolvedValue({
+      results: [
+        { entry_id: 'C1', payload_json: '{"customerId":"C1","custom":"one"}' },
+        { entry_id: 'C2', payload_json: '{"customerId":"C2","custom":"two"}' }
+      ]
+    });
+    const bind = vi.fn().mockReturnValue({ all });
+    const prepare = vi.fn().mockReturnValue({ bind });
+    const database = { prepare } as unknown as CloudflareD1Database;
+
+    await expect(loadAssessmentSnapshotsForIds(database, 'customer', [])).resolves.toEqual(new Map());
+    expect(prepare).not.toHaveBeenCalled();
+
+    const snapshots = await loadAssessmentSnapshotsForIds(database, 'customer', ['C1', 'C2']);
+    expect(snapshots).toEqual(new Map([
+      ['C1', { customerId: 'C1', custom: 'one' }], ['C2', { customerId: 'C2', custom: 'two' }]
+    ]));
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(prepare).toHaveBeenCalledWith(ASSESSMENT_SNAPSHOT_SQL.byAssessmentIds);
+    expect(bind).toHaveBeenCalledWith('customer', '["C1","C2"]');
   });
 
   it('returns all source runs and versions despite legacy scalar identifiers colliding across assessments', () => {

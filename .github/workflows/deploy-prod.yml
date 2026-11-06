@@ -23,17 +23,15 @@ jobs:
     env:
       CI: "true"
       NODE_OPTIONS: "--max-old-space-size=4096"
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24 LTS
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install Dependencies
         run: |
@@ -41,12 +39,18 @@ jobs:
           npm ci --prefix frontend --legacy-peer-deps
           npm ci --prefix backend --legacy-peer-deps
 
-      - name: Build Frontend (OpenNext / Vinext)
-        run: npm run build:vinext || npm run cloudflare:build
-        working-directory: frontend
+      - name: Verify production D1 account and binding before writes or deploys
+        working-directory: backend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx wrangler d1 list --json > "$RUNNER_TEMP/d1-databases.json"
+          node scripts/verify-production-d1.js "$RUNNER_TEMP/d1-databases.json"
 
-      - name: Deploy Frontend to Cloudflare (Production Environment)
-        run: npx wrangler deploy --env prod
+      - name: Build Frontend (OpenNext / Vinext)
+        run: npm run cloudflare:build
         working-directory: frontend
 
       - name: Apply Backend D1 Schema (Production)
@@ -54,7 +58,19 @@ jobs:
         env:
           D1_ENV: prod
           D1_DATABASE_NAME: consulting-db
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy Frontend to Cloudflare (Production Environment)
+        run: npx wrangler deploy --env prod
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy Backend Worker to Cloudflare (Production Environment)
         run: npx wrangler deploy --env prod
         working-directory: backend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

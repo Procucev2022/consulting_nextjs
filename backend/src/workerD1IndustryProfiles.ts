@@ -1,13 +1,12 @@
 import { D1_TABLES, D1_ROUTE_MESSAGES } from './constants/d1';
+import { D1_REFERENCE_CACHE_KEYS } from './constants/db';
 import { industryProfileQuerySchema } from './constants/validation';
 import { queryD1Rows, requireWorkerDb } from './services/workerD1Query';
+import { getOrLoadD1ReferenceData } from './services/d1ReferenceDataCache';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
+import type { D1IndustryCatalog, IndustryProfileStorageRow, IndustrySectorPreset } from './types/industry';
 import logger from './utils/logger';
-
-interface IndustryProfileStorageRow extends D1Record {
-  profile_json: string;
-}
 
 const parseProfile = (row: IndustryProfileStorageRow): Record<string, unknown> => {
   const parsed: unknown = JSON.parse(row.profile_json);
@@ -35,30 +34,48 @@ export const handleIndustryProfilesRoute = async (
     return { status: 400, data: { success: false, message: D1_ROUTE_MESSAGES.industryProfileInvalid, errors: parsed.error.issues } };
   }
   const requestId = request.headers.get('x-request-id') || undefined;
-  const profiles = await queryD1Rows<IndustryProfileStorageRow>(database, `
-    SELECT profile_id, major_sector, minor_sector, profile_json
-    FROM ${D1_TABLES.industryProfiles}
-    ${parsed.data.majorSector ? 'WHERE major_sector = ?' : ''}
-    ORDER BY major_sector, minor_sector
-  `, parsed.data.majorSector ? [parsed.data.majorSector] : [], requestId);
-  const presets = await queryD1Rows<D1Record>(database, `
-    SELECT client_name AS clientName, major_sector AS majorSector, minor_sector AS minorSector
-    FROM ${D1_TABLES.industrySectorPresets} ORDER BY client_name
-  `, [], requestId);
   try {
+    const catalogResult = await getOrLoadD1ReferenceData<D1IndustryCatalog>(
+      database,
+      D1_REFERENCE_CACHE_KEYS.INDUSTRY_CATALOG,
+      async () => {
+        const profiles = await queryD1Rows<IndustryProfileStorageRow>(database, `
+          SELECT profile_id, major_sector, minor_sector, profile_json
+          FROM ${D1_TABLES.industryProfiles}
+          ORDER BY major_sector, minor_sector
+        `, [], requestId);
+        const presets = await queryD1Rows<D1Record>(database, `
+          SELECT client_name AS clientName, major_sector AS majorSector, minor_sector AS minorSector
+          FROM ${D1_TABLES.industrySectorPresets} ORDER BY client_name
+        `, [], requestId);
+        return {
+          profiles: profiles.map(parseProfile),
+          presets: presets.map((row): IndustrySectorPreset => ({
+            clientName: String(row.clientName),
+            majorSector: String(row.majorSector) as IndustrySectorPreset['majorSector'],
+            minorSector: String(row.minorSector)
+          }))
+        };
+      }
+    );
+    logger.debug('Resolved industry profile catalog cache', {
+      model: D1_TABLES.industryProfiles, cacheStatus: catalogResult.cacheStatus, requestId
+    });
+    const profiles = parsed.data.majorSector
+      ? catalogResult.value.profiles.filter((profile) => profile.majorSector === parsed.data.majorSector)
+      : catalogResult.value.profiles;
     return {
       data: {
         success: true,
-        profiles: profiles.map(parseProfile),
-        presets: presets.map((row) => ({
-          clientName: String(row.clientName),
-          majorSector: String(row.majorSector),
-          minorSector: String(row.minorSector)
-        }))
+        profiles,
+        presets: catalogResult.value.presets
       }
     };
   } catch (error) {
-    logger.error('Industry profile JSON could not be decoded from D1', { requestId }, error);
-    return { status: 500, data: { success: false, message: D1_ROUTE_MESSAGES.industryProfileCorrupt } };
+    if (error instanceof SyntaxError || (error instanceof Error && error.message.startsWith('D1 industry profile '))) {
+      logger.error('Industry profile JSON could not be decoded from D1', { requestId }, error);
+      return { status: 500, data: { success: false, message: D1_ROUTE_MESSAGES.industryProfileCorrupt } };
+    }
+    throw error;
   }
 };

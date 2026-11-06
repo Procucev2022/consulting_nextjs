@@ -50,7 +50,7 @@ export interface ExecutiveOpportunityBriefReport {
 
 export type ExecutiveOpportunityBriefLoadResult =
   | { ok: true; report: ExecutiveOpportunityBriefReport }
-  | { ok: false; reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions' };
+  | { ok: false; reason: 'tenant-scope-required' | 'no-tenant' | 'no-transactions' };
 
 export type ExecutiveOpportunityBriefRequestLoad =
   | { ok: true; report: ExecutiveOpportunityBriefReport; requestId: string; startedAt: number }

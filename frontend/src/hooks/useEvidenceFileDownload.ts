@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 /**
  * Downloads evidence files with the Bearer token and saves them through a declarative hidden anchor.
  * A plain <a href> cannot send the Authorization header, so the file is fetched first and saved from
@@ -41,7 +42,7 @@ const buildAuthHeaders = (): Record<string, string> => {
 
 const fetchEvidenceFile = async (url: string, filename: string): Promise<EvidenceDownloadOutcome> => {
   try {
-    const response = await fetch(url, { headers: buildAuthHeaders() });
+    const response = await apiFetch(url, { headers: buildAuthHeaders() });
     if (!response.ok) {
       const detail = await readFailureDetail(response);
       return {

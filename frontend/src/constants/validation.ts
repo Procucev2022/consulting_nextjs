@@ -8,6 +8,33 @@
 import { z } from 'zod';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from './module2VendorConsolidation';
 import { TAXONOMY_PAGE_SIZE } from './taxonomy';
+import {
+  CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_STACK_LENGTH
+} from './errors';
+export * from './subscriptionValidation';
+
+export const INGESTION_UPLOAD_MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+export const clientErrorReportSchema = z.object({
+  level: z.enum(['warn', 'error']),
+  source: z.enum(['logger', 'window', 'unhandledrejection', 'react-boundary']),
+  errorName: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH),
+  message: z.string().trim().min(1).max(CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH),
+  stack: z.string().max(CLIENT_ERROR_REPORT_MAX_STACK_LENGTH).optional(),
+  route: z.string().regex(/^\/(?!\/)[^?#]*$/).max(CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH),
+  occurredAt: z.string().datetime(),
+  clientRequestId: z.string().min(1).max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH).optional()
+}).strict();
+
+export const apiRequestIdSchema = z.string()
+  .min(1)
+  .max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH)
+  .regex(/^[A-Za-z0-9._-]+$/u);
+
 export const module2LogisticsPackagingQuerySchema = z.object({
   assessmentId: z.string().trim().min(1).max(120)
 });
@@ -47,6 +74,11 @@ export const conversionStagesResponseSchema = z.object({
     percentage_leakage_identified: z.number().optional()
   }))
 });
+
+export const apiDataEnvelopeResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.record(z.string(), z.unknown())
+}).passthrough();
 
 const briefText = z.string().min(1);
 const briefNumber = z.number().finite();
@@ -107,6 +139,8 @@ export const pcbiWeeklyIndexResponseSchema = z.array(z.object({
   unit: z.string().optional(),
   currency: z.string().optional()
 }).passthrough());
+
+export { pcbiHistoricalObservationsQuerySchema, pcbiHistoricalObservationsResponseSchema } from './pcbiHistoricalValidation';
 
 // Header Selection Schemas
 export const headerTenantSchema = z.object({
@@ -224,17 +258,15 @@ export const executiveBriefEmailRequestSchema = z.object({
 
 // Outgoing API Request Validation Schemas (Frontend API Boundary)
 export const apiUpdateTenantPayloadSchema = z.object({
-  enterprise_name: z.string().min(1).optional(),
-  region: z.string().min(1).optional(),
-  base_currency: z.string().min(1).optional(),
-  financial_year: z.string().min(1).optional(),
+  enterprise_name: z.string().trim().min(1).optional(),
+  region: z.string().trim().min(1).optional(),
+  base_currency: z.string().trim().regex(/^[A-Z]{3}$/u).optional(),
   total_spend_evaluated: z.number().nonnegative().optional(),
   total_spend_evaluated_inr: z.number().nonnegative().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional(),
-  major_sector: z.string().min(1).optional(),
-  minor_sector: z.string().min(1).optional(),
-  status: z.string().optional()
-});
+  major_sector: z.string().trim().min(1).optional(),
+  minor_sector: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional()
+}).strict().refine((data) => Object.values(data).some((value) => value !== undefined));
 
 export const apiAddIngestionFilePayloadSchema = z.object({
   file_name: z.string().min(1, 'File name is required'),

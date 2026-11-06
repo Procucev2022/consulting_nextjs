@@ -74,7 +74,11 @@ describe('useEvidenceFileDownload', () => {
       await result.current.requestDownload(HOOK_KEY, HOOK_URL, HOOK_FILENAME);
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(HOOK_URL, { headers: { [EVIDENCE_DOWNLOAD_CONSTANTS.AUTH_HEADER]: 'Bearer tok-1' } });
+    const [requestedUrl, init] = fetchMock.mock.calls[0];
+    const headers = new Headers(init?.headers);
+    expect(requestedUrl).toBe(HOOK_URL);
+    expect(headers.get(EVIDENCE_DOWNLOAD_CONSTANTS.AUTH_HEADER)).toBe('Bearer tok-1');
+    expect(headers.get(EVIDENCE_DOWNLOAD_CONSTANTS.REQUEST_ID_HEADER)).toMatch(/^[A-Za-z0-9._:-]+$/u);
     expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
     expect(result.current.downloadPayload).toEqual({ href: 'blob:evidence-1', filename: HOOK_FILENAME });
     expect(result.current.downloadError).toBeNull();
@@ -121,7 +125,11 @@ describe('useEvidenceFileDownload', () => {
       await result.current.requestDownload(HOOK_KEY, HOOK_URL, HOOK_FILENAME);
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(HOOK_URL, { headers: {} });
+    const [requestedUrl, init] = fetchMock.mock.calls[0];
+    const headers = new Headers(init?.headers);
+    expect(requestedUrl).toBe(HOOK_URL);
+    expect(headers.has(EVIDENCE_DOWNLOAD_CONSTANTS.AUTH_HEADER)).toBe(false);
+    expect(headers.get(EVIDENCE_DOWNLOAD_CONSTANTS.REQUEST_ID_HEADER)).toMatch(/^[A-Za-z0-9._:-]+$/u);
   });
 
   it('turns a JSON failure into a message with the file, status, reason, and request ID', async () => {

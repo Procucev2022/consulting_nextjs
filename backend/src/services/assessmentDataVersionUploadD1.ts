@@ -3,6 +3,7 @@ import {
   ASSESSMENT_DATA_VERSION_MAX_BYTES,
   uploadDataVersionSchema
 } from '../constants/assessmentValidation';
+import { ASSESSMENT_D1_MESSAGES } from '../constants/assessmentD1';
 import { D1_TABLES } from '../constants/d1';
 import { INGESTION_WORKBOOK_MESSAGES } from '../constants/ingestionWorkbook';
 import type { AssessmentDatasetActionContext, AssessmentUploadPayload } from '../types/assessmentDataVersionD1';
@@ -21,6 +22,7 @@ import type { AssessmentRow } from '../types/assessmentDataVersionD1';
 import { importIngestionWorkbook } from './ingestionWorkbookImporter';
 import { mapD1Assessment, mapD1DataVersion } from './assessmentD1Mappers';
 import logger from '../utils/logger';
+import { clearScopedModule2Cache } from './workerD1Module2Cache';
 
 interface UploadFileDetails {
   bytes: Uint8Array;
@@ -110,18 +112,23 @@ const validateUploadFile = async (payload: AssessmentUploadPayload): Promise<Fil
   return { ok: true, value: { bytes, extension, checksum } };
 };
 
-const prepareUpload = async (
-  context: AssessmentDatasetActionContext,
-  payload: AssessmentUploadPayload,
-  file: UploadFileDetails
-): Promise<PreparedResult> => {
+const prepareUpload = async (context: AssessmentDatasetActionContext,
+  payload: AssessmentUploadPayload, file: UploadFileDetails): Promise<PreparedResult> => {
   const { db, assessmentId } = context;
+  const tenantId = context.environment.REQUEST_TENANT_ID;
   const assessment = await queryFirst<AssessmentRow>(db,
-    `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
+    `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
   if (!assessment) {
-    return { ok: false, result: { status: 404, data: { success: false, message: `Assessment ${assessmentId} not found` } } };
+    logger.warn('Assessment workbook upload rejected for an unavailable tenant assessment', {
+      assessmentId, tenantId, requestId: context.requestId
+    });
+    return { ok: false, result: {
+      status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.missingRecord(assessmentId) }
+    } };
   }
-  const previousSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId);
+  const previousSnapshot = await readAssessmentSnapshot(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId, {
+    requestId: context.requestId, tenantId
+  });
   const previousDataStatus = String(assessment.data_status || 'NOT_RECEIVED');
   const versionRow = await queryFirst<{ max_version: number | string | null }>(db,
     `SELECT COALESCE(MAX(version_number), 0) AS max_version FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ?`,
@@ -135,16 +142,14 @@ const prepareUpload = async (
   };
 };
 
-const persistUpload = async (
-  context: AssessmentDatasetActionContext,
-  prepared: PreparedUpload
-): Promise<WorkerD1Result> => {
+const persistUpload = async (context: AssessmentDatasetActionContext,
+  prepared: PreparedUpload): Promise<WorkerD1Result> => {
   const { db, environment, assessmentId } = context;
   const { payload, assessment, file, versionNumber, dataVersionId, objectKey } = prepared;
   const contentType = contentTypeFor(file.extension);
   const imported = await importIngestionWorkbook({
     db, bytes: file.bytes, fileName: payload.fileName, fileType: file.extension.slice(1), docId: dataVersionId,
-    tenantId: assessment.customer_id, assessmentId
+    tenantId: assessment.tenant_id, assessmentId
   });
   const nextSnapshot = {
     ...prepared.previousSnapshot,
@@ -168,12 +173,12 @@ const persistUpload = async (
     db.prepare(`INSERT OR REPLACE INTO ObjectMetadata (
       object_key, tenant_id, assessment_id, filename, content_type, size_bytes, sha256, bucket, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'AVAILABLE')`).bind(
-      objectKey, assessment.customer_id, assessmentId, payload.fileName, contentType, file.bytes.byteLength,
+      objectKey, assessment.tenant_id, assessmentId, payload.fileName, contentType, file.bytes.byteLength,
       file.checksum, environment.R2_BUCKET || ''
     ),
     db.prepare(`UPDATE ${D1_TABLES.assessments}
       SET data_status = ?, data_received_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE assessment_id = ?`).bind(ASSESSMENT_DATA_STATUS_RECEIVED, assessmentId),
+      WHERE assessment_id = ? AND tenant_id = ?`).bind(ASSESSMENT_DATA_STATUS_RECEIVED, assessmentId, assessment.tenant_id),
     assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, nextSnapshot, file.checksum),
     assessmentSnapshotWrite(db, ASSESSMENT_VERSION_SNAPSHOT_TYPE, assessmentId, {
       dataVersionId, assessmentId, versionNumber, fileName: payload.fileName, fileSize: file.bytes.byteLength,
@@ -188,20 +193,17 @@ const persistUpload = async (
   return buildUploadResponse(context, prepared, nextSnapshot, imported);
 };
 
-const buildUploadResponse = async (
-  context: AssessmentDatasetActionContext,
-  prepared: PreparedUpload,
-  nextSnapshot: D1Record,
-  imported: Awaited<ReturnType<typeof importIngestionWorkbook>>
-): Promise<WorkerD1Result> => {
+const buildUploadResponse = async (context: AssessmentDatasetActionContext, prepared: PreparedUpload,
+  nextSnapshot: D1Record, imported: Awaited<ReturnType<typeof importIngestionWorkbook>>): Promise<WorkerD1Result> => {
   const { db, assessmentId, requestId } = context;
   const { payload, assessment, file, versionNumber, dataVersionId, objectKey } = prepared;
   const updated = await queryFirst<AssessmentRow>(db,
-    `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
+    `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`,
+    [assessmentId, assessment.tenant_id]);
   const responseDataVersion = await queryFirst<D1Record>(db,
     `SELECT * FROM ${D1_TABLES.dataVersions} WHERE data_version_id = ?`, [dataVersionId]);
   logger.info('Assessment workbook imported into D1', {
-    assessmentId, dataVersionId, importedCount: imported.importedCount,
+    assessmentId, tenantId: assessment.tenant_id, dataVersionId, importedCount: imported.importedCount,
     validationCount: imported.validationCount, requestId
   });
   return {
@@ -228,36 +230,55 @@ const cleanupFailedUpload = async (
   objectStored: boolean
 ): Promise<void> => {
   const { db, environment, assessmentId } = context;
-  const { dataVersionId, objectKey, previousDataStatus, previousSnapshot } = prepared;
+  const { assessment, dataVersionId, objectKey, previousDataStatus, previousSnapshot } = prepared;
   try {
     await runStatements(db, [
-      db.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ?').bind(dataVersionId),
-      db.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ?').bind(`REC-${dataVersionId}-ROW-%`),
-      db.prepare(`DELETE FROM ${D1_TABLES.dataVersions} WHERE data_version_id = ?`).bind(dataVersionId),
-      db.prepare('DELETE FROM ObjectMetadata WHERE object_key = ?').bind(objectKey),
+      db.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND assessment_id = ? AND tenant_id = ?')
+        .bind(dataVersionId, assessmentId, assessment.tenant_id),
+      db.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?')
+        .bind(`REC-${dataVersionId}-ROW-%`, assessment.tenant_id),
+      db.prepare(`DELETE FROM ${D1_TABLES.dataVersions} WHERE data_version_id = ? AND assessment_id = ?`)
+        .bind(dataVersionId, assessmentId),
+      db.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND assessment_id = ? AND tenant_id = ?')
+        .bind(objectKey, assessmentId, assessment.tenant_id),
       db.prepare('DELETE FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?')
         .bind(ASSESSMENT_VERSION_SNAPSHOT_TYPE, assessmentId, dataVersionId),
-      db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ? WHERE assessment_id = ?`)
-        .bind(previousDataStatus, assessmentId),
+      db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ? WHERE assessment_id = ? AND tenant_id = ?`)
+        .bind(previousDataStatus, assessmentId, assessment.tenant_id),
       Object.keys(previousSnapshot).length > 0
         ? assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, previousSnapshot, 'rollback')
         : db.prepare('DELETE FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?')
           .bind(ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId)
     ]);
   } catch (error) {
-    logger.error('Failed to roll back an assessment data version', { assessmentId, dataVersionId }, error);
+    logger.error('Failed to roll back an assessment data version', {
+      assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
+    }, error);
   }
+  clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
   if (!objectStored) return;
   try {
     await environment.OBJECTS?.delete(objectKey);
   } catch (error) {
-    logger.error('Failed to remove assessment upload object after D1 rollback', { assessmentId, dataVersionId }, error);
+    logger.error('Failed to remove assessment upload object after D1 rollback', {
+      assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
+    }, error);
   }
 };
 
 export const uploadAssessmentDataVersion = async (
   context: AssessmentDatasetActionContext
 ): Promise<WorkerD1Result> => {
+  const tenantId = context.environment.REQUEST_TENANT_ID;
+  if (!tenantId) {
+    logger.warn('Assessment workbook upload rejected without tenant scope', {
+      assessmentId: context.assessmentId, requestId: context.requestId
+    });
+    return {
+      status: 403,
+      data: { success: false, message: ASSESSMENT_D1_MESSAGES.tenantScopeRequired }
+    };
+  }
   const parsed = parseUploadPayload(context);
   if (!parsed.ok) return parsed.result;
   if (!context.environment.OBJECTS) {
@@ -281,6 +302,7 @@ export const uploadAssessmentDataVersion = async (
     await cleanupFailedUpload(context, prepared.value, objectStored);
     logger.error('Assessment workbook upload failed', {
       assessmentId: context.assessmentId,
+      tenantId,
       dataVersionId: prepared.value.dataVersionId,
       requestId: context.requestId
     }, error);

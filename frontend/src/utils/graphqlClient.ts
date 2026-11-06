@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Unified GraphQL Client Utility (Frontend)
  * 
@@ -28,7 +29,7 @@ export async function executeGraphQL<T = unknown>(
   });
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await apiFetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

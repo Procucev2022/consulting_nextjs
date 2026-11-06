@@ -83,7 +83,7 @@ describe('ProCPXModal Component', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('handles close button', () => {
+  it('handles close button', async () => {
     const onClose = vi.fn();
     render(
       <ProCPXModal
@@ -94,6 +94,7 @@ describe('ProCPXModal Component', () => {
       />
     );
 
+    await screen.findByRole('checkbox', { name: 'Test Supplier' });
     const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.proCPX.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();

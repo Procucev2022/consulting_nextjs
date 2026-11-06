@@ -13,6 +13,7 @@ import type { ActionOwner, ActionPlanItem, SavingsOpportunityItem, SavingsWaterf
 import type { D1SavingsActionPlanRow, D1SavingsAssessmentRow, D1SavingsOpportunityRow } from '../types/savingsD1';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../types/cloudflare';
 import type { WorkerD1Result } from '../types/d1';
+import { parsePersistedSavingsMetrics } from './workerD1SavingsMetrics';
 import { queryD1Rows } from './workerD1Query';
 
 const numberValue = (value: unknown): number =>
@@ -109,19 +110,24 @@ const buildWaterfallMetrics = (
   };
 };
 
-export const loadSavingsFromD1 = async (db: CloudflareD1Database): Promise<Record<string, unknown>> => {
-  const [opportunityRows, actionPlanRows, assessment] = await Promise.all([
+export const loadSavingsFromD1 = async (
+  db: CloudflareD1Database,
+  tenantId: string
+): Promise<Record<string, unknown>> => {
+  const [opportunityRows, actionPlanRows] = await Promise.all([
     queryD1Rows<D1SavingsOpportunityRow>(db,
-      `SELECT * FROM ${D1_TABLES.opportunities} ORDER BY est_savings_inr_cr DESC, opp_id ASC`),
+      `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
+      `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
+      'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC, opportunity.opp_id ASC', [tenantId]),
     queryD1Rows<D1SavingsActionPlanRow>(db,
       `SELECT plan.*, details.target_date, details.priority, details.comments FROM ${D1_TABLES.actionPlans} AS plan ` +
-      `LEFT JOIN ${D1_TABLES.actionPlanDetails} AS details ON details.action_id = plan.id ORDER BY plan.created_at ASC, plan.id ASC`),
-    db.prepare('SELECT total_spend_cr, addressable_spend_cr, overlap_deductions_cr, proven_opportunity_cr ' +
-      `FROM ${D1_TABLES.assessments} ORDER BY created_at ASC LIMIT 1`).first<D1SavingsAssessmentRow>()
+      `LEFT JOIN ${D1_TABLES.actionPlanDetails} AS details ON details.action_id = plan.id ` +
+      `WHERE plan.opp_id IN (SELECT scope.opp_id FROM ${D1_TABLES.opportunityTenantScope} AS scope WHERE scope.tenant_id = ?) ` +
+      'ORDER BY plan.created_at ASC, plan.id ASC', [tenantId])
   ]);
   const actionPlans = actionPlanRows.map(toActionPlan);
   const opportunities = opportunityItems(opportunityRows, actionPlans);
-  const waterfallMetrics = buildWaterfallMetrics(opportunities, assessment);
+  const waterfallMetrics = buildWaterfallMetrics(opportunities, null);
   return {
     opportunities,
     overlaps: [],
@@ -137,13 +143,14 @@ export const loadSavingsFromD1 = async (db: CloudflareD1Database): Promise<Recor
 export const loadAssessmentSavingsFromD1 = async (
   db: CloudflareD1Database,
   assessmentId: string,
-  tenantId?: string
+  tenantId: string,
+  requestId?: string
 ): Promise<WorkerD1Result> => {
   const assessment = await db.prepare(
     'SELECT assessment_id, customer_id, total_spend_cr, validated_spend_cr, addressable_spend_cr, gross_opportunity_cr, ' +
     'overlap_deductions_cr, net_defensible_opportunity_cr, proven_opportunity_cr, potential_savings_cr ' +
-    `FROM ${D1_TABLES.assessments} WHERE assessment_id = ?${tenantId ? ' AND customer_id = ?' : ''}`
-  ).bind(...(tenantId ? [assessmentId, tenantId] : [assessmentId])).first<D1SavingsAssessmentRow & {
+    `FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`
+  ).bind(assessmentId, tenantId).first<D1SavingsAssessmentRow & {
     assessment_id: string;
     customer_id: string;
     validated_spend_cr: number | null;
@@ -156,18 +163,12 @@ export const loadAssessmentSavingsFromD1 = async (
   };
 
   const run = await db.prepare(
-    `SELECT metrics_json FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ? AND is_superseded = 0 ` +
+    `SELECT analysis_run_id, metrics_json FROM ${D1_TABLES.analysisRuns} WHERE assessment_id = ? AND is_superseded = 0 ` +
     'ORDER BY created_at DESC, analysis_run_id DESC LIMIT 1'
-  ).bind(assessmentId).first<{ metrics_json: string | null }>();
-  let persistedMetrics: Record<string, unknown> = {};
-  if (run?.metrics_json) {
-    try {
-      const parsed: unknown = JSON.parse(run.metrics_json);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) persistedMetrics = parsed as Record<string, unknown>;
-    } catch {
-      persistedMetrics = {};
-    }
-  }
+  ).bind(assessmentId).first<{ analysis_run_id: string; metrics_json: string | null }>();
+  const persistedMetrics = run?.metrics_json
+    ? parsePersistedSavingsMetrics(run.metrics_json, requestId, assessmentId, run.analysis_run_id, tenantId)
+    : {};
   const opportunities = Array.isArray(persistedMetrics.opportunities) ? persistedMetrics.opportunities : [];
   const actionPlans = Array.isArray(persistedMetrics.actionPlans) ? persistedMetrics.actionPlans : [];
   const overlaps = Array.isArray(persistedMetrics.overlaps) ? persistedMetrics.overlaps : [];
@@ -204,6 +205,7 @@ export const loadAssessmentSavingsFromD1 = async (
 const buildActionPlanUpdateStatements = (
   db: CloudflareD1Database,
   actionId: string,
+  tenantId: string,
   updates: Omit<ReturnType<typeof updateActionPlanSchema.parse>, 'actionId'>
 ): CloudflareD1PreparedStatement[] => {
   const statements = [];
@@ -219,16 +221,21 @@ const buildActionPlanUpdateStatements = (
   }
   if (coreUpdates.length > 0) {
     coreValues.push(new Date().toISOString(), actionId);
-    const sql = `UPDATE ${D1_TABLES.actionPlans} SET ${coreUpdates.join(', ')}, updated_at = ? WHERE id = ?`;
-    statements.push(db.prepare(sql).bind(...coreValues));
+    const sql = `UPDATE ${D1_TABLES.actionPlans} SET ${coreUpdates.join(', ')}, updated_at = ? WHERE id = ? ` +
+      `AND EXISTS (SELECT 1 FROM ${D1_TABLES.opportunityTenantScope} AS scope ` +
+      `WHERE scope.opp_id = ${D1_TABLES.actionPlans}.opp_id AND scope.tenant_id = ?)`;
+    statements.push(db.prepare(sql).bind(...coreValues, tenantId));
   }
   if (updates.priority !== undefined || updates.comments !== undefined) {
     statements.push(db.prepare(
-      `INSERT INTO ${D1_TABLES.actionPlanDetails} (action_id, priority, comments, updated_at) VALUES (?, COALESCE(?, 'MEDIUM'), ?, CURRENT_TIMESTAMP) ` +
+      `INSERT INTO ${D1_TABLES.actionPlanDetails} (action_id, priority, comments, updated_at) ` +
+      'SELECT ?, COALESCE(?, \'MEDIUM\'), ?, CURRENT_TIMESTAMP WHERE EXISTS (' +
+      'SELECT 1 FROM ' + D1_TABLES.actionPlans + ' AS plan INNER JOIN ' + D1_TABLES.opportunityTenantScope + ' AS scope ' +
+      'ON scope.opp_id = plan.opp_id WHERE plan.id = ? AND scope.tenant_id = ?) ' +
       'ON CONFLICT(action_id) DO UPDATE SET ' +
       `priority = COALESCE(excluded.priority, ${D1_TABLES.actionPlanDetails}.priority), ` +
       `comments = COALESCE(excluded.comments, ${D1_TABLES.actionPlanDetails}.comments), updated_at = CURRENT_TIMESTAMP`
-    ).bind(actionId, updates.priority ?? null, updates.comments ?? null));
+    ).bind(actionId, updates.priority ?? null, updates.comments ?? null, actionId, tenantId));
   }
   return statements;
 };
@@ -240,7 +247,11 @@ const persistActionPlanStatements = async (
   else for (const statement of statements) await statement.run();
 };
 
-export const updateActionPlanInD1 = async (db: CloudflareD1Database, input: unknown): Promise<WorkerD1Result> => {
+export const updateActionPlanInD1 = async (
+  db: CloudflareD1Database,
+  input: unknown,
+  tenantId: string
+): Promise<WorkerD1Result> => {
   const parsed = updateActionPlanSchema.safeParse(input);
   if (!parsed.success) return {
     status: 400,
@@ -252,18 +263,22 @@ export const updateActionPlanInD1 = async (db: CloudflareD1Database, input: unkn
     status: 400,
     data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanNoChanges }
   };
-  const current = await db.prepare(`SELECT id FROM ${D1_TABLES.actionPlans} WHERE id = ?`)
-    .bind(actionId).first<{ id: string }>();
+  const current = await db.prepare(
+    `SELECT plan.id FROM ${D1_TABLES.actionPlans} AS plan INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ` +
+    'ON scope.opp_id = plan.opp_id WHERE plan.id = ? AND scope.tenant_id = ?'
+  ).bind(actionId, tenantId).first<{ id: string }>();
   if (!current) return {
     status: 404,
     data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanNotFound(actionId) }
   };
-  await persistActionPlanStatements(db, buildActionPlanUpdateStatements(db, actionId, updates));
+  await persistActionPlanStatements(db, buildActionPlanUpdateStatements(db, actionId, tenantId, updates));
 
   const refreshed = await db.prepare(
     `SELECT plan.*, details.target_date, details.priority, details.comments FROM ${D1_TABLES.actionPlans} AS plan ` +
-    `LEFT JOIN ${D1_TABLES.actionPlanDetails} AS details ON details.action_id = plan.id WHERE plan.id = ?`
-  ).bind(actionId).first<D1SavingsActionPlanRow>();
+    `LEFT JOIN ${D1_TABLES.actionPlanDetails} AS details ON details.action_id = plan.id ` +
+    `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = plan.opp_id ` +
+    'WHERE plan.id = ? AND scope.tenant_id = ?'
+  ).bind(actionId, tenantId).first<D1SavingsActionPlanRow>();
   if (!refreshed) return {
     status: 404,
     data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanNotFound(actionId) }
@@ -272,7 +287,7 @@ export const updateActionPlanInD1 = async (db: CloudflareD1Database, input: unkn
 };
 
 export const updateOpportunityStatusInD1 = async (
-  db: CloudflareD1Database, input: unknown
+  db: CloudflareD1Database, input: unknown, tenantId: string
 ): Promise<WorkerD1Result> => {
   const parsed = updateOpportunityStatusSchema.safeParse(input);
   if (!parsed.success) return {
@@ -280,8 +295,13 @@ export const updateOpportunityStatusInD1 = async (
     data: { success: false, message: 'Opportunity status validation failed.', errors: parsed.error.issues }
   };
   const { opp_id: opportunityId, status } = parsed.data;
-  await db.prepare(`UPDATE ${D1_TABLES.opportunities} SET status = ? WHERE opp_id = ?`).bind(status, opportunityId).run();
-  const opportunity = await db.prepare(`SELECT * FROM ${D1_TABLES.opportunities} WHERE opp_id = ?`).bind(opportunityId).first<D1SavingsOpportunityRow>();
+  await db.prepare(`UPDATE ${D1_TABLES.opportunities} SET status = ? WHERE opp_id = ? ` +
+    `AND EXISTS (SELECT 1 FROM ${D1_TABLES.opportunityTenantScope} AS scope ` +
+    `WHERE scope.opp_id = ${D1_TABLES.opportunities}.opp_id AND scope.tenant_id = ?)`)
+    .bind(status, opportunityId, tenantId).run();
+  const opportunity = await db.prepare(`SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
+    `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
+    'WHERE opportunity.opp_id = ? AND scope.tenant_id = ?').bind(opportunityId, tenantId).first<D1SavingsOpportunityRow>();
   if (!opportunity) {
     return { status: 404, data: { success: false, message: SAVINGS_D1_MESSAGES.opportunityNotFound(opportunityId) } };
   }

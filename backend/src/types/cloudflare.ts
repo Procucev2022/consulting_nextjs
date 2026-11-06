@@ -6,8 +6,25 @@ export interface CloudflareD1Database {
 export interface CloudflareD1PreparedStatement {
   bind(...values: unknown[]): CloudflareD1PreparedStatement;
   first<T = Record<string, unknown>>(): Promise<T | null>;
-  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
+  all<T = Record<string, unknown>>(): Promise<CloudflareD1QueryResult<T>>;
   run(): Promise<unknown>;
+}
+
+export interface CloudflareD1QueryMeta {
+  duration?: number;
+  rows_read?: number;
+  rows_written?: number;
+  changes?: number;
+}
+
+export interface CloudflareD1MutationResult {
+  meta?: CloudflareD1QueryMeta;
+  changes?: number | bigint;
+}
+
+export interface CloudflareD1QueryResult<T> {
+  results: T[];
+  meta?: CloudflareD1QueryMeta;
 }
 
 export interface CloudflareR2Bucket {
@@ -28,6 +45,9 @@ export interface CloudflareR2Object {
 
 export interface CloudflareEnvironment {
   DB?: CloudflareD1Database;
+  REQUEST_TENANT_ID?: string;
+  REQUEST_USER_ID?: string;
+  REQUEST_USER_ROLE?: string;
   OBJECTS?: CloudflareR2Bucket;
   FRONTEND_URL?: string;
   AUTH_SECRET?: string;

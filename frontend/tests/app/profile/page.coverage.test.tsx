@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import ProfilePage from '../../../src/app/profile/page';
 import { authApiClient } from '../../../src/utils/authApi';
 import { apiClient } from '../../../src/utils/api';
+import frontendLogger from '../../../src/utils/logger';
 import { UI_STRINGS } from '../../../src/constants';
 import type { RawDocumentIngestion, TenantMaster, UserProfile } from '../../../src/types';
 
@@ -38,6 +39,7 @@ const PROFILE_USER: UserProfile = {
   role: 'USER',
   status: 'ACTIVE',
   subscription_tier: 'ENTERPRISE_PRO',
+  tenant_id: 'TNT-ACME-001',
   created_at: '2025-11-03T00:00:00.000Z'
 };
 
@@ -52,7 +54,7 @@ const buildDocument = (overrides: Partial<RawDocumentIngestion>): RawDocumentIng
   ({
     doc_id: 'doc-own-1',
     file_name: 'Q1_Spend.xlsx',
-    tenant_id: PROFILE_USER.id,
+    tenant_id: PROFILE_USER.tenant_id,
     file_type: 'XLSX',
     ocr_status: 'Completed',
     file_size_mb: 2.4,
@@ -147,7 +149,7 @@ describe('ProfilePage coverage', () => {
     expect(authApiClient.setStoredSession).not.toHaveBeenCalled();
   });
 
-  it('shows the refreshed profile, tenant details, and the documents that belong to this buyer', async () => {
+  it('shows the refreshed profile and only documents assigned to the verified tenant', async () => {
     vi.mocked(authApiClient.getMe).mockResolvedValue({
       user: { ...PROFILE_USER, name: 'Asha Verma (Refreshed)' }
     } as never);
@@ -158,8 +160,8 @@ describe('ProfilePage coverage', () => {
     expect(screen.getByText(TENANT.major_sector)).toBeInTheDocument();
     expect(screen.getByText(TENANT.minor_sector)).toBeInTheDocument();
     expect(screen.getByText(DOC_OWN.file_name)).toBeInTheDocument();
-    expect(screen.getByText(DOC_EMAIL_SCOPED.file_name)).toBeInTheDocument();
-    expect(screen.getByText(DOC_SHARED.file_name)).toBeInTheDocument();
+    expect(screen.queryByText(DOC_EMAIL_SCOPED.file_name)).not.toBeInTheDocument();
+    expect(screen.queryByText(DOC_SHARED.file_name)).not.toBeInTheDocument();
     expect(screen.queryByText(DOC_OTHER_BUYER.file_name)).not.toBeInTheDocument();
     expect(authApiClient.setStoredSession).toHaveBeenCalledWith(
       SESSION_TOKEN,
@@ -167,12 +169,79 @@ describe('ProfilePage coverage', () => {
     );
   });
 
-  it('uses the refreshed buyer id when the cached profile has no identifier', async () => {
+  it('loads the next tenant-scoped document page and updates its count', async () => {
+    const secondDocument = buildDocument({ doc_id: 'doc-own-2', file_name: 'Q2_Spend.xlsx' });
+    const cursor = { uploadedAt: '2026-02-01T10:00:00.000Z', docId: DOC_OWN.doc_id || '' };
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce({
+        queue: [DOC_OWN],
+        pagination: { queue: { hasMore: true, nextCursor: cursor } },
+        summary: { totalFiles: 2 }
+      } as never)
+      .mockResolvedValueOnce({
+        queue: [secondDocument],
+        pagination: { queue: { hasMore: false, nextCursor: null } },
+        summary: { totalFiles: 2 }
+      } as never);
+
+    await renderProfile();
+    expect(screen.getByText(UI_STRINGS.module1.showingIngestionDocuments(1, 2))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module1.loadMoreIngestionDocuments }));
+
+    expect(await screen.findByText(secondDocument.file_name || '')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.showingIngestionDocuments(2, 2))).toBeInTheDocument();
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(PROFILE_USER.tenant_id, { queueCursor: cursor });
+    expect(screen.queryByRole('button', { name: UI_STRINGS.module1.loadMoreIngestionDocuments })).not.toBeInTheDocument();
+  });
+
+  it('reports a correlated error when loading a later document page fails', async () => {
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce({
+        queue: [DOC_OWN],
+        pagination: { queue: { hasMore: true, nextCursor: { uploadedAt: '2026-02-01', docId: 'DOC-OLD' } } }
+      } as never)
+      .mockRejectedValueOnce(new Error('Request REQ-PROFILE-PAGE-1 failed'));
+
+    await renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module1.loadMoreIngestionDocuments }));
+
+    expect(await screen.findByText('Request REQ-PROFILE-PAGE-1 failed')).toBeInTheDocument();
+    expect(screen.getByText(DOC_OWN.file_name)).toBeInTheDocument();
+  });
+
+  it('ignores an invalid next-page state without a cursor', async () => {
+    vi.mocked(apiClient.getIngestionData).mockResolvedValueOnce({
+      queue: [DOC_OWN],
+      pagination: { queue: { hasMore: true, nextCursor: null } }
+    } as never);
+
+    await renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module1.loadMoreIngestionDocuments }));
+
+    expect(apiClient.getIngestionData).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(DOC_OWN.file_name)).toBeInTheDocument();
+  });
+
+  it('uses the assigned tenant when the cached profile has no user identifier', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...PROFILE_USER, id: '' });
 
     await renderProfile();
 
+    expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id);
     expect(screen.queryByText(DOC_OTHER_BUYER.file_name)).not.toBeInTheDocument();
+  });
+
+  it('fails closed without querying tenant data when the verified user has no tenant assignment', async () => {
+    const unassignedUser = { ...PROFILE_USER, tenant_id: undefined };
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(unassignedUser);
+    vi.mocked(authApiClient.getMe).mockResolvedValue({ user: unassignedUser } as never);
+
+    render(<ProfilePage />);
+
+    await waitFor(() => expect(screen.queryAllByRole('button', { name: DELETE_BUTTON_LABEL })).toHaveLength(0));
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
+    expect(screen.queryByText(DOC_OWN.file_name)).not.toBeInTheDocument();
   });
 
   it('renders the empty repository state when no documents are queued', async () => {
@@ -218,10 +287,30 @@ describe('ProfilePage coverage', () => {
     vi.mocked(apiClient.getTenant).mockRejectedValue(new Error('tenant service down'));
     vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
     vi.mocked(apiClient.getIngestionData).mockRejectedValue(new Error('ingestion unavailable'));
+    const errorEntry = { timestamp: '', level: 'error' as const, service: 'test', message: 'test' };
+    const warningEntry = { ...errorEntry, level: 'warn' as const };
+    const errorLog = vi.spyOn(frontendLogger, 'error').mockReturnValue(errorEntry);
+    const warningLog = vi.spyOn(frontendLogger, 'warn').mockReturnValue(warningEntry);
 
     await renderProfile();
 
     expect(screen.getAllByText(PROFILE_USER.company_name).length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent([
+      UI_STRINGS.header.userProfile.profileRefreshFailed('session refresh failed'),
+      UI_STRINGS.header.userProfile.tenantLoadFailed('tenant service down'),
+      UI_STRINGS.header.userProfile.ingestionLoadFailed('ingestion unavailable')
+    ].join(' '));
+    expect(warningLog).toHaveBeenCalledWith('Profile refresh failed; evaluating the saved profile fallback', expect.objectContaining({
+      action: 'profile.auth.refresh', userId: PROFILE_USER.id, fallback: 'saved-profile'
+    }), expect.any(Error));
+    expect(errorLog).toHaveBeenCalledWith('Profile organization details failed to load', expect.objectContaining({
+      action: 'profile.tenant.load', tenantId: PROFILE_USER.tenant_id,
+      fallback: 'keep-profile-without-organization-details'
+    }), expect.any(Error));
+    expect(errorLog).toHaveBeenCalledWith('Profile ingestion documents failed to load', expect.objectContaining({
+      action: 'profile.ingestion.load', tenantId: PROFILE_USER.tenant_id,
+      fallback: 'keep-profile-without-ingestion-documents'
+    }), expect.any(Error));
     expect(authApiClient.setStoredSession).not.toHaveBeenCalled();
     expect(screen.queryAllByRole('button', { name: DELETE_BUTTON_LABEL })).toHaveLength(0);
   });
@@ -241,7 +330,7 @@ describe('ProfilePage coverage', () => {
 
     render(<ProfilePage />);
 
-    await waitFor(() => expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.id));
+    await waitFor(() => expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id));
     expect(mockPush).not.toHaveBeenCalledWith('/login');
   });
 
@@ -447,7 +536,7 @@ describe('ProfilePage coverage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: DELETE_BUTTON_LABEL })[0]);
 
     await waitFor(() => expect(screen.queryByText(DOC_OWN.file_name)).not.toBeInTheDocument());
-    expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.id);
+    expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.tenant_id);
     act(() => {
       vi.advanceTimersByTime(3000);
     });
@@ -475,7 +564,7 @@ describe('ProfilePage coverage', () => {
     await renderProfile();
 
     fireEvent.click(screen.getAllByRole('button', { name: DELETE_BUTTON_LABEL })[0]);
-    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.id));
+    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.tenant_id));
 
     await waitFor(() => expect(screen.queryAllByRole('button', { name: DELETE_BUTTON_LABEL })).toHaveLength(0));
   });
@@ -513,14 +602,14 @@ describe('ProfilePage coverage', () => {
   it('uses the cached buyer identity when the profile refresh is unavailable', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(PROFILE_USER);
     vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
-    vi.mocked(apiClient.getIngestionData).mockResolvedValue({ queue: [DOC_SHARED] } as never);
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue({ queue: [DOC_OWN] } as never);
     vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([] as never);
     render(<ProfilePage />);
-    await screen.findByText(DOC_SHARED.file_name);
+    await screen.findByText(DOC_OWN.file_name);
 
     fireEvent.click(screen.getByRole('button', { name: DELETE_BUTTON_LABEL }));
 
-    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_SHARED.doc_id, PROFILE_USER.id));
+    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.tenant_id));
   });
 
   it('clears an unverified session without requesting profile or ingestion data', async () => {

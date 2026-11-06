@@ -62,7 +62,7 @@ describe('CategorySpecialisationView coverage', () => {
 
     expect(screen.queryByTestId(OVERVIEW_TAB_TEST_ID)).not.toBeInTheDocument();
     expect(await screen.findByTestId(OVERVIEW_TAB_TEST_ID)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(ANALYSIS_URL);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(ANALYSIS_URL);
   });
 
   it('opens the category register with the selected category expanded when an overview row is chosen', async () => {

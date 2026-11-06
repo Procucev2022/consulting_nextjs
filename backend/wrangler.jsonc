@@ -8,7 +8,13 @@
   ],
   "workers_dev": true,
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
   },
   "d1_databases": [
     {
@@ -26,6 +32,7 @@
   "vars": {
     "D1_DATABASE_NAME": "consulting-db",
     "R2_BUCKET": "consulting-doc",
+    "LOG_PERSISTENCE": "false",
     "APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
     "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
     "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
@@ -40,7 +47,7 @@
   },
   "env": {
     "dev": {
-      "name": "consulting-nextjs-backend",
+      "name": "consulting-nextjs-backend-dev",
       "d1_databases": [
         {
           "binding": "DB",
@@ -51,15 +58,16 @@
       "r2_buckets": [
         {
           "binding": "OBJECTS",
-          "bucket_name": "consulting-doc"
+          "bucket_name": "consulting-doc-dev"
         }
       ],
       "vars": {
         "D1_DATABASE_NAME": "consulting_dev",
-        "R2_BUCKET": "consulting-doc",
+        "R2_BUCKET": "consulting-doc-dev",
+        "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
-        "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
-        "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
+        "FRONTEND_URL": "https://consulting-frontend-dev.anshul-goel.workers.dev",
+        "NEXT_PUBLIC_APP_URL": "https://consulting-frontend-dev.anshul-goel.workers.dev",
         "GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
         "GEMINI_PRIMARY_MODEL": "gemini-3.5-flash",
         "GEMINI_FALLBACK_MODELS": "gemini-flash-latest,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash",
@@ -88,6 +96,7 @@
       "vars": {
         "D1_DATABASE_NAME": "consulting-db",
         "R2_BUCKET": "consulting-doc",
+        "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "PRODUCTION",
         "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
@@ -119,6 +128,7 @@
       "vars": {
         "D1_DATABASE_NAME": "consulting-db",
         "R2_BUCKET": "consulting-doc",
+        "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "PRODUCTION",
         "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",

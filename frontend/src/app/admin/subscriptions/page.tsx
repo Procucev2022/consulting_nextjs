@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '../../../utils/apiFetch';
 
 /**
  * Admin Subscription Management Dashboard (Prompt 288 §14 & §35)
@@ -22,12 +23,47 @@ import type { SubscriptionRecord, SubscriptionAuditEvent } from '../../../types'
 import { ProvisionSubscriptionModal } from '../../../components/admin/ProvisionSubscriptionModal';
 import { getApiBaseUrl } from '../../../utils/apiBase';
 import { authApiClient } from '../../../utils/authApi';
+import frontendLogger from '../../../utils/logger';
+import { API_REQUEST_ID_HEADER } from '../../../constants/app';
 
 const adminApiFetch = (path: string, init: RequestInit = {}): Promise<Response> => {
   const token = authApiClient.getStoredToken();
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+  return apiFetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+};
+
+const logSubscriptionApiFailure = (
+  action: string,
+  method: string,
+  path: string,
+  statusCode: number,
+  requestId: string | undefined,
+  error: unknown
+): void => {
+  frontendLogger.error('Admin subscription API operation failed', {
+    action,
+    method,
+    path,
+    statusCode,
+    requestId
+  }, error);
+};
+
+const logUnsuccessfulSubscriptionResponse = (
+  action: string,
+  method: string,
+  path: string,
+  response: Response
+): void => {
+  logSubscriptionApiFailure(
+    action,
+    method,
+    path,
+    response.status,
+    response.headers?.get(API_REQUEST_ID_HEADER) || undefined,
+    new Error(`Admin subscription API returned an unsuccessful response (HTTP ${response.status}).`)
+  );
 };
 
 const BADGE_CLASSES: Record<string, string> = {
@@ -52,27 +88,52 @@ export default function AdminSubscriptionsPage() {
 
   const fetchSubscriptions = useCallback(async () => {
     setIsLoading(true);
+    const path = '/api/subscription/admin/list';
+    let response: Response | undefined;
     try {
-      const res = await adminApiFetch('/api/subscription/admin/list');
-      const data = await res.json();
-      if (data.success) setSubscriptions(data.subscriptions || []);
-    } catch {
-      // silent
+      response = await adminApiFetch(path);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        logUnsuccessfulSubscriptionResponse('subscription.admin.list', 'GET', path, response);
+        return;
+      }
+      setSubscriptions(data.subscriptions || []);
+    } catch (error: unknown) {
+      logSubscriptionApiFailure(
+        'subscription.admin.list',
+        'GET',
+        path,
+        response?.status || 0,
+        response?.headers?.get(API_REQUEST_ID_HEADER) || undefined,
+        error
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const fetchAuditEvents = useCallback(async (subId?: string) => {
+    const path = subId
+      ? `/api/subscription/admin/audit-trail?subscription_id=${encodeURIComponent(subId)}`
+      : '/api/subscription/admin/audit-trail';
+    let response: Response | undefined;
     try {
-      const url = subId
-        ? `/api/subscription/admin/audit-trail?subscription_id=${encodeURIComponent(subId)}`
-        : '/api/subscription/admin/audit-trail';
-      const res = await adminApiFetch(url);
-      const data = await res.json();
-      if (data.success) setAuditEvents(data.audit_events || []);
-    } catch {
-      // silent
+      response = await adminApiFetch(path);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        logUnsuccessfulSubscriptionResponse('subscription.admin.audit', 'GET', path, response);
+        return;
+      }
+      setAuditEvents(data.audit_events || []);
+    } catch (error: unknown) {
+      logSubscriptionApiFailure(
+        'subscription.admin.audit',
+        'GET',
+        path,
+        response?.status || 0,
+        response?.headers?.get(API_REQUEST_ID_HEADER) || undefined,
+        error
+      );
     }
   }, []);
 
@@ -82,18 +143,29 @@ export default function AdminSubscriptionsPage() {
   }, [fetchSubscriptions, fetchAuditEvents]);
 
   const handleStatusChange = async (id: string, newStatus: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED') => {
+    const path = `/api/subscription/admin/${encodeURIComponent(id)}/status`;
+    let response: Response | undefined;
     try {
-      const res = await adminApiFetch(`/api/subscription/admin/${encodeURIComponent(id)}/status`, {
+      response = await adminApiFetch(path, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      if (res.ok) {
+      if (response.ok) {
         await fetchSubscriptions();
         await fetchAuditEvents();
+      } else {
+        logUnsuccessfulSubscriptionResponse('subscription.admin.status.update', 'PATCH', path, response);
       }
-    } catch {
-      // silent
+    } catch (error: unknown) {
+      logSubscriptionApiFailure(
+        'subscription.admin.status.update',
+        'PATCH',
+        path,
+        response?.status || 0,
+        response?.headers?.get(API_REQUEST_ID_HEADER) || undefined,
+        error
+      );
     }
   };
 

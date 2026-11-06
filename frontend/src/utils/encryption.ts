@@ -7,9 +7,14 @@
 
 import {
   CLIENT_AES_ALGORITHM,
+  CLIENT_AES_HEX_PATTERN,
+  CLIENT_AES_KEY_HEX_LENGTH,
   CLIENT_AES_KEY_LENGTH_BITS,
   CLIENT_AES_IV_LENGTH_BYTES,
+  CLIENT_AES_IV_HEX_LENGTH,
+  CLIENT_AES_OPTIONAL_HEX_PATTERN,
   CLIENT_AES_TAG_LENGTH_BITS,
+  CLIENT_AES_TAG_HEX_LENGTH,
   DEFAULT_CLIENT_CRYPTO_PREFIX,
   CLIENT_CRYPTO_ERRORS
 } from '../constants/crypto';
@@ -18,8 +23,6 @@ import type {
   ClientEncryptionOptions
 } from '../types/crypto';
 import frontendLogger from './logger';
-
-const DEFAULT_DEV_CLIENT_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 function getSubtleCrypto(): SubtleCrypto {
   const cryptoObj = typeof window !== 'undefined'
@@ -48,6 +51,32 @@ function bytesToHex(bytes: Uint8Array): string {
   return hex;
 }
 
+const isValidFixedLengthHex = (value: string, length: number): boolean =>
+  value.length === length && CLIENT_AES_HEX_PATTERN.test(value);
+
+const isValidEncryptedPayload = (payload: ClientEncryptedPayload): boolean =>
+  typeof payload === 'object' && payload !== null &&
+  payload.algorithm === CLIENT_AES_ALGORITHM &&
+  typeof payload.iv === 'string' && isValidFixedLengthHex(payload.iv, CLIENT_AES_IV_HEX_LENGTH) &&
+  typeof payload.tag === 'string' && isValidFixedLengthHex(payload.tag, CLIENT_AES_TAG_HEX_LENGTH) &&
+  typeof payload.ciphertext === 'string' && CLIENT_AES_OPTIONAL_HEX_PATTERN.test(payload.ciphertext);
+
+const resolveClientKey = async (
+  key: CryptoKey | string | undefined,
+  usage: 'encrypt' | 'decrypt'
+): Promise<CryptoKey> => {
+  if (!key) throw new Error(CLIENT_CRYPTO_ERRORS.MISSING_KEY);
+  if (typeof key === 'string') return importHexKey(key);
+
+  const algorithm = key.algorithm as Partial<AesKeyAlgorithm> | undefined;
+  if (key.type !== 'secret' || algorithm?.name !== CLIENT_AES_ALGORITHM ||
+    algorithm?.length !== CLIENT_AES_KEY_LENGTH_BITS || !Array.isArray(key.usages) ||
+    !key.usages.includes(usage)) {
+    throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_KEY);
+  }
+  return key;
+};
+
 /**
  * Generates a new 256-bit AES-GCM CryptoKey.
  */
@@ -68,6 +97,9 @@ export async function generateClientKey(): Promise<CryptoKey> {
  */
 export async function importHexKey(hexKey: string): Promise<CryptoKey> {
   const subtle = getSubtleCrypto();
+  if (hexKey.length !== CLIENT_AES_KEY_HEX_LENGTH || !CLIENT_AES_HEX_PATTERN.test(hexKey)) {
+    throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_KEY);
+  }
   const keyBytes = hexToBytes(hexKey);
   return await subtle.importKey(
     'raw',
@@ -92,16 +124,14 @@ export async function exportKeyToHex(key: CryptoKey): Promise<string> {
  */
 export async function encryptDataClient(
   plaintext: string,
-  key?: CryptoKey | string,
+  key: CryptoKey | string,
   options?: ClientEncryptionOptions
 ): Promise<ClientEncryptedPayload> {
   const subtle = getSubtleCrypto();
   const start = Date.now();
 
   try {
-    const cryptoKey: CryptoKey = typeof key === 'string'
-      ? await importHexKey(key)
-      : key || await importHexKey(DEFAULT_DEV_CLIENT_KEY);
+    const cryptoKey = await resolveClientKey(key, 'encrypt');
 
     const cryptoInstance = typeof window !== 'undefined'
       ? window.crypto
@@ -149,7 +179,7 @@ export async function encryptDataClient(
  */
 export async function decryptDataClient(
   encrypted: ClientEncryptedPayload | string,
-  key?: CryptoKey | string,
+  key: CryptoKey | string,
   options?: ClientEncryptionOptions
 ): Promise<string> {
   const subtle = getSubtleCrypto();
@@ -160,13 +190,11 @@ export async function decryptDataClient(
       ? deserializeClientPayload(encrypted)
       : encrypted;
 
-    if (!payload.iv || !payload.tag || !payload.ciphertext) {
+    if (!isValidEncryptedPayload(payload)) {
       throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_PAYLOAD);
     }
 
-    const cryptoKey: CryptoKey = typeof key === 'string'
-      ? await importHexKey(key)
-      : key || await importHexKey(DEFAULT_DEV_CLIENT_KEY);
+    const cryptoKey = await resolveClientKey(key, 'decrypt');
 
     const ivBytes = hexToBytes(payload.iv);
     const ciphertextBytes = hexToBytes(payload.ciphertext);
@@ -196,8 +224,8 @@ export async function decryptDataClient(
 
     return plaintext;
   } catch (err: unknown) {
-    const errorObj = err as { message: string };
-    frontendLogger.warn('Client decryption verification failed', { error: errorObj.message });
+    const errorObj = err instanceof Error ? err : new Error(String(err));
+    frontendLogger.warn('Client decryption verification failed', { error: errorObj.message }, errorObj);
     if ((Object.values(CLIENT_CRYPTO_ERRORS) as string[]).includes(errorObj.message)) {
       throw err;
     }
@@ -209,6 +237,7 @@ export async function decryptDataClient(
  * Serializes ClientEncryptedPayload into a compact portable string format.
  */
 export function serializeClientPayload(payload: ClientEncryptedPayload): string {
+  if (!isValidEncryptedPayload(payload)) throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_PAYLOAD);
   return `${DEFAULT_CLIENT_CRYPTO_PREFIX}:${payload.iv}:${payload.tag}:${payload.ciphertext}`;
 }
 
@@ -221,14 +250,16 @@ export function deserializeClientPayload(serialized: string): ClientEncryptedPay
   }
 
   const parts = serialized.split(':');
-  if (parts.length < 4 || parts[0] !== DEFAULT_CLIENT_CRYPTO_PREFIX) {
+  if (parts.length !== 4 || parts[0] !== DEFAULT_CLIENT_CRYPTO_PREFIX) {
     throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_PAYLOAD);
   }
 
-  return {
+  const payload: ClientEncryptedPayload = {
     algorithm: CLIENT_AES_ALGORITHM,
     iv: parts[1],
     tag: parts[2],
     ciphertext: parts[3]
   };
+  if (!isValidEncryptedPayload(payload)) throw new Error(CLIENT_CRYPTO_ERRORS.INVALID_PAYLOAD);
+  return payload;
 }
