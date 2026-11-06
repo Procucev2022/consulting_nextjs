@@ -1,3 +1,5 @@
+import type { CloudflareD1Database } from './cloudflare';
+import type { WorkerD1Result } from './d1';
 import type {
   CommoditySourceEvidenceObject,
   ExtractedObservationDetail,
@@ -119,3 +121,7 @@ export interface PCBIDataLabDomainResult {
   matchedSignatures: string[];
 }
 
+export interface PCBIDataLabUploadDependencies {
+  detectDomain(request: Request): Promise<WorkerD1Result>;
+  getBenchmark(db: CloudflareD1Database, pcbiId: string): Promise<PCBICommodityBenchmarkRow | null>;
+}
