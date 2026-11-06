@@ -3,7 +3,11 @@ import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { handleExecutiveBriefRegenerate } from '../src/workerD1ExecutiveBriefRegenerate';
 import { extractBearerToken, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
 import { AUTH_MESSAGES } from '../src/constants/auth';
-import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from '../src/constants/executiveBriefRouteConstants';
+import {
+  EXECUTIVE_BRIEF_HTTP_STATUS,
+  EXECUTIVE_BRIEF_MESSAGES,
+  EXECUTIVE_BRIEF_ROUTE_BASE
+} from '../src/constants/executiveBriefRouteConstants';
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
@@ -11,6 +15,7 @@ import {
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
 import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
 import logger from '../src/utils/logger';
+import * as workerAuth from '../src/workerAuth';
 import {
   TEST_AUTH_SECRET,
   adminToken,
@@ -196,6 +201,69 @@ describe('executive brief regeneration authorization', () => {
     const response = await regenerate({ token: await malformedPayloadToken() });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
     expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.tokenInvalid);
+  });
+
+  it('logs token verifier exceptions without logging the bearer token', async () => {
+    const failure = new Error('Web Crypto verification unavailable');
+    vi.spyOn(workerAuth, 'verifyToken').mockRejectedValueOnce(failure);
+    const request = briefRequest('POST', REGENERATE_PATH, {
+      headers: {
+        Authorization: 'Bearer sensitive-test-token',
+        'X-Request-Id': 'req-executive-auth-verify'
+      }
+    });
+
+    const outcome = await authorizeExecutiveBriefAdmin(request, testEnvironment());
+
+    expect(outcome).toEqual({
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+      message: EXECUTIVE_BRIEF_MESSAGES.tokenInvalid
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Executive brief token verification failed',
+      expect.objectContaining({
+        action: 'executive-brief.auth.verify-token',
+        method: 'POST',
+        path: `${EXECUTIVE_BRIEF_ROUTE_BASE}${REGENERATE_PATH}`,
+        requestId: 'req-executive-auth-verify',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+        fallbackApplied: true
+      }),
+      failure
+    );
+    expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain('sensitive-test-token');
+  });
+
+  it('logs account lookup exceptions while preserving the service-unavailable fallback', async () => {
+    const failure = new Error('D1 current-user lookup failed');
+    vi.spyOn(workerAuth, 'authenticateWorkerUser').mockRejectedValueOnce(failure);
+    const request = briefRequest('POST', REGENERATE_PATH, {
+      headers: {
+        Authorization: `Bearer ${await adminToken()}`,
+        'X-Request-Id': 'req-executive-auth-d1'
+      }
+    });
+
+    const outcome = await authorizeExecutiveBriefAdmin(request, testEnvironment());
+
+    expect(outcome).toEqual({
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Executive brief administrator account lookup failed',
+      expect.objectContaining({
+        action: 'executive-brief.auth.account-lookup',
+        method: 'POST',
+        path: `${EXECUTIVE_BRIEF_ROUTE_BASE}${REGENERATE_PATH}`,
+        requestId: 'req-executive-auth-d1',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+        fallbackApplied: true
+      }),
+      failure
+    );
   });
 
   it('uses the active account lookup result to enforce current admin access', async () => {
