@@ -3,6 +3,7 @@ import { handleAssessmentRoute as handleAssessmentRouteImpl } from '../src/worke
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { ASSESSMENT_D1_MESSAGES } from '../src/constants/assessmentD1';
 import { createWorkerAuthToken } from '../src/workerAuth';
+import logger from '../src/utils/logger';
 import { createWorkerDatabase, runtimeEnvironment, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
 
 const mockDb = (records: {
@@ -322,6 +323,67 @@ describe('workerD1Assessment handler', () => {
         .toEqual({ tenant_id: 'TENANT-A' });
     } finally {
       fixture.close();
+    }
+  });
+
+  it('logs assessment insert failures and attempts to remove an unlinked customer', async () => {
+    const assessmentInsertError = new Error('assessment insert failed');
+    const rollbackError = new Error('customer rollback failed');
+    const makeFailingDb = (options: { rollbackFails?: boolean; existingCustomer?: boolean } = {}) => ({
+      prepare: vi.fn((sql: string) => ({
+        bind: vi.fn((..._values: unknown[]) => ({
+          all: vi.fn(async () => ({ results: [] })),
+          first: vi.fn(async () => sql.includes('CustomerRecord') && options.existingCustomer ? {
+            customer_id: 'CUST-EXISTING', customer_name: 'Existing', industry: 'Manufacturing',
+            business_unit: 'Default BU', company_website: null
+          } : null),
+          run: vi.fn(async () => {
+            if (sql.includes('INSERT INTO AssessmentRecord')) throw assessmentInsertError;
+            if (sql.startsWith('DELETE FROM CustomerRecord') && options.rollbackFails) throw rollbackError;
+            return {};
+          })
+        })),
+        all: vi.fn(async () => ({ results: [] })),
+        first: vi.fn(async () => null),
+        run: vi.fn(async () => ({}))
+      }))
+    }) as unknown as CloudflareD1Database;
+    const requestForCreate = (customerId?: string) => req('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-request-id': 'assessment-create-failure' },
+      body: JSON.stringify({
+        ...(customerId ? { customerId } : {}), customerName: 'New Client', industry: 'Manufacturing',
+        assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
+      })
+    });
+    const logError = vi.spyOn(logger, 'error');
+    try {
+      const rollbackSuccessDb = makeFailingDb();
+      const rollbackSuccessRequest = requestForCreate();
+      await expect(handleAssessmentRoute(rollbackSuccessDb, '/', rollbackSuccessRequest,
+        new URL(rollbackSuccessRequest.url))).rejects.toBe(assessmentInsertError);
+
+      const rollbackFailureDb = makeFailingDb({ rollbackFails: true });
+      const rollbackFailureRequest = requestForCreate();
+      await expect(handleAssessmentRoute(rollbackFailureDb, '/', rollbackFailureRequest,
+        new URL(rollbackFailureRequest.url))).rejects.toBe(assessmentInsertError);
+      expect(logError).toHaveBeenCalledWith(
+        'Failed to roll back an unlinked customer created with an assessment',
+        expect.objectContaining({ requestId: 'assessment-create-failure', customerId: expect.any(String) }),
+        rollbackError
+      );
+
+      const existingCustomerDb = makeFailingDb({ existingCustomer: true });
+      const existingCustomerRequest = requestForCreate('CUST-EXISTING');
+      await expect(handleAssessmentRoute(existingCustomerDb, '/', existingCustomerRequest,
+        new URL(existingCustomerRequest.url))).rejects.toBe(assessmentInsertError);
+      expect(logError).toHaveBeenCalledWith(
+        'Failed to create tenant-scoped assessment',
+        expect.objectContaining({ requestId: 'assessment-create-failure', tenantId: 'TNT-GLOBAL-8902' }),
+        assessmentInsertError
+      );
+    } finally {
+      logError.mockRestore();
     }
   });
 
