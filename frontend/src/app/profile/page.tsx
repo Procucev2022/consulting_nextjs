@@ -46,6 +46,7 @@ export default function ProfilePage(): React.ReactElement {
   const [hasMoreIngestionDocuments, setHasMoreIngestionDocuments] = useState(false);
   const [isLoadingMoreIngestionDocuments, setIsLoadingMoreIngestionDocuments] = useState(false);
   const [totalIngestionDocuments, setTotalIngestionDocuments] = useState(0);
+  const [profileLoadWarnings, setProfileLoadWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(false);
 
@@ -105,6 +106,7 @@ export default function ProfilePage(): React.ReactElement {
 
     const loadProfileData = async () => {
       try {
+        const loadWarnings: string[] = [];
         const storedUser = authApiClient.getStoredUser();
         const storedToken = authApiClient.getStoredToken();
 
@@ -120,7 +122,22 @@ export default function ProfilePage(): React.ReactElement {
           return;
         }
 
-        const meRes = storedToken ? await authApiClient.getMe(storedToken).catch(() => null) : null;
+        let meRes = null;
+        if (storedToken) {
+          try {
+            meRes = await authApiClient.getMe(storedToken);
+          } catch (error: unknown) {
+            frontendLogger.warn('Profile refresh failed; evaluating the saved profile fallback', {
+              action: 'profile.auth.refresh',
+              userId: storedUser?.id,
+              fallback: storedUser ? 'saved-profile' : 'login-redirect'
+            }, error);
+            if (storedUser) {
+              const reason = error instanceof Error ? error.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+              loadWarnings.push(UI_STRINGS.header.userProfile.profileRefreshFailed(reason));
+            }
+          }
+        }
 
         if (!isMounted) return;
 
@@ -155,26 +172,49 @@ export default function ProfilePage(): React.ReactElement {
           setQueueCursor(null);
           setHasMoreIngestionDocuments(false);
           setTotalIngestionDocuments(0);
+          setProfileLoadWarnings(loadWarnings);
           return;
         }
 
-        const [tRes, ingRes] = await Promise.all([
-          apiClient.getTenant(activeTenantId).catch(() => null),
-          apiClient.getIngestionData(activeTenantId).catch(() => null)
+        const [tenantResult, ingestionResult] = await Promise.allSettled([
+          apiClient.getTenant(activeTenantId),
+          apiClient.getIngestionData(activeTenantId)
         ]);
 
         if (!isMounted) return;
 
-        if (tRes) {
-          setTenant(tRes);
+        if (tenantResult.status === 'fulfilled') {
+          setTenant(tenantResult.value);
+        } else {
+          frontendLogger.error('Profile organization details failed to load', {
+            action: 'profile.tenant.load',
+            tenantId: activeTenantId,
+            fallback: 'keep-profile-without-organization-details'
+          }, tenantResult.reason);
+          const reason = tenantResult.reason instanceof Error
+            ? tenantResult.reason.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+          loadWarnings.push(UI_STRINGS.header.userProfile.tenantLoadFailed(reason));
         }
 
-        if (ingRes?.queue) setIngestionQueue(ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId));
-        if (ingRes?.pagination?.queue) {
-          setQueueCursor(ingRes.pagination.queue.nextCursor);
-          setHasMoreIngestionDocuments(ingRes.pagination.queue.hasMore);
+        if (ingestionResult.status === 'fulfilled') {
+          const ingRes = ingestionResult.value;
+          if (ingRes.queue) setIngestionQueue(ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId));
+          if (ingRes.pagination?.queue) {
+            setQueueCursor(ingRes.pagination.queue.nextCursor);
+            setHasMoreIngestionDocuments(ingRes.pagination.queue.hasMore);
+          }
+          if (ingRes.summary) setTotalIngestionDocuments(ingRes.summary.totalFiles);
+        } else {
+          frontendLogger.error('Profile ingestion documents failed to load', {
+            action: 'profile.ingestion.load',
+            tenantId: activeTenantId,
+            fallback: 'keep-profile-without-ingestion-documents'
+          }, ingestionResult.reason);
+          const reason = ingestionResult.reason instanceof Error
+            ? ingestionResult.reason.message : UI_STRINGS.header.userProfile.unknownLoadFailure;
+          loadWarnings.push(UI_STRINGS.header.userProfile.ingestionLoadFailed(reason));
         }
-        if (ingRes?.summary) setTotalIngestionDocuments(ingRes.summary.totalFiles);
+        setProfileLoadWarnings(loadWarnings);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -395,6 +435,12 @@ export default function ProfilePage(): React.ReactElement {
 
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        {profileLoadWarnings.length > 0 && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{profileLoadWarnings.join(' ')}</p>
+          </div>
+        )}
         {/* Profile Hero Header Card */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-cyan-950/40 border border-sky-100 dark:border-cyan-500/20 p-6 sm:p-8 shadow-sm dark:shadow-xl">
           <div className="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />

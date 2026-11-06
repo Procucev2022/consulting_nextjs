@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import ProfilePage from '../../../src/app/profile/page';
 import { authApiClient } from '../../../src/utils/authApi';
 import { apiClient } from '../../../src/utils/api';
+import frontendLogger from '../../../src/utils/logger';
 import { UI_STRINGS } from '../../../src/constants';
 import type { RawDocumentIngestion, TenantMaster, UserProfile } from '../../../src/types';
 
@@ -286,10 +287,30 @@ describe('ProfilePage coverage', () => {
     vi.mocked(apiClient.getTenant).mockRejectedValue(new Error('tenant service down'));
     vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
     vi.mocked(apiClient.getIngestionData).mockRejectedValue(new Error('ingestion unavailable'));
+    const errorEntry = { timestamp: '', level: 'error' as const, service: 'test', message: 'test' };
+    const warningEntry = { ...errorEntry, level: 'warn' as const };
+    const errorLog = vi.spyOn(frontendLogger, 'error').mockReturnValue(errorEntry);
+    const warningLog = vi.spyOn(frontendLogger, 'warn').mockReturnValue(warningEntry);
 
     await renderProfile();
 
     expect(screen.getAllByText(PROFILE_USER.company_name).length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent([
+      UI_STRINGS.header.userProfile.profileRefreshFailed('session refresh failed'),
+      UI_STRINGS.header.userProfile.tenantLoadFailed('tenant service down'),
+      UI_STRINGS.header.userProfile.ingestionLoadFailed('ingestion unavailable')
+    ].join(' '));
+    expect(warningLog).toHaveBeenCalledWith('Profile refresh failed; evaluating the saved profile fallback', expect.objectContaining({
+      action: 'profile.auth.refresh', userId: PROFILE_USER.id, fallback: 'saved-profile'
+    }), expect.any(Error));
+    expect(errorLog).toHaveBeenCalledWith('Profile organization details failed to load', expect.objectContaining({
+      action: 'profile.tenant.load', tenantId: PROFILE_USER.tenant_id,
+      fallback: 'keep-profile-without-organization-details'
+    }), expect.any(Error));
+    expect(errorLog).toHaveBeenCalledWith('Profile ingestion documents failed to load', expect.objectContaining({
+      action: 'profile.ingestion.load', tenantId: PROFILE_USER.tenant_id,
+      fallback: 'keep-profile-without-ingestion-documents'
+    }), expect.any(Error));
     expect(authApiClient.setStoredSession).not.toHaveBeenCalled();
     expect(screen.queryAllByRole('button', { name: DELETE_BUTTON_LABEL })).toHaveLength(0);
   });
