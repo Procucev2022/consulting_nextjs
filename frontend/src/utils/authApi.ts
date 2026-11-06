@@ -27,6 +27,7 @@ import {
 import { AUTH_STORAGE_KEYS, AUTH_API_ENDPOINTS } from '../constants/auth';
 import { getApiBaseUrl } from './apiBase';
 import { UI_STRINGS } from '../constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../constants/app';
 
 const setFilterParam = (params: URLSearchParams, key: string, value?: string): void => {
   if (value && value !== 'ALL') {
@@ -50,28 +51,27 @@ export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchPara
   return params;
 };
 
-async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
-  let json: Record<string, unknown> | null = null;
-  if (typeof res.text === 'function') {
-    const text = await res.text();
-    try {
-      json = JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      if (!res.ok) {
-        throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
-      }
-      throw new Error('Invalid response received from server');
+const parseAuthResponseBody = async <T>(res: Response, operation: string): Promise<T | null> => {
+  try {
+    if (typeof res.text === 'function') return JSON.parse(await res.text()) as T;
+    if (typeof res.json === 'function') return await res.json() as T;
+    return null;
+  } catch (error: unknown) {
+    frontendLogger.error('Authentication API response body could not be parsed', {
+      action: 'auth.response.parse',
+      operation,
+      statusCode: res.status,
+      requestId: res.headers?.get(API_REQUEST_ID_HEADER) || undefined
+    }, error);
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
     }
-  } else if (typeof res.json === 'function') {
-    try {
-      json = (await res.json()) as Record<string, unknown>;
-    } catch {
-      if (!res.ok) {
-        throw new Error(`Server error (${res.status}): Please ensure backend API server is running`);
-      }
-      throw new Error('Invalid response received from server');
-    }
+    throw new Error('Invalid response received from server');
   }
+};
+
+async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
+  const json = await parseAuthResponseBody<Record<string, unknown>>(res, fallbackError);
 
   if (!res.ok) {
     const errorMsg = typeof json?.message === 'string' ? json.message : fallbackError;
@@ -94,7 +94,11 @@ export const authApiClient = {
     if (!raw) return null;
     try {
       return JSON.parse(raw);
-    } catch {
+    } catch (error: unknown) {
+      frontendLogger.warn('Cached authentication profile was malformed and ignored', {
+        action: 'auth.session.user.parse',
+        storageKey: AUTH_STORAGE_KEYS.CURRENT_USER
+      }, error);
       return null;
     }
   },
@@ -113,8 +117,10 @@ export const authApiClient = {
     try {
       sessionStorage.removeItem('procucev_uploaded_dataset');
       sessionStorage.removeItem('procucev_autofill_active_doc');
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      frontendLogger.warn('Optional session data could not be cleared; authentication session cleanup continued', {
+        action: 'auth.session.optional-storage.clear'
+      }, error);
     }
   },
 

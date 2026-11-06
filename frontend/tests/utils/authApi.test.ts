@@ -2,7 +2,9 @@ import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { authApiClient, buildAdminUserQueryParams } from '../../src/utils/authApi';
 import { AUTH_STORAGE_KEYS } from '../../src/constants/auth';
+import { API_REQUEST_ID_HEADER } from '../../src/constants/app';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import frontendLogger from '../../src/utils/logger';
 import type { RegisterFormData, LoginFormData, UserProfile } from '../../src/types';
 
 describe('authApiClient and auth utilities', () => {
@@ -28,6 +30,7 @@ describe('authApiClient and auth utilities', () => {
   afterEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('Session Storage Helpers', () => {
@@ -45,23 +48,32 @@ describe('authApiClient and auth utilities', () => {
     });
 
     it('should return null when stored user profile contains corrupted JSON', () => {
+      const warning = vi.spyOn(frontendLogger, 'warn');
       localStorage.setItem(AUTH_STORAGE_KEYS.CURRENT_USER, 'invalid-json-{');
       expect(authApiClient.getStoredUser()).toBeNull();
+      expect(warning).toHaveBeenCalledWith(
+        'Cached authentication profile was malformed and ignored',
+        { action: 'auth.session.user.parse', storageKey: AUTH_STORAGE_KEYS.CURRENT_USER },
+        expect.any(SyntaxError)
+      );
     });
 
     it('should not throw when sessionStorage.removeItem throws during clearStoredSession', () => {
+      const warning = vi.spyOn(frontendLogger, 'warn');
       authApiClient.setStoredSession('token-xyz', mockUser);
       // Simulate sessionStorage.removeItem throwing (e.g., in private mode)
-      const originalRemoveItem = sessionStorage.removeItem.bind(sessionStorage);
-      vi.spyOn(sessionStorage, 'removeItem').mockImplementationOnce(() => {
-        throw new Error('QuotaExceededError');
+      const storageError = new Error('QuotaExceededError');
+      vi.stubGlobal('sessionStorage', {
+        removeItem: vi.fn(() => { throw storageError; })
       });
 
-      // clearStoredSession should silently swallow the sessionStorage error
+      // clearStoredSession should log the recoverable sessionStorage error and complete cleanup.
       expect(() => authApiClient.clearStoredSession()).not.toThrow();
-
-      // Restore
-      vi.spyOn(sessionStorage, 'removeItem').mockImplementation(originalRemoveItem);
+      expect(warning).toHaveBeenCalledWith(
+        'Optional session data could not be cleared; authentication session cleanup continued',
+        { action: 'auth.session.optional-storage.clear' },
+        storageError
+      );
     });
   });
 
@@ -94,6 +106,7 @@ describe('authApiClient and auth utilities', () => {
 
   describe('parseResponseJson branch coverage (res.json fallback path)', () => {
     it('throws "Invalid response received from server" when res has no text() but res.json() throws and res.ok is true', async () => {
+      const errorLog = vi.spyOn(frontendLogger, 'error');
       // Craft a mock Response where typeof res.text !== 'function' (so it goes to else-if res.json)
       // but res.json() throws and res.ok is true → line 68 path in authApi.ts
       global.fetch = vi.fn().mockResolvedValue({
@@ -106,19 +119,56 @@ describe('authApiClient and auth utilities', () => {
       await expect(
         authApiClient.getMe('some-token')
       ).rejects.toThrow('Invalid response received from server');
+      expect(errorLog).toHaveBeenCalledWith(
+        'Authentication API response body could not be parsed',
+        expect.objectContaining({ action: 'auth.response.parse', statusCode: 200 }),
+        expect.objectContaining({ message: 'JSON parse failure' })
+      );
     });
 
     it('throws Server error message when res has no text() but res.json() throws and res.ok is false', async () => {
+      const errorLog = vi.spyOn(frontendLogger, 'error');
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 503,
         text: undefined,
+        headers: new Headers({ [API_REQUEST_ID_HEADER]: 'request-auth-503' }),
         json: () => { throw new Error('JSON parse failure'); }
       });
 
       await expect(
         authApiClient.getMe('some-token')
       ).rejects.toThrow('Server error (503): Please ensure backend API server is running');
+      expect(errorLog).toHaveBeenCalledWith(
+        'Authentication API response body could not be parsed',
+        expect.objectContaining({
+          action: 'auth.response.parse',
+          statusCode: 503,
+          requestId: 'request-auth-503'
+        }),
+        expect.objectContaining({ message: 'JSON parse failure' })
+      );
+    });
+
+    it('logs malformed text response bodies with their request correlation ID', async () => {
+      const errorLog = vi.spyOn(frontendLogger, 'error');
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ [API_REQUEST_ID_HEADER]: 'request-auth-200' }),
+        text: async () => '{ invalid json'
+      });
+
+      await expect(authApiClient.getMe('some-token')).rejects.toThrow('Invalid response received from server');
+      expect(errorLog).toHaveBeenCalledWith(
+        'Authentication API response body could not be parsed',
+        expect.objectContaining({
+          action: 'auth.response.parse',
+          statusCode: 200,
+          requestId: 'request-auth-200'
+        }),
+        expect.any(SyntaxError)
+      );
     });
   });
 
