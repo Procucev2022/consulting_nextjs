@@ -16,7 +16,7 @@ import {
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
 import { clearScopedModule2Cache } from './services/workerD1Module2Cache';
-import { requireD1AtomicBatch } from './services/workerD1Query';
+import { requireD1AtomicBatch, runD1Statements } from './services/workerD1Query';
 
 const getIngestionData = async (
   environment: CloudflareEnvironment,
@@ -165,6 +165,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   const fileName = body.fileName;
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
+  const requestId = request.headers.get('x-request-id') || undefined;
   if (body.assessment_id) {
     const assessment = await database.prepare(
       'SELECT assessment_id FROM AssessmentRecord WHERE assessment_id = ? AND tenant_id = ?'
@@ -202,7 +203,8 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
           fileType,
           docId,
           tenantId,
-          assessmentId: body.assessment_id
+          assessmentId: body.assessment_id,
+          requestId
         });
       }
     }
@@ -215,32 +217,57 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     const isSupportedExtraction = Boolean(bytes) && parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType);
     const extractionStatus = isSupportedExtraction ? 'Completed' : 'Pending';
     const extractionProgress = isSupportedExtraction ? 100 : 0;
-    await database.prepare(`
+    const persistenceStatements: CloudflareD1PreparedStatement[] = [database.prepare(`
       INSERT INTO RawDocumentIngestion (
         doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies)).run();
+    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies))];
 
     if (bytes) {
-      await database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-        .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || '').run();
+      persistenceStatements.push(database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || ''));
     }
+    await runD1Statements(database, persistenceStatements, {
+      action: D1_LOG_ACTIONS.ingestionUploadPersist,
+      operation: D1_LOG_ACTIONS.ingestionUploadPersist,
+      requestId,
+      tenantId,
+      documentId: docId
+    });
   } catch (error) {
     try {
-      await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(docId, tenantId).run();
-      clearScopedModule2Cache(database, tenantId);
-      await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${docId}-ROW-%`, tenantId).run();
-      await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(docId, tenantId).run();
-      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(objectKey, tenantId).run();
+      await runD1Statements(database, [
+        database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(docId, tenantId),
+        database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${docId}-ROW-%`, tenantId),
+        database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(docId, tenantId),
+        database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(objectKey, tenantId)
+      ], {
+        action: D1_LOG_ACTIONS.ingestionUploadRollback,
+        operation: D1_LOG_ACTIONS.ingestionUploadRollback,
+        requestId,
+        tenantId,
+        documentId: docId
+      });
     } catch (cleanupError) {
-      logger.error('Failed to roll back a D1 ingestion upload', { docId }, cleanupError);
+      logger.error(D1_LOG_MESSAGES.ingestionUploadRollbackFailed, {
+        action: D1_LOG_ACTIONS.ingestionUploadRollback,
+        requestId,
+        tenantId,
+        docId
+      }, cleanupError);
     }
     clearScopedModule2Cache(database, tenantId);
     if (objectStored) {
       try {
         await environment.OBJECTS?.delete(objectKey);
       } catch (cleanupError) {
-        logger.error('Failed to remove the uploaded object after a D1 import failure', { docId }, cleanupError);
+        logger.error(D1_LOG_MESSAGES.ingestionUploadR2CleanupFailed, {
+          action: D1_LOG_ACTIONS.ingestionUploadRollback,
+          requestId,
+          tenantId,
+          docId,
+          objectKey
+        }, cleanupError);
       }
     }
     if (error instanceof Error && /workbook|row import limit|Only XLSX/u.test(error.message)) {
@@ -250,7 +277,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   }
 
   logger.info('Persisted uploaded ingestion dataset in D1', {
-    requestId: request.headers.get('x-request-id') || undefined,
+    requestId,
     docId,
     tenantId,
     importedCount: imported.importedCount,
@@ -262,7 +289,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   const ingestionQueue = queueRows.results.map((row) => ({
     ...row,
     detected_currencies: parseStoredDetectedCurrencies(row.detected_currencies, {
-      requestId: request.headers.get('x-request-id') || undefined,
+      requestId,
       tenantId,
       documentId: String(row.doc_id)
     })

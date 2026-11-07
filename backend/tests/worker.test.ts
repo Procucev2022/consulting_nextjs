@@ -1231,15 +1231,47 @@ describe('Cloudflare worker core routes', () => {
       expect(docId).toMatch(/^DOC-INGEST-/u);
       expect(deleteObject).toHaveBeenCalledWith(objectKey);
       expect(errorLog).toHaveBeenCalledWith(
-        'Failed to roll back a D1 ingestion upload',
-        { docId },
+        D1_LOG_MESSAGES.ingestionUploadRollbackFailed,
+        expect.objectContaining({ action: D1_LOG_ACTIONS.ingestionUploadRollback, requestId: expect.any(String), tenantId: 'TNT-1', docId }),
         expect.objectContaining({ message: 'D1 rollback unavailable' })
       );
       expect(errorLog).toHaveBeenCalledWith(
-        'Failed to remove the uploaded object after a D1 import failure',
-        { docId },
+        D1_LOG_MESSAGES.ingestionUploadR2CleanupFailed,
+        expect.objectContaining({ action: D1_LOG_ACTIONS.ingestionUploadRollback, requestId: expect.any(String), tenantId: 'TNT-1', docId, objectKey }),
         expect.objectContaining({ message: 'R2 cleanup unavailable' })
       );
+    });
+
+    it('rejects binary metadata persistence without D1 batching and removes the staged object', async () => {
+      const put = vi.fn<CloudflareR2Bucket['put']>(async () => undefined);
+      const deleteObject = vi.fn<CloudflareR2Bucket['delete']>(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put, get: vi.fn(async () => null), delete: deleteObject };
+      const databaseWithoutBatch = { prepare: (sql: string) => fixture.d1.prepare(sql) };
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'ingestion-upload-no-batch-1';
+
+      const response = await send('/api/ingestion/upload-object', {
+        ...jsonBody('POST', {
+          tenant_id: 'TNT-1', fileName: 'no-batch.csv', fileType: 'CSV', fileBase64: Buffer.from('col\nvalue').toString('base64')
+        }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': requestId }
+      }, environmentWithDb({ DB: databaseWithoutBatch, OBJECTS: bucket }));
+
+      const objectKey = String(put.mock.calls[0]?.[0]);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toMatchObject({ message: D1_ROUTE_MESSAGES.atomicBatchUnavailable });
+      expect(deleteObject).toHaveBeenCalledWith(objectKey);
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 0 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata').first()).resolves.toEqual({ total: 0 });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionUploadPersist,
+        operation: D1_LOG_ACTIONS.ingestionUploadPersist,
+        requestId,
+        tenantId: 'TNT-1',
+        documentId: expect.any(String),
+        statementCount: 2
+      }), expect.any(Error));
     });
 
     it.each([
