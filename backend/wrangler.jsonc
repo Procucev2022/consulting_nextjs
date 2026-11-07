@@ -32,6 +32,13 @@
       "bucket_name": "consulting-doc"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "CLIENT_ERROR_RATE_LIMITER",
+      "namespace_id": "8110801",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   "vars": {
     "D1_DATABASE_NAME": "consulting-db",
     "R2_BUCKET": "consulting-doc",
@@ -62,6 +69,13 @@
         {
           "binding": "OBJECTS",
           "bucket_name": "consulting-doc-dev"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "CLIENT_ERROR_RATE_LIMITER",
+          "namespace_id": "8110802",
+          "simple": { "limit": 60, "period": 60 }
         }
       ],
       "vars": {
@@ -96,6 +110,13 @@
           "bucket_name": "consulting-doc"
         }
       ],
+      "ratelimits": [
+        {
+          "name": "CLIENT_ERROR_RATE_LIMITER",
+          "namespace_id": "8110801",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
       "vars": {
         "D1_DATABASE_NAME": "consulting-db",
         "R2_BUCKET": "consulting-doc",
@@ -126,6 +147,13 @@
         {
           "binding": "OBJECTS",
           "bucket_name": "consulting-doc"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "CLIENT_ERROR_RATE_LIMITER",
+          "namespace_id": "8110801",
+          "simple": { "limit": 60, "period": 60 }
         }
       ],
       "vars": {

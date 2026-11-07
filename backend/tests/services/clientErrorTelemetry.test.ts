@@ -10,7 +10,8 @@ vi.mock('../../src/utils/logger', () => ({
 
 const url = 'https://backend.example.com/api/telemetry/client-error';
 const environment: CloudflareEnvironment = {
-  FRONTEND_URL: 'https://app.example.com', NEXT_PUBLIC_APP_URL: 'https://app.example.com/dashboard'
+  FRONTEND_URL: 'https://app.example.com', NEXT_PUBLIC_APP_URL: 'https://app.example.com/dashboard',
+  CLIENT_ERROR_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) }
 };
 const validReport = {
   level: 'error', source: 'window', errorName: 'TypeError', message: 'Cannot read property',
@@ -95,6 +96,41 @@ describe('client error telemetry endpoint', () => {
     expect(serialized).not.toContain('a.person@example.com');
     expect(serialized).not.toContain('secret-value');
     expect(serialized).not.toContain('123-456-7890');
+  });
+
+  it('rate limits client error reports by Cloudflare client address before parsing and returns retry guidance', async () => {
+    const limiter = vi.fn().mockResolvedValue({ success: false });
+    const response = await handleClientErrorTelemetry(requestFor('not-json', {
+      'cf-connecting-ip': '192.0.2.8', 'x-request-id': 'request-rate-limited'
+    }), { ...environment, CLIENT_ERROR_RATE_LIMITER: { limit: limiter } });
+
+    expect(limiter).toHaveBeenCalledWith({ key: 'consulting-nextjs-client-error:192.0.2.8' });
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(await response.json()).toEqual({
+      success: false,
+      message: 'Client error report rate limit reached. Wait one minute before sending more reports.'
+    });
+    expect(logger.warn).toHaveBeenCalledWith('Client error telemetry rate limit exceeded', expect.objectContaining({
+      requestId: 'request-rate-limited', statusCode: 429, limit: 60, periodSeconds: 60
+    }));
+  });
+
+  it('fails closed and records diagnostics when the rate limiter is missing or unavailable', async () => {
+    const missingBinding = await handleClientErrorTelemetry(requestFor(JSON.stringify(validReport)), {});
+    const rateLimiterError = new Error('Cloudflare rate limiter unavailable');
+    const failedBinding = await handleClientErrorTelemetry(requestFor(JSON.stringify(validReport)), {
+      ...environment, CLIENT_ERROR_RATE_LIMITER: { limit: vi.fn().mockRejectedValue(rateLimiterError) }
+    });
+
+    expect(missingBinding.status).toBe(503);
+    expect(failedBinding.status).toBe(503);
+    expect(logger.error).toHaveBeenCalledWith('Client error telemetry rate limiter is not configured', expect.objectContaining({
+      statusCode: 503
+    }));
+    expect(logger.error).toHaveBeenCalledWith('Client error telemetry rate limiter failed', expect.objectContaining({
+      statusCode: 503
+    }), rateLimiterError);
   });
 
   it('records caught warning exceptions at warning severity', async () => {

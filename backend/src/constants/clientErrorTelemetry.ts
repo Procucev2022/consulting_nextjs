@@ -4,6 +4,9 @@ export const CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH = 240;
 export const CLIENT_ERROR_REPORT_MAX_STACK_LENGTH = 1800;
 export const CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH = 180;
 export const CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH = 128;
+export const CLIENT_ERROR_RATE_LIMIT = 60;
+export const CLIENT_ERROR_RATE_LIMIT_PERIOD_SECONDS = 60;
+export const CLIENT_ERROR_RATE_LIMIT_NAMESPACE = 'consulting-nextjs-client-error';
 export const CLIENT_ERROR_LOCAL_FRONTEND_ORIGINS = [
   'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'
 ] as const;
@@ -24,7 +27,9 @@ export const CLIENT_ERROR_TELEMETRY_HTTP_STATUS = {
   BAD_REQUEST: 400,
   FORBIDDEN: 403,
   METHOD_NOT_ALLOWED: 405,
+  RATE_LIMITED: 429,
   PAYLOAD_TOO_LARGE: 413,
+  RATE_LIMIT_UNAVAILABLE: 503,
   UNSUPPORTED_MEDIA_TYPE: 415
 } as const;
 export const CLIENT_ERROR_TELEMETRY_MESSAGES = {
@@ -33,5 +38,7 @@ export const CLIENT_ERROR_TELEMETRY_MESSAGES = {
   jsonRequired: 'Client error reports require an application/json body.',
   invalidJson: 'Client error report JSON is invalid.',
   invalidFields: 'Client error report fields are invalid.',
+  rateLimited: 'Client error report rate limit reached. Wait one minute before sending more reports.',
+  rateLimiterUnavailable: 'Client error reports are temporarily unavailable. Retry later.',
   bodyTooLarge: (maxBytes: number) => `Client error report exceeds the ${maxBytes}-byte limit.`
 } as const;

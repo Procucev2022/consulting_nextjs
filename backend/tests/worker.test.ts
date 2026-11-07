@@ -171,7 +171,10 @@ describe('Cloudflare backend worker', () => {
     const response = await workerFetch(request('/api/telemetry/client-error', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'server-1' },
       body: JSON.stringify(report)
-    }), { FRONTEND_URL: 'https://app.example.com' }, executionContext);
+    }), {
+      FRONTEND_URL: 'https://app.example.com',
+      CLIENT_ERROR_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) }
+    }, executionContext);
 
     expect(response.status).toBe(202);
     expect(response.headers.get('x-request-id')).toBe('server-1');

@@ -5,6 +5,9 @@ import {
   CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
   CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH,
   CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH,
+  CLIENT_ERROR_RATE_LIMIT,
+  CLIENT_ERROR_RATE_LIMIT_NAMESPACE,
+  CLIENT_ERROR_RATE_LIMIT_PERIOD_SECONDS,
   CLIENT_ERROR_TELEMETRY_HTTP_STATUS,
   CLIENT_ERROR_TELEMETRY_MESSAGES,
   CLIENT_ERROR_REPORT_MAX_STACK_LENGTH,
@@ -79,6 +82,9 @@ export const handleClientErrorTelemetry = async (
   const requestFailure = validateTelemetryRequest(request, environment);
   if (requestFailure) return requestFailure;
 
+  const rateLimitFailure = await enforceTelemetryRateLimit(request, environment);
+  if (rateLimitFailure) return rateLimitFailure;
+
   const body = await readLimitedBody(request);
   if (body.tooLarge) return jsonResponse({
     success: false, message: CLIENT_ERROR_TELEMETRY_MESSAGES.bodyTooLarge(CLIENT_ERROR_REPORT_MAX_BYTES)
@@ -115,6 +121,49 @@ export const handleClientErrorTelemetry = async (
   if (report.level === 'error') logger.error('Browser reported an application error', logContext, error);
   else logger.warn('Browser reported a recovered application exception', logContext, error);
   return jsonResponse({ success: true }, CLIENT_ERROR_TELEMETRY_HTTP_STATUS.ACCEPTED, request);
+};
+
+const enforceTelemetryRateLimit = async (
+  request: Request, environment: CloudflareEnvironment
+): Promise<Response | undefined> => {
+  const requestId = request.headers.get('x-request-id') || undefined;
+  const context = { requestId, method: request.method, path: new URL(request.url).pathname };
+  if (!environment.CLIENT_ERROR_RATE_LIMITER) {
+    logger.error('Client error telemetry rate limiter is not configured', {
+      ...context, statusCode: CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMIT_UNAVAILABLE
+    });
+    return jsonResponse({
+      success: false, message: CLIENT_ERROR_TELEMETRY_MESSAGES.rateLimiterUnavailable
+    }, CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMIT_UNAVAILABLE, request);
+  }
+
+  const clientAddress = request.headers.get('cf-connecting-ip') || 'unknown';
+  try {
+    const decision = await environment.CLIENT_ERROR_RATE_LIMITER.limit({
+      key: `${CLIENT_ERROR_RATE_LIMIT_NAMESPACE}:${clientAddress}`
+    });
+    if (decision.success) return undefined;
+
+    logger.warn('Client error telemetry rate limit exceeded', {
+      ...context,
+      statusCode: CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMITED,
+      limit: CLIENT_ERROR_RATE_LIMIT,
+      periodSeconds: CLIENT_ERROR_RATE_LIMIT_PERIOD_SECONDS
+    });
+    const response = jsonResponse({
+      success: false, message: CLIENT_ERROR_TELEMETRY_MESSAGES.rateLimited
+    }, CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMITED, request);
+    const headers = new Headers(response.headers);
+    headers.set('Retry-After', String(CLIENT_ERROR_RATE_LIMIT_PERIOD_SECONDS));
+    return new Response(response.body, { status: response.status, headers });
+  } catch (error: unknown) {
+    logger.error('Client error telemetry rate limiter failed', {
+      ...context, statusCode: CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMIT_UNAVAILABLE
+    }, error);
+    return jsonResponse({
+      success: false, message: CLIENT_ERROR_TELEMETRY_MESSAGES.rateLimiterUnavailable
+    }, CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMIT_UNAVAILABLE, request);
+  }
 };
 
 const validateTelemetryRequest = (
