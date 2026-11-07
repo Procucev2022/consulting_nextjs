@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleAssessmentRoute as handleAssessmentRouteImpl } from '../src/workerD1Assessment';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { ASSESSMENT_D1_MESSAGES } from '../src/constants/assessmentD1';
+import { D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import { createWorkerAuthToken } from '../src/workerAuth';
 import logger from '../src/utils/logger';
 import { createWorkerDatabase, runtimeEnvironment, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
@@ -326,64 +327,117 @@ describe('workerD1Assessment handler', () => {
     }
   });
 
-  it('logs assessment insert failures and attempts to remove an unlinked customer', async () => {
-    const assessmentInsertError = new Error('assessment insert failed');
-    const rollbackError = new Error('customer rollback failed');
-    const makeFailingDb = (options: { rollbackFails?: boolean; existingCustomer?: boolean } = {}) => ({
-      prepare: vi.fn((sql: string) => ({
-        bind: vi.fn((..._values: unknown[]) => ({
-          all: vi.fn(async () => ({ results: [] })),
-          first: vi.fn(async () => sql.includes('CustomerRecord') && options.existingCustomer ? {
-            customer_id: 'CUST-EXISTING', customer_name: 'Existing', industry: 'Manufacturing',
-            business_unit: 'Default BU', company_website: null
-          } : null),
-          run: vi.fn(async () => {
-            if (sql.includes('INSERT INTO AssessmentRecord')) throw assessmentInsertError;
-            if (sql.startsWith('DELETE FROM CustomerRecord') && options.rollbackFails) throw rollbackError;
-            return {};
-          })
-        })),
-        all: vi.fn(async () => ({ results: [] })),
-        first: vi.fn(async () => null),
-        run: vi.fn(async () => ({}))
-      }))
-    }) as unknown as CloudflareD1Database;
-    const requestForCreate = (customerId?: string) => req('/', {
+  it('rejects customer and assessment creation before either write when transactional batch is unavailable', async () => {
+    const fixture = createWorkerDatabase();
+    delete fixture.d1.batch;
+    const create = req('/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-request-id': 'assessment-create-failure' },
+      headers: { 'Content-Type': 'application/json', 'x-request-id': 'assessment-create-no-batch' },
       body: JSON.stringify({
-        ...(customerId ? { customerId } : {}), customerName: 'New Client', industry: 'Manufacturing',
+        customerName: 'New Client', industry: 'Manufacturing',
         assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
       })
     });
     const logError = vi.spyOn(logger, 'error');
     try {
-      const rollbackSuccessDb = makeFailingDb();
-      const rollbackSuccessRequest = requestForCreate();
-      await expect(handleAssessmentRoute(rollbackSuccessDb, '/', rollbackSuccessRequest,
-        new URL(rollbackSuccessRequest.url))).rejects.toBe(assessmentInsertError);
-
-      const rollbackFailureDb = makeFailingDb({ rollbackFails: true });
-      const rollbackFailureRequest = requestForCreate();
-      await expect(handleAssessmentRoute(rollbackFailureDb, '/', rollbackFailureRequest,
-        new URL(rollbackFailureRequest.url))).rejects.toBe(assessmentInsertError);
+      await expect(handleAssessmentRoute(fixture.d1, '/', create, new URL(create.url)))
+        .rejects.toMatchObject({ message: D1_ROUTE_MESSAGES.atomicBatchUnavailable });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM CustomerRecord WHERE customer_name = ?')
+        .get('New Client')).toEqual({ count: 0 });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentRecord WHERE customer_name = ?')
+        .get('New Client')).toEqual({ count: 0 });
       expect(logError).toHaveBeenCalledWith(
-        'Failed to roll back an unlinked customer created with an assessment',
-        expect.objectContaining({ requestId: 'assessment-create-failure', customerId: expect.any(String) }),
-        rollbackError
+        D1_LOG_MESSAGES.atomicBatchUnavailable,
+        expect.objectContaining({
+          operation: 'assessment.create',
+          action: 'assessment.create',
+          requestId: 'assessment-create-no-batch',
+          tenantId: 'TNT-GLOBAL-8902',
+          assessmentId: expect.any(String),
+          statementCount: 2,
+          fallback: 'none'
+        }),
+        expect.any(Error)
       );
-
-      const existingCustomerDb = makeFailingDb({ existingCustomer: true });
-      const existingCustomerRequest = requestForCreate('CUST-EXISTING');
-      await expect(handleAssessmentRoute(existingCustomerDb, '/', existingCustomerRequest,
-        new URL(existingCustomerRequest.url))).rejects.toBe(assessmentInsertError);
       expect(logError).toHaveBeenCalledWith(
         'Failed to create tenant-scoped assessment',
-        expect.objectContaining({ requestId: 'assessment-create-failure', tenantId: 'TNT-GLOBAL-8902' }),
-        assessmentInsertError
+        expect.objectContaining({ requestId: 'assessment-create-no-batch', tenantId: 'TNT-GLOBAL-8902' }),
+        expect.any(Error)
       );
     } finally {
       logError.mockRestore();
+      fixture.close();
+    }
+  });
+
+  it('rolls the customer insert back when the assessment insert fails in the D1 batch', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.exec(`
+      CREATE TRIGGER reject_new_client_assessment
+      BEFORE INSERT ON AssessmentRecord
+      WHEN NEW.customer_name = 'New Client'
+      BEGIN
+        SELECT RAISE(ABORT, 'assessment insert failed');
+      END;
+    `);
+    const create = req('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-request-id': 'assessment-create-batch-failure' },
+      body: JSON.stringify({
+        customerName: 'New Client', industry: 'Manufacturing',
+        assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
+      })
+    });
+    const logError = vi.spyOn(logger, 'error');
+    try {
+      await expect(handleAssessmentRoute(fixture.d1, '/', create, new URL(create.url)))
+        .rejects.toThrow('assessment insert failed');
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM CustomerRecord WHERE customer_name = ?')
+        .get('New Client')).toEqual({ count: 0 });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentRecord WHERE customer_name = ?')
+        .get('New Client')).toEqual({ count: 0 });
+      expect(logError).toHaveBeenCalledWith(
+        D1_LOG_MESSAGES.atomicWriteFailed,
+        expect.objectContaining({
+          operation: 'assessment.create',
+          action: 'assessment.create',
+          requestId: 'assessment-create-batch-failure',
+          tenantId: 'TNT-GLOBAL-8902',
+          statementCount: 2
+        }),
+        expect.any(Error)
+      );
+    } finally {
+      logError.mockRestore();
+      fixture.close();
+    }
+  });
+
+  it('keeps a single assessment insert available without batch support for an existing customer', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.prepare(`INSERT INTO CustomerRecord (
+      customer_id, tenant_id, customer_name, industry, status
+    ) VALUES (?, ?, ?, ?, 'ACTIVE')`).run(
+      'CUST-EXISTING', 'TNT-GLOBAL-8902', 'Existing Client', 'Manufacturing'
+    );
+    delete fixture.d1.batch;
+    const create = req('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerId: 'CUST-EXISTING', customerName: 'Ignored Name', industry: 'Ignored Industry',
+        assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
+      })
+    });
+    try {
+      const response = await handleAssessmentRoute(fixture.d1, '/', create, new URL(create.url));
+      expect(response.status).toBe(201);
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM CustomerRecord WHERE customer_id = ?')
+        .get('CUST-EXISTING')).toEqual({ count: 1 });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentRecord WHERE customer_id = ?')
+        .get('CUST-EXISTING')).toEqual({ count: 1 });
+    } finally {
+      fixture.close();
     }
   });
 

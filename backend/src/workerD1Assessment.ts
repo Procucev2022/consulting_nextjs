@@ -9,6 +9,7 @@ import { mapD1Assessment, loadAssessmentSnapshotsForIds } from './services/asses
 import { queryAll, queryFirst } from './services/assessmentD1Queries';
 import { handleCustomerRoute } from './workerD1AssessmentCustomers';
 import { handleAssessmentAction } from './workerD1AssessmentActions';
+import { runD1Statements } from './services/workerD1Query';
 import { readJson } from './workerHttp';
 import logger from './utils/logger';
 
@@ -103,22 +104,13 @@ export const handleAssessmentRoute = async (
       `).bind(createdCustomerId, tenantId, body.customerName, body.industry,
         body.businessUnit || 'Default BU', body.companyWebsite || null) : null;
       try {
-        if (customerInsert && db.batch) await db.batch([customerInsert, assessmentInsert]);
-        else {
-          if (customerInsert) await customerInsert.run();
-          await assessmentInsert.run();
-        }
+        await runD1Statements(db, customerInsert ? [customerInsert, assessmentInsert] : [assessmentInsert], {
+          operation: 'assessment.create',
+          requestId: request.headers.get('x-request-id') || undefined,
+          tenantId,
+          assessmentId: id
+        });
       } catch (error) {
-        if (createdCustomerId && !db.batch) {
-          try {
-            await db.prepare(`DELETE FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`)
-              .bind(createdCustomerId, tenantId).run();
-          } catch (rollbackError) {
-            logger.error('Failed to roll back an unlinked customer created with an assessment', {
-              requestId: request.headers.get('x-request-id') || undefined, customerId: createdCustomerId
-            }, rollbackError);
-          }
-        }
         logger.error('Failed to create tenant-scoped assessment', {
           requestId: request.headers.get('x-request-id') || undefined, assessmentId: id, tenantId
         }, error);
