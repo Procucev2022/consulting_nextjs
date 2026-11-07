@@ -41,7 +41,7 @@ describe('scheduled R2 cleanup handler', () => {
     const error = vi.spyOn(logger, 'error');
 
     scheduled({ cron: '*/15 * * * *', scheduledTime: 1794012345000 }, {}, context);
-    await waitUntil.mock.calls[0][0];
+    await expect(waitUntil.mock.calls[0][0]).rejects.toThrow('Unexpected queue processor failure');
 
     expect(error).toHaveBeenCalledWith(R2_CLEANUP_LOG_MESSAGES.queueReadFailed, expect.objectContaining({
       action: R2_CLEANUP_ACTIONS.cron,

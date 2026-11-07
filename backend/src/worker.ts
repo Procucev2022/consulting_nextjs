@@ -151,14 +151,16 @@ export const scheduled = (
     cron: controller.cron,
     scheduledTime: controller.scheduledTime
   });
-  executionContext.waitUntil(processR2ObjectCleanupOutbox(environment, { requestId }).catch((error: unknown) => {
+  const cleanupTask = processR2ObjectCleanupOutbox(environment, { requestId }).catch((error: unknown) => {
     logger.error(R2_CLEANUP_LOG_MESSAGES.queueReadFailed, {
       action: R2_CLEANUP_ACTIONS.cron,
       requestId,
       cron: controller.cron,
       scheduledTime: controller.scheduledTime
     }, error);
-  }));
+    throw error;
+  });
+  executionContext.waitUntil(cleanupTask);
 };
 
 export default { fetch, scheduled };
