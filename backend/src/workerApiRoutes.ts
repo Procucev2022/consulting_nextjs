@@ -49,13 +49,16 @@ export const handleApiRequest = async (request: Request, environment: Cloudflare
     if (subscriptionResult) return jsonResponse(subscriptionResult.body, subscriptionResult.status, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ai`)) {
-    return handleAiRoute(request, url, environment);
+    const response = await handleAiRoute(request, url, environment);
+    return response;
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/taxonomy`)) {
-    return handleTaxonomyRoute(request, environment, url);
+    const response = await handleTaxonomyRoute(request, environment, url);
+    return response;
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/graphql`) {
-    return handleGraphQLRoute(request, environment, url);
+    const response = await handleGraphQLRoute(request, environment, url);
+    return response;
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/orchestration`)) {
     return (await handleOrchestrationRoute(request, environment, url)) ?? notFoundResponse(request);

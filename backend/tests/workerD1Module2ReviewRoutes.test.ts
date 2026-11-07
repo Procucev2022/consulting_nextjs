@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import type { MaterialMappingEntry } from '../src/types/module2MaterialMapping';
 import {
-  handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleProcurementComplianceReview,
+  executeMaterialMappingStatements, handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleProcurementComplianceReview,
   handleSpecificationReview, procurementComplianceReport, specificationReport
 } from '../src/workerD1Module2ReviewRoutes';
 
@@ -140,6 +140,12 @@ describe('Module 2 specification review routes', () => {
 });
 
 describe('Module 2 material mapping routes', () => {
+  it('skips D1 batch calls when there are no prepared mapping statements', async () => {
+    const db = makeDb({ batch: true });
+    await executeMaterialMappingStatements(db, []);
+    expect(db.batch).not.toHaveBeenCalled();
+  });
+
   it('validates and authorizes single and bulk mapping updates', async () => {
     const db = makeDb();
     const url = new URL('https://unit.test/mappings');

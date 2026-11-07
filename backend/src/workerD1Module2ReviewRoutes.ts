@@ -1,4 +1,4 @@
-import type { CloudflareD1Database } from './types/cloudflare';
+import type { CloudflareD1Database, CloudflareD1PreparedStatement } from './types/cloudflare';
 import type { WorkerD1Result } from './types/d1';
 import type { WorkerAuthIdentity } from './types/auth';
 import type {
@@ -19,6 +19,18 @@ import type { SpecificationRationalisationResult } from './types/module2Specific
 import type { ProcurementComplianceResult } from './types/module2ProcurementCompliance';
 import logger from './utils/logger';
 import { readJson } from './workerHttp';
+
+export const executeMaterialMappingStatements = async (
+  db: CloudflareD1Database,
+  statements: CloudflareD1PreparedStatement[]
+): Promise<void> => {
+  if (statements.length === 0) return;
+  if (db.batch) {
+    await db.batch(statements);
+    return;
+  }
+  await Promise.all(statements.map((statement) => statement.run()));
+};
 
 const withAssessmentScope = (url: URL, assessmentId: string): URL => {
   const scopedUrl = new URL(url);
@@ -181,8 +193,7 @@ const persistMaterialMappingUpdates = async (
   `).bind(
     assessmentId, mapping.sourceMaterialId, JSON.stringify(mapping), reviewer.email, now
   ));
-  if (db.batch) await db.batch(statements);
-  else await Promise.all(statements.map((statement) => statement.run()));
+  await executeMaterialMappingStatements(db, statements);
   clearScopedModule2Cache();
   logger.info('Persisted D1 assessment material classifications', {
     assessmentId, mappingCount: updatedMappings.length,
@@ -209,9 +220,10 @@ export const handleProcurementComplianceReview = async (
   if (!('user' in auth)) return auth;
   const payload: ProcurementComplianceReviewInput = parsed.data;
   const current = await procurementComplianceReport(db, request, url, payload.assessmentId);
-  if (!current || (current.status && current.status >= 400)) return current || {
+  if (!current) return {
     status: 409, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.complianceExceptionNotFound }
   };
+  if (current.status && current.status >= 400) return current;
   const exception = (current.data as ProcurementComplianceResult).exceptions
     .find((item) => item.exceptionId === payload.candidateId);
   if (!exception) return { status: 404, data: {
