@@ -16,17 +16,41 @@ import {
   updateOpportunityStatusSchema
 } from '../constants/validation';
 import { UI_STRINGS } from '../constants/uiStrings';
+import {
+  SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION,
+  SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE
+} from '../constants/savings';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 async function readSavingsResponse<T>(response: Response, operation: string): Promise<T> {
-  const payload = await response.json().catch(() => null) as SavingsApiResponse<T> | null;
+  let payload: SavingsApiResponse<T> | null = null;
+  let parseFailed = false;
+  let parseError: unknown;
+  try {
+    payload = await response.json() as SavingsApiResponse<T>;
+  } catch (error: unknown) {
+    parseFailed = true;
+    parseError = error;
+  }
   if (!response.ok || !payload || payload.success === false || payload.data == null) {
     const requestId = response.headers?.get('x-request-id') ?? UI_STRINGS.common.notAvailable;
     const message = UI_STRINGS.module4.apiRequestFailed(
       operation, response.status, payload?.message || UI_STRINGS.module4.apiNoDetails, requestId
     );
-    frontendLogger.warn('Savings API operation failed', { operation, status: response.status, requestId, message });
+    const context = {
+      action: parseFailed ? SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION : 'savings.api.response.read',
+      operation,
+      statusCode: response.status,
+      requestId,
+      message,
+      parseFallback: parseFailed
+    };
+    if (parseFailed) {
+      frontendLogger.warn(SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE, context, parseError);
+    } else {
+      frontendLogger.warn('Savings API operation failed', context);
+    }
     throw new Error(message);
   }
   return payload.data;

@@ -25,6 +25,11 @@ describe('Frontend Constants Modules', () => {
     expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_MESSAGE).toContain('record-count fallback');
   });
 
+  it('exports the savings API parse fallback diagnostics', () => {
+    expect(ConstantsIndex.SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION).toBe('savings.api.response.json.fallback');
+    expect(ConstantsIndex.SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE).toContain('not valid JSON');
+  });
+
   describe('Currency Constants', () => {
     it('should define correct currency constants and FX rate mappings', () => {
       expect(CurrencyConstants.DEFAULT_BASE_CURRENCY).toBe('INR');
