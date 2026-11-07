@@ -23,7 +23,7 @@ import type {
 } from './types/pcbiDataLabStorage';
 import type { UploadCommoditySourceInput } from './types/validation';
 import { readJson } from './workerHttp';
-import { requireWorkerDb, runD1Statements } from './services/workerD1Query';
+import { requireD1AtomicBatch, requireWorkerDb, runD1Statements } from './services/workerD1Query';
 import { geminiService } from './services/geminiService';
 import logger from './utils/logger';
 
@@ -193,13 +193,6 @@ export const uploadPcbiCommoditySource = async (
       : input.fileType === 'PDF' ? 'application/pdf'
         : input.fileType === 'TXT' ? 'text/plain'
           : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-  try {
-    await environment.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType } });
-  } catch (error) {
-    logger.error('PCBI evidence upload to R2 failed', { requestId, sourceId, pcbiId: input.pcbiId }, error);
-    return { status: 503, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabR2Unavailable } };
-  }
-
   let observations: PCBIParsedObservation[] = [];
   let invalidRows = 0;
   let extractionStatus: CommoditySourceEvidenceObject['extractionStatus'] = 'PENDING';
@@ -269,6 +262,24 @@ export const uploadPcbiCommoditySource = async (
       sourceIssue = error instanceof Error ? error.message : String(error);
     }
   }
+  if (observations.length > 0 && !db.batch) {
+    const context = {
+      operation: 'pcbi.data_lab.upload.persist', requestId, sourceId,
+      tenantId: environment.REQUEST_TENANT_ID, pcbiId: input.pcbiId
+    };
+    try {
+      requireD1AtomicBatch(db, context, observations.length + 1);
+    } catch (error: unknown) {
+      logger.error('PCBI commodity source upload rejected before object storage or D1 writes', context, error);
+      return { status: 503, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } };
+    }
+  }
+  try {
+    await environment.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType } });
+  } catch (error) {
+    logger.error('PCBI evidence upload to R2 failed', { requestId, sourceId, pcbiId: input.pcbiId }, error);
+    return { status: 503, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiDataLabR2Unavailable } };
+  }
   const frequency = input.frequency || 'WEEKLY';
   const unit = input.unit || benchmark.benchmark_unit;
   const currency = input.currency || benchmark.currency;
@@ -301,20 +312,13 @@ export const uploadPcbiCommoditySource = async (
       .bind(id(), sourceId, input.pcbiId, observation.observationDate, observation.value, unit, currency,
         observation.value, unit, currency, frequency, observationStatus, JSON.stringify(observation.originalRow)));
   try {
-    await runD1Statements(db, [insertSource, ...insertObservations]);
+    await runD1Statements(db, [insertSource, ...insertObservations], {
+      operation: 'pcbi.data_lab.upload.persist', requestId, sourceId,
+      tenantId: environment.REQUEST_TENANT_ID, pcbiId: input.pcbiId
+    });
   } catch (error: unknown) {
     const failureContext = { requestId, sourceId, pcbiId: input.pcbiId, observationCount: observations.length };
-    logger.error('PCBI commodity source D1 persistence failed; cleanup was attempted', failureContext, error);
-    if (!db.batch) {
-      try {
-        await runD1Statements(db, [
-          db.prepare(`DELETE FROM ${D1_TABLES.pcbiCommodityObservations} WHERE source_id = ?`).bind(sourceId),
-          db.prepare(`DELETE FROM ${D1_TABLES.pcbiCommoditySources} WHERE source_id = ?`).bind(sourceId)
-        ]);
-      } catch (rollbackError: unknown) {
-        logger.error('Failed to roll back partially persisted PCBI source rows', failureContext, rollbackError);
-      }
-    }
+    logger.error('PCBI commodity source D1 persistence failed; transactional write was rolled back or rejected before writes', failureContext, error);
     try {
       await environment.OBJECTS.delete(objectKey);
     } catch (cleanupError: unknown) {

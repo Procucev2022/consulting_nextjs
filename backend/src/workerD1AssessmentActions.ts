@@ -92,7 +92,12 @@ const handleReviewGates = async (
     `AUD-${globalThis.crypto.randomUUID()}`, assessmentId, actorEmail, actorRole, 'REVIEW_GATE_UPDATED',
     JSON.stringify({ gateKey, status, evidenceReference: evidence, reviewNote: note })
   );
-  await runStatements(db, [update, audit]);
+  await runStatements(db, [update, audit], {
+    operation: 'assessment.review_gate.update',
+    requestId: request.headers.get('x-request-id') || undefined,
+    tenantId: environment.REQUEST_TENANT_ID,
+    assessmentId
+  });
   logger.info('Assessment review gate updated', {
     assessmentId, gateKey, status, actorEmail, requestId: request.headers.get('x-request-id') || undefined
   });

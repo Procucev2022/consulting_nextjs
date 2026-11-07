@@ -6,6 +6,7 @@ import {
   validateAssessmentDataVersion as validateAssessmentDataVersionRaw
 } from '../../src/services/assessmentDataVersionD1';
 import { ASSESSMENT_DATA_VERSION_MAX_BYTES } from '../../src/constants/assessmentValidation';
+import { D1_ROUTE_MESSAGES } from '../../src/constants/d1';
 import * as XLSX from 'xlsx';
 import logger from '../../src/utils/logger';
 import { readAssessmentSnapshot } from '../../src/services/assessmentDataVersionD1Helpers';
@@ -444,7 +445,7 @@ describe('assessment data version D1 lifecycle', () => {
     }
   });
 
-  it('logs rollback failures and preserves the original D1 persistence error', async () => {
+  it('rejects an upload before object storage when multi-statement D1 batching is unavailable', async () => {
     const fixture = makeDatabase();
     const { bucket } = makeBucket();
     const database = {
@@ -467,8 +468,9 @@ describe('assessment data version D1 lifecycle', () => {
     try {
       await expect(uploadAssessmentDataVersion({
         db: database, environment: { OBJECTS: bucket }, assessmentId: 'AIC-UPLOAD-1', body: await makeBody()
-      })).rejects.toThrow('D1 persistence unavailable');
-      expect(bucket.delete).toHaveBeenCalledOnce();
+      })).rejects.toThrow(D1_ROUTE_MESSAGES.atomicBatchUnavailable);
+      expect(bucket.put).not.toHaveBeenCalled();
+      expect(bucket.delete).not.toHaveBeenCalled();
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentDataVersion').get().count).toBe(0);
     } finally {
       fixture.close();

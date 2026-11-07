@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { D1_REPORTING, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_LOG_MESSAGES, D1_REPORTING, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import { SQL_PCBI_CUSTOMER_SPEND_BY_UNSPSC } from '../src/constants/pcbiDataLabSql';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement, CloudflareEnvironment } from '../src/types/cloudflare';
 import type {
@@ -187,13 +187,19 @@ class LabDatabase implements CloudflareD1Database {
   constructor(withBatch = true) {
     if (withBatch) this.batch = async (statements) => {
       this.batchCalls += 1;
-      const sourcesBefore = [...this.sources];
-      const observationsBefore = [...this.observations];
+      const sourcesBefore = this.sources.map((row) => ({ ...row }));
+      const observationsBefore = this.observations.map((row) => ({ ...row }));
+      const promotionsBefore = this.promotions.map((row) => ({ ...row }));
+      const assignmentsBefore = this.assignments.map((row) => ({ ...row }));
+      const workflowsBefore = this.workflows.map((row) => ({ ...row }));
       try {
         return await Promise.all(statements.map((statement) => statement.run()));
       } catch (error: unknown) {
         this.sources.splice(0, this.sources.length, ...sourcesBefore);
         this.observations.splice(0, this.observations.length, ...observationsBefore);
+        this.promotions.splice(0, this.promotions.length, ...promotionsBefore);
+        this.assignments.splice(0, this.assignments.length, ...assignmentsBefore);
+        this.workflows.splice(0, this.workflows.length, ...workflowsBefore);
         throw error;
       }
     };
@@ -275,8 +281,8 @@ describe('D1 Commodity Data Lab', () => {
     expect(db.workflows).toHaveLength(0);
   });
 
-  it('preserves workflow defaults and uses sequential writes when D1 batching is unavailable', async () => {
-    const db = new LabDatabase(false);
+  it('preserves workflow defaults and existing research details with D1 batches', async () => {
+    const db = new LabDatabase();
     const env = environment(db);
     const assigned = await route(env, '/assignment', 'POST', {
       pcbiId: BENCHMARK.pcbi_id, assignee: 'first-researcher@example.test'
@@ -310,8 +316,8 @@ describe('D1 Commodity Data Lab', () => {
     expect(db.workflows).toHaveLength(0);
   });
 
-  it('restores the previous assignment when a later sequential D1 write fails', async () => {
-    const db = new LabDatabase(false);
+  it('keeps assignment state unchanged when a D1 batch fails', async () => {
+    const db = new LabDatabase();
     const previousAssignment = {
       pcbi_id: BENCHMARK.pcbi_id, assigned_to: 'old@example.test', assigned_by: 'prior-admin@example.test',
       assigned_at: '2026-10-01T00:00:00.000Z', updated_at: '2026-10-02T00:00:00.000Z'
@@ -331,39 +337,39 @@ describe('D1 Commodity Data Lab', () => {
 
     expect(db.assignments).toEqual([previousAssignment]);
     expect(db.workflows).toEqual([previousWorkflow]);
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Sequential D1 write failed; previous state was restored',
-      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-research-assignment', consistencyRestored: true }),
+    expect(logger.error).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.atomicWriteFailed,
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi.research.assign', statementCount: 2 }),
       db.statementFailure
     );
   });
 
-  it('logs incomplete sequential D1 compensation with correlation when restoring prior state also fails', async () => {
+  it('rejects assignment and unassignment before writes when D1 batching is unavailable', async () => {
     const db = new LabDatabase(false);
-    db.assignments.push({
+    const previousAssignment = {
       pcbi_id: BENCHMARK.pcbi_id, assigned_to: 'old@example.test', assigned_by: 'prior-admin@example.test',
       assigned_at: '2026-10-01T00:00:00.000Z', updated_at: '2026-10-02T00:00:00.000Z'
-    });
-    db.failureSqlPatterns = ['INSERT INTO PCBICommodityResearchWorkflow', 'INSERT INTO PCBICommodityResearchAssignment'];
-    db.failureAttemptNumbers = [1, 2];
+    };
+    const previousWorkflow = {
+      pcbi_id: BENCHMARK.pcbi_id, status: 'RESEARCHING', due_date: '2026-10-20', notes: 'Original plan',
+      updated_by: 'prior-admin@example.test', updated_at: '2026-10-02T00:00:00.000Z'
+    };
+    db.assignments.push(previousAssignment);
+    db.workflows.push(previousWorkflow);
 
     await expect(route(environment(db), '/assignment', 'POST', {
       pcbiId: BENCHMARK.pcbi_id, assignee: 'new@example.test'
-    })).rejects.toThrow(db.statementFailure);
+    })).rejects.toThrow(D1_ROUTE_MESSAGES.atomicBatchUnavailable);
+    await expect(route(environment(db), '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: null
+    })).rejects.toThrow(D1_ROUTE_MESSAGES.atomicBatchUnavailable);
 
-    expect(db.assignments).toMatchObject([{ assigned_to: 'new@example.test' }]);
+    expect(db.assignments).toEqual([previousAssignment]);
+    expect(db.workflows).toEqual([previousWorkflow]);
     expect(logger.error).toHaveBeenCalledWith(
-      'Sequential D1 write failed and compensation was incomplete',
-      expect.objectContaining({
-        requestId: 'req-lab-1', action: 'pcbi-research-assignment', consistencyRestored: false,
-        failedCompensations: 1
-      }),
-      db.statementFailure
-    );
-    expect(logger.error).toHaveBeenCalledWith(
-      'Sequential D1 compensation statement failed',
-      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-research-assignment' }),
-      db.statementFailure
+      D1_LOG_MESSAGES.atomicBatchUnavailable,
+      expect.objectContaining({ requestId: 'req-lab-1', operation: 'pcbi.research.assign', pcbiId: BENCHMARK.pcbi_id, fallback: 'none' }),
+      expect.any(Error)
     );
   });
 
@@ -616,7 +622,7 @@ describe('D1 Commodity Data Lab', () => {
     expect(db.observations[0]).toMatchObject({ observation_date: '2026-10-15', normalized_value: 118.5 });
   });
 
-  it('handles rejected R2 writes, unknown benchmarks, malformed JSON files, and non-batch promotion', async () => {
+  it('handles rejected R2 writes, malformed files, and successful batch promotion', async () => {
     const db = new LabDatabase(false);
     const env = environment(db);
     expect(await route(env, '/upload-source', 'POST', validUpload({ pcbiId: 'UNKNOWN-PCBI' }))).toMatchObject({ status: 404 });
@@ -639,15 +645,28 @@ describe('D1 Commodity Data Lab', () => {
     failedR2.OBJECTS = { put: vi.fn().mockRejectedValue(new Error('R2 offline')), get: vi.fn(), delete: vi.fn() };
     expect(await route(failedR2, '/upload-source', 'POST', validUpload())).toMatchObject({ status: 503 });
 
-    const upload = await route(env, '/upload-source', 'POST', validUpload());
+    const sourceCountBeforeUnavailableBatch = db.sources.length;
+    const objectPutsBeforeUnavailableBatch = vi.mocked(env.OBJECTS!.put).mock.calls.length;
+    const objectDeletesBeforeUnavailableBatch = vi.mocked(env.OBJECTS!.delete).mock.calls.length;
+    const unavailableBatchUpload = await route(env, '/upload-source', 'POST', validUpload());
+    expect(unavailableBatchUpload).toMatchObject({
+      status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed }
+    });
+    expect(db.sources).toHaveLength(sourceCountBeforeUnavailableBatch);
+    expect(db.observations).toHaveLength(0);
+    expect(vi.mocked(env.OBJECTS!.put)).toHaveBeenCalledTimes(objectPutsBeforeUnavailableBatch);
+    expect(vi.mocked(env.OBJECTS!.delete)).toHaveBeenCalledTimes(objectDeletesBeforeUnavailableBatch);
+
+    const batchEnvironment = environment(new LabDatabase());
+    const upload = await route(batchEnvironment, '/upload-source', 'POST', validUpload());
     expect(upload.data).toMatchObject({ source: { validationStatus: 'VALIDATED' } });
-    const approved = await route(env, '/approve', 'POST', { commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin' });
+    const approved = await route(batchEnvironment, '/approve', 'POST', { commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin' });
     expect(approved.data).toMatchObject({ result: { success: true } });
-    expect(db.sources[0]).toMatchObject({ approval_status: 'ADMIN_APPROVED' });
+    expect((batchEnvironment.DB as LabDatabase).sources[0]).toMatchObject({ approval_status: 'ADMIN_APPROVED' });
   });
 
-  it('removes a sequentially inserted promotion when the approval status update fails', async () => {
-    const db = new LabDatabase(false);
+  it('restores approval state when a D1 batch update fails', async () => {
+    const db = new LabDatabase();
     const env = environment(db);
     await route(env, '/upload-source', 'POST', validUpload());
     const previousSource = { ...db.sources[0] };
@@ -663,15 +682,15 @@ describe('D1 Commodity Data Lab', () => {
       methodology_status: previousSource.methodology_status,
       approval_status: previousSource.approval_status
     });
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Sequential D1 write failed; previous state was restored',
-      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-commodity-approval', consistencyRestored: true }),
+    expect(logger.error).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.atomicWriteFailed,
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi.data_lab.approve', statementCount: 2 }),
       db.statementFailure
     );
   });
 
-  it('restores approval status when a later sequential promotion insert fails', async () => {
-    const db = new LabDatabase(false);
+  it('rolls back source approval when a later promotion insert in the D1 batch fails', async () => {
+    const db = new LabDatabase();
     const env = environment(db);
     await route(env, '/upload-source', 'POST', validUpload());
     const previousSource = { ...db.sources[0] };
@@ -687,14 +706,39 @@ describe('D1 Commodity Data Lab', () => {
       methodology_status: previousSource.methodology_status,
       approval_status: previousSource.approval_status
     });
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Sequential D1 write failed; previous state was restored',
-      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-commodity-approval', consistencyRestored: true }),
+    expect(logger.error).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.atomicWriteFailed,
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi.data_lab.approve', statementCount: 2 }),
       db.statementFailure
     );
   });
 
-  it('atomically batches source rows and compensates partial D1 and R2 writes on failure', async () => {
+  it('rejects approval before changing source status when D1 batching is unavailable', async () => {
+    const sourceEnvironment = environment(new LabDatabase());
+    await route(sourceEnvironment, '/upload-source', 'POST', validUpload());
+    const sourceDatabase = sourceEnvironment.DB as LabDatabase;
+    const db = new LabDatabase(false);
+    db.sources.push(...sourceDatabase.sources.map((row) => ({ ...row })));
+    db.observations.push(...sourceDatabase.observations.map((row) => ({ ...row })));
+    const previousSource = { ...db.sources[0] };
+
+    await expect(route(environment(db), '/approve', 'POST', {
+      commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin'
+    })).rejects.toThrow(D1_ROUTE_MESSAGES.atomicBatchUnavailable);
+
+    expect(db.promotions).toHaveLength(0);
+    expect(db.sources[0]).toMatchObject({
+      methodology_status: previousSource.methodology_status,
+      approval_status: previousSource.approval_status
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.atomicBatchUnavailable,
+      expect.objectContaining({ requestId: 'req-lab-1', operation: 'pcbi.data_lab.approve', sourceId: previousSource.source_id, fallback: 'none' }),
+      expect.any(Error)
+    );
+  });
+
+  it('rejects before side effects without D1 batching and cleans up R2 after batch failures', async () => {
     const atomicDb = new LabDatabase();
     atomicDb.failObservationInsertAt = 1;
     const atomicEnvironment = environment(atomicDb);
@@ -708,7 +752,6 @@ describe('D1 Commodity Data Lab', () => {
     expect(atomicObjectDelete).toHaveBeenCalledWith(expect.stringContaining('pcbi/commodities/PCBI-STEEL-1'));
 
     const recoveryDb = new LabDatabase(false);
-    recoveryDb.failObservationInsertAt = 1;
     const recoveryEnvironment = environment(recoveryDb);
     const recoveryObjectDelete = vi.fn().mockResolvedValue(undefined);
     recoveryEnvironment.OBJECTS = { put: vi.fn().mockResolvedValue(undefined), get: vi.fn(), delete: recoveryObjectDelete };
@@ -717,16 +760,21 @@ describe('D1 Commodity Data Lab', () => {
     expect(recovered).toMatchObject({ status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } });
     expect(recoveryDb.sources).toHaveLength(0);
     expect(recoveryDb.observations).toHaveLength(0);
-    expect(recoveryObjectDelete).toHaveBeenCalledOnce();
+    expect(recoveryEnvironment.OBJECTS?.put).not.toHaveBeenCalled();
+    expect(recoveryObjectDelete).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
-      'PCBI commodity source D1 persistence failed; cleanup was attempted',
-      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id, observationCount: 1 }),
-      recoveryDb.observationInsertFailure
+      D1_LOG_MESSAGES.atomicBatchUnavailable,
+      expect.objectContaining({ requestId: 'req-lab-1', operation: 'pcbi.data_lab.upload.persist', sourceId: expect.any(String), fallback: 'none' }),
+      expect.any(Error)
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'PCBI commodity source upload rejected before object storage or D1 writes',
+      expect.objectContaining({ requestId: 'req-lab-1', operation: 'pcbi.data_lab.upload.persist', pcbiId: BENCHMARK.pcbi_id }),
+      expect.any(Error)
     );
 
-    const cleanupFailureDb = new LabDatabase(false);
+    const cleanupFailureDb = new LabDatabase();
     cleanupFailureDb.failObservationInsertAt = 1;
-    cleanupFailureDb.failCompensatingDelete = true;
     const cleanupFailureEnvironment = environment(cleanupFailureDb);
     const objectCleanupFailure = new Error('R2 cleanup failed');
     cleanupFailureEnvironment.OBJECTS = {
@@ -734,13 +782,9 @@ describe('D1 Commodity Data Lab', () => {
     };
     const cleanupFailure = await route(cleanupFailureEnvironment, '/upload-source', 'POST', validUpload());
     expect(cleanupFailure).toMatchObject({ status: 503, data: { message: D1_ROUTE_MESSAGES.pcbiDataLabPersistenceFailed } });
-    expect(cleanupFailureDb.sources).toHaveLength(1);
+    expect(cleanupFailureDb.sources).toHaveLength(0);
     expect(cleanupFailureDb.observations).toHaveLength(0);
-    expect(logger.error).toHaveBeenCalledWith(
-      'Failed to roll back partially persisted PCBI source rows',
-      expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id }),
-      cleanupFailureDb.rollbackFailure
-    );
+    expect(cleanupFailureEnvironment.OBJECTS?.put).toHaveBeenCalledOnce();
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to remove PCBI evidence object after D1 persistence failure',
       expect.objectContaining({ requestId: 'req-lab-1', pcbiId: BENCHMARK.pcbi_id }),

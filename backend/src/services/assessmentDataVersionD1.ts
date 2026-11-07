@@ -103,7 +103,12 @@ export const validateAssessmentDataVersion = async (
       SET data_status = ?, updated_at = CURRENT_TIMESTAMP WHERE assessment_id = ? AND tenant_id = ?`)
       .bind(nextDataStatus, assessmentId, assessment.tenant_id),
     assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, nextSnapshot, String(dataVersion.checksum || ''))
-  ]);
+  ], {
+    operation: 'assessment.data_version.validate',
+    requestId: context.requestId,
+    tenantId: assessment.tenant_id,
+    assessmentId
+  });
   logger.info('Assessment dataset validated from D1 records', {
     assessmentId, tenantId: assessment.tenant_id, dataVersionId, ...validationSummary, requestId: context.requestId
   });

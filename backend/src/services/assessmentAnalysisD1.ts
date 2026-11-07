@@ -249,7 +249,12 @@ export const runAssessmentAnalysisFromD1 = async (
       VALUES (?, ?, ?, ?, ?, ?)`)
       .bind(`AUD-${globalThis.crypto.randomUUID()}`, assessmentId, String(assessment.assessment_owner || 'analyst@procucev.com'),
         'ANALYST', AUDIT_ACTIONS.ANALYSIS_COMPLETED, JSON.stringify({ analysisRunId, dataVersionId, kind, totalSpendCr, validatedSpendCr }))
-  ]);
+  ], {
+    operation: 'assessment.analysis.persist',
+    requestId,
+    tenantId: context.environment.REQUEST_TENANT_ID,
+    assessmentId
+  });
 
   const [savedAssessment, savedRun] = await Promise.all([
     db.prepare(`SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`).bind(assessmentId).first<D1Record>(),

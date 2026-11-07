@@ -122,7 +122,12 @@ const persistAssessment = async (
     assessmentSnapshotWrite(context.db, ASSESSMENT_SNAPSHOT_TYPE, context.assessmentId, snapshot, LIFECYCLE_CHECKSUM),
     ...additional,
     audit
-  ]);
+  ], {
+    operation: `assessment.lifecycle.${context.action}.persist`,
+    requestId: context.requestId,
+    tenantId: context.environment.REQUEST_TENANT_ID,
+    assessmentId: context.assessmentId
+  });
   return mapD1Assessment({ ...row, status }, snapshot);
 };
 

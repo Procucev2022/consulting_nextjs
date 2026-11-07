@@ -8,6 +8,7 @@ export interface IngestionWorkbookInput {
   docId: string;
   tenantId: string;
   assessmentId?: string;
+  requestId?: string;
 }
 
 export interface IngestionWorkbookResult {

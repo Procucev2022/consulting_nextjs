@@ -12,17 +12,21 @@ import {
   ASSESSMENT_DATA_STATUS_RECEIVED,
   ASSESSMENT_SNAPSHOT_TYPE,
   ASSESSMENT_VERSION_SNAPSHOT_TYPE,
+  assessmentUploadContentType,
   assessmentSnapshotWrite,
   assessmentValidationError,
+  decodeAssessmentUploadBase64,
   queryFirst,
   readAssessmentSnapshot,
-  runStatements
+  runStatements,
+  safeAssessmentUploadFileName
 } from './assessmentDataVersionD1Helpers';
 import type { AssessmentRow } from '../types/assessmentDataVersionD1';
 import { importIngestionWorkbook } from './ingestionWorkbookImporter';
 import { mapD1Assessment, mapD1DataVersion } from './assessmentD1Mappers';
 import logger from '../utils/logger';
 import { clearScopedModule2Cache } from './workerD1Module2Cache';
+import { requireD1AtomicBatch } from './workerD1Query';
 
 interface UploadFileDetails {
   bytes: Uint8Array;
@@ -44,35 +48,9 @@ interface PreparedUpload {
 type PreparedResult = { ok: true; value: PreparedUpload } | { ok: false; result: WorkerD1Result };
 type FileResult = { ok: true; value: UploadFileDetails } | { ok: false; result: WorkerD1Result };
 
-const decodeBase64 = (value: string, expectedBytes: number): Uint8Array | null => {
-  const maximumEncodedLength = Math.ceil(expectedBytes / 3) * 4;
-  const validCharacters = /^[A-Za-z0-9+/]*={0,2}$/u.test(value);
-  if (!validCharacters || value.length % 4 === 1 || value.length > maximumEncodedLength) return null;
-  try {
-    const binary = atob(value);
-    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  } catch {
-    return null;
-  }
-};
-
 const sha256Hex = async (bytes: Uint8Array): Promise<string> => {
   const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
-};
-
-const contentTypeFor = (extension: string): string => {
-  if (extension === '.csv') return 'text/csv';
-  if (extension === '.xls') return 'application/vnd.ms-excel';
-  return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-};
-
-const safeFileName = (fileName: string): string => {
-  const normalized = Array.from(fileName, (character) => {
-    const code = character.charCodeAt(0);
-    return code <= 31 || character === '/' || character === '\\' ? '_' : character;
-  }).join('');
-  return encodeURIComponent(normalized);
 };
 
 const parseUploadPayload = (context: AssessmentDatasetActionContext):
@@ -92,7 +70,7 @@ const validateUploadFile = async (payload: AssessmentUploadPayload): Promise<Fil
   if (payload.fileSize > ASSESSMENT_DATA_VERSION_MAX_BYTES) {
     return { ok: false, result: assessmentValidationError('The workbook exceeds the 100 MB upload limit. Split the file and retry.') };
   }
-  const bytes = decodeBase64(payload.fileBase64, payload.fileSize);
+  const bytes = decodeAssessmentUploadBase64(payload.fileBase64, payload.fileSize);
   if (!bytes) {
     return { ok: false, result: assessmentValidationError('The workbook content is not valid Base64. Select the file again and retry.') };
   }
@@ -135,7 +113,7 @@ const prepareUpload = async (context: AssessmentDatasetActionContext,
     [assessmentId]);
   const versionNumber = Number(versionRow?.max_version || 0) + 1;
   const dataVersionId = `DV-${globalThis.crypto.randomUUID()}`;
-  const objectKey = `assessments/${encodeURIComponent(assessmentId)}/${dataVersionId}/${safeFileName(payload.fileName)}`;
+  const objectKey = `assessments/${encodeURIComponent(assessmentId)}/${dataVersionId}/${safeAssessmentUploadFileName(payload.fileName)}`;
   return {
     ok: true,
     value: { payload, assessment, file, previousSnapshot, previousDataStatus, versionNumber, dataVersionId, objectKey }
@@ -146,7 +124,7 @@ const persistUpload = async (context: AssessmentDatasetActionContext,
   prepared: PreparedUpload): Promise<WorkerD1Result> => {
   const { db, environment, assessmentId } = context;
   const { payload, assessment, file, versionNumber, dataVersionId, objectKey } = prepared;
-  const contentType = contentTypeFor(file.extension);
+  const contentType = assessmentUploadContentType(file.extension);
   const imported = await importIngestionWorkbook({
     db, bytes: file.bytes, fileName: payload.fileName, fileType: file.extension.slice(1), docId: dataVersionId,
     tenantId: assessment.tenant_id, assessmentId
@@ -189,7 +167,12 @@ const persistUpload = async (context: AssessmentDatasetActionContext,
     db.prepare(`UPDATE ${D1_TABLES.dataVersions} SET is_superseded = 1
       WHERE assessment_id = ? AND data_version_id != ?`).bind(assessmentId, dataVersionId)
   ];
-  await runStatements(db, statements);
+  await runStatements(db, statements, {
+    operation: 'assessment.data_version.upload.persist',
+    requestId: context.requestId,
+    tenantId: assessment.tenant_id,
+    assessmentId
+  });
   return buildUploadResponse(context, prepared, nextSnapshot, imported);
 };
 
@@ -249,7 +232,13 @@ const cleanupFailedUpload = async (
         ? assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, previousSnapshot, 'rollback')
         : db.prepare('DELETE FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?')
           .bind(ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId)
-    ]);
+    ], {
+      operation: 'assessment.data_version.upload.rollback',
+      tenantId: assessment.tenant_id,
+      assessmentId,
+      documentId: dataVersionId,
+      requestId: context.requestId
+    });
   } catch (error) {
     logger.error('Failed to roll back an assessment data version', {
       assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
@@ -291,10 +280,17 @@ export const uploadAssessmentDataVersion = async (
   if (!file.ok) return file.result;
   const prepared = await prepareUpload(context, parsed.value, file.value);
   if (!prepared.ok) return prepared.result;
+  requireD1AtomicBatch(context.db, {
+    operation: 'assessment.data_version.upload',
+    requestId: context.requestId,
+    tenantId,
+    assessmentId: context.assessmentId,
+    documentId: prepared.value.dataVersionId
+  }, 6);
   let objectStored = false;
   try {
     await context.environment.OBJECTS.put(prepared.value.objectKey, prepared.value.file.bytes, {
-      httpMetadata: { contentType: contentTypeFor(prepared.value.file.extension) }
+      httpMetadata: { contentType: assessmentUploadContentType(prepared.value.file.extension) }
     });
     objectStored = true;
     return await persistUpload(context, prepared.value);

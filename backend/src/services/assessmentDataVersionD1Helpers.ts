@@ -1,10 +1,38 @@
 import type { CloudflareD1PreparedStatement } from '../types/cloudflare';
+import type { D1AtomicWriteContext } from '../types/d1AtomicWrite';
 import type { D1Record, WorkerD1Result } from '../types/d1';
 import type { AssessmentDatasetActionContext } from '../types/assessmentDataVersionD1';
 import type { AssessmentSnapshotReadContext } from '../types/assessmentDataVersionD1';
 import { ASSESSMENT_D1_FALLBACKS, ASSESSMENT_D1_LOG_MESSAGES } from '../constants/assessmentD1';
 import logger from '../utils/logger';
 import { runD1Statements } from './workerD1Query';
+
+export const decodeAssessmentUploadBase64 = (value: string, expectedBytes: number): Uint8Array | null => {
+  const maximumEncodedLength = Math.ceil(expectedBytes / 3) * 4;
+  const validCharacters = /^[A-Za-z0-9+/]*={0,2}$/u.test(value);
+  if (!validCharacters || value.length % 4 === 1 || value.length > maximumEncodedLength) return null;
+  try {
+    const binary = atob(value);
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  } catch {
+    return null;
+  }
+};
+
+export const assessmentUploadContentType = (extension: string): string => {
+  if (extension === '.csv') return 'text/csv';
+  if (extension === '.xls') return 'application/vnd.ms-excel';
+  return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+};
+
+export const safeAssessmentUploadFileName = (fileName: string): string => {
+  const normalized = Array.from(fileName, (character) => {
+    const code = character.charCodeAt(0);
+    return code <= 31 || character === '/' || character === '\\' ? '_' : character;
+  }).join('');
+  return encodeURIComponent(normalized);
+};
+
 
 export const ASSESSMENT_SNAPSHOT_TYPE = 'assessment';
 export const ASSESSMENT_VERSION_SNAPSHOT_TYPE = 'version';
@@ -24,8 +52,9 @@ export const queryFirst = async <T>(
 
 export const runStatements = async (
   db: AssessmentDatasetActionContext['db'],
-  statements: CloudflareD1PreparedStatement[]
-): Promise<void> => runD1Statements(db, statements);
+  statements: CloudflareD1PreparedStatement[],
+  context?: D1AtomicWriteContext
+): Promise<void> => runD1Statements(db, statements, context);
 
 export const readAssessmentSnapshot = async (
   db: AssessmentDatasetActionContext['db'],

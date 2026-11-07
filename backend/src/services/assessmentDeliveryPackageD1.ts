@@ -193,7 +193,12 @@ export const generateAssessmentDeliveryPackage = async (
       `).bind(`AUD-${globalThis.crypto.randomUUID()}`, context.assessmentId, context.actorEmail, context.actorRole,
         AUDIT_ACTIONS.DELIVERY_PACKAGE_GENERATED,
         JSON.stringify({ itemsCount: stored.items.length, analysisRunId: run.analysisRunId }))
-    ]);
+    ], {
+      operation: 'assessment.delivery_package.persist',
+      requestId: context.requestId,
+      tenantId: context.environment.REQUEST_TENANT_ID,
+      assessmentId: context.assessmentId
+    });
     logger.info('Generated encrypted assessment delivery artifacts from D1', {
       assessmentId: context.assessmentId, analysisRunId: run.analysisRunId,
       itemsCount: stored.items.length, requestId: context.requestId
