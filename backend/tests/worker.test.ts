@@ -905,6 +905,13 @@ describe('Cloudflare worker core routes', () => {
       expect((await send('/api/tenant', jsonBody('PUT', {}), environment)).status).toBe(503);
     });
 
+    it('preserves the shared not-found response for unsupported tenant methods', async () => {
+      const response = await send('/api/tenant', { method: 'DELETE' });
+
+      expect(response.status).toBe(404);
+      await expect(bodyOf(response)).resolves.toMatchObject({ success: false });
+    });
+
     it('scopes the ingestion queue to the buyer named in the query string', async () => {
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
         ['DOC-1', 'TNT-1', 'alpha.xlsx', '2026-02-01T00:00:00Z'],

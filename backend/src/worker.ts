@@ -15,17 +15,16 @@ import {
   handleSavingsRoute,
   handleAssessmentRoute,
   handleCryptoRoute,
-  getTenantFromD1,
   getProcurementCategoryMappingsFromD1,
   requireD1Binding
 } from './workerD1';
 import {
-  d1DatasetScopeSchema, requestHeadersSchema, tenantUpdateSchema
+  d1DatasetScopeSchema, requestHeadersSchema
 } from './constants/validation';
 import logger from './utils/logger';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import {
-  apiData, jsonResponse, notFoundResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError, withCors
+  apiData, jsonResponse, notFoundResponse, RequestBodyTooLargeError, RequestJsonParseError, withCors
 } from './workerHttp';
 import { handleOrchestrationRoute } from './workerD1Orchestration';
 import { handleEvidenceRoute } from './workerD1Evidence';
@@ -42,11 +41,7 @@ import { handleD1DataRoute } from './workerD1DataRoutes';
 import { handleIngestionRoute } from './workerD1IngestionRoutes';
 import { handleAiRoute } from './workerAiRoutes';
 import { handleTaxonomyRoute } from './workerTaxonomyRoutes';
-
-const getTenant = async (environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
-  requireD1Binding(environment.DB);
-  return { ...await getTenantFromD1(environment.DB, environment.REQUEST_TENANT_ID) };
-};
+import { handleTenantRoute } from './workerD1TenantRoutes';
 
 
 const handleDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
@@ -130,66 +125,8 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
     return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME, database: Boolean(environment.DB) }, 200, request);
   }
 
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/tenant` && request.method === 'GET') {
-    return apiData(await getTenant(environment), request);
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/tenant` && request.method === 'PUT') {
-    const database = requireD1Binding(environment.DB);
-    const body = await readJson(request);
-    const tenantId = environment.REQUEST_TENANT_ID;
-    if (!tenantId) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, 403, request);
-    const validation = tenantUpdateSchema.safeParse(body);
-    if (!validation.success) {
-      const requestId = request.headers.get('x-request-id');
-      logger.warn(D1_ROUTE_MESSAGES.validationFailed, {
-        requestId,
-        method: request.method,
-        path: new URL(request.url).pathname,
-        tenantId,
-        operation: 'tenant-update',
-        errors: validation.error.issues
-      });
-      return jsonResponse({
-        success: false,
-        message: D1_ROUTE_MESSAGES.validationFailed,
-        errors: validation.error.issues
-      }, 400, request);
-    }
-    const updates = validation.data;
-    const updatedTenant = await database.prepare(`
-      UPDATE TenantMaster
-      SET enterprise_name = COALESCE(?, enterprise_name), region = COALESCE(?, region), base_currency = COALESCE(?, base_currency),
-          total_spend_evaluated = COALESCE(?, total_spend_evaluated), total_spend_evaluated_inr = COALESCE(?, total_spend_evaluated_inr),
-          status = COALESCE(?, status), major_sector = COALESCE(?, major_sector), minor_sector = COALESCE(?, minor_sector),
-          updated_at = CURRENT_TIMESTAMP
-      WHERE tenant_id = ?
-      RETURNING *
-    `).bind(
-      updates.enterprise_name ?? null,
-      updates.region ?? null,
-      updates.base_currency ?? null,
-      updates.total_spend_evaluated ?? null,
-      updates.total_spend_evaluated_inr ?? null,
-      updates.status ?? null,
-      updates.major_sector ?? null,
-      updates.minor_sector ?? null,
-      tenantId
-    ).first<Record<string, unknown>>();
-    if (!updatedTenant) {
-      const message = D1_ROUTE_MESSAGES.tenantUnavailable(tenantId);
-      logger.warn(message, {
-        requestId: request.headers.get('x-request-id') || undefined,
-        method: request.method,
-        path: new URL(request.url).pathname,
-        tenantId,
-        operation: 'tenant-update',
-        affectedRows: 0
-      });
-      return jsonResponse({ success: false, message }, 404, request);
-    }
-    return apiData(updatedTenant, request);
-  }
+  const tenantResponse = await handleTenantRoute(request, environment, url);
+  if (tenantResponse) return tenantResponse;
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
     const authResult = await handleAuthRoute(request, environment, url);
     return jsonResponse(authResult.body, authResult.status, request);
