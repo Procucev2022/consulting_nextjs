@@ -34,12 +34,13 @@ import {
   buildNotificationInput,
   buildNotificationRow,
   changedRowCount,
-  compareAndSet,
   findLatestChecklistRow,
   insertAuditStatement,
+  insertAuditStatementAfterChange,
   insertNotificationStatement,
-  requireAtomicD1Batch,
+  insertNotificationStatementAfterChange,
   runAtomically,
+  runCompareAndSetAtomically,
   submitReportStatement,
   updateNotificationEmailStatement
 } from './workerD1OrchestrationStore';
@@ -178,26 +179,15 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
   if (checklist.is_complete !== 1) {
     throw conflictError(ORCHESTRATION_MESSAGES.checklistIncomplete(checklist.unconfirmed_count));
   }
-  requireAtomicD1Batch(context.database, {
-    requestId: context.requestId,
-    tenantId: job.tenant_id,
-    assessmentId: job.assessment_id,
-    action: context.url.pathname
-  }, 3);
-  const submitted = await compareAndSet(submitReportStatement(
+  const notification = buildCustomerNotificationDraft(context, job, report.report_version_id);
+  const submitted = await runCompareAndSetAtomically(context.database, submitReportStatement(
     context.database,
     report.report_version_id,
     context.actor.userId,
     context.runtime.now()
-  ));
-  if (!submitted) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
-  const notification = buildCustomerNotificationDraft(context, job, report.report_version_id);
-  await runAtomically(context.database, [
-    insertNotificationStatement(
-      context.database,
-      notification
-    ),
-    insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
+  ), [
+    insertNotificationStatementAfterChange(context.database, notification),
+    insertAuditStatementAfterChange(context.database, buildAuditEvent(context.runtime, {
       tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
@@ -215,6 +205,7 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
     assessmentId: job.assessment_id,
     action: context.url.pathname
   });
+  if (!submitted) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   const delivery = await deliverNotificationEmail(context, job, notification, false);
   const message = delivery.status === ORCHESTRATION_EMAIL_STATUS.SENT
     ? ORCHESTRATION_MESSAGES.reportSubmittedEmailSent

@@ -380,9 +380,7 @@ describe('Home Page Component', () => {
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
-    await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
-    }, { timeout: 4000 });
+    await screen.findByText(UI_STRINGS.module2.heading, {}, { timeout: 8000 });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);

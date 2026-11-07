@@ -35,10 +35,13 @@ import {
   SQL_CAS_VIEW_REPORT,
   SQL_CORRECTIONS_FOR_JOB,
   SQL_INSERT_ACKNOWLEDGEMENT,
+  SQL_INSERT_ACKNOWLEDGEMENT_AFTER_CHANGE,
   SQL_INSERT_AUDIT_EVENT,
+  SQL_INSERT_AUDIT_EVENT_AFTER_CHANGE,
   SQL_INSERT_CHECKLIST,
   SQL_INSERT_CORRECTION,
   SQL_INSERT_NOTIFICATION,
+  SQL_INSERT_NOTIFICATION_AFTER_CHANGE,
   SQL_UPDATE_NOTIFICATION_EMAIL,
   SQL_INSERT_REPORT,
   SQL_JOB_BY_ID,
@@ -174,14 +177,41 @@ export const runAtomically = async (
   db: OrchestrationDatabase,
   statements: CloudflareD1PreparedStatement[],
   context: OrchestrationAtomicWriteContext
-): Promise<void> => {
-  if (statements.length === 0) return;
-  if (db.batch) {
-    await db.batch(statements);
-    return;
+): Promise<unknown[]> => {
+  if (statements.length === 0) return [];
+  if (!db.batch && statements.length > 1) requireAtomicD1Batch(db, context, statements.length);
+  const startedAt = Date.now();
+  try {
+    const results = db.batch
+      ? await db.batch(statements)
+      : [await statements[0].run()];
+    logger.debug('Orchestration D1 write completed', {
+      ...context,
+      statementCount: statements.length,
+      batch: Boolean(db.batch),
+      durationMs: Date.now() - startedAt
+    });
+    return results;
+  } catch (error: unknown) {
+    logger.error('Orchestration D1 atomic write failed', {
+      ...context,
+      statementCount: statements.length,
+      batch: Boolean(db.batch),
+      durationMs: Date.now() - startedAt
+    }, error);
+    throw error;
   }
-  if (statements.length > 1) requireAtomicD1Batch(db, context, statements.length);
-  await statements[0].run();
+};
+
+/** Runs a state transition and its dependent writes in one transaction. */
+export const runCompareAndSetAtomically = async (
+  db: OrchestrationDatabase,
+  compareAndSetStatement: CloudflareD1PreparedStatement,
+  dependentStatements: CloudflareD1PreparedStatement[],
+  context: OrchestrationAtomicWriteContext
+): Promise<boolean> => {
+  const results = await runAtomically(db, [compareAndSetStatement, ...dependentStatements], context);
+  return changedRowCount(results[0]) === 1;
 };
 
 export const insertReportStatement = (db: OrchestrationDatabase, row: ReportRow): CloudflareD1PreparedStatement =>
@@ -252,6 +282,21 @@ export const insertAcknowledgementStatement = (
     row.acknowledged_at
   );
 
+export const insertAcknowledgementStatementAfterChange = (
+  db: OrchestrationDatabase,
+  row: AcknowledgementRow
+): CloudflareD1PreparedStatement =>
+  db.prepare(SQL_INSERT_ACKNOWLEDGEMENT_AFTER_CHANGE).bind(
+    row.acknowledgement_id,
+    row.report_version_id,
+    row.assessment_id,
+    row.tenant_id,
+    row.user_id,
+    row.user_name,
+    row.notes,
+    row.acknowledged_at
+  );
+
 export const insertCorrectionStatement = (
   db: OrchestrationDatabase,
   row: CorrectionRow
@@ -288,6 +333,24 @@ export const insertNotificationStatement = (
   row: NotificationRow
 ): CloudflareD1PreparedStatement =>
   db.prepare(SQL_INSERT_NOTIFICATION).bind(
+    row.notification_id,
+    row.recipient_type,
+    row.tenant_id,
+    row.assessment_id,
+    row.report_version_id,
+    row.title,
+    row.message,
+    row.severity,
+    row.email_status,
+    row.email_last_error,
+    row.created_at
+  );
+
+export const insertNotificationStatementAfterChange = (
+  db: OrchestrationDatabase,
+  row: NotificationRow
+): CloudflareD1PreparedStatement =>
+  db.prepare(SQL_INSERT_NOTIFICATION_AFTER_CHANGE).bind(
     row.notification_id,
     row.recipient_type,
     row.tenant_id,
@@ -339,6 +402,25 @@ export const insertAuditStatement = (
   event: AuditEventInput
 ): CloudflareD1PreparedStatement =>
   db.prepare(SQL_INSERT_AUDIT_EVENT).bind(
+    event.eventId,
+    event.tenantId,
+    event.assessmentId,
+    event.actorId,
+    event.actorRole,
+    event.eventType,
+    event.entityType,
+    event.entityId,
+    event.previousState,
+    event.newState,
+    event.metadata === null ? null : JSON.stringify(event.metadata),
+    event.createdAt
+  );
+
+export const insertAuditStatementAfterChange = (
+  db: OrchestrationDatabase,
+  event: AuditEventInput
+): CloudflareD1PreparedStatement =>
+  db.prepare(SQL_INSERT_AUDIT_EVENT_AFTER_CHANGE).bind(
     event.eventId,
     event.tenantId,
     event.assessmentId,

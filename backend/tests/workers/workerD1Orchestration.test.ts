@@ -1643,6 +1643,38 @@ describe('execution without batch support', () => {
   });
 });
 
+describe('atomic report state transitions', () => {
+  it('rolls back submission state and notification when the audit insert fails', async () => {
+    const report = await generateReport();
+    const reportId = report.body.report.reportVersionId as string;
+    await confirmChecklist();
+    const auditsBefore = harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationAuditEvent').get();
+    harness.sqlite.exec(`
+      CREATE TRIGGER reject_report_submitted_audit
+      BEFORE INSERT ON OrchestrationAuditEvent
+      WHEN NEW.event_type = 'REPORT_SUBMITTED'
+      BEGIN
+        SELECT RAISE(ABORT, 'forced audit failure');
+      END;
+    `);
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/approve-and-submit',
+      body: { reportVersionId: reportId },
+      requestId: 'req-submit-audit-rollback'
+    });
+
+    expect(result.status).toBe(500);
+    expect(result.body.requestId).toBe('req-submit-audit-rollback');
+    expect(harness.sqlite.prepare('SELECT workflow_state FROM OrchestrationReportVersion WHERE report_version_id = ?')
+      .get(reportId)).toEqual({ workflow_state: 'ADMIN_REVIEW' });
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationNotification WHERE report_version_id = ?')
+      .get(reportId)).toEqual({ count: 0 });
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationAuditEvent').get()).toEqual(auditsBefore);
+  });
+});
+
 describe('dispatch from the Worker entry point', () => {
   it('ignores paths outside the orchestration prefix', async () => {
     const url = new URL('https://edge.example/api/orchestrationjobs');

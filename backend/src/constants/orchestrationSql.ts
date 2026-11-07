@@ -211,6 +211,11 @@ INSERT INTO OrchestrationAcknowledgement (
   acknowledgement_id, report_version_id, assessment_id, tenant_id, user_id, user_name, notes, acknowledged_at
 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`;
 
+export const SQL_INSERT_ACKNOWLEDGEMENT_AFTER_CHANGE = `
+INSERT INTO OrchestrationAcknowledgement (
+  acknowledgement_id, report_version_id, assessment_id, tenant_id, user_id, user_name, notes, acknowledged_at
+) SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 WHERE changes() = 1`;
+
 export const SQL_INSERT_CORRECTION = `
 INSERT INTO OrchestrationCorrectionRequest (
   request_id, assessment_id, tenant_id, user_id, category, description, supporting_file_name, status, created_at
@@ -222,6 +227,12 @@ INSERT INTO OrchestrationNotification (
   read_flag, email_status, email_last_error, email_retry_count, created_at
 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?10, 0, ?11)`;
 
+export const SQL_INSERT_NOTIFICATION_AFTER_CHANGE = `
+INSERT INTO OrchestrationNotification (
+  notification_id, recipient_type, tenant_id, assessment_id, report_version_id, title, message, severity,
+  read_flag, email_status, email_last_error, email_retry_count, created_at
+) SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?10, 0, ?11 WHERE changes() = 1`;
+
 export const SQL_UPDATE_NOTIFICATION_EMAIL = `
 UPDATE OrchestrationNotification
 SET email_status = ?1, email_last_error = ?2, email_retry_count = email_retry_count + ?3
@@ -232,3 +243,9 @@ INSERT INTO OrchestrationAuditEvent (
   event_id, tenant_id, assessment_id, actor_id, actor_role, event_type, entity_type, entity_id,
   previous_state, new_state, metadata_json, created_at
 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`;
+
+export const SQL_INSERT_AUDIT_EVENT_AFTER_CHANGE = `
+INSERT INTO OrchestrationAuditEvent (
+  event_id, tenant_id, assessment_id, actor_id, actor_role, event_type, entity_type, entity_id,
+  previous_state, new_state, metadata_json, created_at
+) SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12 WHERE changes() = 1`;
