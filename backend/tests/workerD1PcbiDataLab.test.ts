@@ -252,6 +252,41 @@ describe('D1 Commodity Data Lab', () => {
     expect(db.workflows).toHaveLength(0);
   });
 
+  it('preserves workflow defaults and uses sequential writes when D1 batching is unavailable', async () => {
+    const db = new LabDatabase(false);
+    const env = environment(db);
+    const assigned = await route(env, '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: 'first-researcher@example.test'
+    });
+    expect(assigned.data).toMatchObject({
+      success: true,
+      assignment: {
+        assignedTo: 'first-researcher@example.test', workflowStatus: 'QUEUED', dueDate: null, notes: ''
+      }
+    });
+    expect(db.assignments).toHaveLength(1);
+    expect(db.workflows).toMatchObject([{ status: 'QUEUED', due_date: null, notes: '' }]);
+
+    db.workflows[0].due_date = '2026-11-28';
+    db.workflows[0].notes = 'Keep the existing research plan.';
+    const reassigned = await route(env, '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: 'second-researcher@example.test'
+    });
+    expect(reassigned.data).toMatchObject({
+      assignment: {
+        assignedTo: 'second-researcher@example.test', workflowStatus: 'QUEUED',
+        dueDate: '2026-11-28', notes: 'Keep the existing research plan.'
+      }
+    });
+
+    const unassigned = await route(env, '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: null
+    });
+    expect(unassigned.data).toMatchObject({ success: true, assignment: null });
+    expect(db.assignments).toHaveLength(0);
+    expect(db.workflows).toHaveLength(0);
+  });
+
   it('rejects invalid assignments, unknown benchmark IDs, malformed JSON, and unsupported methods', async () => {
     const env = environment();
     expect(await route(env, '/assignment', 'POST', { pcbiId: '', assignee: 'researcher' })).toMatchObject({ status: 400 });
@@ -262,6 +297,11 @@ describe('D1 Commodity Data Lab', () => {
     const malformedBody = new Request(malformed.url, { method: 'POST', body: '{' });
     expect(await handlePcbiDataLabRoute(env, malformedBody, new URL(malformedBody.url), 'admin'))
       .toMatchObject({ status: 400 });
+    expect(await route(env, '/approve', 'POST', {})).toMatchObject({ status: 400 });
+    expect(await route(env, '/approve', 'POST', {
+      commodityId: 'COM-MISSING', pcbiId: 'PCBI-UNKNOWN', approverName: 'Admin'
+    })).toMatchObject({ status: 404 });
+    expect(await route(env, '')).toMatchObject({ status: 404 });
   });
 
   it('detects supported domains and routes customer or PCBI master files away from research upload', async () => {
@@ -592,6 +632,8 @@ describe('D1 Commodity Data Lab', () => {
     source.frequency = 'MONTHLY';
     expect(await approve()).toMatchObject({ status: 422 });
     source.frequency = 'WEEKLY';
+    source.unit = null as unknown as string;
+    expect(await approve()).toMatchObject({ status: 422 });
     source.unit = 'KG';
     expect(await approve()).toMatchObject({ status: 422 });
     source.unit = BENCHMARK.benchmark_unit;
@@ -604,6 +646,15 @@ describe('D1 Commodity Data Lab', () => {
     db.observations[0].status = 'NEEDS_REVIEW';
     expect(await approve()).toMatchObject({ status: 422 });
     db.observations[0].status = 'VERIFIED';
+
+    db.promotions.push({
+      promotion_id: 'PROMOTION-EXISTING', catalog_version_id: 'PCBI-EXISTING', source_id: source.source_id,
+      commodity_id: source.commodity_id, pcbi_id: source.pcbi_id, approver_name: 'existing-admin@example.test',
+      comments: null, promoted_at: '2026-11-01T00:00:00.000Z', observation_count: 1
+    });
+    expect(await approve()).toMatchObject({ status: 422 });
+    db.promotions.pop();
+
     await approve();
     expect(await approve()).toMatchObject({ status: 422 });
   });
