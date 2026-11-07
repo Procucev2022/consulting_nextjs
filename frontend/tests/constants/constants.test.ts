@@ -19,6 +19,12 @@ describe('Frontend Constants Modules', () => {
     });
   });
 
+  it('exports the text upload record-count fallback contract', () => {
+    expect(ConstantsIndex.DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT).toBe(14200);
+    expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_ACTION).toBe('ingestion.upload.record-count.fallback');
+    expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_MESSAGE).toContain('record-count fallback');
+  });
+
   describe('Currency Constants', () => {
     it('should define correct currency constants and FX rate mappings', () => {
       expect(CurrencyConstants.DEFAULT_BASE_CURRENCY).toBe('INR');

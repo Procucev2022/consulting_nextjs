@@ -10,6 +10,11 @@ import { frontendLogger } from '@/utils/logger';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { mockTenant, conversionFunnelStages } from '../fixtures/mockData';
 import { EMPTY_TENANT } from '@/constants/app';
+import {
+  DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+  INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+  INGESTION_RECORD_COUNT_FALLBACK_MESSAGE
+} from '@/constants/ingestion';
 import type { AssessmentRecord, CustomerRecord, OperatingModeConfig } from '@/types/assessment';
 import type { MaterialMappingEntry } from '../../src/types/module2MaterialMapping';
 import type {
@@ -1738,7 +1743,18 @@ describe('Home page: batch upload outcomes', () => {
 
     const payloads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.map(([payload]) => payload);
     expect(payloads[0]).toMatchObject({ fileType: 'CSV', recordsCount: 2 });
-    expect(payloads[1]).toMatchObject({ recordsCount: 14200 });
+    expect(payloads[1]).toMatchObject({ recordsCount: DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT });
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      INGESTION_RECORD_COUNT_FALLBACK_MESSAGE,
+      expect.objectContaining({
+        action: INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+        fileType: 'CSV',
+        fileSizeBytes: expect.any(Number),
+        fallbackRecordsCount: DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+        requestId: expect.stringMatching(/^[A-Za-z0-9._:-]+$/u)
+      }),
+      expect.objectContaining({ message: 'read failed' })
+    );
   });
 
   it('counts TXT lines and uploads PDF and ZIP documents without parsing their contents', async () => {

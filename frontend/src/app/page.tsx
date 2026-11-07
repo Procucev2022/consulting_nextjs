@@ -65,6 +65,12 @@ import { EMPTY_TENANT } from '@/constants/app';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '@/constants/validation';
+import {
+  DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+  INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+  INGESTION_RECORD_COUNT_FALLBACK_MESSAGE
+} from '@/constants/ingestion';
+import { createClientRequestId } from '@/utils/requestId';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -2028,8 +2034,15 @@ export default function Home() {
         const text = await file.text();
         const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
         recordsCount = Math.max(1, lines.length - 1);
-      } catch {
-        recordsCount = 14200;
+      } catch (error: unknown) {
+        frontendLogger.warn(INGESTION_RECORD_COUNT_FALLBACK_MESSAGE, {
+          action: INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+          fileType: file.name.endsWith('.csv') ? 'CSV' : 'TXT',
+          fileSizeBytes: file.size,
+          fallbackRecordsCount: DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+          requestId: createClientRequestId()
+        }, error);
+        recordsCount = DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT;
       }
     }
 
