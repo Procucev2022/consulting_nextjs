@@ -57,6 +57,7 @@ import type {
   adminUpdateUserTierSchema,
   tenantScopeSelectionSchema
 } from '../constants/validation';
+import type { updateActionPlanSchema } from '../constants/validationWorkflow';
 
 export type ClientErrorReportInput = z.infer<typeof clientErrorReportSchema>;
 export type PCBIHistoricalObservationsQueryInput = z.infer<typeof pcbiHistoricalObservationsQuerySchema>;
@@ -72,6 +73,7 @@ export type GraphQLIngestionCursorInput = z.infer<typeof graphqlIngestionCursorS
 export type AlternateSourcingQueryInput = z.infer<typeof alternateSourcingQuerySchema>;
 export type VendorConsolidationQueryInput = z.infer<typeof vendorConsolidationQuerySchema>;
 export type TenantUpdateInput = z.infer<typeof tenantUpdateSchema>;
+export type UpdateActionPlanInput = z.infer<typeof updateActionPlanSchema>;
 export type AddIngestionFileInput = z.infer<typeof addIngestionFileSchema>;
 export type UploadIngestionFileInput = z.infer<typeof uploadIngestionFileSchema>;
 export type UpdateValidationRecordInput = z.infer<typeof updateValidationRecordSchema>;

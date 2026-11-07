@@ -51,5 +51,14 @@ export const SAVINGS_D1_ENGINE_BY_LEVER: Readonly<Record<string, SavingsSourceEn
 export const SAVINGS_D1_MESSAGES = {
   actionPlanNotFound: (actionId: string): string => `Action plan ${actionId} was not found in D1. Refresh the savings workspace and select a saved action plan.`,
   actionPlanNoChanges: 'Provide at least one action-plan field to update.',
+  actionPlanBatchUnavailable: 'The action plan was not updated because atomic D1 batching is unavailable. No fields were changed. Retry later and include the response x-request-id header if you need support.',
   opportunityNotFound: (opportunityId: string): string => `Savings opportunity ${opportunityId} was not found in D1. Refresh the workspace and select a saved opportunity.`
+} as const;
+
+export const SAVINGS_D1_LOG_MESSAGES = {
+  actionPlanBatchUnavailable: 'Savings action-plan update was aborted before writes because D1 atomic batching is unavailable'
+} as const;
+
+export const SAVINGS_D1_LOG_ACTIONS = {
+  actionPlanBatchUnavailable: 'd1.savings.action_plan.atomic_batch_unavailable'
 } as const;
