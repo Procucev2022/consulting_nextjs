@@ -82,3 +82,9 @@ export interface CloudflareExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
 }
+
+export interface CloudflareScheduledController {
+  scheduledTime: number;
+  cron: string;
+  noRetry?: boolean;
+}

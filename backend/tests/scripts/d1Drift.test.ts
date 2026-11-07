@@ -56,10 +56,11 @@ describe('D1 drift diagnostics', () => {
     expect(getTenantScopedPrimaryKeySql()).toContain("pragma_table_info('VendorPriceRank')");
     expect(getTenantScopedPrimaryKeySql()).toContain("pragma_table_info('Module1CurrencyBreakdown')");
     expect(getTenantIntegrityTriggerSql()).toContain('sqlite_schema');
-    expect(TENANT_INTEGRITY_TRIGGER_NAMES).toHaveLength(48);
-    expect(new Set(TENANT_INTEGRITY_TRIGGER_NAMES).size).toBe(48);
+    expect(TENANT_INTEGRITY_TRIGGER_NAMES).toHaveLength(50);
+    expect(new Set(TENANT_INTEGRITY_TRIGGER_NAMES).size).toBe(50);
     expect(Object.keys(TENANT_SCOPED_PRIMARY_KEYS)).toHaveLength(5);
-    expect(TENANT_REFERENCE_TABLES).toHaveLength(21);
+    expect(TENANT_REFERENCE_TABLES).toHaveLength(22);
+    expect(TENANT_REFERENCE_TABLES).toContain('R2ObjectCleanupOutbox');
     expect(new Set(TENANT_REFERENCE_TABLES).size).toBe(TENANT_REFERENCE_TABLES.length);
     for (const tableName of TENANT_REFERENCE_TABLES) {
       expect(getOrphanReferenceSql()).toContain(`FROM/**/${tableName}/**/AS/**/scoped`);

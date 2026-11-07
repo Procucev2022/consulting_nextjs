@@ -16,6 +16,8 @@ import {
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
 import { clearScopedModule2Cache } from './services/workerD1Module2Cache';
+import { enqueueR2ObjectCleanup, processR2ObjectCleanupOutbox } from './services/r2ObjectCleanupOutbox';
+import { R2_CLEANUP_REASONS, R2_CLEANUP_SQL } from './constants';
 import { requireD1AtomicBatch, runD1Statements } from './services/workerD1Query';
 
 const getIngestionData = async (
@@ -193,6 +195,11 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
         : fileType === 'XLS' ? 'application/vnd.ms-excel'
           : fileType === 'CSV' ? 'text/csv'
             : fileType === 'PDF' ? 'application/pdf' : 'application/octet-stream';
+      await enqueueR2ObjectCleanup(database, {
+        tenantId,
+        objectKey,
+        reason: R2_CLEANUP_REASONS.uploadStaging
+      }, requestId);
       await environment.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType } });
       objectStored = true;
       if (parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType)) {
@@ -226,6 +233,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     if (bytes) {
       persistenceStatements.push(database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
         .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || ''));
+      persistenceStatements.push(database.prepare(R2_CLEANUP_SQL.deleteJobByObject).bind(tenantId, objectKey));
     }
     await runD1Statements(database, persistenceStatements, {
       action: D1_LOG_ACTIONS.ingestionUploadPersist,
@@ -258,17 +266,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     }
     clearScopedModule2Cache(database, tenantId);
     if (objectStored) {
-      try {
-        await environment.OBJECTS?.delete(objectKey);
-      } catch (cleanupError) {
-        logger.error(D1_LOG_MESSAGES.ingestionUploadR2CleanupFailed, {
-          action: D1_LOG_ACTIONS.ingestionUploadRollback,
-          requestId,
-          tenantId,
-          docId,
-          objectKey
-        }, cleanupError);
-      }
+      await processR2ObjectCleanupOutbox(environment, { requestId, tenantId, objectKey, limit: 1 });
     }
     if (error instanceof Error && /workbook|row import limit|Only XLSX/u.test(error.message)) {
       return { data: { success: false, message: error.message }, status: 400 };
@@ -368,7 +366,12 @@ const deleteIngestion = async (
         )`).bind(tenantId, tenantId).all<{ object_key: string }>();
   if (documents.results.length) {
     const documentScope = documentId || null;
+    const enqueueStatements = objects.results.length
+      ? [database.prepare(R2_CLEANUP_SQL.enqueueForIngestionDelete)
+        .bind(R2_CLEANUP_REASONS.ingestionDelete, tenantId, tenantId, documentScope, documentScope)]
+      : [];
     await runD1Statements(database, [
+      ...enqueueStatements,
       database.prepare(`DELETE FROM ProcurementTransaction
         WHERE tenant_id = ? AND source_document_id IN (
           SELECT doc_id FROM RawDocumentIngestion
@@ -394,23 +397,14 @@ const deleteIngestion = async (
       requestId,
       tenantId,
       documentId: documentId || undefined,
-      documentCount: documents.results.length
+      documentCount: documents.results.length,
+      objectCount: objects.results.length
     });
     clearScopedModule2Cache(database, tenantId);
   }
-  for (const object of objects.results) {
-    try {
-      await environment.OBJECTS?.delete(object.object_key);
-    } catch (error: unknown) {
-      logger.warn(D1_LOG_MESSAGES.ingestionDeleteObjectCleanupFailed, {
-        action: D1_LOG_ACTIONS.ingestionDelete,
-        requestId,
-        tenantId,
-        documentId: documentId || undefined,
-        objectKey: object.object_key
-      }, error);
-    }
-  }
+  if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
+    requestId, tenantId, limit: objects.results.length
+  });
   logger.info('Deleted D1 ingestion documents and linked data', {
     action: D1_LOG_ACTIONS.ingestionDelete,
     requestId,
@@ -444,10 +438,12 @@ const resetIngestionDataset = async (
   const objects = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId).all<{ object_key: string }>();
   const documentIds = documents.results.map((document) => document.doc_id);
   const deleteStatements: CloudflareD1PreparedStatement[] = [];
+  if (objects.results.length) deleteStatements.push(database.prepare(R2_CLEANUP_SQL.enqueueForTenantReset)
+    .bind(R2_CLEANUP_REASONS.ingestionReset, tenantId));
   if (documentIds.length) {
-    const placeholders = documentIds.map(() => '?').join(', ');
-    deleteStatements.push(database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (${placeholders})`)
-      .bind(tenantId, ...documentIds));
+    deleteStatements.push(database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (
+      SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?
+    )`).bind(tenantId, tenantId));
   }
   deleteStatements.push(
     database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId),
@@ -463,18 +459,9 @@ const resetIngestionDataset = async (
     objectCount: objects.results.length
   });
   if (documentIds.length) clearScopedModule2Cache(database, tenantId);
-  for (const object of objects.results) {
-    try {
-      await environment.OBJECTS?.delete(object.object_key);
-    } catch (error: unknown) {
-      logger.warn(D1_LOG_MESSAGES.ingestionResetObjectCleanupFailed, {
-        action: D1_LOG_ACTIONS.ingestionReset,
-        requestId,
-        tenantId,
-        objectKey: object.object_key
-      }, error);
-    }
-  }
+  if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
+    requestId, tenantId, limit: objects.results.length
+  });
   logger.info('Reset tenant ingestion dataset', {
     action: D1_LOG_ACTIONS.ingestionReset,
     requestId,

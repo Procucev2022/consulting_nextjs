@@ -15,6 +15,7 @@ const TENANT_REFERENCE_TABLES = Object.freeze([
   'OrchestrationNotification',
   'ProcurementTransaction',
   'RawDocumentIngestion',
+  'R2ObjectCleanupOutbox',
   'SpendCategorySummary',
   'SubscriptionAuditEvent',
   'SubscriptionRecord',

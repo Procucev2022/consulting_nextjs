@@ -7,6 +7,7 @@ import type {
 import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME } from '../src/constants/cloudflare';
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
 import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { R2_CLEANUP_LOG_MESSAGES } from '../src/constants';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
 import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
 import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
@@ -1216,6 +1217,7 @@ describe('Cloudflare worker core routes', () => {
         }
       });
       const errorLog = vi.spyOn(logger, 'error');
+      const warning = vi.spyOn(logger, 'warn');
 
       const response = await send('/api/ingestion/upload-object', jsonBody('POST', {
         tenant_id: 'TNT-1',
@@ -1235,9 +1237,9 @@ describe('Cloudflare worker core routes', () => {
         expect.objectContaining({ action: D1_LOG_ACTIONS.ingestionUploadRollback, requestId: expect.any(String), tenantId: 'TNT-1', docId }),
         expect.objectContaining({ message: 'D1 rollback unavailable' })
       );
-      expect(errorLog).toHaveBeenCalledWith(
-        D1_LOG_MESSAGES.ingestionUploadR2CleanupFailed,
-        expect.objectContaining({ action: D1_LOG_ACTIONS.ingestionUploadRollback, requestId: expect.any(String), tenantId: 'TNT-1', docId, objectKey }),
+      expect(warning).toHaveBeenCalledWith(
+        R2_CLEANUP_LOG_MESSAGES.objectDeleteFailed,
+        expect.objectContaining({ action: expect.any(String), requestId: expect.any(String), tenantId: 'TNT-1', cleanupId: expect.any(String), objectKey }),
         expect.objectContaining({ message: 'R2 cleanup unavailable' })
       );
     });
@@ -1270,8 +1272,9 @@ describe('Cloudflare worker core routes', () => {
         requestId,
         tenantId: 'TNT-1',
         documentId: expect.any(String),
-        statementCount: 2
+        statementCount: 3
       }), expect.any(Error));
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM R2ObjectCleanupOutbox').first()).resolves.toEqual({ total: 1 });
     });
 
     it.each([
@@ -1616,7 +1619,7 @@ describe('Cloudflare worker core routes', () => {
         operation: action,
         requestId,
         tenantId: 'TNT-1',
-        statementCount: 4,
+        statementCount: 5,
         fallback: 'none'
       }), expect.any(Error));
     });
@@ -1661,7 +1664,7 @@ describe('Cloudflare worker core routes', () => {
         operation: D1_LOG_ACTIONS.ingestionDelete,
         requestId,
         tenantId: 'TNT-1',
-        statementCount: 4
+        statementCount: 5
       }), expect.any(Error));
     });
 
@@ -1718,11 +1721,11 @@ describe('Cloudflare worker core routes', () => {
       });
       expect(deleteObject).toHaveBeenCalledWith('tenant/TNT-1/reset.csv');
       expect(warning).toHaveBeenCalledWith(
-        D1_LOG_MESSAGES.ingestionResetObjectCleanupFailed,
+        R2_CLEANUP_LOG_MESSAGES.objectDeleteFailed,
         expect.objectContaining({
-          action: D1_LOG_ACTIONS.ingestionReset,
+          action: expect.any(String),
           requestId: response.headers.get('x-request-id'),
-          tenantId: 'TNT-1', objectKey: 'tenant/TNT-1/reset.csv'
+          tenantId: 'TNT-1', cleanupId: expect.any(String), objectKey: 'tenant/TNT-1/reset.csv'
         }),
         expect.objectContaining({ message: 'R2 unavailable' })
       );
@@ -1730,6 +1733,7 @@ describe('Cloudflare worker core routes', () => {
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata').first()).resolves.toEqual({ total: 0 });
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ProcurementTransaction').first()).resolves.toEqual({ total: 0 });
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ValidationPreCheckRecord').first()).resolves.toEqual({ total: 0 });
+      await expect(fixture.d1.prepare('SELECT attempt_count FROM R2ObjectCleanupOutbox').first()).resolves.toEqual({ attempt_count: 1 });
     });
 
     it('resets an empty tenant ingestion dataset without issuing a document cleanup query', async () => {

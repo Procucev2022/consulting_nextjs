@@ -57,6 +57,7 @@ export const D1_TABLES = {
   alternateVendors: 'AlternateVendorIndex',
   materialMappings: 'MaterialMappingRegister',
   objectMetadata: 'ObjectMetadata',
+  r2ObjectCleanupOutbox: 'R2ObjectCleanupOutbox',
   alternateVendorCompany: 'AlternateVendorCompany',
   pcbiSnapshot: 'PCBICommoditySnapshot',
   pcbiMasterVersions: 'PCBIMasterVersion',

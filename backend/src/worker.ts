@@ -2,7 +2,7 @@ import {
   CLOUDFLARE_API_PREFIX,
   CLOUDFLARE_HEALTH_PATH
 } from './constants/cloudflare';
-import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
+import type { CloudflareEnvironment, CloudflareExecutionContext, CloudflareScheduledController } from './types/cloudflare';
 import { requestHeadersSchema } from './constants/validation';
 import logger from './utils/logger';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
@@ -13,6 +13,8 @@ import { D1_QUERY_LOG_MESSAGES } from './constants/db';
 import { createD1RequestMetrics, instrumentD1Database } from './services/d1QueryTelemetry';
 import { authorizeTenantRequest } from './services/workerTenantAccess';
 import { handleApiRequest } from './workerApiRoutes';
+import { processR2ObjectCleanupOutbox } from './services/r2ObjectCleanupOutbox';
+import { R2_CLEANUP_ACTIONS, R2_CLEANUP_LOG_MESSAGES } from './constants';
 
 export const fetch = async (
   request: Request,
@@ -137,4 +139,26 @@ export const fetch = async (
   }
 };
 
-export default { fetch };
+export const scheduled = (
+  controller: CloudflareScheduledController,
+  environment: CloudflareEnvironment,
+  executionContext: CloudflareExecutionContext
+): void => {
+  const requestId = crypto.randomUUID();
+  logger.info(R2_CLEANUP_LOG_MESSAGES.cronStarted, {
+    action: R2_CLEANUP_ACTIONS.cron,
+    requestId,
+    cron: controller.cron,
+    scheduledTime: controller.scheduledTime
+  });
+  executionContext.waitUntil(processR2ObjectCleanupOutbox(environment, { requestId }).catch((error: unknown) => {
+    logger.error(R2_CLEANUP_LOG_MESSAGES.queueReadFailed, {
+      action: R2_CLEANUP_ACTIONS.cron,
+      requestId,
+      cron: controller.cron,
+      scheduledTime: controller.scheduledTime
+    }, error);
+  }));
+};
+
+export default { fetch, scheduled };
