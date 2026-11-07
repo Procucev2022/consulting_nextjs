@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { D1_LOG_ACTIONS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../src/types/cloudflare';
 import type { D1Record } from '../src/types/d1';
 import type { PcbiAdminImportInput } from '../src/types/validation';
@@ -264,9 +264,8 @@ describe('D1 PCBI master administration', () => {
     );
   });
 
-  it('publishes a validated version, archives the former active version, and supports non-batch D1 adapters', async () => {
-    vi.mocked(logger.warn).mockClear();
-    const db = new TestDatabase(false);
+  it('publishes a validated version and archives the former active version', async () => {
+    const db = new TestDatabase();
     await call(db, '/import', 'POST', importPayload());
     await call(db, '/import', 'POST', importPayload({ version: 'V4.0' }));
     await call(db, '/publish/V3.0', 'POST', { published_by: 'Admin User' });
@@ -291,6 +290,44 @@ describe('D1 PCBI master administration', () => {
         fallback: 'empty-object'
       }),
       expect.any(SyntaxError)
+    );
+  });
+
+  it('preserves the active version and logs correlated diagnostics when atomic batching is unavailable', async () => {
+    vi.mocked(logger.error).mockClear();
+    const db = new TestDatabase(false);
+    await call(db, '/import', 'POST', importPayload({ version: 'V3.0' }));
+    await call(db, '/import', 'POST', importPayload({ version: 'V4.0' }));
+    Object.assign(db.versions[0], { status: 'PUBLISHED', published_at: '2026-10-01T00:00:00.000Z' });
+    const requestId = 'req-pcbi-publish';
+    const url = new URL('https://edge.example/api/admin/pcbi/publish/V4.0');
+    const request = new Request(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-request-id': requestId },
+      body: JSON.stringify({ published_by: 'Second Admin' })
+    });
+
+    const response = await handlePcbiAdminRoute(db, request, url);
+
+    expect(response).toEqual({
+      status: 503,
+      data: { success: false, message: D1_ROUTE_MESSAGES.pcbiPublishBatchUnavailable }
+    });
+    expect(db.versions.map((row) => [row.version, row.status])).toEqual([
+      ['V3.0', 'PUBLISHED'],
+      ['V4.0', 'VALIDATED']
+    ]);
+    expect(logger.error).toHaveBeenCalledWith(
+      D1_LOG_MESSAGES.pcbiPublishBatchUnavailable,
+      expect.objectContaining({
+        action: D1_LOG_ACTIONS.pcbiPublishBatchUnavailable,
+        requestId,
+        version: 'V4.0',
+        statementCount: 2,
+        writesStarted: false,
+        fallback: D1_LOG_FALLBACKS.failClosed
+      }),
+      expect.objectContaining({ message: D1_ROUTE_MESSAGES.pcbiPublishBatchUnavailable })
     );
   });
 

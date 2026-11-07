@@ -173,7 +173,8 @@ export const D1_ROUTE_MESSAGES = {
   unknownSavings: 'This savings endpoint does not exist. Refresh the savings workspace and select a supported action.',
   currencyNotFound: (currency: string): string => `Currency ${currency} is not present in D1 reference data.`,
   currencyRateUnavailable: (currency: string, date: string): string => `No D1 exchange rate for ${currency} is available on or before ${date}.`,
-  vendorMergeBatchUnavailable: 'The supplier name was not changed because atomic D1 batching is unavailable. No data was changed. Retry later and include the response x-request-id header if you need support.'
+  vendorMergeBatchUnavailable: 'The supplier name was not changed because atomic D1 batching is unavailable. No data was changed. Retry later and include the response x-request-id header if you need support.',
+  pcbiPublishBatchUnavailable: 'The PCBI version was not published because atomic D1 batching is unavailable. No version status was changed. Retry later and include the response x-request-id header if you need support.'
 } as const;
 
 export const D1_LOG_MESSAGES = {
@@ -181,14 +182,16 @@ export const D1_LOG_MESSAGES = {
   invalidPcbiAdminStoredJson: 'Stored PCBI administration JSON is invalid; the value was not trusted',
   invalidPcbiAdminPayloadSchema: 'Stored PCBI administration payload does not match its schema; publication was blocked',
   invalidPaymentTermsSourceJson: 'Malformed D1 payment-term source JSON reduced verified coverage',
-  vendorMergeBatchUnavailable: 'Supplier master merge was aborted before writes because D1 atomic batching is unavailable'
+  vendorMergeBatchUnavailable: 'Supplier master merge was aborted before writes because D1 atomic batching is unavailable',
+  pcbiPublishBatchUnavailable: 'PCBI master publication was aborted before writes because D1 atomic batching is unavailable'
 } as const;
 
 export const D1_LOG_ACTIONS = {
   invalidPcbiAdminStoredJson: 'd1.pcbi_admin.stored_json_invalid',
   invalidPcbiAdminPayloadSchema: 'd1.pcbi_admin.payload_schema_invalid',
   invalidPaymentTermsSourceJson: 'd1.payment_terms.source_json_invalid',
-  vendorMergeBatchUnavailable: 'd1.vendor_merge.atomic_batch_unavailable'
+  vendorMergeBatchUnavailable: 'd1.vendor_merge.atomic_batch_unavailable',
+  pcbiPublishBatchUnavailable: 'd1.pcbi_admin.publish_atomic_batch_unavailable'
 } as const;
 
 export const D1_LOG_FALLBACKS = {
