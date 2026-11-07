@@ -1,7 +1,7 @@
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import {
   D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATED_RECORDS_QUERY,
-  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES
+  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES, D1_LOG_ACTIONS, D1_LOG_MESSAGES
 } from './constants/d1';
 import {
   ingestionDataQuerySchema, updateValidationRecordSchema, addIngestionFileSchema,
@@ -16,6 +16,7 @@ import {
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
 import { clearScopedModule2Cache } from './services/workerD1Module2Cache';
+import { requireD1AtomicBatch } from './services/workerD1Query';
 
 const getIngestionData = async (
   environment: CloudflareEnvironment,
@@ -77,19 +78,32 @@ const remediateIngestion = async (environment: CloudflareEnvironment, requestId?
   }
 
   const updatedRecordIds: string[] = [];
-  if (database.batch && updateStatements.length) {
-    const results = await database.batch(updateStatements) as CloudflareD1MutationResult[];
+  if (updateStatements.length) {
+    const operationContext = {
+      action: D1_LOG_ACTIONS.ingestionRemediation,
+      operation: D1_LOG_ACTIONS.ingestionRemediation,
+      requestId,
+      tenantId,
+      statementCount: updateStatements.length
+    };
+    if (updateStatements.length > 1 && !database.batch) {
+      requireD1AtomicBatch(database, operationContext, updateStatements.length);
+    }
+    let results: CloudflareD1MutationResult[];
+    try {
+      results = database.batch
+        ? await database.batch(updateStatements) as CloudflareD1MutationResult[]
+        : await Promise.all(updateStatements.map(async (statement) =>
+          await statement.run() as CloudflareD1MutationResult));
+    } catch (error: unknown) {
+      logger.error(D1_LOG_MESSAGES.atomicWriteFailed, operationContext, error);
+      throw error;
+    }
     candidateRecordIds.forEach((recordId, index) => {
       const result = results[index];
       const affected = Number(result?.meta?.changes ?? result?.changes);
       if (affected > 0) updatedRecordIds.push(recordId);
     });
-  } else {
-    for (const [index, statement] of updateStatements.entries()) {
-      const result = await statement.run() as CloudflareD1MutationResult;
-      const affected = Number(result?.meta?.changes ?? result?.changes);
-      if (affected > 0) updatedRecordIds.push(candidateRecordIds[index] as string);
-    }
   }
   const updatedRecords = updatedRecordIds.length
     ? (await database.prepare(D1_INGESTION_REMEDIATED_RECORDS_QUERY)

@@ -195,6 +195,7 @@ export const D1_LOG_ACTIONS = {
   invalidPaymentTermsSourceJson: 'd1.payment_terms.source_json_invalid',
   vendorMergeBatchUnavailable: 'd1.vendor_merge.atomic_batch_unavailable',
   pcbiPublishBatchUnavailable: 'd1.pcbi_admin.publish_atomic_batch_unavailable',
+  ingestionRemediation: 'd1.ingestion.remediation',
   atomicBatchUnavailable: 'd1.write.batch_unavailable'
 } as const;
 

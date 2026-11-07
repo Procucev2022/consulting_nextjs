@@ -1324,7 +1324,7 @@ describe('Cloudflare worker core routes', () => {
       expect(untouched).toEqual({ amount_inr: null, issue_flag: 'Currency Review', resolved: 0 });
     });
 
-    it('keeps remediation working when the D1 adapter does not expose batch', async () => {
+    it('keeps a single-record remediation working when the D1 adapter does not expose batch', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
         ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
@@ -1342,6 +1342,80 @@ describe('Cloudflare worker core routes', () => {
 
       expect(data).toMatchObject({ updatedCount: 1, skippedCount: 0 });
       expect(persisted).toEqual({ amount_inr: 8500, fx_rate_applied: 85 });
+    });
+
+    it('rejects multi-record remediation before writes when atomic D1 batching is unavailable', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['USD', '2025-06-30', 85, 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-FX-NO-BATCH-1', 'TNT-1', 'PO-NO-BATCH-1', 'Acme', 'First item', 100, 'USD', '2025-06-30', 'Currency Review', 'Review', 0],
+        ['REC-FX-NO-BATCH-2', 'TNT-1', 'PO-NO-BATCH-2', 'Acme', 'Second item', 200, 'USD', '2025-06-30', 'Currency Review', 'Review', 0]
+      ]);
+      fixture.d1.batch = undefined;
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'remediate-no-batch-1';
+
+      const response = await send('/api/ingestion/remediate?tenantId=TNT-1', {
+        method: 'POST', headers: { 'x-request-id': requestId }
+      });
+
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false, message: D1_ROUTE_MESSAGES.atomicBatchUnavailable
+      });
+      await expect(fixture.d1.prepare('SELECT amount_inr, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id IN (?, ?) ORDER BY record_id')
+        .bind('REC-FX-NO-BATCH-1', 'REC-FX-NO-BATCH-2').all()).resolves.toEqual({
+        results: [{ amount_inr: null, fx_rate_applied: null }, { amount_inr: null, fx_rate_applied: null }]
+      });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionRemediation,
+        operation: D1_LOG_ACTIONS.ingestionRemediation,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2,
+        fallback: 'none'
+      }), expect.any(Error));
+    });
+
+    it('logs and preserves validation records when the remediation batch fails', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['USD', '2025-06-30', 85, 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-FX-BATCH-FAIL-1', 'TNT-1', 'PO-BATCH-FAIL-1', 'Acme', 'First item', 100, 'USD', '2025-06-30', 'Currency Review', 'Review', 0],
+        ['REC-FX-BATCH-FAIL-2', 'TNT-1', 'PO-BATCH-FAIL-2', 'Acme', 'Second item', 200, 'USD', '2025-06-30', 'Currency Review', 'Review', 0]
+      ]);
+      const batchError = new Error('D1 remediation batch failed');
+      fixture.d1.batch = vi.fn(async () => { throw batchError; });
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'remediate-batch-failed-1';
+
+      const response = await send('/api/ingestion/remediate?tenantId=TNT-1', {
+        method: 'POST', headers: { 'x-request-id': requestId }
+      });
+
+      expect(response.status).toBe(500);
+      await expect(fixture.d1.prepare('SELECT amount_inr, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id IN (?, ?) ORDER BY record_id')
+        .bind('REC-FX-BATCH-FAIL-1', 'REC-FX-BATCH-FAIL-2').all()).resolves.toEqual({
+        results: [{ amount_inr: null, fx_rate_applied: null }, { amount_inr: null, fx_rate_applied: null }]
+      });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicWriteFailed, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionRemediation,
+        operation: D1_LOG_ACTIONS.ingestionRemediation,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2
+      }), batchError);
     });
 
     it('reports zero updates when there are no validation records to remediate', async () => {
