@@ -1,14 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GRAPHQL_ERRORS, GRAPHQL_SCHEMA_SDL } from '../../src/constants/graphql';
 import { AUTH_MESSAGES } from '../../src/constants/auth';
-import { D1_ROUTE_MESSAGES } from '../../src/constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../../src/constants/d1';
 import { createD1GraphqlResolvers } from '../../src/resolvers/d1GraphqlResolvers';
 import { createD1RequestMetrics, instrumentD1Database, recordD1CacheAccess } from '../../src/services/d1QueryTelemetry';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../../src/types/cloudflare';
 import type { GraphQLContext } from '../../src/types/graphql';
+import logger from '../../src/utils/logger';
 import { createSqliteD1 } from '../helpers/evidenceSqlite';
 import { seedTestTenantRegistry } from '../helpers/tenantFixtures';
 
@@ -55,6 +56,7 @@ interface ResolverFixture {
 }
 
 interface StubOptions {
+  supportsBatch?: boolean;
   firstRow?: Record<string, unknown> | null;
   allResult?: unknown;
   runResult?: unknown;
@@ -96,6 +98,9 @@ const createStubD1 = (options: StubOptions = {}): { d1: CloudflareD1Database; st
       return statement;
     }
   };
+  if (options.supportsBatch !== false) {
+    d1.batch = async (statements) => Promise.all(statements.map((statement) => statement.run()));
+  }
   return { d1, statements };
 };
 
@@ -801,6 +806,7 @@ describe('mergeVendor', () => {
 
   afterEach(() => {
     fixture.close();
+    vi.restoreAllMocks();
   });
 
   const MERGE_ARGS = { input: { targetName: 'Acme Stl', masterId: 'MV-1', canonicalName: 'Acme Steel' } };
@@ -884,6 +890,23 @@ describe('mergeVendor', () => {
       .resolves.toEqual({ success: true, affected: 3 });
     expect(batch).toHaveBeenCalledOnce();
     expect(batch.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it('fails closed with correlated diagnostics when atomic D1 batching is unavailable', async () => {
+    const stub = createStubD1({ supportsBatch: false, runError: new Error('individual vendor write must not run') });
+    const errorLog = vi.spyOn(logger, 'error');
+
+    await expect(resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1)))
+      .rejects.toThrow(D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable);
+
+    expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.vendorMergeBatchUnavailable, expect.objectContaining({
+      action: D1_LOG_ACTIONS.vendorMergeBatchUnavailable,
+      requestId: 'req-d1-resolvers',
+      tenantId: 'TNT-1',
+      statementCount: 2,
+      writesStarted: false,
+      fallback: D1_LOG_FALLBACKS.failClosed
+    }), expect.any(Error));
   });
 
   it('propagates write failures', async () => {
