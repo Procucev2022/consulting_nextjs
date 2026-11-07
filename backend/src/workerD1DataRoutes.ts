@@ -6,7 +6,7 @@ import {
   deployOpportunitySchema,
   mergeVendorSchema
 } from './constants/validation';
-import { D1_ROUTE_MESSAGES } from './constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareD1MutationResult, CloudflareEnvironment } from './types/cloudflare';
 import { getTenantD1Data, invalidateTenantD1Data } from './services/d1TenantDataCache';
 import { getCurrencyRatesFromD1, requireD1Binding } from './workerD1';
@@ -74,11 +74,21 @@ const handleStaticDataRoute = async (
         database.prepare('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId),
         database.prepare('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId)
       ];
+      if (!database.batch) {
+        const error = new Error(D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable);
+        logger.error(D1_LOG_MESSAGES.vendorMergeBatchUnavailable, {
+          action: D1_LOG_ACTIONS.vendorMergeBatchUnavailable,
+          requestId: request.headers.get('x-request-id') || undefined,
+          tenantId,
+          statementCount: statements.length,
+          writesStarted: false,
+          fallback: D1_LOG_FALLBACKS.failClosed
+        }, error);
+        return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable }, 503, request);
+      }
       let updateResults: CloudflareD1MutationResult[];
       try {
-        updateResults = database.batch
-          ? await database.batch(statements) as CloudflareD1MutationResult[]
-          : await Promise.all(statements.map(async (statement) => await statement.run() as CloudflareD1MutationResult));
+        updateResults = await database.batch(statements) as CloudflareD1MutationResult[];
       } finally {
         invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
         invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);

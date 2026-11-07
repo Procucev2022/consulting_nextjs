@@ -6,7 +6,7 @@ import type {
 } from '../src/types/cloudflare';
 import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME } from '../src/constants/cloudflare';
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
-import { D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
 import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
 import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
@@ -1870,20 +1870,37 @@ describe('Cloudflare worker core routes', () => {
         .toEqual(['Acme Steel']);
     });
 
-    it('updates supplier records when the D1 binding does not support batch writes', async () => {
-      insertRows(fixture.db, 'INSERT INTO VendorYearDetail (id, rank, vendor_name, master_vendor_id, primary_category) VALUES (?, ?, ?, ?, ?)', [
-        ['VD-NO-BATCH', 1, 'Acme Steel Ltd', 'MV-NO-BATCH', 'Steel']
+    it('fails closed without changing either supplier table when atomic D1 batching is unavailable', async () => {
+      insertRows(fixture.db, 'INSERT INTO VendorYearDetail (id, rank, vendor_name, master_vendor_id, primary_category, tenant_id) VALUES (?, ?, ?, ?, ?, ?)', [
+        ['VD-NO-BATCH', 1, 'Acme Steel Ltd', 'MV-NO-BATCH', 'Steel', 'TNT-1']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO VendorPriceRank (vendor_name, master_id, category, tenant_id) VALUES (?, ?, ?, ?)', [
+        ['Acme Steel Ltd', 'MV-NO-BATCH', 'Steel', 'TNT-1']
       ]);
       const databaseWithoutBatch = { prepare: (sql: string) => fixture.d1.prepare(sql) };
+      const errorLog = vi.spyOn(logger, 'error');
 
-      const response = await send('/api/vendors', jsonBody('POST', {
-        targetName: 'Acme Steel Ltd', masterId: 'MV-NO-BATCH', canonicalName: 'Acme Steel'
-      }), runtimeEnvironment({ DB: databaseWithoutBatch }));
+      const requestId = 'vendor-merge-no-batch-1';
+      const response = await send('/api/vendors', {
+        ...jsonBody('POST', { targetName: 'Acme Steel Ltd', masterId: 'MV-NO-BATCH', canonicalName: 'Acme Steel' }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': requestId, 'x-tenant-id': 'TNT-1' }
+      }, runtimeEnvironment({ DB: databaseWithoutBatch, REQUEST_TENANT_ID: 'TNT-1' }));
 
-      expect(response.status).toBe(200);
-      await expect(bodyOf(response)).resolves.toMatchObject({ success: true, data: { success: true, affected: 1 } });
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable });
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorYearDetail WHERE id = ?')
-        .bind('VD-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel' });
+        .bind('VD-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel Ltd' });
+      await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorPriceRank WHERE master_id = ?')
+        .bind('MV-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel Ltd' });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.vendorMergeBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.vendorMergeBatchUnavailable,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2,
+        writesStarted: false,
+        fallback: D1_LOG_FALLBACKS.failClosed
+      }), expect.any(Error));
     });
 
     it('uses a D1 batch when the binding supports batched supplier updates', async () => {
