@@ -16,6 +16,7 @@ import {
   listPcbiGapRows,
   listProcurementStats,
   listVersionRows,
+  requireAtomicD1Batch,
   runAtomically,
   upsertPcbiGapResolutionStatement
 } from './workerD1OrchestrationStore';
@@ -79,7 +80,12 @@ export const resolvePcbiGap: OrchestrationHandler = async (context) => {
         researchNotes: body.researchNotes ?? null
       }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   const updatedRows = await listPcbiGapRows(context.database, job.assessment_id, job.current_version_id, job.tenant_id);
   const updatedSource = updatedRows.find((row) => row.category_key === source.category_key);
   if (!updatedSource) throw serviceUnavailableError(ORCHESTRATION_MESSAGES.pcbiGapNotFound(context.params.gapId));
@@ -102,6 +108,12 @@ export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
   );
   const job = await loadAccessibleJob(context, context.params.jobId);
   if (!context.objects) throw serviceUnavailableError(ORCHESTRATION_MESSAGES.datasetStorageNotConfigured);
+  requireAtomicD1Batch(context.database, {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  }, 2);
 
   const upload = await uploadAssessmentDataVersion({
     db: context.database,
@@ -155,7 +167,12 @@ export const uploadCorrectedDataset: OrchestrationHandler = async (context) => {
       newState: dataVersionId,
       metadata: { fileName: body.fileName, checksum: body.checksum, reason: body.reason, notes: body.notes ?? null }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
 
   let reanalysisStatus: 'COMPLETED' | 'PENDING' | 'FAILED' = 'COMPLETED';
   let reanalysisMessage = '';

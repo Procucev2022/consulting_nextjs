@@ -37,6 +37,7 @@ import {
   insertReportStatement,
   listPcbiGapRows,
   nextReportSequence,
+  requireAtomicD1Batch,
   runAtomically,
   supersedeReportStatement
 } from './workerD1OrchestrationStore';
@@ -80,7 +81,12 @@ export const recordQualityGate: OrchestrationHandler = async (context) => {
       newState: null,
       metadata: { reportVersionId: reportId, unconfirmedCount, complete }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Quality gate checklist saved', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -156,7 +162,12 @@ export const generateReport: OrchestrationHandler = async (context) => {
       newState: 'ADMIN_REVIEW',
       metadata: { analysisRunId: job.run_id, dataVersionId: job.run_version_id }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Report generated and placed in admin review', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -178,6 +189,12 @@ export const supersedeReport: OrchestrationHandler = async (context) => {
   if (report.workflow_state === 'SUPERSEDED') {
     throw conflictError(ORCHESTRATION_MESSAGES.reportAlreadySuperseded(report.report_version_id));
   }
+  requireAtomicD1Batch(context.database, {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  }, 2);
   const superseded = await compareAndSet(supersedeReportStatement(
     context.database,
     report.report_version_id,
@@ -199,7 +216,12 @@ export const supersedeReport: OrchestrationHandler = async (context) => {
       newState: 'SUPERSEDED',
       metadata: { reason: body.reason }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Report superseded by administrator', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,

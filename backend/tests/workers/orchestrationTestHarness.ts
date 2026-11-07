@@ -41,7 +41,7 @@ export const SUSPENDED_ID = 'usr-suspended';
 export const GUEST_ID = 'usr-guest';
 
 export interface HarnessOptions {
-  /** When false, the binding has no batch(); writes run one statement at a time. */
+  /** When false, the binding has no transactional batch support. */
   withBatch?: boolean;
   /** Runs before every statement. Tests use it to simulate a concurrent writer. */
   beforeStatement?: (sql: string, sqlite: SqliteDatabaseLike) => void;

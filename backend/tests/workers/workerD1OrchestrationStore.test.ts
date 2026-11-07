@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CloudflareD1PreparedStatement } from '../../src/types/cloudflare';
 import type { OrchestrationDatabase, OrchestrationRuntime } from '../../src/types/orchestrationD1';
+import logger from '../../src/utils/logger';
 import {
   buildAuditEvent,
   buildNotificationInput,
@@ -88,17 +89,49 @@ describe('runAtomically', () => {
     const first = fakeStatement();
     const second = fakeStatement();
     const database = fakeDatabase(first.statement, true);
-    await runAtomically(database, [first.statement, second.statement]);
+    await runAtomically(database, [first.statement, second.statement], {
+      requestId: 'req-atomic-batch',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-BATCH',
+      action: '/api/orchestration/jobs/AIC-BATCH/write'
+    });
     expect(database.batch).toHaveBeenCalledTimes(1);
     expect(first.runs()).toBe(0);
   });
 
-  it('runs each statement in order when the binding has no batch', async () => {
+  it('rejects a multi-statement write before running any statement when batch is unavailable', async () => {
     const first = fakeStatement();
     const second = fakeStatement();
-    await runAtomically(fakeDatabase(first.statement, false), [first.statement, second.statement]);
+    await expect(runAtomically(fakeDatabase(first.statement, false), [first.statement, second.statement], {
+      requestId: 'req-atomic-test',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-ATOMIC',
+      action: '/api/orchestration/jobs/AIC-ATOMIC/quality-gate'
+    })).rejects.toMatchObject({ statusCode: 503 });
+    expect(first.runs()).toBe(0);
+    expect(second.runs()).toBe(0);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('transactional D1 batch support is unavailable'),
+      expect.objectContaining({
+        requestId: 'req-atomic-test',
+        tenantId: TEST_TENANT_ID,
+        assessmentId: 'AIC-ATOMIC',
+        action: '/api/orchestration/jobs/AIC-ATOMIC/quality-gate',
+        statementCount: 2
+      }),
+      expect.any(Error)
+    );
+  });
+
+  it('allows a single independent statement when batch is unavailable', async () => {
+    const first = fakeStatement();
+    await runAtomically(fakeDatabase(first.statement, false), [first.statement], {
+      requestId: 'req-atomic-single',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-SINGLE',
+      action: '/api/orchestration/jobs/AIC-SINGLE/write'
+    });
     expect(first.runs()).toBe(1);
-    expect(second.runs()).toBe(1);
   });
 });
 

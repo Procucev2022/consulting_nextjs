@@ -38,6 +38,7 @@ import {
   findLatestChecklistRow,
   insertAuditStatement,
   insertNotificationStatement,
+  requireAtomicD1Batch,
   runAtomically,
   submitReportStatement,
   updateNotificationEmailStatement
@@ -177,6 +178,12 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
   if (checklist.is_complete !== 1) {
     throw conflictError(ORCHESTRATION_MESSAGES.checklistIncomplete(checklist.unconfirmed_count));
   }
+  requireAtomicD1Batch(context.database, {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  }, 3);
   const submitted = await compareAndSet(submitReportStatement(
     context.database,
     report.report_version_id,
@@ -202,7 +209,12 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
       newState: 'SUBMITTED_TO_CUSTOMER',
       metadata: { notificationId: notification.notification_id }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   const delivery = await deliverNotificationEmail(context, job, notification, false);
   const message = delivery.status === ORCHESTRATION_EMAIL_STATUS.SENT
     ? ORCHESTRATION_MESSAGES.reportSubmittedEmailSent
@@ -243,7 +255,12 @@ export const resendNotification: OrchestrationHandler = async (context) => {
       newState: null,
       metadata: { reportVersionId: report.report_version_id, notificationId: notification.notification_id }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   const delivery = await deliverNotificationEmail(context, job, notification, true);
   if (delivery.status !== ORCHESTRATION_EMAIL_STATUS.SENT) {
     throw serviceUnavailableError(delivery.message, { notification: mapNotification(notification) });

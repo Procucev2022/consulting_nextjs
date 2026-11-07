@@ -39,6 +39,7 @@ import {
   insertAuditStatement,
   insertCorrectionStatement,
   insertNotificationStatement,
+  requireAtomicD1Batch,
   runAtomically,
   viewReportStatement
 } from './workerD1OrchestrationStore';
@@ -54,6 +55,12 @@ export const recordCustomerView: OrchestrationHandler = async (context) => {
   if (report.workflow_state !== 'SUBMITTED_TO_CUSTOMER') {
     throw conflictError(ORCHESTRATION_MESSAGES.reportNotVisible(report.report_version_id, report.workflow_state));
   }
+  requireAtomicD1Batch(context.database, {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  }, 2);
   const viewed = await compareAndSet(
     viewReportStatement(context.database, report.report_version_id, context.runtime.now())
   );
@@ -71,7 +78,12 @@ export const recordCustomerView: OrchestrationHandler = async (context) => {
       newState: 'CUSTOMER_VIEWED',
       metadata: null
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Customer viewed submitted report', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -117,6 +129,12 @@ export const acknowledgeReport: OrchestrationHandler = async (context) => {
   const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   assertAcknowledgeable(report);
+  requireAtomicD1Batch(context.database, {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  }, 3);
   const acknowledged = await compareAndSet(
     acknowledgeReportStatement(context.database, report.report_version_id, context.runtime.now())
   );
@@ -136,7 +154,12 @@ export const acknowledgeReport: OrchestrationHandler = async (context) => {
       newState: 'CUSTOMER_ACKNOWLEDGED',
       metadata: { reportVersionId: report.report_version_id }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Customer acknowledged report', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -202,7 +225,12 @@ export const requestCorrection: OrchestrationHandler = async (context) => {
       newState: 'OPEN',
       metadata: { category: body.category }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Customer requested analysis correction', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,

@@ -1609,16 +1609,37 @@ describe('R2-backed source dataset download', () => {
 });
 
 describe('execution without batch support', () => {
-  it('runs the approval flow one statement at a time when the binding has no batch()', async () => {
+  it('rejects a multi-row report generation before persisting the report or audit event', async () => {
     harness.close();
     harness = createHarness({ withBatch: false, beforeStatement });
     seedStandardFixtures(harness.sqlite);
     adminToken = await tokenFor(ADMIN_ID);
     customerToken = await tokenFor(CUSTOMER_A_ID);
-    const reportId = await submitReport();
-    const detail = await customerCall({ path: '/jobs/AIC-A1' });
-    expect(detail.body.data.job.reportVersionId).toBe(reportId);
-    expect(detail.body.data.reports).toHaveLength(1);
+    const result = await generateReport();
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.atomicWriteUnavailable);
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationReportVersion').get()).toEqual({ count: 0 });
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationAuditEvent').get()).toEqual({ count: 0 });
+  });
+
+  it('checks batch support before changing a report state through the approval compare-and-set', async () => {
+    const report = await generateReport();
+    const reportId = report.body.report.reportVersionId as string;
+    await confirmChecklist();
+    const auditsBefore = harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationAuditEvent').get();
+    delete harness.database.batch;
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/approve-and-submit',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(harness.sqlite.prepare('SELECT workflow_state FROM OrchestrationReportVersion WHERE report_version_id = ?')
+      .get(reportId)).toEqual({ workflow_state: 'ADMIN_REVIEW' });
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationNotification').get()).toEqual({ count: 0 });
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM OrchestrationAuditEvent').get()).toEqual(auditsBefore);
   });
 });
 

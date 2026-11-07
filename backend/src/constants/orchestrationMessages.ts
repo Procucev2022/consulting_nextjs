@@ -14,6 +14,9 @@ export const ORCHESTRATION_MESSAGES = {
   databaseNotConfigured:
     'Cloudflare D1 binding DB is not configured for this Worker, so analysis data cannot be read. ' +
     'Add the DB binding in wrangler.jsonc and redeploy.',
+  atomicWriteUnavailable:
+    'This change needs a transactional Cloudflare D1 batch, but the database binding does not provide one. ' +
+    'Restore the D1 batch binding and retry; include the request ID when asking support for help.',
   authNotConfigured:
     'Analysis access cannot be verified because AUTH_SECRET is not set on the Worker. ' +
     'Set AUTH_SECRET and redeploy.',

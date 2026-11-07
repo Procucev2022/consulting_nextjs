@@ -21,8 +21,12 @@ import type {
   SequenceRow,
   UserRow
 } from './types/orchestrationD1';
+import type { OrchestrationAtomicWriteContext } from './types/orchestrationAtomicWrite';
 import type { PCBIGapSourceRow, PCBISeriesRow } from './types/orchestrationPcbi';
 import { ORCHESTRATION_ID_PREFIX } from './constants/orchestration';
+import { ORCHESTRATION_MESSAGES } from './constants/orchestrationMessages';
+import { serviceUnavailableError } from './workerD1OrchestrationHttp';
+import logger from './utils/logger';
 import {
   SQL_ACKNOWLEDGEMENT_FOR_REPORT,
   SQL_CAS_ACKNOWLEDGE_REPORT,
@@ -150,18 +154,34 @@ export const changedRowCount = (result: unknown): number => {
 export const compareAndSet = async (statement: CloudflareD1PreparedStatement): Promise<boolean> =>
   changedRowCount(await statement.run()) === 1;
 
-/** Runs statements as one transaction when the binding supports batch (Cloudflare D1 does). */
+/** Rejects operations that require a transaction when the binding cannot batch statements. */
+export const requireAtomicD1Batch = (
+  db: OrchestrationDatabase,
+  context: OrchestrationAtomicWriteContext,
+  statementCount: number
+): void => {
+  if (db.batch) return;
+  const error = new Error(ORCHESTRATION_MESSAGES.atomicWriteUnavailable);
+  logger.error('Orchestration write rejected because transactional D1 batch support is unavailable', {
+    ...context,
+    statementCount
+  }, error);
+  throw serviceUnavailableError(ORCHESTRATION_MESSAGES.atomicWriteUnavailable);
+};
+
+/** Runs multiple statements as one transaction; only a single independent statement may fall back. */
 export const runAtomically = async (
   db: OrchestrationDatabase,
-  statements: CloudflareD1PreparedStatement[]
+  statements: CloudflareD1PreparedStatement[],
+  context: OrchestrationAtomicWriteContext
 ): Promise<void> => {
+  if (statements.length === 0) return;
   if (db.batch) {
     await db.batch(statements);
     return;
   }
-  for (const statement of statements) {
-    await statement.run();
-  }
+  if (statements.length > 1) requireAtomicD1Batch(db, context, statements.length);
+  await statements[0].run();
 };
 
 export const insertReportStatement = (db: OrchestrationDatabase, row: ReportRow): CloudflareD1PreparedStatement =>

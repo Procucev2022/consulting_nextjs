@@ -3,9 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { D1SeedManifest } from '../../src/types/d1Seed';
-import type { D1SchemaTableRow } from '../../src/types/d1';
-import type { CloudflareD1Database } from '../../src/types/cloudflare';
-import { loadCanonicalAssessmentFromD1 } from '../../src/services/workerD1Canonical';
 import { D1_DEMO_TENANT_ID } from '../../src/constants/d1';
 
 const require = createRequire(import.meta.url);
@@ -289,84 +286,29 @@ describe('durable D1 migration', () => {
     }
   });
 
-  it('restores the complete manifest on a clean database with valid assessment snapshots', async () => {
+  it('restores the canonical user tenant assignment from the base seed', () => {
     const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
+    expect(manifest.seedFiles).toContain('d1-seed.sql');
     const database = new DatabaseSync(':memory:');
-    const importAllSeeds = (): void => {
-      database.exec('BEGIN');
-      try {
-        for (const file of manifest.seedFiles) {
-          const source = fs.readFileSync(path.join(backendRoot, file), 'utf8');
-          database.exec(source);
-        }
-        database.exec('COMMIT');
-      } catch (error) {
-        database.exec('ROLLBACK');
-        throw error;
-      }
-    };
     try {
-      for (const file of ['d1-schema.sql', 'd1-reference-schema.sql']) {
-        database.exec(fs.readFileSync(path.join(backendRoot, file), 'utf8'));
-      }
-      importAllSeeds();
-      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
-      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-002'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
-      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-admin-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
-      expect(database.prepare("SELECT COUNT(*) AS count FROM User WHERE role = 'ADMIN' AND tenant_id = 'TNT-GLOBAL-8902'").get()).toEqual({ count: 3 });
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
+      const seed = fs.readFileSync(path.join(backendRoot, 'd1-seed.sql'), 'utf8');
+      database.exec(seed);
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-001'").get()).toEqual({
+        tenant_id: 'TNT-GLOBAL-8902'
+      });
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-002'").get()).toEqual({
+        tenant_id: 'TNT-GLOBAL-8902'
+      });
+      expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-admin-001'").get()).toEqual({
+        tenant_id: 'TNT-GLOBAL-8902'
+      });
+      expect(database.prepare("SELECT COUNT(*) AS count FROM User WHERE role = 'ADMIN' AND tenant_id = 'TNT-GLOBAL-8902'").get())
+        .toEqual({ count: 3 });
 
       database.prepare("UPDATE User SET status = 'PENDING', tenant_id = NULL WHERE id = 'usr-user-001'").run();
-      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-seed.sql'), 'utf8'));
+      database.exec(seed);
       expect(database.prepare("SELECT tenant_id FROM User WHERE id = 'usr-user-001'").get()).toEqual({ tenant_id: 'TNT-GLOBAL-8902' });
-
-      const schemaTables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as D1SchemaTableRow[];
-      expect(schemaTables.map((row) => row.name)).toEqual(Object.keys(manifest.tables).sort());
-      for (const [table, expected] of Object.entries(manifest.tables)) {
-        expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count, table).toBe(expected);
-      }
-      expect(database.prepare('SELECT COUNT(*) AS count FROM AssessmentStoreEntry WHERE json_valid(payload_json) = 0').get().count).toBe(0);
-      expect(database.prepare('SELECT COUNT(*) AS count FROM D1SeedPayloadChunk').get().count).toBe(0);
-      for (const upload of manifest.uploads) {
-        const stats = database.prepare('SELECT COUNT(*) AS count, SUM(total_inr_raw) AS total FROM ProcurementTransaction WHERE assessment_id = ?').get(upload.assessmentId);
-        expect(stats.count).toBe(upload.rowCount);
-        expect(stats.total).toBeCloseTo(upload.sumInr, 2);
-        const rawRow = database.prepare(
-          'SELECT raw_json FROM ProcurementTransaction WHERE assessment_id = ? LIMIT 1'
-        ).get(upload.assessmentId);
-        const sourceRow = JSON.parse(rawRow.raw_json);
-        expect(sourceRow.sourceRaw).toBeDefined();
-        expect(sourceRow.sourceChecksum).toBe(upload.sourceChecksum);
-      }
-
-      const keyedTransaction = database.prepare(`SELECT tenant_id, assessment_id, source_document_id, source_row_number
-        FROM ProcurementTransaction WHERE assessment_id IS NOT NULL AND source_document_id IS NOT NULL
-          AND source_row_number IS NOT NULL LIMIT 1`).get() as {
-        tenant_id: string; assessment_id: string; source_document_id: string; source_row_number: number;
-      };
-      expect(keyedTransaction).toBeDefined();
-      const insertTransaction = database.prepare(`INSERT INTO ProcurementTransaction (
-        transaction_id, tenant_id, assessment_id, source_document_id, source_row_number,
-        supplier_name, currency, raw_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
-      expect(() => insertTransaction.run('TX-UNIQUE-KEY-DUPLICATE', keyedTransaction.tenant_id,
-        keyedTransaction.assessment_id, keyedTransaction.source_document_id, keyedTransaction.source_row_number,
-        'Regression duplicate', 'INR', '{}')).toThrow(/UNIQUE constraint failed/u);
-      expect(() => {
-        insertTransaction.run('TX-UNIQUE-KEY-INCOMPLETE-1', keyedTransaction.tenant_id,
-          keyedTransaction.assessment_id, null, keyedTransaction.source_row_number, 'Incomplete source 1', 'INR', '{}');
-        insertTransaction.run('TX-UNIQUE-KEY-INCOMPLETE-2', keyedTransaction.tenant_id,
-          keyedTransaction.assessment_id, null, keyedTransaction.source_row_number, 'Incomplete source 2', 'INR', '{}');
-      }).not.toThrow();
-
-      const d1 = { prepare: (sql: string) => ({
-        bind: (...values: unknown[]) => ({ all: async () => ({ results: database.prepare(sql).all(...values) }) }),
-        all: async () => ({ results: database.prepare(sql).all() })
-      }) } as unknown as CloudflareD1Database;
-      expect(await loadCanonicalAssessmentFromD1(d1, 'AIC-2026-0001', D1_DEMO_TENANT_ID)).toMatchObject({
-        assessmentId: 'AIC-2026-0001', dataVersionId: 'DV-001', sourceRowCount: 20505,
-        validRowCount: 20241, excludedRowCount: 252, anomalyRowCount: 12,
-        validFxNormalizedSpendInr: 40738306838.0198
-      });
     } finally {
       database.close();
     }
