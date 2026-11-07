@@ -338,7 +338,11 @@ const updateIngestion = async (request: Request, environment: CloudflareEnvironm
   return updated ? { data: { ...updated, resolved: Boolean((updated as Record<string, unknown>).resolved) } } : { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
-const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
+const deleteIngestion = async (
+  url: URL,
+  environment: CloudflareEnvironment,
+  requestId?: string
+): Promise<{ data: unknown; status?: number }> => {
   const database = requireD1Binding(environment.DB);
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
@@ -350,18 +354,66 @@ const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Pr
   const documents = documentId
     ? await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(documentId, tenantId).all<{ doc_id: string }>()
     : await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).all<{ doc_id: string }>();
-  for (const document of documents.results) {
-    const objectRows = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE tenant_id = ? AND object_key LIKE ?').bind(tenantId, `${document.doc_id}_%`).all<{ object_key: string }>();
-    for (const object of objectRows.results) {
-      if (environment.OBJECTS) await environment.OBJECTS.delete(object.object_key);
-      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(object.object_key, tenantId).run();
-    }
-    await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(document.doc_id, tenantId).run();
+  const objects = !documents.results.length
+    ? { results: [] as Array<{ object_key: string }> }
+    : documentId
+      ? await database.prepare(`SELECT object_key FROM ObjectMetadata
+        WHERE tenant_id = ? AND substr(object_key, 1, length(?) + 1) = ? || '_'`)
+        .bind(tenantId, documentId, documentId).all<{ object_key: string }>()
+      : await database.prepare(`SELECT object_key FROM ObjectMetadata
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ?
+            AND substr(ObjectMetadata.object_key, 1, length(document.doc_id) + 1) = document.doc_id || '_'
+        )`).bind(tenantId, tenantId).all<{ object_key: string }>();
+  if (documents.results.length) {
+    const documentScope = documentId || null;
+    await runD1Statements(database, [
+      database.prepare(`DELETE FROM ProcurementTransaction
+        WHERE tenant_id = ? AND source_document_id IN (
+          SELECT doc_id FROM RawDocumentIngestion
+          WHERE tenant_id = ? AND (? IS NULL OR doc_id = ?)
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare(`DELETE FROM ValidationPreCheckRecord
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
+            AND substr(ValidationPreCheckRecord.record_id, 1, length('REC-' || document.doc_id || '-ROW-')) = 'REC-' || document.doc_id || '-ROW-'
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare(`DELETE FROM ObjectMetadata
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
+            AND substr(ObjectMetadata.object_key, 1, length(document.doc_id) + 1) = document.doc_id || '_'
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ? AND (? IS NULL OR doc_id = ?)')
+        .bind(tenantId, documentScope, documentScope)
+    ], {
+      action: D1_LOG_ACTIONS.ingestionDelete,
+      operation: D1_LOG_ACTIONS.ingestionDelete,
+      requestId,
+      tenantId,
+      documentId: documentId || undefined,
+      documentCount: documents.results.length
+    });
     clearScopedModule2Cache(database, tenantId);
-    await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${document.doc_id}-ROW-%`, tenantId).run();
-    await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(document.doc_id, tenantId).run();
+  }
+  for (const object of objects.results) {
+    try {
+      await environment.OBJECTS?.delete(object.object_key);
+    } catch (error: unknown) {
+      logger.warn(D1_LOG_MESSAGES.ingestionDeleteObjectCleanupFailed, {
+        action: D1_LOG_ACTIONS.ingestionDelete,
+        requestId,
+        tenantId,
+        documentId: documentId || undefined,
+        objectKey: object.object_key
+      }, error);
+    }
   }
   logger.info('Deleted D1 ingestion documents and linked data', {
+    action: D1_LOG_ACTIONS.ingestionDelete,
+    requestId,
     documentCount: documents.results.length,
     requestedDocumentId: documentId || undefined,
     tenantId
@@ -381,32 +433,55 @@ const resetValidationRecords = async (environment: CloudflareEnvironment): Promi
   return { data: records.results || [] };
 };
 
-const resetIngestionDataset = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+const resetIngestionDataset = async (
+  environment: CloudflareEnvironment,
+  requestId?: string
+): Promise<{ data: unknown }> => {
   const database = requireD1Binding(environment.DB);
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
   const documents = await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).all<{ doc_id: string }>();
   const objects = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId).all<{ object_key: string }>();
+  const documentIds = documents.results.map((document) => document.doc_id);
+  const deleteStatements: CloudflareD1PreparedStatement[] = [];
+  if (documentIds.length) {
+    const placeholders = documentIds.map(() => '?').join(', ');
+    deleteStatements.push(database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (${placeholders})`)
+      .bind(tenantId, ...documentIds));
+  }
+  deleteStatements.push(
+    database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId),
+    database.prepare('DELETE FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId),
+    database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId)
+  );
+  await runD1Statements(database, deleteStatements, {
+    action: D1_LOG_ACTIONS.ingestionReset,
+    operation: D1_LOG_ACTIONS.ingestionReset,
+    requestId,
+    tenantId,
+    documentCount: documentIds.length,
+    objectCount: objects.results.length
+  });
+  if (documentIds.length) clearScopedModule2Cache(database, tenantId);
   for (const object of objects.results) {
     try {
       await environment.OBJECTS?.delete(object.object_key);
-    } catch (error) {
-      logger.warn('Failed to remove a tenant object during ingestion reset; metadata cleanup will continue', {
-        tenantId, objectKey: object.object_key
+    } catch (error: unknown) {
+      logger.warn(D1_LOG_MESSAGES.ingestionResetObjectCleanupFailed, {
+        action: D1_LOG_ACTIONS.ingestionReset,
+        requestId,
+        tenantId,
+        objectKey: object.object_key
       }, error);
     }
   }
-  const documentIds = documents.results.map((document) => document.doc_id);
-  if (documentIds.length) {
-    const placeholders = documentIds.map(() => '?').join(', ');
-    await database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (${placeholders})`)
-      .bind(tenantId, ...documentIds).run();
-    clearScopedModule2Cache(database, tenantId);
-  }
-  await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId).run();
-  await database.prepare('DELETE FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId).run();
-  await database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).run();
-  logger.info('Reset tenant ingestion dataset', { tenantId, documentCount: documentIds.length, objectCount: objects.results.length });
+  logger.info('Reset tenant ingestion dataset', {
+    action: D1_LOG_ACTIONS.ingestionReset,
+    requestId,
+    tenantId,
+    documentCount: documentIds.length,
+    objectCount: objects.results.length
+  });
   return { data: { success: true, tenantId, deletedDocuments: documentIds.length, deletedObjects: objects.results.length } };
 };
 
@@ -426,11 +501,15 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
   if (request.method === 'POST' && url.pathname.endsWith('/remediate')) {
     return remediateIngestion(environment, request.headers.get('x-request-id') || undefined);
   }
-  if (request.method === 'POST' && url.pathname.endsWith('/reset')) return resetIngestionDataset(environment);
+  if (request.method === 'POST' && url.pathname.endsWith('/reset')) {
+    return resetIngestionDataset(environment, request.headers.get('x-request-id') || undefined);
+  }
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);
   if (request.method === 'DELETE' && url.pathname.endsWith('/validation-records')) return resetValidationRecords(environment);
-  if (request.method === 'DELETE') return deleteIngestion(url, environment);
+  if (request.method === 'DELETE') {
+    return deleteIngestion(url, environment, request.headers.get('x-request-id') || undefined);
+  }
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
 

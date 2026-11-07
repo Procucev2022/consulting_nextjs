@@ -7,4 +7,6 @@ export interface D1AtomicWriteContext {
   documentId?: string;
   sourceId?: string;
   pcbiId?: string;
+  documentCount?: number;
+  objectCount?: number;
 }

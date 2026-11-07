@@ -188,7 +188,9 @@ export const D1_LOG_MESSAGES = {
   atomicBatchUnavailable: 'D1 multi-statement write was rejected before any statements ran because transactional batch support is unavailable',
   atomicWriteFailed: 'D1 transactional write batch failed',
   ingestionUploadRollbackFailed: 'Failed to roll back a D1 ingestion upload',
-  ingestionUploadR2CleanupFailed: 'Failed to remove the uploaded object after a D1 import failure'
+  ingestionUploadR2CleanupFailed: 'Failed to remove the uploaded object after a D1 import failure',
+  ingestionDeleteObjectCleanupFailed: 'Ingestion data was removed from D1, but an R2 object could not be deleted',
+  ingestionResetObjectCleanupFailed: 'Ingestion data was reset in D1, but a tenant R2 object could not be deleted'
 } as const;
 
 export const D1_LOG_ACTIONS = {
@@ -200,6 +202,8 @@ export const D1_LOG_ACTIONS = {
   ingestionRemediation: 'd1.ingestion.remediation',
   ingestionUploadPersist: 'd1.ingestion.upload.persist',
   ingestionUploadRollback: 'd1.ingestion.upload.rollback',
+  ingestionDelete: 'd1.ingestion.delete',
+  ingestionReset: 'd1.ingestion.reset',
   atomicBatchUnavailable: 'd1.write.batch_unavailable'
 } as const;
 
