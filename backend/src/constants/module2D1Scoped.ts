@@ -36,6 +36,7 @@ export const MODULE2_D1_SCOPED_MESSAGES = {
 
 export const MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS = {
   ACTION: 'assessment.material-mappings.read',
+  WRITE_ACTION: 'assessment.material-mappings.write',
   MESSAGE: 'Invalid assessment material mappings were omitted from the D1 response',
   FALLBACK: 'omit-invalid-mappings',
   MAX_SAMPLE_SOURCE_IDS: 20,
@@ -57,6 +58,7 @@ export const MODULE2_D1_ROUTE_MESSAGES = {
   materialMappingTargetNotFound: 'The material is not present in the selected D1 assessment. Refresh the mapping queue and retry.',
   materialMappingTaxonomyNotFound: 'That UNSPSC commodity code is not in the D1 taxonomy. Select a code from the taxonomy and retry.',
   materialMappingSaved: 'Material classification saved to the selected assessment.',
+  materialMappingBatchUnavailable: 'The material mapping update was not saved because atomic D1 batching is unavailable. No data was changed. Retry later and include the response x-request-id header if you need support.',
   invalidComplianceReview: 'The compliance review is invalid. Add a clear justification and provide a dismissal reason when dismissing an exception.',
   complianceExceptionNotFound: 'The exception is not present in the selected D1 assessment. Refresh the assessment and retry.',
   complianceReviewSaved: 'Procurement compliance review saved to the selected assessment.',

@@ -9,7 +9,7 @@ import {
   materialMappingBulkUpdateSchema, materialMappingUpdateSchema, procurementComplianceReviewSchema,
   specificationReviewSchema
 } from './constants/validation';
-import { MODULE2_D1_ROUTE_MESSAGES } from './constants/module2D1Scoped';
+import { MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS, MODULE2_D1_ROUTE_MESSAGES } from './constants/module2D1Scoped';
 import { clearScopedModule2Cache, handleScopedModule2Route } from './services/workerD1Module2Scoped';
 import { authenticateWorkerUser } from './workerAuth';
 import { applySpecificationReviewHistory, loadSpecificationReviewHistory } from './services/workerD1SpecificationReviews';
@@ -22,14 +22,23 @@ import { readJson } from './workerHttp';
 
 export const executeMaterialMappingStatements = async (
   db: CloudflareD1Database,
-  statements: CloudflareD1PreparedStatement[]
-): Promise<void> => {
-  if (statements.length === 0) return;
-  if (db.batch) {
-    await db.batch(statements);
-    return;
+  statements: CloudflareD1PreparedStatement[],
+  requestId?: string
+): Promise<boolean> => {
+  if (statements.length === 0) return true;
+  if (!db.batch) {
+    const error = new Error(MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable);
+    logger.error('Material mapping update aborted before writes because D1 atomic batching is unavailable', {
+      action: MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS.WRITE_ACTION,
+      requestId,
+      statementCount: statements.length,
+      writesStarted: false,
+      fallback: 'fail-closed'
+    }, error);
+    return false;
   }
-  await Promise.all(statements.map((statement) => statement.run()));
+  await db.batch(statements);
+  return true;
 };
 
 const withAssessmentScope = (url: URL, assessmentId: string): URL => {
@@ -193,7 +202,13 @@ const persistMaterialMappingUpdates = async (
   `).bind(
     assessmentId, mapping.sourceMaterialId, JSON.stringify(mapping), reviewer.email, now
   ));
-  await executeMaterialMappingStatements(db, statements);
+  const persisted = await executeMaterialMappingStatements(
+    db, statements, request.headers.get('x-request-id') || undefined
+  );
+  if (!persisted) return {
+    status: 503,
+    data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable }
+  };
   clearScopedModule2Cache();
   logger.info('Persisted D1 assessment material classifications', {
     assessmentId, mappingCount: updatedMappings.length,

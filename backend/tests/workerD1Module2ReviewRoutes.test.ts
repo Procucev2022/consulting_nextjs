@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import type { MaterialMappingEntry } from '../src/types/module2MaterialMapping';
+import { MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import {
   executeMaterialMappingStatements, handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleProcurementComplianceReview,
   handleSpecificationReview, procurementComplianceReport, specificationReport
@@ -12,7 +13,9 @@ const routeMocks = vi.hoisted(() => ({
   loadHistory: vi.fn(),
   applyHistory: vi.fn(),
   clearCache: vi.fn(),
-  logInfo: vi.fn()
+  logInfo: vi.fn(),
+  logWarn: vi.fn(),
+  logError: vi.fn()
 }));
 
 vi.mock('../src/services/workerD1Module2Scoped', () => ({
@@ -25,7 +28,7 @@ vi.mock('../src/services/workerD1SpecificationReviews', () => ({
   loadSpecificationReviewHistory: routeMocks.loadHistory
 }));
 vi.mock('../src/utils/logger', () => ({
-  default: { debug: vi.fn(), info: routeMocks.logInfo, warn: vi.fn(), error: vi.fn() }
+  default: { debug: vi.fn(), info: routeMocks.logInfo, warn: routeMocks.logWarn, error: routeMocks.logError }
 }));
 
 const user = {
@@ -55,7 +58,7 @@ const makeDb = (options: { taxonomyResults?: unknown; batch?: boolean } = {}): C
   };
   return {
     prepare: vi.fn(() => statement),
-    ...(options.batch ? { batch: vi.fn(async () => []) } : {})
+    ...(options.batch === false ? {} : { batch: vi.fn(async () => []) })
   } as unknown as CloudflareD1Database;
 };
 
@@ -142,8 +145,29 @@ describe('Module 2 specification review routes', () => {
 describe('Module 2 material mapping routes', () => {
   it('skips D1 batch calls when there are no prepared mapping statements', async () => {
     const db = makeDb({ batch: true });
-    await executeMaterialMappingStatements(db, []);
+    await expect(executeMaterialMappingStatements(db, [])).resolves.toBe(true);
     expect(db.batch).not.toHaveBeenCalled();
+  });
+
+  it('fails closed with a correlated error when atomic D1 batching is unavailable', async () => {
+    const db = makeDb({ batch: false });
+    const statement = db.prepare('UPDATE AssessmentMaterialMapping SET payload_json = ?');
+
+    await expect(executeMaterialMappingStatements(db, [statement], 'mapping-request-1')).resolves.toBe(false);
+
+    expect(db.batch).toBeUndefined();
+    expect(statement.run).not.toHaveBeenCalled();
+    expect(routeMocks.logError).toHaveBeenCalledWith(
+      'Material mapping update aborted before writes because D1 atomic batching is unavailable',
+      expect.objectContaining({
+        action: MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS.WRITE_ACTION,
+        requestId: 'mapping-request-1',
+        statementCount: 1,
+        writesStarted: false,
+        fallback: 'fail-closed'
+      }),
+      expect.objectContaining({ message: MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable })
+    );
   });
 
   it('validates and authorizes single and bulk mapping updates', async () => {
@@ -177,7 +201,7 @@ describe('Module 2 material mapping routes', () => {
     }), url)).toMatchObject({ status: 400 });
   });
 
-  it('persists approved and provisional classifications with D1 batch and statement fallbacks', async () => {
+  it('persists approved and provisional classifications atomically and rejects adapters without batch support', async () => {
     const url = new URL('https://unit.test/mappings');
     const batchedDb = makeDb({ batch: true });
     const approved = await handleMaterialMappingUpdate(batchedDb, requestFor('/mappings', validMapping({
@@ -198,8 +222,26 @@ describe('Module 2 material mapping routes', () => {
       evidence: 'Unreviewed classification suggestion generated from assessment data.'
     })] });
     expect(statementDb.prepare).toHaveBeenCalledTimes(2);
+    expect(statementDb.batch).toHaveBeenCalledOnce();
     expect(routeMocks.clearCache).toHaveBeenCalledTimes(2);
     expect(routeMocks.logInfo).toHaveBeenCalledWith('Persisted D1 assessment material classifications', expect.any(Object));
+
+    const unsupportedDb = makeDb({ batch: false });
+    const unavailable = await handleBulkMaterialMappingUpdate(unsupportedDb, new Request('https://unit.test/mappings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'mapping-request-2' },
+      body: JSON.stringify({ assessmentId: 'A-1', mappings: [validMapping()] })
+    }), url);
+    expect(unavailable).toEqual({
+      status: 503,
+      data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable }
+    });
+    const updateStatement = vi.mocked(unsupportedDb.prepare).mock.results.at(-1)?.value;
+    expect(updateStatement?.run).not.toHaveBeenCalled();
+    expect(routeMocks.logError).toHaveBeenCalledWith(
+      'Material mapping update aborted before writes because D1 atomic batching is unavailable',
+      expect.objectContaining({ requestId: 'mapping-request-2', writesStarted: false }),
+      expect.any(Error)
+    );
   });
 });
 

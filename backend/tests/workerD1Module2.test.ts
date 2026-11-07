@@ -115,6 +115,29 @@ const handleModule2Route = async (
 };
 
 describe('workerD1Module2 handler', () => {
+  it('models D1 batch execution as an atomic SQLite transaction', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const first = fixture.d1.prepare(`INSERT INTO AssessmentMaterialMapping (
+        assessment_id, source_material_id, payload_json, reviewed_by, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`)
+        .bind('A1', 'MAT-ROLLBACK', '{}', 'reviewer@example.test', '2026-11-07T00:00:00Z');
+      const invalid = fixture.d1.prepare(`INSERT INTO AssessmentMaterialMapping (
+        assessment_id, source_material_id, payload_json, reviewed_by, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`)
+        .bind('A1', 'MAT-INVALID', null, 'reviewer@example.test', '2026-11-07T00:00:00Z');
+
+      const batch = fixture.d1.batch;
+      if (!batch) throw new Error('SQLite D1 fixture does not provide batch execution.');
+      await expect(batch([first, invalid])).rejects.toThrow();
+      expect(fixture.db.prepare(
+        'SELECT COUNT(*) AS count FROM AssessmentMaterialMapping WHERE assessment_id = ?'
+      ).get('A1')).toMatchObject({ count: 0 });
+    } finally {
+      fixture.close();
+    }
+  });
+
   it('scopes uploaded transaction reads to bound assessment and tenant identifiers', async () => {
     const statement = { bind: vi.fn().mockReturnThis(), first: vi.fn().mockResolvedValue({ ok: 1 }),
       all: vi.fn().mockResolvedValue({ results: [{ transaction_id: 'DB-ROW', total_inr_raw: 10000000 }] }) };
