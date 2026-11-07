@@ -46,6 +46,9 @@ class LabStatement implements CloudflareD1PreparedStatement {
     if (this.sql.includes('PCBICommodityResearchWorkflow')) {
       return (this.database.workflows.find((row) => row.pcbi_id === this.values[0]) || null) as T | null;
     }
+    if (this.sql.includes('PCBICommodityResearchAssignment')) {
+      return (this.database.assignments.find((row) => row.pcbi_id === this.values[0]) || null) as T | null;
+    }
     return null;
   }
   async all<T>(): Promise<{ results: T[] }> {
@@ -86,6 +89,13 @@ class LabStatement implements CloudflareD1PreparedStatement {
     return { results: [] };
   }
   async run(): Promise<unknown> {
+    for (const [index, pattern] of this.database.failureSqlPatterns.entries()) {
+      if (!this.sql.includes(pattern)) continue;
+      this.database.failurePatternCounts[index] = (this.database.failurePatternCounts[index] || 0) + 1;
+      if (this.database.failurePatternCounts[index] === this.database.failureAttemptNumbers[index]) {
+        throw this.database.statementFailure;
+      }
+    }
     if (this.sql.includes('INSERT INTO PCBICommoditySource')) {
       const [source_id, commodity_id, pcbi_id, series_id, source_name, publisher, url, document_name, publication_date,
         uploaded_at, uploaded_by, file_type, checksum, object_key, geography, grade_specification, unit, currency,
@@ -120,10 +130,16 @@ class LabStatement implements CloudflareD1PreparedStatement {
     } else if (this.sql.includes('INSERT INTO PCBICommodityPromotion')) {
       const [promotion_id, catalog_version_id, source_id, commodity_id, pcbi_id, approver_name, comments, promoted_at, observation_count] = this.values;
       this.database.promotions.unshift({ promotion_id, catalog_version_id, source_id, commodity_id, pcbi_id, approver_name, comments, promoted_at, observation_count } as PCBICommodityPromotionRow);
+    } else if (this.sql.includes('DELETE FROM PCBICommodityPromotion')) {
+      const index = this.database.promotions.findIndex((row) => row.promotion_id === this.values[0]);
+      if (index >= 0) this.database.promotions.splice(index, 1);
     } else if (this.sql.includes('INSERT INTO PCBICommodityResearchAssignment')) {
       const [pcbi_id, assigned_to, assigned_by, assigned_at, updated_at] = this.values;
       const existing = this.database.assignments.find((row) => row.pcbi_id === pcbi_id);
-      if (existing) Object.assign(existing, { assigned_to, assigned_by, updated_at });
+      if (existing) Object.assign(existing, {
+        assigned_to, assigned_by, updated_at,
+        ...(this.sql.includes('assigned_at = excluded.assigned_at') ? { assigned_at } : {})
+      });
       else this.database.assignments.push({ pcbi_id, assigned_to, assigned_by, assigned_at, updated_at });
     } else if (this.sql.includes('INSERT INTO PCBICommodityResearchWorkflow')) {
       const [pcbi_id, status, due_date, notes, updated_by, updated_at] = this.values;
@@ -137,8 +153,11 @@ class LabStatement implements CloudflareD1PreparedStatement {
       const assignmentIndex = this.database.assignments.findIndex((row) => row.pcbi_id === this.values[0]);
       if (assignmentIndex >= 0) this.database.assignments.splice(assignmentIndex, 1);
     } else if (this.sql.includes('UPDATE PCBICommoditySource')) {
-      const source = this.database.sources.find((row) => row.source_id === this.values[0]);
-      if (source) Object.assign(source, { methodology_status: 'METHODOLOGY_APPROVED', approval_status: 'ADMIN_APPROVED' });
+      const sourceId = this.sql.includes('SET methodology_status = ?, approval_status = ?') ? this.values[2] : this.values[0];
+      const source = this.database.sources.find((row) => row.source_id === sourceId);
+      if (source && this.sql.includes('SET methodology_status = ?, approval_status = ?')) {
+        Object.assign(source, { methodology_status: this.values[0], approval_status: this.values[1] });
+      } else if (source) Object.assign(source, { methodology_status: 'METHODOLOGY_APPROVED', approval_status: 'ADMIN_APPROVED' });
     }
     return { success: true };
   }
@@ -159,6 +178,10 @@ class LabDatabase implements CloudflareD1Database {
   failCompensatingDelete = false;
   readonly observationInsertFailure = new Error('D1 observation insert failed');
   readonly rollbackFailure = new Error('D1 compensation failed');
+  readonly statementFailure = new Error('D1 statement failed');
+  failureSqlPatterns: string[] = [];
+  failureAttemptNumbers: number[] = [];
+  failurePatternCounts: number[] = [];
   batchCalls = 0;
   readonly batch?: CloudflareD1Database['batch'];
   constructor(withBatch = true) {
@@ -285,6 +308,63 @@ describe('D1 Commodity Data Lab', () => {
     expect(unassigned.data).toMatchObject({ success: true, assignment: null });
     expect(db.assignments).toHaveLength(0);
     expect(db.workflows).toHaveLength(0);
+  });
+
+  it('restores the previous assignment when a later sequential D1 write fails', async () => {
+    const db = new LabDatabase(false);
+    const previousAssignment = {
+      pcbi_id: BENCHMARK.pcbi_id, assigned_to: 'old@example.test', assigned_by: 'prior-admin@example.test',
+      assigned_at: '2026-10-01T00:00:00.000Z', updated_at: '2026-10-02T00:00:00.000Z'
+    };
+    const previousWorkflow = {
+      pcbi_id: BENCHMARK.pcbi_id, status: 'RESEARCHING', due_date: '2026-10-20', notes: 'Original plan',
+      updated_by: 'prior-admin@example.test', updated_at: '2026-10-02T00:00:00.000Z'
+    };
+    db.assignments.push({ ...previousAssignment });
+    db.workflows.push({ ...previousWorkflow });
+    db.failureSqlPatterns = ['INSERT INTO PCBICommodityResearchWorkflow'];
+    db.failureAttemptNumbers = [1];
+
+    await expect(route(environment(db), '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: 'new@example.test', notes: 'Changed plan'
+    })).rejects.toThrow(db.statementFailure);
+
+    expect(db.assignments).toEqual([previousAssignment]);
+    expect(db.workflows).toEqual([previousWorkflow]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Sequential D1 write failed; previous state was restored',
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-research-assignment', consistencyRestored: true }),
+      db.statementFailure
+    );
+  });
+
+  it('logs incomplete sequential D1 compensation with correlation when restoring prior state also fails', async () => {
+    const db = new LabDatabase(false);
+    db.assignments.push({
+      pcbi_id: BENCHMARK.pcbi_id, assigned_to: 'old@example.test', assigned_by: 'prior-admin@example.test',
+      assigned_at: '2026-10-01T00:00:00.000Z', updated_at: '2026-10-02T00:00:00.000Z'
+    });
+    db.failureSqlPatterns = ['INSERT INTO PCBICommodityResearchWorkflow', 'INSERT INTO PCBICommodityResearchAssignment'];
+    db.failureAttemptNumbers = [1, 2];
+
+    await expect(route(environment(db), '/assignment', 'POST', {
+      pcbiId: BENCHMARK.pcbi_id, assignee: 'new@example.test'
+    })).rejects.toThrow(db.statementFailure);
+
+    expect(db.assignments).toMatchObject([{ assigned_to: 'new@example.test' }]);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Sequential D1 write failed and compensation was incomplete',
+      expect.objectContaining({
+        requestId: 'req-lab-1', action: 'pcbi-research-assignment', consistencyRestored: false,
+        failedCompensations: 1
+      }),
+      db.statementFailure
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Sequential D1 compensation statement failed',
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-research-assignment' }),
+      db.statementFailure
+    );
   });
 
   it('rejects invalid assignments, unknown benchmark IDs, malformed JSON, and unsupported methods', async () => {
@@ -564,6 +644,54 @@ describe('D1 Commodity Data Lab', () => {
     const approved = await route(env, '/approve', 'POST', { commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin' });
     expect(approved.data).toMatchObject({ result: { success: true } });
     expect(db.sources[0]).toMatchObject({ approval_status: 'ADMIN_APPROVED' });
+  });
+
+  it('removes a sequentially inserted promotion when the approval status update fails', async () => {
+    const db = new LabDatabase(false);
+    const env = environment(db);
+    await route(env, '/upload-source', 'POST', validUpload());
+    const previousSource = { ...db.sources[0] };
+    db.failureSqlPatterns = ['UPDATE PCBICommoditySource'];
+    db.failureAttemptNumbers = [1];
+
+    await expect(route(env, '/approve', 'POST', {
+      commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin'
+    })).rejects.toThrow(db.statementFailure);
+
+    expect(db.promotions).toHaveLength(0);
+    expect(db.sources[0]).toMatchObject({
+      methodology_status: previousSource.methodology_status,
+      approval_status: previousSource.approval_status
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Sequential D1 write failed; previous state was restored',
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-commodity-approval', consistencyRestored: true }),
+      db.statementFailure
+    );
+  });
+
+  it('restores approval status when a later sequential promotion insert fails', async () => {
+    const db = new LabDatabase(false);
+    const env = environment(db);
+    await route(env, '/upload-source', 'POST', validUpload());
+    const previousSource = { ...db.sources[0] };
+    db.failureSqlPatterns = ['INSERT INTO PCBICommodityPromotion'];
+    db.failureAttemptNumbers = [1];
+
+    await expect(route(env, '/approve', 'POST', {
+      commodityId: 'COM-STEEL-1', pcbiId: BENCHMARK.pcbi_id, approverName: 'Admin'
+    })).rejects.toThrow(db.statementFailure);
+
+    expect(db.promotions).toHaveLength(0);
+    expect(db.sources[0]).toMatchObject({
+      methodology_status: previousSource.methodology_status,
+      approval_status: previousSource.approval_status
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Sequential D1 write failed; previous state was restored',
+      expect.objectContaining({ requestId: 'req-lab-1', action: 'pcbi-commodity-approval', consistencyRestored: true }),
+      db.statementFailure
+    );
   });
 
   it('atomically batches source rows and compensates partial D1 and R2 writes on failure', async () => {
