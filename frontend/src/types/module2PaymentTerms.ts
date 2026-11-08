@@ -137,3 +137,10 @@ export interface PaymentTermsOpportunitiesTabProps {
   coverageSummary: PaymentTermsCoverageSummary;
 }
 
+export interface PaymentTermsSupplierTabProps {
+  supplierProfiles: SupplierPaymentTermsProfile[];
+  coverageRecords: PaymentTermsRecordCoverage[];
+}
+
+export type PaymentTermsSupplierSubView = 'suppliers' | 'transactions';
+

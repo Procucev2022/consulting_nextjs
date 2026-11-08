@@ -1,19 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { SupplierPaymentTermsProfile, PaymentTermsRecordCoverage } from '../../types/module2PaymentTerms';
+import type {
+  PaymentTermsSupplierSubView,
+  PaymentTermsSupplierTabProps
+} from '../../types/module2PaymentTerms';
 import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
-
-interface PaymentTermsSupplierTabProps {
-  supplierProfiles: SupplierPaymentTermsProfile[];
-  coverageRecords: PaymentTermsRecordCoverage[];
-}
+import { UI_STRINGS } from '../../constants/uiStrings';
+import {
+  PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT,
+  PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT
+} from '../../constants/module2PaymentTerms';
 
 export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = ({
   supplierProfiles,
   coverageRecords
 }) => {
-  const [subView, setSubView] = useState<'suppliers' | 'transactions'>('suppliers');
+  const [subView, setSubView] = useState<PaymentTermsSupplierSubView>('suppliers');
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredSuppliers = supplierProfiles.filter((s) => {
@@ -21,7 +24,7 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
     return s.supplierName.toLowerCase().includes(q) || s.supplierCode.toLowerCase().includes(q) || s.spendCategory.toLowerCase().includes(q);
   });
 
-  const filteredTransactions = coverageRecords.slice(0, 100).filter((t) => {
+  const filteredTransactions = coverageRecords.slice(0, PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT).filter((t) => {
     const q = searchTerm.toLowerCase();
     return t.vendorName.toLowerCase().includes(q) || t.poNumber.toLowerCase().includes(q);
   });
@@ -45,7 +48,7 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
               color: subView === 'suppliers' ? '#1d4ed8' : '#475569'
             }}
           >
-            Supplier Profiles ({supplierProfiles.length})
+            {UI_STRINGS.module2.paymentTerms.supplierProfilesButton(supplierProfiles.length)}
           </button>
           <button
             type="button"
@@ -61,13 +64,13 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
               color: subView === 'transactions' ? '#1d4ed8' : '#475569'
             }}
           >
-            Transaction Register Preview (Top 100)
+            {UI_STRINGS.module2.paymentTerms.transactionRegisterButton}
           </button>
         </div>
 
         <input
           type="text"
-          placeholder="Filter by name, code or PO..."
+          placeholder={UI_STRINGS.module2.paymentTerms.supplierSearchPlaceholder}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -85,17 +88,25 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                <th style={{ padding: '10px 16px' }}>Supplier</th>
-                <th style={{ padding: '10px 16px' }}>Category</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Total Spend</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Transactions</th>
-                <th style={{ padding: '10px 16px' }}>Observed Terms</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Wavg Days</th>
-                <th style={{ padding: '10px 16px' }}>Data Availability</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.supplierHeaders.supplier}</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.supplierHeaders.category}</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.supplierHeaders.totalSpend}
+                </th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.supplierHeaders.transactions}
+                </th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.supplierHeaders.observedTerms}</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.supplierHeaders.weightedAverageDays}
+                </th>
+                <th style={{ padding: '10px 16px' }}>
+                  {UI_STRINGS.module2.paymentTerms.supplierHeaders.dataAvailability}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filteredSuppliers.slice(0, 50).map((s) => (
+              {filteredSuppliers.slice(0, PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT).map((s) => (
                 <tr key={s.supplierCode} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 16px' }}>
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{s.supplierName}</div>
@@ -103,16 +114,20 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
                   </td>
                   <td style={{ padding: '10px 16px', color: '#475569' }}>{resolveHumanReadableCategory(s.spendCategory)}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
-                    ₹{s.totalSpendCr.toFixed(4)} Cr
+                    {UI_STRINGS.common.croreAmount(s.totalSpendCr.toFixed(4))}
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', color: '#64748b' }}>
                     {s.transactionCount.toLocaleString()}
                   </td>
                   <td style={{ padding: '10px 16px', color: '#334155' }}>
-                    {s.observedPaymentTerms.length > 0 ? s.observedPaymentTerms.join(', ') : 'Not Found in Source Data'}
+                    {s.observedPaymentTerms.length > 0
+                      ? s.observedPaymentTerms.join(', ')
+                      : UI_STRINGS.module2.paymentTerms.observedTermsUnavailable}
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', color: '#0f172a', fontWeight: 600 }}>
-                    {s.weightedAvgCreditDays > 0 ? `${s.weightedAvgCreditDays}d` : '—'}
+                    {s.weightedAvgCreditDays > 0
+                      ? UI_STRINGS.module2.paymentTerms.creditDays(s.weightedAvgCreditDays)
+                      : UI_STRINGS.module2.paymentTerms.creditDaysUnavailable}
                   </td>
                   <td style={{ padding: '10px 16px' }}>
                     <span
@@ -135,7 +150,7 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
                             : '#991b1b'
                       }}
                     >
-                      {s.dataAvailability}
+                      {UI_STRINGS.module2.paymentTerms.availabilityLabels[s.dataAvailability]}
                     </span>
                   </td>
                 </tr>
@@ -148,13 +163,21 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                <th style={{ padding: '10px 16px' }}>PO Number</th>
-                <th style={{ padding: '10px 16px' }}>PO Date</th>
-                <th style={{ padding: '10px 16px' }}>Vendor</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Spend (INR)</th>
-                <th style={{ padding: '10px 16px' }}>Raw Payment Terms</th>
-                <th style={{ padding: '10px 16px' }}>Coverage Status</th>
-                <th style={{ padding: '10px 16px' }}>Gap Classification</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.transactionHeaders.poNumber}</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.transactionHeaders.poDate}</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.transactionHeaders.vendor}</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.transactionHeaders.spendInr}
+                </th>
+                <th style={{ padding: '10px 16px' }}>
+                  {UI_STRINGS.module2.paymentTerms.transactionHeaders.rawPaymentTerms}
+                </th>
+                <th style={{ padding: '10px 16px' }}>
+                  {UI_STRINGS.module2.paymentTerms.transactionHeaders.coverageStatus}
+                </th>
+                <th style={{ padding: '10px 16px' }}>
+                  {UI_STRINGS.module2.paymentTerms.transactionHeaders.gapClassification}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -164,10 +187,10 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
                   <td style={{ padding: '10px 16px', color: '#475569' }}>{t.poDate}</td>
                   <td style={{ padding: '10px 16px', color: '#0f172a' }}>{t.vendorName}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
-                    ₹{t.spendInr.toLocaleString('en-IN')}
+                    {UI_STRINGS.module2.paymentTerms.inrAmount(t.spendInr.toLocaleString('en-IN'))}
                   </td>
                   <td style={{ padding: '10px 16px', color: t.rawPaymentTerms ? '#047857' : '#94a3b8' }}>
-                    {t.rawPaymentTerms || 'MISSING IN ERP'}
+                    {t.rawPaymentTerms || UI_STRINGS.module2.paymentTerms.paymentTermsMissingInErp}
                   </td>
                   <td style={{ padding: '10px 16px' }}>
                     <span
@@ -180,11 +203,11 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
                         color: t.coverageStatus === 'COMPLETE' ? '#166534' : t.coverageStatus === 'PARTIAL' ? '#92400e' : '#991b1b'
                       }}
                     >
-                      {t.coverageStatus}
+                      {UI_STRINGS.module2.paymentTerms.coverageStatusLabels[t.coverageStatus]}
                     </span>
                   </td>
                   <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '11px' }}>
-                    {t.gapReason || 'None (Verified)'}
+                    {t.gapReason || UI_STRINGS.module2.paymentTerms.verifiedCoverageGapNone}
                   </td>
                 </tr>
               ))}

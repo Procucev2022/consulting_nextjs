@@ -7,19 +7,21 @@ import type {
   PaymentTermsDataAvailabilityStatus,
   PaymentTermsDataGapReason
 } from '../types/module2PaymentTerms';
+import { UI_STRINGS } from './uiStrings';
 
 export const PROCUCEV_STANDARD_FINANCING_RATE_PER_30_DAYS = 0.015;
 export const DAYS_IN_STANDARD_YEAR = 365;
 export const STANDARD_CREDIT_INTERVAL_DAYS = 30;
 export const PAYMENT_TERMS_ENDPOINT = '/api/module2/sourcing/payment-terms';
 
-export const PAYMENT_TERMS_STATUS_DISPLAY_LABELS: Record<PaymentTermsDataAvailabilityStatus, string> = {
-  OPPORTUNITY_IDENTIFIED: 'Opportunity Identified',
-  DATA_PARTIALLY_AVAILABLE: 'Data Partially Available',
-  DATA_UNAVAILABLE: 'Data Unavailable — Payment Terms Not Found in Source Data',
-  AWAITING_VALIDATION: 'Awaiting Validation',
-  NOT_YET_QUANTIFIABLE: 'Not Yet Quantifiable'
-} as const;
+export const PAYMENT_TERMS_STATUS_DISPLAY_LABELS: Record<PaymentTermsDataAvailabilityStatus, string> =
+  UI_STRINGS.module2.paymentTerms.availabilityLabels;
+
+export const PAYMENT_TERMS_SIMULATION_DEFAULT_SPEND_CR = 120;
+export const PAYMENT_TERMS_SIMULATION_DEFAULT_CREDIT_DAYS = 30;
+export const PAYMENT_TERMS_SIMULATION_CREDIT_DAY_OPTIONS = [15, 30, 45, 60, 90] as const;
+export const PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT = 50;
+export const PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT = 100;
 
 export const PAYMENT_TERMS_DATA_GAP_DESCRIPTIONS: Record<PaymentTermsDataGapReason, string> = {
   FIELD_NOT_IN_SOURCE_ERP: 'Payment terms field is not present in the customer source ERP extract.',

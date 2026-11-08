@@ -34,7 +34,7 @@ const mockCoverageSummary: PaymentTermsCoverageSummary = {
     FIELD_NOT_IN_SOURCE_ERP: 23570
   },
   overallDataAvailabilityStatus: 'DATA_UNAVAILABLE',
-  overallStatusDisplayText: 'Data Unavailable — Payment Terms Not Found in Source Data',
+  overallStatusDisplayText: UI_STRINGS.module2.paymentTerms.availabilityLabels.DATA_UNAVAILABLE,
   reconciliationDeltaInr: 0.0,
   procucevModellingRatePctPer30Days: 1.5,
   totalWorkingCapitalReleasedCr: 0.0,
@@ -100,16 +100,18 @@ describe('PaymentTermsComponents', () => {
       expect(screen.getByText(UI_STRINGS.module2.paymentTerms.title)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('₹613.8805 Cr')).toBeInTheDocument();
-    expect(screen.getByText('DATA UNAVAILABLE')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('613.8805'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualCreditDaysUnavailable)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.paymentTerms.planningScenarioTitle)).toBeInTheDocument();
   });
 
   it('renders declarative virtual DOM Excel download link', async () => {
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
     await waitFor(() => {
-      const link = screen.getByText(/Download 8-Sheet Auditable Excel Report/i);
-      expect(link.closest('a')).toHaveAttribute(
+      const link = screen.getByRole('link', {
+        name: new RegExp(UI_STRINGS.module2.paymentTerms.exportButton)
+      });
+      expect(link).toHaveAttribute(
         'href',
         '/api/module2/sourcing/payment-terms/export-excel?assessmentId=AIC-2026-0002'
       );
@@ -135,14 +137,14 @@ describe('PaymentTermsComponents', () => {
     expect(screen.getAllByText(/Data Unavailable — Payment Terms Not Found in Source Data/i).length).toBeGreaterThan(0);
 
     // Verify simulation formula: 120 Cr * 1.5% * (30/30) = 1.8000 Cr; WC = 120 / 365 * 30 = 9.8630 Cr
-    expect(screen.getByText('₹1.8000 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹9.8630 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('1.8000'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('9.8630'))).toBeInTheDocument();
 
     // Change additional days to 60 days -> 120 Cr * 1.5% * (60/30) = 3.6000 Cr
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: '60' } });
-    expect(screen.getByText('₹3.6000 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹19.7260 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('3.6000'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('19.7260'))).toBeInTheDocument();
   });
 
   it('renders PaymentTermsSupplierTab and toggles between suppliers and transactions', () => {
@@ -153,12 +155,12 @@ describe('PaymentTermsComponents', () => {
       />
     );
     expect(screen.getByText('Acme Fibers Ltd')).toBeInTheDocument();
-    expect(screen.getByText('₹50.0000 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('50.0000'))).toBeInTheDocument();
 
     const txBtn = screen.getByText(/Transaction Register Preview/i);
     fireEvent.click(txBtn);
     expect(screen.getByText('PO-1001')).toBeInTheDocument();
-    expect(screen.getByText('₹5,00,000')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.inrAmount('5,00,000'))).toBeInTheDocument();
   });
 
   it('handles fetch error gracefully in PaymentTermsView', async () => {
