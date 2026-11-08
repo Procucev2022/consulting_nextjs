@@ -209,6 +209,10 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module2.volumeAggregation.genuineOpportunityCount', () => UI_STRINGS.module2.volumeAggregation.genuineOpportunityCount(7), ['7', 'multi-plant']],
   ['module2.volumeAggregation.limitedHistorySpend', () => UI_STRINGS.module2.volumeAggregation.limitedHistorySpend(UI_STRINGS.common.croreAmount('2.50')), ['2.50', 'limited history']],
   ['module2.volumeAggregation.unresolvedUomCount', () => UI_STRINGS.module2.volumeAggregation.unresolvedUomCount(4), ['4', 'Ambiguous UOM']],
+  ['module2.paymentTerms.networkFailure', () => UI_STRINGS.module2.paymentTerms.networkFailure('offline', 'req-4'), ['offline', 'retry', 'req-4']],
+  ['module2.paymentTerms.httpFailure', () => UI_STRINGS.module2.paymentTerms.httpFailure(503, 'req-5'), ['503', 'Retry', 'req-5']],
+  ['module2.paymentTerms.responseFailure', () => UI_STRINGS.module2.paymentTerms.responseFailure('invalid data', 'req-6'), ['invalid data', 'Retry', 'req-6']],
+  ['module2.paymentTerms.unexpectedFailure', () => UI_STRINGS.module2.paymentTerms.unexpectedFailure('req-7'), ['failure details', 'Retry', 'req-7']],
 
   ['module2VendorConsolidation.breadcrumbSupplier', () => UI_STRINGS.module2VendorConsolidation.breadcrumbSupplier('Packaging'), ['Packaging']],
   ['module2VendorConsolidation.breadcrumbMaterial', () => UI_STRINGS.module2VendorConsolidation.breadcrumbMaterial('MAT-1'), ['MAT-1']],

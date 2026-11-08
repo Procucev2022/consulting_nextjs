@@ -10,7 +10,9 @@ import { PaymentTermsView } from '../../../src/components/module2/PaymentTermsVi
 import { PaymentTermsCoverageTab } from '../../../src/components/module2/PaymentTermsCoverageTab';
 import { PaymentTermsOpportunitiesTab } from '../../../src/components/module2/PaymentTermsOpportunitiesTab';
 import { PaymentTermsSupplierTab } from '../../../src/components/module2/PaymentTermsSupplierTab';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../../src/constants/module2PaymentTerms';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../../../src/constants/app';
+import { logger } from '../../../src/utils/logger';
 import type { PaymentTermsResult, PaymentTermsCoverageSummary } from '../../../src/types/module2PaymentTerms';
 
 const mockCoverageSummary: PaymentTermsCoverageSummary = {
@@ -95,12 +97,12 @@ describe('PaymentTermsComponents', () => {
   it('renders PaymentTermsView with 5 KPI cards and data unavailable notice', async () => {
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
     await waitFor(() => {
-      expect(screen.getByText('Lever 5: Payment Terms Optimisation')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.title)).toBeInTheDocument();
     });
 
     expect(screen.getByText('₹613.8805 Cr')).toBeInTheDocument();
     expect(screen.getByText('DATA UNAVAILABLE')).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.planningScenarioTitle)).toBeInTheDocument();
   });
 
   it('renders declarative virtual DOM Excel download link', async () => {
@@ -128,8 +130,8 @@ describe('PaymentTermsComponents', () => {
         coverageSummary={mockCoverageSummary}
       />
     );
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.SCENARIO_BOX_TITLE)).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.SCENARIO_GOVERNANCE_TAG)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.scenarioBoxTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.scenarioGovernanceTag)).toBeInTheDocument();
     expect(screen.getAllByText(/Data Unavailable — Payment Terms Not Found in Source Data/i).length).toBeGreaterThan(0);
 
     // Verify simulation formula: 120 Cr * 1.5% * (30/30) = 1.8000 Cr; WC = 120 / 365 * 30 = 9.8630 Cr
@@ -160,11 +162,20 @@ describe('PaymentTermsComponents', () => {
   });
 
   it('handles fetch error gracefully in PaymentTermsView', async () => {
-    vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network offline'));
+    const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network offline'));
+    vi.spyOn(logger, 'error').mockImplementation((message) => ({
+      timestamp: '2026-11-08T00:00:00.000Z',
+      level: 'error',
+      service: 'consulting-frontend',
+      message
+    }));
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
+    const requestInit = fetchSpy.mock.calls[0]?.[1];
+    const requestId = new Headers(requestInit?.headers).get(API_REQUEST_ID_HEADER) || '';
     await waitFor(() => {
-      expect(screen.getByText('Unable to load Payment Terms analysis')).toBeInTheDocument();
-      expect(screen.getByText('Network offline')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.errorTitle)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.networkFailure('Network offline', requestId)))
+        .toBeInTheDocument();
     });
   });
 });

@@ -110,6 +110,11 @@ export interface PaymentTermsCalculationOptions {
   authorizedBy?: string;
 }
 
+export interface PaymentTermsViewProps {
+  assessmentId: string;
+  onBackToOverview?: () => void;
+}
+
 export interface PaymentTermsResult {
   assessmentId: string;
   coverageSummary: PaymentTermsCoverageSummary;
@@ -120,6 +125,11 @@ export interface PaymentTermsResult {
 }
 
 export interface PaymentTermsKpiHeaderProps {
+  coverageSummary: PaymentTermsCoverageSummary;
+}
+
+export interface PaymentTermsOpportunitiesTabProps {
+  opportunities: PaymentTermsOpportunity[];
   coverageSummary: PaymentTermsCoverageSummary;
 }
 

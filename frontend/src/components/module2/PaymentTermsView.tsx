@@ -2,18 +2,22 @@
 import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { PaymentTermsResult } from '../../types/module2PaymentTerms';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../constants/module2PaymentTerms';
+import type { PaymentTermsResult, PaymentTermsViewProps } from '../../types/module2PaymentTerms';
+import {
+  API_REQUEST_ID_HEADER,
+  assessmentIdQuerySchema,
+  ERROR_CATEGORIES,
+  PAYMENT_TERMS_ENDPOINT,
+  paymentTermsResponseSchema,
+  UI_STRINGS
+} from '../../constants';
+import { createClientRequestId } from '../../utils/requestId';
+import { logger } from '../../utils/logger';
 import { PaymentTermsCoverageTab } from './PaymentTermsCoverageTab';
 import { PaymentTermsOpportunitiesTab } from './PaymentTermsOpportunitiesTab';
 import { PaymentTermsSupplierTab } from './PaymentTermsSupplierTab';
 import { PaymentTermsKpiHeader } from './PaymentTermsKpiHeader';
 import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
-
-interface PaymentTermsViewProps {
-  assessmentId: string;
-  onBackToOverview?: () => void;
-}
 
 export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   assessmentId,
@@ -26,27 +30,84 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
-    const requestId = beginRequest();
+    const requestSequence = beginRequest();
+    const clientRequestId = createClientRequestId();
     setLoading(true);
     setError(null);
     setData(null);
+    let response: Response | null = null;
+    let invalidAssessment = false;
     try {
-      const res = await apiFetch(`/api/module2/sourcing/payment-terms?assessmentId=${encodeURIComponent(assessmentId)}`);
+      const parsedAssessment = assessmentIdQuerySchema.safeParse({ assessmentId });
+      if (!parsedAssessment.success) {
+        invalidAssessment = true;
+        throw parsedAssessment.error;
+      }
+      const query = new URLSearchParams(parsedAssessment.data);
+      const path = `${PAYMENT_TERMS_ENDPOINT}?${query.toString()}`;
+      const res = await apiFetch(path, { headers: { [API_REQUEST_ID_HEADER]: clientRequestId } });
+      response = res;
       if (!res.ok) {
-        throw new Error(`Failed to fetch Lever 5 Payment Terms analysis (HTTP ${res.status})`);
+        throw new Error(`HTTP ${res.status}`);
       }
-      const json = await res.json();
-      if (!isCurrentRequest(requestId)) return;
-      if (!json.success || !json.data) {
-        throw new Error(json.message || 'Invalid API response payload');
+      const json: unknown = await res.json();
+      if (!isCurrentRequest(requestSequence)) return;
+      const parsedPayload = paymentTermsResponseSchema.safeParse(json);
+      if (!parsedPayload.success) {
+        const payloadMessage = typeof json === 'object' && json !== null && !Array.isArray(json)
+          ? (json as Record<string, unknown>).message
+          : undefined;
+        const detail = typeof payloadMessage === 'string' && payloadMessage.trim()
+          ? payloadMessage
+          : UI_STRINGS.module2.paymentTerms.invalidResponseDetail;
+        throw new Error(detail);
       }
-      setData(json.data);
+      setData(parsedPayload.data.data);
     } catch (err: unknown) {
-      if (!isCurrentRequest(requestId)) return;
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      if (!isCurrentRequest(requestSequence)) return;
+      const requestId = response?.headers.get(API_REQUEST_ID_HEADER) || clientRequestId;
+      const errorDetail = invalidAssessment
+        ? UI_STRINGS.module2.paymentTerms.missingAssessment
+        : err instanceof Error ? err.message : String(err);
+      const statusCode = response?.status ?? 0;
+      const errorCategory = invalidAssessment
+        ? ERROR_CATEGORIES.VALIDATION_ERROR
+        : response === null
+        ? ERROR_CATEGORIES.NETWORK_ERROR
+        : statusCode === 401 || statusCode === 403
+          ? ERROR_CATEGORIES.AUTH_ERROR
+          : statusCode === 404
+            ? ERROR_CATEGORIES.NOT_FOUND_ERROR
+            : statusCode === 429
+              ? ERROR_CATEGORIES.RATE_LIMIT_ERROR
+              : statusCode >= 400 && statusCode < 500
+                ? ERROR_CATEGORIES.VALIDATION_ERROR
+                : ERROR_CATEGORIES.SERVER_ERROR;
+      const paymentTermsStrings = UI_STRINGS.module2.paymentTerms;
+      const message = invalidAssessment
+        ? paymentTermsStrings.missingAssessment
+        : response === null
+        ? paymentTermsStrings.networkFailure(errorDetail, requestId)
+        : !response.ok
+          ? paymentTermsStrings.httpFailure(statusCode, requestId)
+          : paymentTermsStrings.responseFailure(errorDetail, requestId);
+      const context = {
+        action: 'module2.payment-terms.load',
+        method: 'GET',
+        path: PAYMENT_TERMS_ENDPOINT,
+        assessmentId: invalidAssessment ? undefined : assessmentId.trim(),
+        statusCode,
+        requestId,
+        errorCategory
+      };
+      if (invalidAssessment) {
+        logger.warn('Payment Terms analysis request rejected before fetch', context, err);
+      } else {
+        logger.error('Payment Terms analysis request failed', context, err);
+      }
+      setError(message);
     } finally {
-      if (isCurrentRequest(requestId)) setLoading(false);
+      if (isCurrentRequest(requestSequence)) setLoading(false);
     }
   }, [assessmentId, beginRequest, isCurrentRequest]);
 
@@ -58,7 +119,7 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   if (loading) {
     return (
       <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
-        <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing supplier payment terms and credit cycles...</div>
+        <div style={{ fontSize: '14px', fontWeight: 600 }}>{UI_STRINGS.module2.paymentTerms.loadingText}</div>
       </div>
     );
   }
@@ -66,8 +127,12 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   if (error || !data) {
     return (
       <div style={{ padding: '24px', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px' }}>
-        <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '14px' }}>Unable to load Payment Terms analysis</div>
-        <p style={{ margin: '8px 0', fontSize: '13px', color: '#b91c1c' }}>{error || 'No data returned.'}</p>
+        <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '14px' }}>
+          {UI_STRINGS.module2.paymentTerms.errorTitle}
+        </div>
+        <p style={{ margin: '8px 0', fontSize: '13px', color: '#b91c1c' }}>
+          {error || UI_STRINGS.module2.paymentTerms.unexpectedFailure(UI_STRINGS.common.notAvailable)}
+        </p>
         <button
           type="button"
           onClick={fetchData}
@@ -81,7 +146,7 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
             fontSize: '13px'
           }}
         >
-          Retry Analysis
+          {UI_STRINGS.module2.paymentTerms.retry}
         </button>
       </div>
     );
@@ -109,14 +174,14 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
                 gap: '4px'
               }}
             >
-              ← Back to Levers Overview
+              {UI_STRINGS.module2.paymentTerms.backToOverview}
             </button>
           )}
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-            {PAYMENT_TERMS_UI_STRINGS.TITLE}
+            {UI_STRINGS.module2.paymentTerms.title}
           </h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
-            {PAYMENT_TERMS_UI_STRINGS.SUBTITLE}
+            {UI_STRINGS.module2.paymentTerms.subtitle}
           </p>
         </div>
 
@@ -138,7 +203,7 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
           }}
         >
-          📊 {PAYMENT_TERMS_UI_STRINGS.EXPORT_BUTTON}
+          📊 {UI_STRINGS.module2.paymentTerms.exportButton}
         </a>
       </div>
 
@@ -149,9 +214,9 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px' }}>
         {(
           [
-            { id: 'coverage', label: PAYMENT_TERMS_UI_STRINGS.TAB_COVERAGE },
-            { id: 'opportunities', label: PAYMENT_TERMS_UI_STRINGS.TAB_OPPORTUNITIES },
-            { id: 'suppliers', label: PAYMENT_TERMS_UI_STRINGS.TAB_SUPPLIERS }
+            { id: 'coverage', label: UI_STRINGS.module2.paymentTerms.tabCoverage },
+            { id: 'opportunities', label: UI_STRINGS.module2.paymentTerms.tabOpportunities },
+            { id: 'suppliers', label: UI_STRINGS.module2.paymentTerms.tabSuppliers }
           ] as const
         ).map((t) => (
           <button

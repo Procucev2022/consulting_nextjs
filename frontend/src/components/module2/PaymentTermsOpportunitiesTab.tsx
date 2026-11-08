@@ -1,13 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { PaymentTermsOpportunity, PaymentTermsCoverageSummary } from '../../types/module2PaymentTerms';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../constants/module2PaymentTerms';
-
-interface PaymentTermsOpportunitiesTabProps {
-  opportunities: PaymentTermsOpportunity[];
-  coverageSummary: PaymentTermsCoverageSummary;
-}
+import type { PaymentTermsOpportunitiesTabProps } from '../../types/module2PaymentTerms';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTabProps> = ({
   opportunities,
@@ -36,7 +31,7 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-            {PAYMENT_TERMS_UI_STRINGS.SCENARIO_BOX_TITLE}
+            {UI_STRINGS.module2.paymentTerms.scenarioBoxTitle}
           </div>
           <span
             style={{
@@ -50,11 +45,11 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
               letterSpacing: '0.03em'
             }}
           >
-            {PAYMENT_TERMS_UI_STRINGS.SCENARIO_GOVERNANCE_TAG}
+            {UI_STRINGS.module2.paymentTerms.scenarioGovernanceTag}
           </span>
         </div>
         <p style={{ fontSize: '12px', color: '#64748b', margin: '6px 0 12px 0', lineHeight: 1.5 }}>
-          {PAYMENT_TERMS_UI_STRINGS.SCENARIO_DISCLAIMER} {PAYMENT_TERMS_UI_STRINGS.SCENARIO_RATE_NOTE}
+          {UI_STRINGS.module2.paymentTerms.scenarioDisclaimer} {UI_STRINGS.module2.paymentTerms.scenarioRateNote}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -131,10 +126,10 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
           }}
         >
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#92400e' }}>
-            {PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_MESSAGE}
+            {UI_STRINGS.module2.paymentTerms.dataUnavailableMessage}
           </div>
           <p style={{ fontSize: '13px', color: '#b45309', margin: '8px auto 0 auto', maxWidth: '600px' }}>
-            {PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_SUB}
+            {UI_STRINGS.module2.paymentTerms.dataUnavailableSub}
           </p>
           <div style={{ marginTop: '12px', fontSize: '12px', color: '#78350f', fontWeight: 500 }}>
             Status: {coverageSummary.overallStatusDisplayText} | Analysed Spend: ₹{coverageSummary.totalSpendAnalysedCr.toFixed(4)} Cr ({coverageSummary.totalRecordsCount.toLocaleString()} transactions)
@@ -148,7 +143,7 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
             </div>
             <input
               type="text"
-              placeholder={PAYMENT_TERMS_UI_STRINGS.SEARCH_PLACEHOLDER}
+              placeholder={UI_STRINGS.module2.paymentTerms.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{

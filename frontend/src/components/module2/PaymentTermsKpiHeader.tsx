@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { PaymentTermsKpiHeaderProps } from '../../types/module2PaymentTerms';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../constants/module2PaymentTerms';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ coverageSummary: cov }) => {
   const isDataUnavailable = cov.overallDataAvailabilityStatus === 'DATA_UNAVAILABLE';
@@ -24,10 +24,10 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
           }}
         >
           <div style={{ fontSize: '14px', fontWeight: 800, color: '#92400e', letterSpacing: '0.05em' }}>
-            {PAYMENT_TERMS_UI_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_TITLE}
+            {UI_STRINGS.module2.paymentTerms.benefitCannotBeAscertainedTitle}
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#78350f', lineHeight: '20px' }}>
-            {PAYMENT_TERMS_UI_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE}
+            {UI_STRINGS.module2.paymentTerms.benefitCannotBeAscertainedMessage}
           </p>
         </div>
       )}
@@ -36,7 +36,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_TOTAL_SPEND_ANALYSED}
+            {UI_STRINGS.module2.paymentTerms.kpiTotalSpendAnalysed}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
             ₹{cov.totalSpendAnalysedCr.toFixed(4)} Cr
@@ -48,7 +48,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_DATA_AVAILABILITY_STATUS}
+            {UI_STRINGS.module2.paymentTerms.kpiDataAvailabilityStatus}
           </div>
           <div
             style={{
@@ -67,7 +67,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_VERIFIED_SPEND}
+            {UI_STRINGS.module2.paymentTerms.kpiVerifiedSpend}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
             ₹{cov.verifiedSpendCr.toFixed(4)} Cr
@@ -79,7 +79,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {isDataUnavailable ? 'Actual Working Capital Benefit' : PAYMENT_TERMS_UI_STRINGS.KPI_WORKING_CAPITAL_RELEASED}
+            {isDataUnavailable ? 'Actual Working Capital Benefit' : UI_STRINGS.module2.paymentTerms.kpiWorkingCapitalReleased}
           </div>
           <div
             style={{
@@ -91,7 +91,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
             }}
           >
             {isDataUnavailable
-              ? PAYMENT_TERMS_UI_STRINGS.ACTUAL_WC_BENEFIT_UNAVAILABLE
+              ? UI_STRINGS.module2.paymentTerms.actualWorkingCapitalBenefitUnavailable
               : `₹${cov.totalWorkingCapitalReleasedCr.toFixed(4)} Cr`}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
@@ -101,7 +101,7 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {isDataUnavailable ? 'Actual Annual Financing Benefit' : PAYMENT_TERMS_UI_STRINGS.KPI_FINANCING_BENEFIT}
+            {isDataUnavailable ? 'Actual Annual Financing Benefit' : UI_STRINGS.module2.paymentTerms.kpiFinancingBenefit}
           </div>
           <div
             style={{
@@ -113,13 +113,13 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
             }}
           >
             {isDataUnavailable
-              ? PAYMENT_TERMS_UI_STRINGS.ACTUAL_FINANCING_BENEFIT_UNAVAILABLE
+              ? UI_STRINGS.module2.paymentTerms.actualFinancingBenefitUnavailable
               : `₹${cov.totalFinancingBenefitCr.toFixed(4)} Cr`}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
             {isDataUnavailable
               ? 'Additional credit days: DATA UNAVAILABLE'
-              : PAYMENT_TERMS_UI_STRINGS.KPI_FINANCING_BENEFIT_SUB}
+              : UI_STRINGS.module2.paymentTerms.kpiFinancingBenefitSub}
           </div>
         </div>
       </div>
@@ -128,14 +128,14 @@ export const PaymentTermsKpiHeader: React.FC<PaymentTermsKpiHeaderProps> = ({ co
       <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e40af' }}>
-            {PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_TITLE}
+            {UI_STRINGS.module2.paymentTerms.planningScenarioTitle}
           </div>
           <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#2563eb', fontWeight: 600 }}>
             Indicative WC: ₹{((cov.totalSpendAnalysedCr / 365) * 30).toFixed(4)} Cr | Financing: ₹{(cov.totalSpendAnalysedCr * 0.015).toFixed(4)} Cr
           </div>
         </div>
         <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#1e3a8a', lineHeight: '16px', fontStyle: 'italic' }}>
-          {PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_DISCLAIMER}
+          {UI_STRINGS.module2.paymentTerms.planningScenarioDisclaimer}
         </p>
       </div>
     </div>

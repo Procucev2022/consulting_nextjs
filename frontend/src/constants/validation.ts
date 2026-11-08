@@ -39,6 +39,8 @@ export const assessmentIdQuerySchema = z.object({
   assessmentId: z.string().trim().min(1).max(120)
 });
 
+export { paymentTermsResponseSchema } from './validation/paymentTerms';
+
 export const taxonomyPageRequestSchema = z.object({
   limit: z.number().int().min(1).max(TAXONOMY_PAGE_SIZE),
   offset: z.number().int().nonnegative()

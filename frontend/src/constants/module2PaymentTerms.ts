@@ -11,6 +11,7 @@ import type {
 export const PROCUCEV_STANDARD_FINANCING_RATE_PER_30_DAYS = 0.015;
 export const DAYS_IN_STANDARD_YEAR = 365;
 export const STANDARD_CREDIT_INTERVAL_DAYS = 30;
+export const PAYMENT_TERMS_ENDPOINT = '/api/module2/sourcing/payment-terms';
 
 export const PAYMENT_TERMS_STATUS_DISPLAY_LABELS: Record<PaymentTermsDataAvailabilityStatus, string> = {
   OPPORTUNITY_IDENTIFIED: 'Opportunity Identified',
@@ -26,46 +27,6 @@ export const PAYMENT_TERMS_DATA_GAP_DESCRIPTIONS: Record<PaymentTermsDataGapReas
   INCONSISTENT_HEADER_AND_LINE_TERMS: 'Header terms conflict with purchase line item terms.',
   ADVANCE_OR_NON_CREDIT_TERMS: 'Transaction recorded under advance, letter of credit, or immediate cash terms.',
   MISSING_INVOICE_OR_DUE_DATE: 'Due date or invoice date missing to compute actual credit cycle.'
-} as const;
-
-export const PAYMENT_TERMS_UI_STRINGS = {
-  TITLE: 'Lever 5: Payment Terms Optimisation',
-  SUBTITLE:
-    'Analyses supplier payment terms, identifies evidence-supported opportunities to negotiate additional credit days, and calculates indicative financing benefits.',
-  GOVERNANCE_NOTICE:
-    'Procucev standard modelling rate = 1.5% per additional 30 days of credit. Missing payment terms are never invented or assumed as zero.',
-  TAB_COVERAGE: 'Data Coverage & Gap Audit',
-  TAB_OPPORTUNITIES: 'Payment Terms Opportunities',
-  TAB_SUPPLIERS: 'Supplier Profile Analysis',
-  TAB_SCENARIOS: 'Credit Terms Simulation',
-  TAB_TRANSACTIONS: 'Transaction Register',
-  KPI_TOTAL_SPEND_ANALYSED: 'Total Spend Analysed',
-  KPI_VERIFIED_SPEND: 'Verified Payment Terms Spend',
-  KPI_MISSING_SPEND: 'Missing Payment Terms Spend',
-  KPI_DATA_AVAILABILITY_STATUS: 'Data Availability Status',
-  KPI_WORKING_CAPITAL_RELEASED: 'Indicative Working Capital Released',
-  KPI_FINANCING_BENEFIT: 'Indicative Annual Financing Benefit',
-  KPI_FINANCING_BENEFIT_SUB: 'Procucev 1.5% / 30 days modelling rate',
-  EXPORT_BUTTON: 'Download 8-Sheet Auditable Excel Report',
-  FILTER_ALL: 'All Statuses',
-  SEARCH_PLACEHOLDER: 'Search by supplier, spend category, or payment terms...',
-  DATA_UNAVAILABLE_MESSAGE: 'Data Unavailable — Payment Terms Not Found in Source Data.',
-  DATA_UNAVAILABLE_SUB: 'The source ERP extract does not contain payment term fields. No financing benefit has been fabricated.',
-  EMPTY_RECORDS: 'No payment terms records matching the criteria.',
-  SCENARIO_BOX_TITLE: 'Illustrative Credit Extension Scenario Simulator',
-  SCENARIO_GOVERNANCE_TAG: 'ILLUSTRATIVE, UNAPPROVED SCENARIO — NOT AN IDENTIFIED OPPORTUNITY',
-  SCENARIO_DISCLAIMER:
-    'This scenario simulator is an interactive modelling sandbox. It does not appear as an identified opportunity and does not feed into opportunity totals until required commercial inputs and approvals are provided.',
-  SCENARIO_RATE_NOTE: 'Procucev standard modelling rate: 1.5% per additional 30 days of credit (simple linear, non-compounded).',
-  BENEFIT_CANNOT_BE_ASCERTAINED_TITLE: 'BENEFIT CANNOT BE ASCERTAINED',
-  BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE:
-    'Procucev is unable to ascertain the actual working capital release or financing benefit because supplier payment-terms data is unavailable. Please provide or validate supplier payment terms from ERP records, contracts or invoices before quantifying the benefit.',
-  ACTUAL_WC_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
-  ACTUAL_FINANCING_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
-  ACTUAL_CREDIT_DAYS_UNAVAILABLE: 'DATA UNAVAILABLE',
-  PLANNING_SCENARIO_TITLE: 'Illustrative Planning Scenario (30 Days / 1.5%)',
-  PLANNING_SCENARIO_DISCLAIMER:
-    'Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established.'
 } as const;
 
 export const PAYMENT_TERMS_METHODOLOGY_DISCLOSURES: string[] = [

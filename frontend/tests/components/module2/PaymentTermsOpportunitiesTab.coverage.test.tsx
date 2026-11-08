@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { PaymentTermsOpportunitiesTab } from '../../../src/components/module2/PaymentTermsOpportunitiesTab';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../../src/constants/module2PaymentTerms';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type {
   PaymentTermsCoverageSummary,
   PaymentTermsOpportunity
@@ -97,7 +97,7 @@ describe('PaymentTermsOpportunitiesTab coverage', () => {
   it('lists each verified opportunity with formatted spend, benefit, and working capital values', () => {
     render(<PaymentTermsOpportunitiesTab opportunities={OPPORTUNITIES} coverageSummary={COVERAGE} />);
 
-    expect(screen.getByPlaceholderText(PAYMENT_TERMS_UI_STRINGS.SEARCH_PLACEHOLDER)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(UI_STRINGS.module2.paymentTerms.searchPlaceholder)).toBeInTheDocument();
     expect(screen.getAllByRole('row')).toHaveLength(OPPORTUNITIES.length + 1);
     expect(within(getRow('Acme Fibers Ltd')).getByText('₹12.5000 Cr')).toBeInTheDocument();
     expect(within(getRow('Acme Fibers Ltd')).getByText('₹0.1875 Cr')).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('PaymentTermsOpportunitiesTab coverage', () => {
 
   it('filters opportunities by supplier name, supplier code, and spend category', () => {
     render(<PaymentTermsOpportunitiesTab opportunities={OPPORTUNITIES} coverageSummary={COVERAGE} />);
-    const search = screen.getByPlaceholderText(PAYMENT_TERMS_UI_STRINGS.SEARCH_PLACEHOLDER);
+    const search = screen.getByPlaceholderText(UI_STRINGS.module2.paymentTerms.searchPlaceholder);
 
     fireEvent.change(search, { target: { value: 'coastal' } });
     expect(screen.getAllByRole('row')).toHaveLength(2);
@@ -154,9 +154,9 @@ describe('PaymentTermsOpportunitiesTab coverage', () => {
   it('shows the unavailable notice with coverage status and no search field when there are no opportunities', () => {
     render(<PaymentTermsOpportunitiesTab opportunities={[]} coverageSummary={COVERAGE} />);
 
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_MESSAGE)).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_SUB)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.dataUnavailableMessage)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.dataUnavailableSub)).toBeInTheDocument();
     expect(screen.getByText(/Data Partially Available/)).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(PAYMENT_TERMS_UI_STRINGS.SEARCH_PLACEHOLDER)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(UI_STRINGS.module2.paymentTerms.searchPlaceholder)).not.toBeInTheDocument();
   });
 });
