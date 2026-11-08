@@ -818,6 +818,7 @@ describe('Cloudflare worker core routes', () => {
       expect(prepareSpy.mock.calls).toHaveLength(1);
       expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       await expect(bodyOf(updated)).resolves.toMatchObject({
+        success: true,
         data: {
           enterprise_name: 'Beta Holdings', region: 'APAC', base_currency: 'INR',
           total_spend_evaluated: 500, total_spend_evaluated_inr: 450

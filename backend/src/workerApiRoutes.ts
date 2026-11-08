@@ -30,8 +30,10 @@ export const handleApiRequest = async (request: Request, environment: Cloudflare
     return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME, database: Boolean(environment.DB) }, 200, request);
   }
 
-  const tenantResponse = await handleTenantRoute(request, environment, url);
-  if (tenantResponse) return tenantResponse;
+  const tenantRouteResponse = await handleTenantRoute(request, environment, url);
+  if (tenantRouteResponse !== null) {
+    return tenantRouteResponse;
+  }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
     const authResult = await handleAuthRoute(request, environment, url);
     return jsonResponse(authResult.body, authResult.status, request);
