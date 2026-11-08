@@ -413,6 +413,18 @@ describe('D1 Commodity Data Lab', () => {
     expect(await route(env, '/detect-domain', 'POST', {
       fileName: 'weekly_index_master.csv', targetArea: 'MODULE_1_INGESTION'
     })).toMatchObject({ data: { detection: { isAllowedInTarget: false, guidanceMessage: expect.stringContaining('PCBI Master') } } });
+    expect(await route(env, '/detect-domain', 'POST', {
+      fileName: 'customer-data.xlsx', fileContentSnippet: 'purchase order supplier invoice', targetArea: 'MODULE_1_INGESTION'
+    })).toMatchObject({ data: { detection: { detectedDomain: 'CUSTOMER_PURCHASE_HISTORY', isAllowedInTarget: true } } });
+    expect(await route(env, '/detect-domain', 'POST', {
+      fileName: 'records.csv', fileContentSnippet: 'customer_po supplier', targetArea: 'MODULE_1_INGESTION'
+    })).toMatchObject({ data: { detection: { detectedDomain: 'CUSTOMER_PURCHASE_HISTORY', isAllowedInTarget: true } } });
+    expect(await route(env, '/detect-domain', 'POST', {
+      fileName: 'market-price.csv', targetArea: 'MODULE_1_INGESTION'
+    })).toMatchObject({ data: { detection: { detectedDomain: 'COMMODITY_RESEARCH_EVIDENCE', isAllowedInTarget: false } } });
+    expect(await route(env, '/detect-domain', 'POST', {
+      fileName: 'unknown.csv', fileContentSnippet: 'unclassified content', targetArea: 'PCBI_MASTER'
+    })).toMatchObject({ data: { detection: { detectedDomain: 'UNKNOWN', isAllowedInTarget: true, matchedSignatures: [] } } });
   });
 
   it('derives the queue and dashboard from active D1 benchmarks and observations only', async () => {
