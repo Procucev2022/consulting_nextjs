@@ -4,6 +4,7 @@ import type { CloudflareD1Database, CloudflareEnvironment } from './types/cloudf
 import type { D1Record, WorkerD1Result } from './types/d1';
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import { createAssessmentSchema } from './constants/assessmentValidation';
+import { REQUEST_ID_HEADER } from './constants/validation';
 import type { AssessmentSnapshotReadContext } from './types/assessmentDataVersionD1';
 import { mapD1Assessment, loadAssessmentSnapshotsForIds } from './services/assessmentD1Mappers';
 import { queryAll, queryFirst } from './services/assessmentD1Queries';
@@ -55,7 +56,7 @@ export const handleAssessmentRoute = async (
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) {
     logger.warn('Assessment request rejected because tenant scope is unavailable', {
-      requestId: request.headers.get('x-request-id') || undefined,
+      requestId: request.headers.get(REQUEST_ID_HEADER) || undefined,
       path: new URL(request.url).pathname
     });
     return { status: 403, data: { success: false, message: ASSESSMENT_D1_MESSAGES.tenantScopeRequired } };
@@ -106,27 +107,27 @@ export const handleAssessmentRoute = async (
       try {
         await runD1Statements(db, customerInsert ? [customerInsert, assessmentInsert] : [assessmentInsert], {
           operation: 'assessment.create',
-          requestId: request.headers.get('x-request-id') || undefined,
+          requestId: request.headers.get(REQUEST_ID_HEADER) || undefined,
           tenantId,
           assessmentId: id
         });
       } catch (error) {
         logger.error('Failed to create tenant-scoped assessment', {
-          requestId: request.headers.get('x-request-id') || undefined, assessmentId: id, tenantId
+          requestId: request.headers.get(REQUEST_ID_HEADER) || undefined, assessmentId: id, tenantId
         }, error);
         throw error;
       }
       const created = await queryFirst(db,
         `SELECT * FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [id, tenantId]);
       logger.info('Tenant-scoped assessment created', {
-        requestId: request.headers.get('x-request-id') || undefined, assessmentId: id, customerId, tenantId
+        requestId: request.headers.get(REQUEST_ID_HEADER) || undefined, assessmentId: id, customerId, tenantId
       });
       return { data: created ? mapD1Assessment(created) : null, status: 201 };
     }
     const assessments = await queryAll(db,
       `SELECT * FROM ${D1_TABLES.assessments} WHERE tenant_id = ? ORDER BY created_at DESC`, [tenantId]);
     const snapshots = await loadScopedSnapshots(db, 'assessment', assessments.map((row) => String(row.assessment_id)), {
-      requestId: request.headers.get('x-request-id') || undefined, tenantId
+      requestId: request.headers.get(REQUEST_ID_HEADER) || undefined, tenantId
     });
     return { data: assessments.map((row) => mapD1Assessment(row, snapshots.get(String(row.assessment_id)))) };
   }
