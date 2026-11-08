@@ -60,6 +60,7 @@ export const ASSESSMENT_D1_MESSAGES = {
   missingRun: 'No analysis run specified or active on assessment',
   dataVersionMissingForAnalysis: (assessmentId: string): string =>
     `No active uploaded data version was found for assessment ${assessmentId}. Upload a workbook and retry.`,
+  dataVersionUploadConflict: 'Another workbook upload created this assessment version while your upload was processing. Refresh the assessment and retry.',
   dataVersionSuperseded: 'The selected data version was superseded. Choose the current uploaded version and retry.',
   analysisDataMissing: 'The selected data version has no imported D1 transaction and validation rows. Re-upload the workbook and retry.',
   module1AnalysisStarted: 'Module 1 analysis was computed from the selected data version in D1.',
@@ -89,6 +90,21 @@ export const ASSESSMENT_D1_MESSAGES = {
   completedRunRequired: 'Assessment must have completed analysis run to be accepted',
   unknownAction: 'The assessment action does not exist. Refresh the assessment and select a supported action.',
   unsupportedMethod: 'This HTTP method is not supported for the assessment action. No assessment state was changed.'
+} as const;
+
+export const ASSESSMENT_DATA_VERSION_ROLLBACK_SQL = {
+  restoreStatus: `UPDATE AssessmentRecord SET data_status = ?
+    WHERE assessment_id = ? AND tenant_id = ? AND EXISTS (
+      SELECT 1 FROM AssessmentStoreEntry
+      WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?
+        AND json_extract(payload_json, '$.currentDataVersionId') = ?
+    )`,
+  restoreSnapshot: `UPDATE AssessmentStoreEntry SET payload_json = ?, source_checksum = ?
+    WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?
+      AND json_extract(payload_json, '$.currentDataVersionId') = ?`,
+  deleteSnapshot: `DELETE FROM AssessmentStoreEntry
+    WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?
+      AND json_extract(payload_json, '$.currentDataVersionId') = ?`
 } as const;
 
 export const ASSESSMENT_D1_LOG_MESSAGES = {

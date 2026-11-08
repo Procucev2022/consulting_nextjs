@@ -15,10 +15,10 @@ const seedAssessment = (owner = 'analyst@example.test'): void => {
   ) VALUES (?, ?, ?, ?, ?)`, [['A1', 'T1', 'Client One', 'Chemicals', owner]]);
 };
 
-const seedVersion = (id: string, count: number, superseded = 0): void => {
+const seedVersion = (id: string, count: number, superseded = 0, versionNumber = 1): void => {
   insertRows(fixture.db, `INSERT INTO AssessmentDataVersion (
     data_version_id, assessment_id, version_number, file_name, checksum, record_count, is_superseded
-  ) VALUES (?, ?, ?, ?, ?, ?, ?)`, [[id, 'A1', 1, `${id}.csv`, 'checksum', count, superseded]]);
+  ) VALUES (?, ?, ?, ?, ?, ?, ?)`, [[id, 'A1', versionNumber, `${id}.csv`, 'checksum', count, superseded]]);
 };
 
 const context = (body: unknown = {}, assessmentId = 'A1') => ({
@@ -188,7 +188,7 @@ describe('D1 assessment analysis', () => {
     seedVersion('DV-OLD', 1, 1);
     expect(await runAssessmentAnalysisFromD1(context({ dataVersionId: 'DV-OLD' }), 'full'))
       .toMatchObject({ status: 409, data: { message: ASSESSMENT_D1_MESSAGES.dataVersionSuperseded } });
-    seedVersion('DV-EMPTY', 1);
+    seedVersion('DV-EMPTY', 1, 0, 2);
     expect(await runAssessmentAnalysisFromD1(context({ dataVersionId: 'DV-EMPTY' }), 'full'))
       .toMatchObject({ status: 409, data: { message: ASSESSMENT_D1_MESSAGES.analysisDataMissing } });
   });

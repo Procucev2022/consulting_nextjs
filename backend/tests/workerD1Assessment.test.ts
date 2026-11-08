@@ -152,12 +152,12 @@ describe('workerD1Assessment handler', () => {
       expect(await run('/A1/run-module1', { dataVersionId: '' })).toMatchObject({ status: 400, data: { success: false } });
       expect(await run('/MISSING/run-analysis', {})).toMatchObject({ status: 404, data: { success: false } });
       expect(await run('/A1/run-analysis', {})).toMatchObject({ status: 404, data: { success: false } });
-      fixture.db.prepare(`INSERT INTO AssessmentDataVersion (data_version_id, assessment_id, file_name, checksum, is_superseded)
-        VALUES (?, ?, ?, ?, ?)`).run('DV-OLD', 'A1', 'old.csv', 'checksum', 1);
+      fixture.db.prepare(`INSERT INTO AssessmentDataVersion (data_version_id, assessment_id, version_number, file_name, checksum, is_superseded)
+        VALUES (?, ?, ?, ?, ?, ?)`).run('DV-OLD', 'A1', 1, 'old.csv', 'checksum', 1);
       expect(await run('/A1/run-analysis', { dataVersionId: 'DV-OLD' }))
         .toMatchObject({ status: 409, data: { message: ASSESSMENT_D1_MESSAGES.dataVersionSuperseded } });
-      fixture.db.prepare(`INSERT INTO AssessmentDataVersion (data_version_id, assessment_id, file_name, checksum, record_count)
-        VALUES (?, ?, ?, ?, ?)`).run('DV-EMPTY', 'A1', 'empty.csv', 'checksum', 1);
+      fixture.db.prepare(`INSERT INTO AssessmentDataVersion (data_version_id, assessment_id, version_number, file_name, checksum, record_count)
+        VALUES (?, ?, ?, ?, ?, ?)`).run('DV-EMPTY', 'A1', 2, 'empty.csv', 'checksum', 1);
       expect(await run('/A1/run-analysis', { dataVersionId: 'DV-EMPTY' }))
         .toMatchObject({ status: 409, data: { message: ASSESSMENT_D1_MESSAGES.analysisDataMissing } });
     } finally {

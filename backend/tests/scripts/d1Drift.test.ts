@@ -14,6 +14,7 @@ const {
   getSchemaTablesSql,
   getSeedLedgerSql,
   getDuplicateTransactionKeysSql,
+  getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
@@ -46,6 +47,8 @@ describe('D1 drift diagnostics', () => {
     expect(getDuplicateTransactionKeysSql()).toContain('WHERE/**/assessment_id/**/IS/**/NOT/**/NULL');
     expect(getDuplicateTransactionKeysSql()).toContain('source_document_id/**/IS/**/NOT/**/NULL');
     expect(getDuplicateTransactionKeysSql()).toContain('source_row_number/**/IS/**/NOT/**/NULL');
+    expect(getAssessmentDataVersionIntegritySql()).toContain('GROUP/**/BY/**/assessment_id,/**/version_number');
+    expect(getAssessmentDataVersionIntegritySql()).toContain('idx_data_version_assessment_number');
     expect(getUserIntegritySql()).toContain('GROUP/**/BY/**/lower(email)');
     expect(getUserIntegritySql()).toContain('idx_user_email_normalized');
     expect(getUserIntegritySql()).toContain('lower(email))');
@@ -105,6 +108,31 @@ describe('D1 drift diagnostics', () => {
       const plan = db.prepare(`EXPLAIN QUERY PLAN ${getDuplicateTransactionKeysSql()}`).all();
       expect(plan.some((row) => String(row.detail).includes('USING COVERING INDEX idx_procurement_tx_source_row_unique'))).toBe(true);
       expect(db.prepare(getDuplicateTransactionKeysSql()).get()).toEqual({ duplicate_key_groups: 0 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it('detects duplicate assessment version keys and verifies the matching unique index', () => {
+    const db = new DatabaseSync(':memory:');
+    try {
+      db.exec(`
+        CREATE TABLE AssessmentDataVersion (
+          data_version_id TEXT PRIMARY KEY, assessment_id TEXT NOT NULL, version_number INTEGER NOT NULL
+        );
+        INSERT INTO AssessmentDataVersion VALUES ('DV-A', 'A-1', 1), ('DV-B', 'A-1', 1);
+      `);
+      expect(db.prepare(getAssessmentDataVersionIntegritySql()).all()).toEqual([
+        { check_name: 'duplicate_assessment_data_version_groups', violation_count: 1 },
+        { check_name: 'assessment_data_version_index_invalid', violation_count: 1 }
+      ]);
+
+      db.prepare("DELETE FROM AssessmentDataVersion WHERE data_version_id = 'DV-B'").run();
+      db.exec('CREATE UNIQUE INDEX idx_data_version_assessment_number ON AssessmentDataVersion(assessment_id, version_number)');
+      expect(db.prepare(getAssessmentDataVersionIntegritySql()).all()).toEqual([
+        { check_name: 'duplicate_assessment_data_version_groups', violation_count: 0 },
+        { check_name: 'assessment_data_version_index_invalid', violation_count: 0 }
+      ]);
     } finally {
       db.close();
     }
@@ -185,6 +213,8 @@ describe('D1 drift diagnostics', () => {
       rowCountMismatches: [],
       seedLedger: { missingFiles: [], checksumMismatches: [], unexpectedFiles: [] },
       duplicateTransactionKeyGroups: 0,
+      duplicateAssessmentDataVersionGroups: 0,
+      assessmentDataVersionIndexValid: true,
       duplicateUserEmailGroups: 0,
       normalizedUserEmailIndexValid: true,
       orphanCounts: { transaction_assessment_orphans: 0 },
@@ -264,6 +294,21 @@ describe('D1 drift diagnostics', () => {
 
     expect(missingIndex).toMatchObject({ ok: false, normalizedUserEmailIndexValid: false });
     expect(duplicateAccounts).toMatchObject({ ok: false, duplicateUserEmailGroups: 1 });
+  });
+
+  it('fails closed when assessment version numbering is duplicated or lacks the unique index', () => {
+    const report = compareD1Drift({
+      expectedTables: ['AssessmentDataVersion'],
+      actualTables: ['AssessmentDataVersion'],
+      duplicateAssessmentDataVersionGroups: 1,
+      assessmentDataVersionIndexValid: false
+    });
+
+    expect(report).toMatchObject({
+      ok: false,
+      duplicateAssessmentDataVersionGroups: 1,
+      assessmentDataVersionIndexValid: false
+    });
   });
 
   it('reports globally keyed tenant aggregates as schema drift', () => {

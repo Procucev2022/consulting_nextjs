@@ -6,7 +6,12 @@ import {
 import { ASSESSMENT_D1_MESSAGES } from '../constants/assessmentD1';
 import { D1_TABLES } from '../constants/d1';
 import { INGESTION_WORKBOOK_MESSAGES } from '../constants/ingestionWorkbook';
-import type { AssessmentDatasetActionContext, AssessmentUploadPayload } from '../types/assessmentDataVersionD1';
+import type {
+  AssessmentDatasetActionContext,
+  AssessmentUploadFileDetails,
+  AssessmentUploadPayload,
+  PreparedAssessmentDataVersionUpload
+} from '../types/assessmentDataVersionD1';
 import type { D1Record, WorkerD1Result } from '../types/d1';
 import {
   ASSESSMENT_DATA_STATUS_RECEIVED,
@@ -25,28 +30,11 @@ import type { AssessmentRow } from '../types/assessmentDataVersionD1';
 import { importIngestionWorkbook } from './ingestionWorkbookImporter';
 import { mapD1Assessment, mapD1DataVersion } from './assessmentD1Mappers';
 import logger from '../utils/logger';
-import { clearScopedModule2Cache } from './workerD1Module2Cache';
 import { requireD1AtomicBatch } from './workerD1Query';
+import { cleanupFailedAssessmentDataVersionUpload } from './assessmentDataVersionUploadRollbackD1';
 
-interface UploadFileDetails {
-  bytes: Uint8Array;
-  extension: string;
-  checksum: string;
-}
-
-interface PreparedUpload {
-  payload: AssessmentUploadPayload;
-  assessment: AssessmentRow;
-  file: UploadFileDetails;
-  previousSnapshot: D1Record;
-  previousDataStatus: string;
-  versionNumber: number;
-  dataVersionId: string;
-  objectKey: string;
-}
-
-type PreparedResult = { ok: true; value: PreparedUpload } | { ok: false; result: WorkerD1Result };
-type FileResult = { ok: true; value: UploadFileDetails } | { ok: false; result: WorkerD1Result };
+type PreparedResult = { ok: true; value: PreparedAssessmentDataVersionUpload } | { ok: false; result: WorkerD1Result };
+type FileResult = { ok: true; value: AssessmentUploadFileDetails } | { ok: false; result: WorkerD1Result };
 
 const sha256Hex = async (bytes: Uint8Array): Promise<string> => {
   const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
@@ -91,7 +79,7 @@ const validateUploadFile = async (payload: AssessmentUploadPayload): Promise<Fil
 };
 
 const prepareUpload = async (context: AssessmentDatasetActionContext,
-  payload: AssessmentUploadPayload, file: UploadFileDetails): Promise<PreparedResult> => {
+  payload: AssessmentUploadPayload, file: AssessmentUploadFileDetails): Promise<PreparedResult> => {
   const { db, assessmentId } = context;
   const tenantId = context.environment.REQUEST_TENANT_ID;
   const assessment = await queryFirst<AssessmentRow>(db,
@@ -121,7 +109,7 @@ const prepareUpload = async (context: AssessmentDatasetActionContext,
 };
 
 const persistUpload = async (context: AssessmentDatasetActionContext,
-  prepared: PreparedUpload): Promise<WorkerD1Result> => {
+  prepared: PreparedAssessmentDataVersionUpload): Promise<WorkerD1Result> => {
   const { db, environment, assessmentId } = context;
   const { payload, assessment, file, versionNumber, dataVersionId, objectKey } = prepared;
   const contentType = assessmentUploadContentType(file.extension);
@@ -176,7 +164,9 @@ const persistUpload = async (context: AssessmentDatasetActionContext,
   return buildUploadResponse(context, prepared, nextSnapshot, imported);
 };
 
-const buildUploadResponse = async (context: AssessmentDatasetActionContext, prepared: PreparedUpload,
+const buildUploadResponse = async (
+  context: AssessmentDatasetActionContext,
+  prepared: PreparedAssessmentDataVersionUpload,
   nextSnapshot: D1Record, imported: Awaited<ReturnType<typeof importIngestionWorkbook>>): Promise<WorkerD1Result> => {
   const { db, assessmentId, requestId } = context;
   const { payload, assessment, file, versionNumber, dataVersionId, objectKey } = prepared;
@@ -205,54 +195,6 @@ const buildUploadResponse = async (context: AssessmentDatasetActionContext, prep
       detectedCurrencies: imported.detectedCurrencies
     }
   };
-};
-
-const cleanupFailedUpload = async (
-  context: AssessmentDatasetActionContext,
-  prepared: PreparedUpload,
-  objectStored: boolean
-): Promise<void> => {
-  const { db, environment, assessmentId } = context;
-  const { assessment, dataVersionId, objectKey, previousDataStatus, previousSnapshot } = prepared;
-  try {
-    await runStatements(db, [
-      db.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND assessment_id = ? AND tenant_id = ?')
-        .bind(dataVersionId, assessmentId, assessment.tenant_id),
-      db.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?')
-        .bind(`REC-${dataVersionId}-ROW-%`, assessment.tenant_id),
-      db.prepare(`DELETE FROM ${D1_TABLES.dataVersions} WHERE data_version_id = ? AND assessment_id = ?`)
-        .bind(dataVersionId, assessmentId),
-      db.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND assessment_id = ? AND tenant_id = ?')
-        .bind(objectKey, assessmentId, assessment.tenant_id),
-      db.prepare('DELETE FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?')
-        .bind(ASSESSMENT_VERSION_SNAPSHOT_TYPE, assessmentId, dataVersionId),
-      db.prepare(`UPDATE ${D1_TABLES.assessments} SET data_status = ? WHERE assessment_id = ? AND tenant_id = ?`)
-        .bind(previousDataStatus, assessmentId, assessment.tenant_id),
-      Object.keys(previousSnapshot).length > 0
-        ? assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, previousSnapshot, 'rollback')
-        : db.prepare('DELETE FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?')
-          .bind(ASSESSMENT_SNAPSHOT_TYPE, assessmentId, assessmentId)
-    ], {
-      operation: 'assessment.data_version.upload.rollback',
-      tenantId: assessment.tenant_id,
-      assessmentId,
-      documentId: dataVersionId,
-      requestId: context.requestId
-    });
-  } catch (error) {
-    logger.error('Failed to roll back an assessment data version', {
-      assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
-    }, error);
-  }
-  clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
-  if (!objectStored) return;
-  try {
-    await environment.OBJECTS?.delete(objectKey);
-  } catch (error) {
-    logger.error('Failed to remove assessment upload object after D1 rollback', {
-      assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
-    }, error);
-  }
 };
 
 export const uploadAssessmentDataVersion = async (
@@ -295,7 +237,22 @@ export const uploadAssessmentDataVersion = async (
     objectStored = true;
     return await persistUpload(context, prepared.value);
   } catch (error) {
-    await cleanupFailedUpload(context, prepared.value, objectStored);
+    await cleanupFailedAssessmentDataVersionUpload(context, prepared.value, objectStored);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('UNIQUE constraint failed: AssessmentDataVersion.assessment_id, AssessmentDataVersion.version_number')) {
+      logger.warn('Assessment workbook upload conflicted with a concurrent version upload', {
+        assessmentId: context.assessmentId,
+        tenantId,
+        dataVersionId: prepared.value.dataVersionId,
+        requestId: context.requestId,
+        conflictKey: 'assessment_id,version_number',
+        cleanupCompleted: true
+      }, error);
+      return {
+        status: 409,
+        data: { success: false, message: ASSESSMENT_D1_MESSAGES.dataVersionUploadConflict }
+      };
+    }
     logger.error('Assessment workbook upload failed', {
       assessmentId: context.assessmentId,
       tenantId,

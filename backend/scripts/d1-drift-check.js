@@ -8,6 +8,7 @@ const {
   getSchemaTablesSql,
   getSeedLedgerSql,
   getDuplicateTransactionKeysSql,
+  getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
@@ -77,6 +78,8 @@ const runDriftCheck = () => {
   addRowsRead(ledgerResult.rowsRead);
   const duplicateResult = executeQuery(getDuplicateTransactionKeysSql());
   addRowsRead(duplicateResult.rowsRead);
+  const dataVersionIntegrityResult = executeQuery(getAssessmentDataVersionIntegritySql());
+  addRowsRead(dataVersionIntegrityResult.rowsRead);
   const userIntegrityResult = executeQuery(getUserIntegritySql());
   addRowsRead(userIntegrityResult.rowsRead);
   const orphanResult = executeQuery(getOrphanReferenceSql());
@@ -96,6 +99,10 @@ const runDriftCheck = () => {
     expectedSeedChecksums: manifest.files,
     actualSeedLedgerRows: ledgerResult.rows,
     duplicateKeyGroups: duplicateResult.rows[0]?.duplicate_key_groups || 0,
+    duplicateAssessmentDataVersionGroups: dataVersionIntegrityResult.rows
+      .find((row) => row.check_name === 'duplicate_assessment_data_version_groups')?.violation_count || 0,
+    assessmentDataVersionIndexValid: Number(dataVersionIntegrityResult.rows
+      .find((row) => row.check_name === 'assessment_data_version_index_invalid')?.violation_count) === 0,
     duplicateUserEmailGroups: userIntegrityResult.rows
       .find((row) => row.check_name === 'duplicate_user_email_groups')?.violation_count || 0,
     normalizedUserEmailIndexValid: Number(userIntegrityResult.rows

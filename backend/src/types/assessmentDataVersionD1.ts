@@ -54,6 +54,23 @@ export interface AssessmentUploadPayload {
   fileBase64: string;
 }
 
+export interface AssessmentUploadFileDetails {
+  bytes: Uint8Array;
+  extension: string;
+  checksum: string;
+}
+
+export interface PreparedAssessmentDataVersionUpload {
+  payload: AssessmentUploadPayload;
+  assessment: AssessmentRow;
+  file: AssessmentUploadFileDetails;
+  previousSnapshot: D1Record;
+  previousDataStatus: string;
+  versionNumber: number;
+  dataVersionId: string;
+  objectKey: string;
+}
+
 export interface AssessmentLifecycleActionContext {
   db: CloudflareD1Database;
   environment: CloudflareEnvironment;

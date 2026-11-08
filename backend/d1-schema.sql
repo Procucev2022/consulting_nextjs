@@ -383,7 +383,8 @@ CREATE TABLE IF NOT EXISTS AssessmentDataVersion (
   is_superseded INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_data_version_assessment ON AssessmentDataVersion(assessment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_data_version_assessment_number
+  ON AssessmentDataVersion(assessment_id, version_number);
 
 CREATE TABLE IF NOT EXISTS OrchestrationDatasetCorrection (
   data_version_id TEXT PRIMARY KEY NOT NULL,

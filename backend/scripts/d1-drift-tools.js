@@ -82,6 +82,24 @@ const getDuplicateTransactionKeysSql = () => compactSql(`
   )
 `);
 
+const getAssessmentDataVersionIntegritySql = () => compactSql(`
+  SELECT 'duplicate_assessment_data_version_groups' AS check_name, COUNT(*) AS violation_count
+  FROM (
+    SELECT assessment_id, version_number
+    FROM AssessmentDataVersion
+    GROUP BY assessment_id, version_number
+    HAVING COUNT(*) > 1
+  )
+  UNION ALL
+  SELECT 'assessment_data_version_index_invalid' AS check_name,
+    CASE WHEN EXISTS (
+      SELECT 1 FROM sqlite_schema
+      WHERE type = 'index' AND name = 'idx_data_version_assessment_number'
+        AND lower(replace(replace(replace(replace(sql, char(32), ''), char(9), ''), char(10), ''), char(13), '')) =
+          'createuniqueindexidx_data_version_assessment_numberonassessmentdataversion(assessment_id,version_number)'
+    ) THEN 0 ELSE 1 END AS violation_count
+`);
+
 const getUserIntegritySql = () => compactSql(`
   SELECT 'duplicate_user_email_groups' AS check_name, COUNT(*) AS violation_count
   FROM (
@@ -154,6 +172,8 @@ const compareD1Drift = ({
   expectedSeedChecksums = {},
   actualSeedLedgerRows = [],
   duplicateKeyGroups = 0,
+  duplicateAssessmentDataVersionGroups = 0,
+  assessmentDataVersionIndexValid = true,
   duplicateUserEmailGroups = 0,
   normalizedUserEmailIndexValid = false,
   orphanCounts = {},
@@ -191,6 +211,7 @@ const compareD1Drift = ({
       .map(([checkName, count]) => [checkName, Number(count)])
   );
   const duplicateTransactionKeyGroups = Number(duplicateKeyGroups);
+  const duplicateAssessmentDataVersionGroupCount = Number(duplicateAssessmentDataVersionGroups);
   const caseFoldedUserEmailGroups = Number(duplicateUserEmailGroups);
   const foreignKeyViolationCount = Number(foreignKeyViolations);
   const tenantPrimaryKeysByTable = new Map();
@@ -219,7 +240,8 @@ const compareD1Drift = ({
   const hasOrphans = Object.values(normalizedOrphanCounts).some((count) => count > 0);
   const ok = missingTables.length === 0 && extraTables.length === 0 && rowCountMismatches.length === 0 &&
     missingSeedFiles.length === 0 && seedChecksumMismatches.length === 0 && unexpectedSeedFiles.length === 0 &&
-    duplicateTransactionKeyGroups === 0 && caseFoldedUserEmailGroups === 0 && normalizedUserEmailIndexValid &&
+    duplicateTransactionKeyGroups === 0 && duplicateAssessmentDataVersionGroupCount === 0 &&
+    assessmentDataVersionIndexValid && caseFoldedUserEmailGroups === 0 && normalizedUserEmailIndexValid &&
     !hasOrphans && foreignKeyViolationCount === 0 && tenantPrimaryKeyMismatches.length === 0 &&
     missingTenantIntegrityTriggers.length === 0;
 
@@ -230,6 +252,8 @@ const compareD1Drift = ({
     rowCountMismatches,
     seedLedger: { missingFiles: missingSeedFiles, checksumMismatches: seedChecksumMismatches, unexpectedFiles: unexpectedSeedFiles },
     duplicateTransactionKeyGroups,
+    duplicateAssessmentDataVersionGroups: duplicateAssessmentDataVersionGroupCount,
+    assessmentDataVersionIndexValid: Boolean(assessmentDataVersionIndexValid),
     duplicateUserEmailGroups: caseFoldedUserEmailGroups,
     normalizedUserEmailIndexValid: Boolean(normalizedUserEmailIndexValid),
     orphanCounts: normalizedOrphanCounts,
@@ -250,6 +274,7 @@ module.exports = {
   getSchemaTablesSql,
   getSeedLedgerSql,
   getDuplicateTransactionKeysSql,
+  getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,

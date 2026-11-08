@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
-import type { CloudflareD1Database, CloudflareEnvironment, CloudflareR2Bucket } from '../../src/types/cloudflare';
+import type {
+  CloudflareD1Database, CloudflareD1PreparedStatement, CloudflareEnvironment, CloudflareR2Bucket
+} from '../../src/types/cloudflare';
 import {
   uploadAssessmentDataVersion as uploadAssessmentDataVersionRaw,
   validateAssessmentDataVersion as validateAssessmentDataVersionRaw
@@ -209,6 +211,76 @@ describe('assessment data version D1 lifecycle', () => {
       ]);
       expect(fixture.db.prepare("SELECT entry_id FROM AssessmentStoreEntry WHERE entry_type = 'version' ORDER BY entry_id").all())
         .toHaveLength(2);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('keeps concurrent assessment uploads from creating duplicate versions or rolling back the winner', async () => {
+    const fixture = makeDatabase();
+    const { bucket, objects } = makeBucket();
+    let releaseVersionReads = (): void => undefined;
+    const bothVersionReads = new Promise<void>((resolve) => { releaseVersionReads = resolve; });
+    let versionReadCount = 0;
+    let batchQueue = Promise.resolve();
+    const wrapStatement = (sql: string, statement: CloudflareD1PreparedStatement): CloudflareD1PreparedStatement => ({
+      bind: (...values) => wrapStatement(sql, statement.bind(...values)),
+      first: async <T = Record<string, unknown>>(): Promise<T | null> => {
+        const result = await statement.first<T>();
+        if (sql.includes('MAX(version_number)')) {
+          versionReadCount += 1;
+          if (versionReadCount === 2) releaseVersionReads();
+          await bothVersionReads;
+        }
+        return result;
+      },
+      all: <T = Record<string, unknown>>() => statement.all<T>(),
+      run: () => statement.run()
+    });
+    const concurrentDatabase = {
+      prepare: (sql: string) => wrapStatement(sql, fixture.d1.prepare(sql)),
+      batch: (statements: CloudflareD1PreparedStatement[]) => {
+        const current = batchQueue.then(() => fixture.d1.batch!(statements));
+        batchQueue = current.then(() => undefined, () => undefined);
+        return current;
+      }
+    } as CloudflareD1Database;
+    const warning = vi.spyOn(logger, 'warn');
+
+    try {
+      const [first, second] = await Promise.all([
+        uploadAssessmentDataVersion({
+          db: concurrentDatabase, environment: { OBJECTS: bucket }, assessmentId: 'AIC-UPLOAD-1',
+          body: await makeBody('first.csv'), requestId: 'request-upload-first'
+        }),
+        uploadAssessmentDataVersion({
+          db: concurrentDatabase, environment: { OBJECTS: bucket }, assessmentId: 'AIC-UPLOAD-1',
+          body: await makeBody('second.csv'), requestId: 'request-upload-second'
+        })
+      ]);
+      const results = [first, second];
+      const winner = results.find((result) => result.status === 201);
+      const conflict = results.find((result) => result.status === 409);
+
+      expect(winner).toBeDefined();
+      expect(conflict).toMatchObject({ status: 409 });
+      expect(dataOf(conflict!).message).toContain('Another workbook upload created this assessment version');
+      expect(warning).toHaveBeenCalledWith('Assessment workbook upload conflicted with a concurrent version upload',
+        expect.objectContaining({ conflictKey: 'assessment_id,version_number', cleanupCompleted: true }), expect.any(Error));
+      expect(fixture.db.prepare('SELECT assessment_id, version_number, is_superseded FROM AssessmentDataVersion').all())
+        .toHaveLength(1);
+      const winningVersion = dataOf(winner!).dataVersion.dataVersionId as string;
+      expect(fixture.db.prepare('SELECT data_version_id, version_number, is_superseded FROM AssessmentDataVersion').all())
+        .toEqual([{ data_version_id: winningVersion, version_number: 1, is_superseded: 0 }]);
+      expect(fixture.db.prepare('SELECT source_document_id FROM ProcurementTransaction WHERE assessment_id = ?')
+        .all('AIC-UPLOAD-1')).toEqual([{ source_document_id: winningVersion }, { source_document_id: winningVersion }, { source_document_id: winningVersion }]);
+      const assessmentSnapshot = fixture.db.prepare(
+        "SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = 'assessment' AND assessment_id = ?"
+      ).get('AIC-UPLOAD-1') as { payload_json: string };
+      expect(JSON.parse(assessmentSnapshot.payload_json).currentDataVersionId).toBe(winningVersion);
+      expect(fixture.db.prepare('SELECT data_status FROM AssessmentRecord WHERE assessment_id = ?')
+        .get('AIC-UPLOAD-1')).toEqual({ data_status: 'RECEIVED' });
+      expect(objects.size).toBe(1);
     } finally {
       fixture.close();
     }
@@ -440,6 +512,86 @@ describe('assessment data version D1 lifecycle', () => {
       expect(result.status).toBe(400);
       expect(failedDelete).toHaveBeenCalledOnce();
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentDataVersion').get().count).toBe(0);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('logs rollback failures with request context and still removes the staged R2 object', async () => {
+    const fixture = makeDatabase();
+    const { bucket, objects } = makeBucket();
+    const rollbackError = new Error('D1 rollback unavailable');
+    const previousSnapshot = JSON.stringify({ currentDataVersionId: 'DV-PREVIOUS' });
+    fixture.db.prepare('UPDATE AssessmentRecord SET data_status = ? WHERE assessment_id = ?')
+      .run('', 'AIC-UPLOAD-1');
+    fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
+      entry_type, assessment_id, entry_id, payload_json, source_checksum
+    ) VALUES ('assessment', ?, ?, ?, 'previous')`).run(
+      'AIC-UPLOAD-1', 'AIC-UPLOAD-1', previousSnapshot
+    );
+    const database = {
+      ...fixture.d1,
+      batch: vi.fn(async () => { throw rollbackError; })
+    } as CloudflareD1Database;
+    const errorLog = vi.spyOn(logger, 'error').mockImplementation(() => logger.formatEntry('error', ''));
+    try {
+      await expect(uploadAssessmentDataVersion({
+        db: database,
+        environment: { OBJECTS: bucket },
+        assessmentId: 'AIC-UPLOAD-1',
+        body: await makeBody(),
+        requestId: 'request-upload-rollback-failed'
+      })).rejects.toThrow(rollbackError);
+
+      expect(database.batch).toHaveBeenCalledTimes(2);
+      expect(bucket.put).toHaveBeenCalledOnce();
+      expect(bucket.delete).toHaveBeenCalledOnce();
+      expect(objects.size).toBe(0);
+      expect(fixture.db.prepare('SELECT data_status FROM AssessmentRecord WHERE assessment_id = ?')
+        .get('AIC-UPLOAD-1')).toEqual({ data_status: '' });
+      expect(fixture.db.prepare("SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = 'assessment'")
+        .get()).toEqual({ payload_json: previousSnapshot });
+      expect(errorLog).toHaveBeenCalledWith(
+        'Failed to roll back an assessment data version',
+        expect.objectContaining({
+          assessmentId: 'AIC-UPLOAD-1',
+          tenantId: TEST_TENANT_ID,
+          requestId: 'request-upload-rollback-failed'
+        }),
+        rollbackError
+      );
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('logs R2 write failure and avoids deleting an object that was never stored', async () => {
+    const fixture = makeDatabase();
+    const { bucket, objects } = makeBucket();
+    const writeError = new Error('R2 write unavailable');
+    const failingBucket: CloudflareR2Bucket = {
+      ...bucket,
+      put: vi.fn(async () => { throw writeError; })
+    };
+    const errorLog = vi.spyOn(logger, 'error').mockImplementation(() => logger.formatEntry('error', ''));
+    try {
+      await expect(uploadAssessmentDataVersion({
+        db: fixture.d1,
+        environment: { OBJECTS: failingBucket },
+        assessmentId: 'AIC-UPLOAD-1',
+        body: await makeBody(),
+        requestId: 'request-upload-r2-write-failed'
+      })).rejects.toThrow(writeError);
+
+      expect(failingBucket.put).toHaveBeenCalledOnce();
+      expect(bucket.delete).not.toHaveBeenCalled();
+      expect(objects.size).toBe(0);
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentDataVersion').get().count).toBe(0);
+      expect(errorLog).toHaveBeenCalledWith(
+        'Assessment workbook upload failed',
+        expect.objectContaining({ assessmentId: 'AIC-UPLOAD-1', requestId: 'request-upload-r2-write-failed' }),
+        writeError
+      );
     } finally {
       fixture.close();
     }
