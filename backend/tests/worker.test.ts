@@ -1771,6 +1771,30 @@ describe('Cloudflare worker core routes', () => {
       await expect(fixture.d1.prepare('SELECT attempt_count FROM R2ObjectCleanupOutbox').first()).resolves.toEqual({ attempt_count: 1 });
     });
 
+    it('resets only the authorized tenant objects when multiple tenants have metadata', async () => {
+      seedTenant('TNT-1');
+      seedTenant('TNT-2');
+      insertRows(fixture.db,
+        'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          ['tenant/TNT-1/reset.csv', 'TNT-1', 'reset.csv', 'text/csv', 5, 'hash-1', 'consulting-docs'],
+          ['tenant/TNT-2/keep.csv', 'TNT-2', 'keep.csv', 'text/csv', 5, 'hash-2', 'consulting-docs']
+        ]);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = {
+        put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject
+      };
+
+      const response = await send('/api/ingestion/reset?tenantId=TNT-1', { method: 'POST' }, environmentWithDb({ OBJECTS: bucket }));
+
+      expect(response.status).toBe(200);
+      expect(deleteObject).toHaveBeenCalledExactlyOnceWith('tenant/TNT-1/reset.csv');
+      await expect(fixture.d1.prepare('SELECT tenant_id, object_key FROM ObjectMetadata').all())
+        .resolves.toMatchObject({ results: [{ tenant_id: 'TNT-2', object_key: 'tenant/TNT-2/keep.csv' }] });
+      await expect(fixture.d1.prepare('SELECT tenant_id, object_key FROM R2ObjectCleanupOutbox').all())
+        .resolves.toMatchObject({ results: [] });
+    });
+
     it('resets an empty tenant ingestion dataset without issuing a document cleanup query', async () => {
       seedTenant('TNT-1');
 

@@ -439,7 +439,7 @@ const resetIngestionDataset = async (
   const documentIds = documents.results.map((document) => document.doc_id);
   const deleteStatements: CloudflareD1PreparedStatement[] = [];
   if (objects.results.length) deleteStatements.push(database.prepare(R2_CLEANUP_SQL.enqueueForTenantReset)
-    .bind(R2_CLEANUP_REASONS.ingestionReset, tenantId));
+    .bind(tenantId, R2_CLEANUP_REASONS.ingestionReset, tenantId));
   if (documentIds.length) {
     deleteStatements.push(database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (
       SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?

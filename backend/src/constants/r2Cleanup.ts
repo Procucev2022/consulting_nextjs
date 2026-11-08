@@ -42,7 +42,7 @@ export const R2_CLEANUP_SQL = {
         AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
     ) ON CONFLICT(tenant_id, object_key) DO NOTHING`,
   enqueueForTenantReset: `INSERT INTO R2ObjectCleanupOutbox (cleanup_id, tenant_id, object_key, reason)
-    SELECT lower(hex(randomblob(16))), tenant_id, object_key, ? FROM ObjectMetadata WHERE tenant_id = ?
+    SELECT lower(hex(randomblob(16))), ?, object_key, ? FROM ObjectMetadata WHERE tenant_id = ?
     ON CONFLICT(tenant_id, object_key) DO NOTHING`,
   selectAll: `SELECT cleanup_id, tenant_id, object_key, reason, attempt_count
     FROM R2ObjectCleanupOutbox WHERE next_attempt_at <= CURRENT_TIMESTAMP
