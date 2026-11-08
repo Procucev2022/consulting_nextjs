@@ -2751,6 +2751,15 @@ export const UI_STRINGS = {
   },
 
   admin: {
+    analysisRoute: {
+      loading: 'Authenticating Administrator Access...',
+      brandName: 'aiCEV Enterprise',
+      usersNavigation: 'Users',
+      procurementPortal: 'Procurement Portal',
+      fallbackInitial: 'A',
+      fallbackName: 'Administrator',
+      sessionVerificationFailedLog: 'Administrator session verification failed'
+    },
     pageTitle: 'Admin Portal — User & Organization Directory',
     pageSubtitle: 'Complete registry of all registered organizational users with enterprise details and status controls',
     totalUsers: 'Total Users',

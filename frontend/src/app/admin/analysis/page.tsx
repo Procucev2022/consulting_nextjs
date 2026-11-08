@@ -16,7 +16,7 @@ import {
   LogOut,
   FlaskConical
 } from 'lucide-react';
-import { AICEV_LOGO_SRC } from '../../../constants';
+import { AICEV_LOGO_SRC, UI_STRINGS } from '../../../constants';
 import { apiClient } from '../../../utils/api';
 import frontendLogger from '../../../utils/logger';
 import { AnalysisControlCenter } from '../../../components/admin/orchestration/AnalysisControlCenter';
@@ -49,7 +49,11 @@ export default function AdminAnalysisPage(): React.ReactElement {
         setLoading(false);
       } catch (error) {
         if (cancelled) return;
-        frontendLogger.warn('Administrator session verification failed', { action: 'adminAnalysisAuthentication', error });
+        frontendLogger.warn(UI_STRINGS.admin.analysisRoute.sessionVerificationFailedLog, {
+          action: 'adminAnalysisAuthentication',
+          userId: session?.id,
+          tenantId: session?.tenant_id
+        }, error);
         apiClient.clearStoredSession();
         router.push('/admin/login');
       }
@@ -66,7 +70,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#EEF7FF] flex items-center justify-center text-[#0284C7] text-xs font-mono">
-        Authenticating Administrator Access...
+        {UI_STRINGS.admin.analysisRoute.loading}
       </div>
     );
   }
@@ -79,10 +83,10 @@ export default function AdminAnalysisPage(): React.ReactElement {
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2">
               <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#DCE7F5]">
-                <Image src={AICEV_LOGO_SRC} alt="aiCEV" fill className="object-contain" priority />
+                <Image src={AICEV_LOGO_SRC} alt={UI_STRINGS.header.logoAlt} fill className="object-contain" priority />
               </div>
               <span className="font-extrabold text-[#0B1B33] text-sm tracking-tight hidden sm:inline">
-                aiCEV Enterprise
+                {UI_STRINGS.admin.analysisRoute.brandName}
               </span>
             </Link>
 
@@ -95,7 +99,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
                 className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-[#475569] hover:text-[#0B1B33] hover:bg-[#F8FBFE] transition-all"
               >
                 <Users size={14} className="text-[#64748B]" />
-                <span>Users</span>
+                <span>{UI_STRINGS.admin.analysisRoute.usersNavigation}</span>
               </Link>
 
               <Link
@@ -103,7 +107,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
                 className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-[#0284C7]/10 text-[#0284C7] border border-[#0284C7]/30 shadow-xs"
               >
                 <Layers size={14} className="text-[#0284C7]" />
-                <span>Analysis Control Center</span>
+                <span>{UI_STRINGS.orchestration.controlCenterTitle}</span>
               </Link>
 
               <Link
@@ -111,7 +115,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
                 className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-[#475569] hover:text-[#0B1B33] hover:bg-[#F8FBFE] transition-all"
               >
                 <FlaskConical size={14} className="text-[#64748B]" />
-                <span>PCBI Master</span>
+                <span>{UI_STRINGS.pcbiAdmin.breadcrumbMaster}</span>
               </Link>
             </nav>
           </div>
@@ -121,7 +125,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
               href="/"
               className="text-xs text-[#0284C7] hover:underline font-bold flex items-center gap-1 hidden md:flex"
             >
-              <span>Procurement Portal</span>
+              <span>{UI_STRINGS.admin.analysisRoute.procurementPortal}</span>
               <ExternalLink size={12} />
             </Link>
 
@@ -129,10 +133,10 @@ export default function AdminAnalysisPage(): React.ReactElement {
 
             <div className="flex items-center space-x-2">
               <div className="w-7 h-7 rounded-full bg-[#0284C7]/10 flex items-center justify-center text-[#0284C7] font-bold text-xs">
-                {currentUser?.name?.[0] || 'A'}
+                {currentUser?.name?.[0] || UI_STRINGS.admin.analysisRoute.fallbackInitial}
               </div>
               <span className="text-xs font-bold text-[#0B1B33] hidden sm:inline">
-                {currentUser?.name || 'Administrator'}
+                {currentUser?.name || UI_STRINGS.admin.analysisRoute.fallbackName}
               </span>
             </div>
 
@@ -140,7 +144,7 @@ export default function AdminAnalysisPage(): React.ReactElement {
               type="button"
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-[#64748B] hover:text-red-600 hover:bg-red-50 transition-colors"
-              title="Logout"
+              title={UI_STRINGS.auth.logout}
             >
               <LogOut size={16} />
             </button>

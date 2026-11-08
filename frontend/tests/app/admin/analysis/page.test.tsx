@@ -46,13 +46,13 @@ describe('AdminAnalysisPage Route Tests', () => {
     render(<AdminAnalysisPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('aiCEV Enterprise')).toBeInTheDocument();
-      expect(screen.getByText('Users')).toBeInTheDocument();
-      expect(screen.getByText('PCBI Master')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.analysisRoute.brandName)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.analysisRoute.usersNavigation)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.pcbiAdmin.breadcrumbMaster)).toBeInTheDocument();
       expect(screen.getAllByText(UI_STRINGS.orchestration.controlCenterTitle).length).toBeGreaterThanOrEqual(1);
     });
 
-    const signOutBtn = screen.getByTitle('Logout');
+    const signOutBtn = screen.getByTitle(UI_STRINGS.auth.logout);
     fireEvent.click(signOutBtn);
     expect(mockPush).toHaveBeenCalledWith('/admin/login');
   });
