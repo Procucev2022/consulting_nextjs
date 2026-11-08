@@ -128,7 +128,8 @@ const enforceTelemetryRateLimit = async (
 ): Promise<Response | undefined> => {
   const requestId = request.headers.get('x-request-id') || undefined;
   const context = { requestId, method: request.method, path: new URL(request.url).pathname };
-  if (!environment.CLIENT_ERROR_RATE_LIMITER) {
+  const rateLimiter = environment.CLIENT_ERROR_RATE_LIMITER;
+  if (!rateLimiter || typeof rateLimiter.limit !== 'function') {
     logger.error('Client error telemetry rate limiter is not configured', {
       ...context, statusCode: CLIENT_ERROR_TELEMETRY_HTTP_STATUS.RATE_LIMIT_UNAVAILABLE
     });
@@ -139,7 +140,7 @@ const enforceTelemetryRateLimit = async (
 
   const clientAddress = request.headers.get('cf-connecting-ip') || 'unknown';
   try {
-    const decision = await environment.CLIENT_ERROR_RATE_LIMITER.limit({
+    const decision = await rateLimiter.limit({
       key: `${CLIENT_ERROR_RATE_LIMIT_NAMESPACE}:${clientAddress}`
     });
     if (decision.success) return undefined;

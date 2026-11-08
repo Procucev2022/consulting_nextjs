@@ -118,14 +118,23 @@ describe('client error telemetry endpoint', () => {
 
   it('fails closed and records diagnostics when the rate limiter is missing or unavailable', async () => {
     const missingBinding = await handleClientErrorTelemetry(requestFor(JSON.stringify(validReport)), {});
+    const malformedBinding = await handleClientErrorTelemetry(requestFor(JSON.stringify(validReport)), {
+      ...environment,
+      CLIENT_ERROR_RATE_LIMITER: {} as unknown as NonNullable<CloudflareEnvironment['CLIENT_ERROR_RATE_LIMITER']>
+    });
     const rateLimiterError = new Error('Cloudflare rate limiter unavailable');
     const failedBinding = await handleClientErrorTelemetry(requestFor(JSON.stringify(validReport)), {
       ...environment, CLIENT_ERROR_RATE_LIMITER: { limit: vi.fn().mockRejectedValue(rateLimiterError) }
     });
 
     expect(missingBinding.status).toBe(503);
+    expect(malformedBinding.status).toBe(503);
     expect(failedBinding.status).toBe(503);
-    expect(logger.error).toHaveBeenCalledWith('Client error telemetry rate limiter is not configured', expect.objectContaining({
+    expect(logger.error).toHaveBeenCalledTimes(3);
+    expect(logger.error).toHaveBeenNthCalledWith(1, 'Client error telemetry rate limiter is not configured', expect.objectContaining({
+      statusCode: 503
+    }));
+    expect(logger.error).toHaveBeenNthCalledWith(2, 'Client error telemetry rate limiter is not configured', expect.objectContaining({
       statusCode: 503
     }));
     expect(logger.error).toHaveBeenCalledWith('Client error telemetry rate limiter failed', expect.objectContaining({
