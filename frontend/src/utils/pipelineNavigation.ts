@@ -3,6 +3,7 @@ import {
   PIPELINE_NAVIGATION_TABS,
   PIPELINE_WORKSPACE_TABS
 } from '../constants/pipeline';
+import { UI_STRINGS } from '../constants/uiStrings';
 import type { PipelineActiveTab } from '../types/components';
 
 const findTab = (value: string | null, allowedTabs: readonly PipelineActiveTab[]): PipelineActiveTab | null => {
@@ -28,4 +29,12 @@ export const resolvePipelineTabForOperatingMode = (
   const workspaceTab = findTab(navigationValue, PIPELINE_WORKSPACE_TABS);
   if (isInternalAssessment && workspaceTab === null) return 'assessment';
   return workspaceTab;
+};
+
+export const getLockedPipelineTabMessage = (tab: PipelineActiveTab): string => {
+  if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
+  if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
+  if (tab === 'module4') return UI_STRINGS.pipeline.lockedStep3Required;
+  if (tab === 'module5') return UI_STRINGS.pipeline.lockedStep4Required;
+  return UI_STRINGS.pipeline.lockedStep1Required;
 };

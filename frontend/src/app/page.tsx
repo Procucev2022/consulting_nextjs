@@ -73,6 +73,7 @@ import {
 import { createClientRequestId } from '@/utils/requestId';
 import {
   getInitialPipelineTab,
+  getLockedPipelineTabMessage,
   getPipelineTabFromHash,
   resolvePipelineTabForOperatingMode
 } from '@/utils/pipelineNavigation';
@@ -538,14 +539,6 @@ export default function Home() {
       ? canonicalModule1.moduleStatuses?.module4 === 'COMPLETED'
       : (completedSteps.step4 && isStep3Complete)
   );
-
-  const getLockedTabMessage = (tab: PipelineActiveTab): string => {
-    if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
-    if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
-    if (tab === 'module4') return UI_STRINGS.pipeline.lockedStep3Required;
-    if (tab === 'module5') return UI_STRINGS.pipeline.lockedStep4Required;
-    return UI_STRINGS.pipeline.lockedStep1Required;
-  };
 
   const handleSelectTab = (tab: PipelineActiveTab) => {
     setActiveTab(tab);
@@ -2424,7 +2417,7 @@ export default function Home() {
           isStep4Complete={isStep4Complete}
           unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
           onLockedTabClick={(tab) => {
-            showToast(getLockedTabMessage(tab));
+            showToast(getLockedPipelineTabMessage(tab));
           }}
           tenant={tenant}
           opportunities={opportunities}
