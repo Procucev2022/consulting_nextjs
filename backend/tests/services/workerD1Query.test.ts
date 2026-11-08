@@ -78,6 +78,23 @@ describe('audited Worker D1 dataset reads', () => {
     expect(logger.error).not.toHaveBeenCalled();
   });
 
+  it('does not resolve a standalone write before its D1 run promise settles', async () => {
+    let finishRun!: () => void;
+    const runResult = new Promise<void>((resolve) => { finishRun = resolve; });
+    const statement = { run: vi.fn(() => runResult) } as unknown as CloudflareD1PreparedStatement;
+    const binding = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    let operationSettled = false;
+
+    const operation = runD1Statements(binding, [statement]).then(() => { operationSettled = true; });
+    await Promise.resolve();
+    expect(operationSettled).toBe(false);
+    expect(statement.run).toHaveBeenCalledOnce();
+
+    finishRun();
+    await operation;
+    expect(operationSettled).toBe(true);
+  });
+
   it('logs and rethrows a single-statement fallback failure', async () => {
     const failure = new Error('D1 single write failed');
     const statement = { run: vi.fn().mockRejectedValue(failure) } as unknown as CloudflareD1PreparedStatement;

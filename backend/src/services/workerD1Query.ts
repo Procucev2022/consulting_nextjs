@@ -41,20 +41,21 @@ export const runD1Statements = async (
   if (statements.length === 0) return;
   const operation = context.operation ?? context.action ?? D1_LOG_ACTIONS.atomicBatchUnavailable;
   const logContext = { ...context, operation, action: operation };
-  if (db.batch) {
+  if (statements.length === 1) {
     try {
-      await db.batch(statements);
+      if (db.batch) await db.batch(statements);
+      else await statements[0].run();
     } catch (error: unknown) {
       logger.error(D1_LOG_MESSAGES.atomicWriteFailed, { ...logContext, statementCount: statements.length }, error);
       throw error;
     }
     return;
   }
-  // D1 auto-commits a standalone .run() statement; batch() is required only
-  // when multiple statements must succeed or roll back as one transaction.
-  if (statements.length > 1) requireD1AtomicBatch(db, context, statements.length);
+
+  // Multi-statement writes fail before execution unless one atomic batch is available.
+  requireD1AtomicBatch(db, context, statements.length);
   try {
-    await statements[0].run();
+    await db.batch(statements);
   } catch (error: unknown) {
     logger.error(D1_LOG_MESSAGES.atomicWriteFailed, { ...logContext, statementCount: statements.length }, error);
     throw error;
