@@ -126,8 +126,8 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       {/* Breadcrumb Navigation (Part P) */}
       <PCBIBreadcrumb
         items={[
-          { label: 'Admin', href: '/admin/pcbi' },
-          { label: 'PCBI Data Library', isCurrent: activeSubTab === 'COVERAGE_DASHBOARD' },
+          { label: UI_STRINGS.pcbiAdmin.breadcrumbAdmin, href: '/admin/pcbi' },
+          { label: UI_STRINGS.pcbiAdmin.breadcrumbDataLibrary, isCurrent: activeSubTab === 'COVERAGE_DASHBOARD' },
           ...(activeSubTab !== 'COVERAGE_DASHBOARD'
             ? [{ label: activeSubTab.replace(/_/g, ' '), isCurrent: true }]
             : [])

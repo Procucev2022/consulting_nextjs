@@ -43,6 +43,8 @@ export const UI_STRINGS = {
   common: {
     brand: 'PROCUCEV',
     appName: 'PROCUCEV',
+    home: 'Home',
+    breadcrumbNavigation: 'Breadcrumb',
     engineVersion: 'ENGINE 2.0',
     loading: 'Loading...',
     save: 'Save Changes',
@@ -2898,6 +2900,9 @@ export const UI_STRINGS = {
     governanceHistoryScopeUnknown: 'Coverage not assessed',
     versionsLoadFailed: (reason: string): string => `PCBI version history could not be loaded: ${reason}. Check that the Worker PCBI administration routes are configured, then retry.`,
     versionsRetry: 'Retry loading PCBI versions',
+    breadcrumbAdmin: 'Admin',
+    breadcrumbMaster: 'PCBI Master',
+    breadcrumbDataLibrary: 'PCBI Data Library',
     sectionTitle: 'ADMIN / PCBI MASTER',
     title: 'PCBI Master Administration',
     subtitle: 'System-Level Benchmark Reference Repository & Multi-Sector Index Engine',

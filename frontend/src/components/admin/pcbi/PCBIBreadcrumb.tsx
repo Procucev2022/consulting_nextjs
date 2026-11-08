@@ -8,20 +8,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, Home } from 'lucide-react';
+import { UI_STRINGS } from '../../../constants';
 import type { PCBIBreadcrumbProps } from '../../../types/pcbiDataLibraryComponents';
 
 export const PCBIBreadcrumb: React.FC<PCBIBreadcrumbProps> = ({ items, className = '' }) => {
   return (
-    <nav aria-label="Breadcrumb" className={`flex items-center text-xs font-semibold ${className}`}>
+    <nav aria-label={UI_STRINGS.common.breadcrumbNavigation} className={`flex items-center text-xs font-semibold ${className}`}>
       <ol className="flex items-center flex-wrap gap-1.5 text-[#64748B]">
         <li className="flex items-center">
           <Link
             href="/"
             className="flex items-center gap-1 text-[#64748B] hover:text-[#0284C7] transition-colors"
-            title="Home"
+            title={UI_STRINGS.common.home}
           >
             <Home size={13} />
-            <span className="sr-only">Home</span>
+            <span className="sr-only">{UI_STRINGS.common.home}</span>
           </Link>
         </li>
 
