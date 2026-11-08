@@ -35,6 +35,27 @@ describe('audited Worker D1 dataset reads', () => {
     expect(second.run).not.toHaveBeenCalled();
   });
 
+  it('logs and rethrows multi-statement batch failures without replaying statements individually', async () => {
+    const first = { run: vi.fn() } as unknown as CloudflareD1PreparedStatement;
+    const second = { run: vi.fn() } as unknown as CloudflareD1PreparedStatement;
+    const failure = new Error('D1 batch rolled back');
+    const batch = vi.fn().mockRejectedValue(failure);
+    const binding = { prepare: vi.fn(), batch } as unknown as CloudflareD1Database;
+
+    await expect(runD1Statements(binding, [first, second], {
+      operation: 'assessment.atomic_batch_failure', requestId: 'req-atomic-batch-failure'
+    })).rejects.toBe(failure);
+
+    expect(batch).toHaveBeenCalledOnce();
+    expect(batch).toHaveBeenCalledWith([first, second]);
+    expect(first.run).not.toHaveBeenCalled();
+    expect(second.run).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicWriteFailed, expect.objectContaining({
+      operation: 'assessment.atomic_batch_failure', statementCount: 2,
+      requestId: 'req-atomic-batch-failure'
+    }), failure);
+  });
+
   it('rejects multi-statement writes before any mutation when the binding has no batch API', async () => {
     const first = { run: vi.fn() } as unknown as CloudflareD1PreparedStatement;
     const second = { run: vi.fn() } as unknown as CloudflareD1PreparedStatement;

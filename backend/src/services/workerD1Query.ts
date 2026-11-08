@@ -55,6 +55,8 @@ export const runD1Statements = async (
   // Multi-statement writes fail before execution unless one atomic batch is available.
   requireD1AtomicBatch(db, context, statements.length);
   try {
+    // Cloudflare D1 batch() is transactional and rolls back the full batch on statement failure.
+    // Never replace it with sequential run() calls; see https://developers.cloudflare.com/d1/worker-api/d1-database/#batch.
     await db.batch(statements);
   } catch (error: unknown) {
     logger.error(D1_LOG_MESSAGES.atomicWriteFailed, { ...logContext, statementCount: statements.length }, error);
