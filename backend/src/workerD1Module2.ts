@@ -8,12 +8,8 @@ import type { EAuctionResult } from './types/module2EAuction';
 import {
   MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES, MODULE2_D1_SCOPED_MESSAGES
 } from './constants/module2D1Scoped';
-import { MODULE2_D1_COMPLIANCE } from './constants/module2ProcurementComplianceD1';
-import { buildProcurementComplianceWorkbook } from './services/workerD1ProcurementComplianceWorkbook';
-import type { ProcurementComplianceResult } from './types/module2ProcurementCompliance';
 import {
-  handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleProcurementComplianceReview,
-  handleSpecificationReview, procurementComplianceReport
+  handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleSpecificationReview
 } from './workerD1Module2ReviewRoutes';
 import { handleModule2ReportRoute } from './workerD1Module2ReportRoutes';
 import {
@@ -21,6 +17,7 @@ import {
 } from './services/workerD1EAuctionPlanningAssumptions';
 import { readJson, requestJsonFailureResult } from './workerHttp';
 import { handleModule2DataRoute } from './workerD1Module2DataRoutes';
+import { handleProcurementComplianceRoute } from './workerD1Module2ComplianceRoutes';
 
 const readRequestBody = async (request: Request): Promise<unknown> => {
   return readJson(request);
@@ -87,36 +84,8 @@ export const handleModule2Route = async (
     };
     return await handleBulkMaterialMappingUpdate(db, request, url, authSecret);
   }
-  if (normalized.startsWith('/procurement-compliance')) {
-    if (normalized === '/procurement-compliance/review') {
-      if (request.method !== 'POST') return { status: 405, data: {
-        success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired
-      } };
-      return await handleProcurementComplianceReview(db, request, url, authSecret);
-    }
-    if (normalized !== '/procurement-compliance' && normalized !== '/procurement-compliance/export-excel') {
-      return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
-    }
-    if (request.method !== 'GET') return { status: 405, data: {
-      success: false, message: MODULE2_D1_ROUTE_MESSAGES.method
-    } };
-    const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id');
-    if (!assessmentId) return { status: 409, data: {
-      success: false, message: MODULE2_D1_ROUTE_MESSAGES.complianceScopeRequired
-    } };
-    const report = await procurementComplianceReport(db, request, url, assessmentId);
-    if (!report || (report.status && report.status >= 400)) return report || {
-      status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown }
-    };
-    if (normalized === '/procurement-compliance') return report;
-    const file = buildProcurementComplianceWorkbook(report.data as ProcurementComplianceResult);
-    const filename = `${MODULE2_D1_COMPLIANCE.EXPORT.FILENAME_PREFIX}` +
-      `${assessmentId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
-    return { data: null, response: new Response(file, { status: 200, headers: {
-      'Content-Type': MODULE2_D1_COMPLIANCE.EXPORT.MIME_TYPE,
-      'Content-Disposition': `attachment; filename="${filename}"`
-    } }) };
-  }
+  const complianceRoute = await handleProcurementComplianceRoute(db, normalized, request, url, authSecret);
+  if (complianceRoute) return complianceRoute;
   if (MODULE2_D1_PENDING_ROUTES.has(normalized)) {
     logger.warn('Rejected sourcing action that has not been migrated to D1', {
       normalized, method: request.method, requestId: request.headers.get('x-request-id')

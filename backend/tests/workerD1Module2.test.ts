@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
 import { handleModule2Route as handleModule2RouteImpl } from '../src/workerD1Module2';
+import { handleProcurementComplianceRoute } from '../src/workerD1Module2ComplianceRoutes';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
@@ -473,6 +474,13 @@ describe('workerD1Module2 handler', () => {
       );
       const token = await issueEvidenceToken({ userId: 'usr-compliance-reviewer' }, WORKER_CORE_SECRET);
       const get = req('/sourcing/procurement-compliance?assessmentId=A1&tenantId=T1');
+      expect(await handleProcurementComplianceRoute(fixture.d1, '/dashboard', get, new URL(get.url)))
+        .toBeNull();
+      const untrustedRequest = new Request(
+        'https://consulting.edge/api/module2/sourcing/procurement-compliance?assessmentId=A1'
+      );
+      expect(await handleProcurementComplianceRoute(fixture.d1, '/procurement-compliance', untrustedRequest,
+        new URL(untrustedRequest.url))).toMatchObject({ status: 403 });
       const report = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', get, new URL(get.url));
       const result = report.data as { assessmentId: string; summary: Record<string, unknown>;
         exceptions: Array<{ exceptionId: string; checkType: string }> };
@@ -481,6 +489,12 @@ describe('workerD1Module2 handler', () => {
         totalExceptionsIdentifiedCount: 1, totalPotentialFinancialExposureInr: 200
       }, exceptions: [expect.objectContaining({ checkType: 'PRICE_INCONSISTENCY' })] });
       expect(MODULE2_D1_PENDING_ROUTES.has('/procurement-compliance')).toBe(false);
+
+      const headerScoped = req('/sourcing/procurement-compliance', {
+        headers: { 'x-assessment-id': 'A1', 'x-tenant-id': 'T1' }
+      });
+      expect((await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', headerScoped,
+        new URL(headerScoped.url))).data).toMatchObject({ assessmentId: 'A1' });
 
       const exportRequest = req('/sourcing/procurement-compliance/export-excel?assessmentId=A1&tenantId=T1');
       const exported = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/export-excel',
