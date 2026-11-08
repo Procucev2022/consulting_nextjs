@@ -133,7 +133,9 @@ describe('CategoryVendorBreakdownView Component', () => {
   it('renders zero state cleanly when no categories are provided', () => {
     render(<CategoryVendorBreakdownView categories={[]} tenant={mockTenant} />);
     expect(screen.getByText(UI_STRINGS.module2.breakdown.inrValuation)).toBeInTheDocument();
-    expect(screen.getByText(/Awaiting dataset ingestion/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.categoryBreakdownEmptyState)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2.breakdown.byVendors }));
+    expect(screen.getByText(UI_STRINGS.module2.vendorBreakdownEmptyState)).toBeInTheDocument();
   });
 
   it('renders category spend breakdown and switches fiscal years', () => {

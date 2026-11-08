@@ -319,7 +319,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
             {sortedCategories.filter((c) => !c.is_balance_category).length === 0 ? (
               <div className="col-span-full p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
+                {UI_STRINGS.module2.categoryBreakdownEmptyState}
               </div>
             ) : (
               sortedCategories.filter((c) => !c.is_balance_category).slice(0, 10).map((cat, idx) => {
@@ -578,7 +578,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
             {sortedVendors.filter((v) => !v.is_balance_vendor).length === 0 ? (
               <div className="col-span-full p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate vendor spend breakdown.
+                {UI_STRINGS.module2.vendorBreakdownEmptyState}
               </div>
             ) : (
               sortedVendors.filter((v) => !v.is_balance_vendor).slice(0, 10).map((vnd, idx) => {

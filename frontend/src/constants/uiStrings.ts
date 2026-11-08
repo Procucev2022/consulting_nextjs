@@ -9,6 +9,11 @@ const describeRequestId = (requestId: string | null): string =>
   requestId ? `Request ID: ${requestId}.` : 'No request ID was returned by the server.';
 const TOTAL_EVALUATED_UNAVAILABLE = 'Total Evaluated: N/A';
 const EVALUATED_SPEND_UNAVAILABLE = 'Evaluated spend unavailable';
+const FISCAL_YEAR_RANGE_STRINGS = {
+  fy24: '1st April 2023 – 31st March 2024',
+  fy25: '1st April 2024 – 31st March 2025',
+  fy26: '1st April 2025 – 31st March 2026'
+} as const;
 
 export const UI_STRINGS = {
   databaseData: {
@@ -74,6 +79,7 @@ export const UI_STRINGS = {
     retry: 'Retry',
     success: 'Success',
     notAvailable: 'N/A',
+    fiscalYearRanges: FISCAL_YEAR_RANGE_STRINGS,
     dataProtectionBadge: 'Cloudflare D1/R2 Encrypted at Rest',
     dataProtectionNotice: 'Cloudflare D1/R2 protect stored data at rest; application traffic uses TLS.',
     viewDetails: 'View Details',
@@ -959,6 +965,13 @@ export const UI_STRINGS = {
     matrixDesc: 'Annual spend progression in INR Crores (Fiscal Year: 1st April to 31st March), line item counts, and target reduction % mapped to Column L taxonomy.',
     tabCategoryMatrix: 'Year-Wise Category Spend Matrix & Column L Benchmarks',
     tabVendorSupply: 'Top 50 Vendors (Supply Categorization & Risk Trend)',
+    categoryBreakdownEmptyState: 'Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.',
+    vendorBreakdownEmptyState: 'Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate vendor spend breakdown.',
+    matrixUnavailableHeader: 'unavailable',
+    matrixUnavailableTotal: 'Unavailable',
+    matrixSinglePeriod: 'Single Period',
+    matrixNoTransactionsInUpload: (fiscalYear: string): string => `No transactions for ${fiscalYear} in uploaded dataset`,
+    matrixNoTransactionsForYear: (fiscalYear: string): string => `No transactions for ${fiscalYear} in dataset`,
     totalEvaluatedUnavailable: TOTAL_EVALUATED_UNAVAILABLE,
     totalEvaluated: (amount?: number) => amount !== undefined && amount > 0
       ? `Total Evaluated: ₹${amount.toFixed(2)} Cr`
@@ -2064,9 +2077,9 @@ export const UI_STRINGS = {
         fy24Price: 'FY24 Price',
         fy25Price: 'FY25 Price',
         fy26Price: 'FY26 Price',
-        fy24Title: '1st April 2023 – 31st March 2024',
-        fy25Title: '1st April 2024 – 31st March 2025',
-        fy26Title: '1st April 2025 – 31st March 2026',
+        fy24Title: FISCAL_YEAR_RANGE_STRINGS.fy24,
+        fy25Title: FISCAL_YEAR_RANGE_STRINGS.fy25,
+        fy26Title: FISCAL_YEAR_RANGE_STRINGS.fy26,
         priceTrend3Yr: 'Price Trend',
         spend3Yr: 'Period Spend (₹ Cr)',
         savingsPotential: 'Savings Potential',

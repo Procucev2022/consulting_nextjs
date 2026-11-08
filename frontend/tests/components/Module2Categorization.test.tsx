@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
-import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, cleanup, within } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
 import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
@@ -394,7 +394,68 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.category)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.colLRange)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.total)).toBeInTheDocument();
+    const matrix = within(screen.getByTestId('client-spend-intelligence-area'));
+    expect(matrix.getByRole('columnheader', { name: UI_STRINGS.module2.matrixHeaders.fy24 })).toHaveAttribute(
+      'title',
+      UI_STRINGS.common.fiscalYearRanges.fy24
+    );
+    expect(matrix.getByRole('columnheader', { name: UI_STRINGS.module2.matrixHeaders.fy25 })).toHaveAttribute(
+      'title',
+      UI_STRINGS.common.fiscalYearRanges.fy25
+    );
+    expect(matrix.getByRole('columnheader', { name: UI_STRINGS.module2.matrixHeaders.fy26 })).toHaveAttribute(
+      'title',
+      UI_STRINGS.common.fiscalYearRanges.fy26
+    );
   }, 15000);
+
+  it('renders centralized fiscal-year guidance when uploaded categories lack FY25 and FY26 spend', async () => {
+    const categoriesWithoutRecentSpend = sampleSpendCategories.map((category) => ({
+      ...category,
+      spend_fy25_cr: 0,
+      spend_fy26_cr: 0
+    }));
+    await renderAndSettleIndustryCatalog(
+      <Module2Categorization
+        categories={categoriesWithoutRecentSpend}
+        lineItems={[]}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    const matrix = within(screen.getByTestId('client-spend-intelligence-area'));
+    expect(matrix.getByText(UI_STRINGS.module2.matrixHeaders.fy25).closest('th')).toHaveAttribute(
+      'title',
+      UI_STRINGS.module2.matrixNoTransactionsInUpload('FY25')
+    );
+    expect(matrix.getByText(UI_STRINGS.module2.matrixHeaders.fy26).closest('th')).toHaveAttribute(
+      'title',
+      UI_STRINGS.module2.matrixNoTransactionsInUpload('FY26')
+    );
+    expect(matrix.getAllByTitle(UI_STRINGS.module2.matrixNoTransactionsForYear('FY25'))).toHaveLength(2);
+    expect(matrix.getAllByTitle(UI_STRINGS.module2.matrixNoTransactionsForYear('FY26'))).toHaveLength(2);
+    expect(matrix.getAllByText(UI_STRINGS.module2.matrixUnavailableHeader)).toHaveLength(2);
+    expect(matrix.getAllByText(UI_STRINGS.module2.matrixUnavailableTotal)).toHaveLength(2);
+    expect(matrix.getAllByText(UI_STRINGS.module2.matrixSinglePeriod)).toHaveLength(2);
+  });
+
+  it('renders the centralized empty state when there are no category records', async () => {
+    await renderAndSettleIndustryCatalog(
+      <Module2Categorization
+        categories={[]}
+        lineItems={[]}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    expect(
+      within(screen.getByTestId('client-spend-intelligence-area')).getAllByText(UI_STRINGS.module2.categoryBreakdownEmptyState)
+    ).toHaveLength(2);
+  });
 
   it('renders data-backed Material DNA profile summary and filters by sector relevance', async () => {
     await renderAndSettleIndustryCatalog(
