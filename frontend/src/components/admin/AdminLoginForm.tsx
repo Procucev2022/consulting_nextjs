@@ -59,8 +59,8 @@ export default function AdminLoginForm({
       frontendLogger.info('Admin authenticated successfully', { userId: res.user.id });
       onSuccess(res.user);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : UI_STRINGS.common.error;
-      frontendLogger.warn('Admin login failed', { error: msg });
+      const msg = err instanceof Error ? err.message : UI_STRINGS.admin.loginFailureFallback;
+      frontendLogger.warn('Admin login failed', { fallbackMessageUsed: !(err instanceof Error) }, err);
       setErrorMessage(msg);
     } finally {
       setLoading(false);

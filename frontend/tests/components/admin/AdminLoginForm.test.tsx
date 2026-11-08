@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AdminLoginForm from '../../../src/components/admin/AdminLoginForm';
 import { apiClient } from '../../../src/utils/api';
+import frontendLogger from '../../../src/utils/logger';
 import { UI_STRINGS } from '../../../src/constants';
 
 describe('AdminLoginForm Component', () => {
@@ -102,7 +103,9 @@ describe('AdminLoginForm Component', () => {
   });
 
   it('displays error message on failed login', async () => {
-    vi.spyOn(apiClient, 'login').mockRejectedValueOnce(new Error('Invalid email or password'));
+    const loginError = new Error('Invalid email or password');
+    const warningSpy = vi.spyOn(frontendLogger, 'warn');
+    vi.spyOn(apiClient, 'login').mockRejectedValueOnce(loginError);
     render(<AdminLoginForm onSuccess={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
@@ -110,6 +113,7 @@ describe('AdminLoginForm Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Invalid email or password')).toBeInTheDocument();
     });
+    expect(warningSpy).toHaveBeenCalledWith('Admin login failed', { fallbackMessageUsed: false }, loginError);
   });
 
   it('triggers onSwitchToCreate callback when link is clicked', () => {
@@ -135,14 +139,16 @@ describe('AdminLoginForm Component', () => {
   });
 
   it('handles non-Error rejection gracefully during login failure', async () => {
+    const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'login').mockRejectedValueOnce('A raw string error');
     render(<AdminLoginForm onSuccess={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.common.error)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.loginFailureFallback)).toBeInTheDocument();
     });
+    expect(warningSpy).toHaveBeenCalledWith('Admin login failed', { fallbackMessageUsed: true }, 'A raw string error');
   });
 });
 

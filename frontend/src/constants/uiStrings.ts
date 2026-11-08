@@ -2759,6 +2759,9 @@ export const UI_STRINGS = {
     submittingCreate: 'Provisioning Administrator...',
     loginSuccessMessage: 'Administrator authenticated successfully. Redirecting to Admin Dashboard...',
     createSuccessMessage: 'Admin details created and verified successfully for admin@procucev.com.',
+    loginFailureFallback: 'Administrator sign-in failed because the login service returned an unreadable error. Verify the email and password, then retry; contact support if it continues.',
+    provisioningFailureFallback: 'Administrator setup failed because the service returned an unreadable error. Verify the required details and connection, then retry; contact support if it continues.',
+    passwordMismatchMessage: 'Password confirmation failed because the two password values differ. Enter the same password in both fields and retry.',
     accessDeniedMessage:
       'Access Denied: Administrative privileges required. Only system administrators can access this console.',
     activeSessionTitle: 'Active Administrator Session',

@@ -56,7 +56,7 @@ export default function CreateAdminDetailsForm({
     setSuccessMessage(null);
 
     if (form.password !== form.confirm_password) {
-      setErrorMessage('Passwords do not match. Please ensure both password fields are identical.');
+      setErrorMessage(UI_STRINGS.admin.passwordMismatchMessage);
       setLoading(false);
       return;
     }
@@ -70,8 +70,8 @@ export default function CreateAdminDetailsForm({
       frontendLogger.info('Administrator details provisioned', { userId: res.user.id });
       onSuccess(res.user);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : UI_STRINGS.common.error;
-      frontendLogger.warn('Admin provisioning failed', { error: msg });
+      const msg = err instanceof Error ? err.message : UI_STRINGS.admin.provisioningFailureFallback;
+      frontendLogger.warn('Admin provisioning failed', { fallbackMessageUsed: !(err instanceof Error) }, err);
       setErrorMessage(msg);
     } finally {
       setLoading(false);
