@@ -1,4 +1,8 @@
 const INTERNAL_TABLE_NAMES = new Set(['D1SeedFileLedger']);
+const R2_CLEANUP_INDEX_DEFINITIONS = Object.freeze({
+  idx_r2_cleanup_created: 'createindexidx_r2_cleanup_createdonr2objectcleanupoutbox(next_attempt_at,created_at,cleanup_id)',
+  idx_r2_cleanup_tenant_created: 'createindexidx_r2_cleanup_tenant_createdonr2objectcleanupoutbox(tenant_id,next_attempt_at,created_at,cleanup_id)'
+});
 const TENANT_REFERENCE_TABLES = Object.freeze([
   'AssessmentRecord',
   'CategoryYearDetail',
@@ -118,6 +122,18 @@ const getUserIntegritySql = () => compactSql(`
     ) THEN 0 ELSE 1 END AS violation_count
 `);
 
+const getR2CleanupIndexIntegritySql = () => compactSql(Object.entries(R2_CLEANUP_INDEX_DEFINITIONS)
+  .map(([indexName, expectedDefinition]) => `
+    SELECT '${indexName}' AS check_name,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM sqlite_schema
+        WHERE type = 'index' AND name = '${indexName}'
+          AND lower(replace(replace(replace(replace(sql, char(32), ''), char(9), ''), char(10), ''), char(13), '')) =
+            '${expectedDefinition}'
+      ) THEN 0 ELSE 1 END AS violation_count
+  `)
+  .join(' UNION ALL '));
+
 const buildTenantOrphanValues = (tableNames) => {
   if (!Array.isArray(tableNames) || tableNames.length === 0) {
     throw new Error('D1 tenant orphan query requires at least one table');
@@ -176,6 +192,7 @@ const compareD1Drift = ({
   assessmentDataVersionIndexValid = true,
   duplicateUserEmailGroups = 0,
   normalizedUserEmailIndexValid = false,
+  r2CleanupIndexIntegrityRows = [],
   orphanCounts = {},
   foreignKeyViolations = 0,
   tenantPrimaryKeyRows = [],
@@ -213,6 +230,11 @@ const compareD1Drift = ({
   const duplicateTransactionKeyGroups = Number(duplicateKeyGroups);
   const duplicateAssessmentDataVersionGroupCount = Number(duplicateAssessmentDataVersionGroups);
   const caseFoldedUserEmailGroups = Number(duplicateUserEmailGroups);
+  const r2CleanupIndexViolationCounts = new Map(r2CleanupIndexIntegrityRows
+    .map((row) => [row.check_name, Number(row.violation_count)]));
+  const missingR2CleanupIndexes = Object.keys(R2_CLEANUP_INDEX_DEFINITIONS)
+    .filter((indexName) => r2CleanupIndexViolationCounts.get(indexName) !== 0);
+  const r2CleanupIndexesValid = missingR2CleanupIndexes.length === 0;
   const foreignKeyViolationCount = Number(foreignKeyViolations);
   const tenantPrimaryKeysByTable = new Map();
   for (const row of tenantPrimaryKeyRows) {
@@ -242,7 +264,7 @@ const compareD1Drift = ({
     missingSeedFiles.length === 0 && seedChecksumMismatches.length === 0 && unexpectedSeedFiles.length === 0 &&
     duplicateTransactionKeyGroups === 0 && duplicateAssessmentDataVersionGroupCount === 0 &&
     assessmentDataVersionIndexValid && caseFoldedUserEmailGroups === 0 && normalizedUserEmailIndexValid &&
-    !hasOrphans && foreignKeyViolationCount === 0 && tenantPrimaryKeyMismatches.length === 0 &&
+    r2CleanupIndexesValid && !hasOrphans && foreignKeyViolationCount === 0 && tenantPrimaryKeyMismatches.length === 0 &&
     missingTenantIntegrityTriggers.length === 0;
 
   return {
@@ -256,6 +278,8 @@ const compareD1Drift = ({
     assessmentDataVersionIndexValid: Boolean(assessmentDataVersionIndexValid),
     duplicateUserEmailGroups: caseFoldedUserEmailGroups,
     normalizedUserEmailIndexValid: Boolean(normalizedUserEmailIndexValid),
+    r2CleanupIndexesValid,
+    missingR2CleanupIndexes,
     orphanCounts: normalizedOrphanCounts,
     foreignKeyViolations: foreignKeyViolationCount,
     tenantPrimaryKeyMismatches,
@@ -276,6 +300,8 @@ module.exports = {
   getDuplicateTransactionKeysSql,
   getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
+  R2_CLEANUP_INDEX_DEFINITIONS,
+  getR2CleanupIndexIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
   getTenantIntegrityTriggerSql,

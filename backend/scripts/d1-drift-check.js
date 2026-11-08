@@ -10,6 +10,7 @@ const {
   getDuplicateTransactionKeysSql,
   getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
+  getR2CleanupIndexIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
   getTenantIntegrityTriggerSql,
@@ -82,6 +83,8 @@ const runDriftCheck = () => {
   addRowsRead(dataVersionIntegrityResult.rowsRead);
   const userIntegrityResult = executeQuery(getUserIntegritySql());
   addRowsRead(userIntegrityResult.rowsRead);
+  const r2CleanupIndexIntegrityResult = executeQuery(getR2CleanupIndexIntegritySql());
+  addRowsRead(r2CleanupIndexIntegrityResult.rowsRead);
   const orphanResult = executeQuery(getOrphanReferenceSql());
   addRowsRead(orphanResult.rowsRead);
   const foreignKeyResult = executeQuery('PRAGMA/**/foreign_key_check');
@@ -107,6 +110,7 @@ const runDriftCheck = () => {
       .find((row) => row.check_name === 'duplicate_user_email_groups')?.violation_count || 0,
     normalizedUserEmailIndexValid: Number(userIntegrityResult.rows
       .find((row) => row.check_name === 'normalized_user_email_index_invalid')?.violation_count) === 0,
+    r2CleanupIndexIntegrityRows: r2CleanupIndexIntegrityResult.rows,
     orphanCounts: Object.fromEntries(orphanResult.rows.map((row) => [row.check_name, row.violation_count])),
     foreignKeyViolations: foreignKeyResult.rows.length,
     tenantPrimaryKeyRows: tenantPrimaryKeyResult.rows,

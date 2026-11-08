@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
+import { R2_CLEANUP_SQL } from '../../src/constants/r2Cleanup';
 
 const require = createRequire(import.meta.url);
 const {
@@ -16,6 +17,8 @@ const {
   getDuplicateTransactionKeysSql,
   getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
+  R2_CLEANUP_INDEX_DEFINITIONS,
+  getR2CleanupIndexIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
   getTenantIntegrityTriggerSql,
@@ -29,6 +32,8 @@ const createTenantPrimaryKeyRows = (overrides: Record<string, string[]> = {}) =>
       column_name: columnName,
       position: index + 1
     })));
+const createValidR2CleanupIndexIntegrityRows = () => Object.keys(R2_CLEANUP_INDEX_DEFINITIONS)
+  .map((check_name) => ({ check_name, violation_count: 0 }));
 
 describe('D1 drift diagnostics', () => {
   it('builds compact read-only table, seed ledger, duplicate, and orphan queries', () => {
@@ -54,6 +59,9 @@ describe('D1 drift diagnostics', () => {
     expect(getUserIntegritySql()).toContain('lower(email))');
     expect(getUserIntegritySql()).toContain('char(32)');
     expect(getUserIntegritySql()).not.toContain("'/**/'");
+    expect(getR2CleanupIndexIntegritySql()).toContain('idx_r2_cleanup_created');
+    expect(getR2CleanupIndexIntegritySql()).toContain('idx_r2_cleanup_tenant_created');
+    expect(getR2CleanupIndexIntegritySql()).toContain('sqlite_schema');
     expect(getOrphanReferenceSql()).toContain('assessment_customer_orphans');
     expect(getOrphanReferenceSql()).toContain('transaction_tenant_orphans');
     expect(getTenantScopedPrimaryKeySql()).toContain("pragma_table_info('VendorPriceRank')");
@@ -138,6 +146,49 @@ describe('D1 drift diagnostics', () => {
     }
   });
 
+  it('validates both R2 cleanup queue indexes and their ordered query plans', () => {
+    const db = new DatabaseSync(':memory:');
+    try {
+      db.exec(`
+        CREATE TABLE R2ObjectCleanupOutbox (
+          cleanup_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL, object_key TEXT NOT NULL,
+          reason TEXT NOT NULL, attempt_count INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT NOT NULL, created_at TEXT NOT NULL,
+          UNIQUE (tenant_id, object_key)
+        );
+      `);
+
+      const missingIndexRows = db.prepare(getR2CleanupIndexIntegritySql()).all();
+      const missingIndexReport = compareD1Drift({ r2CleanupIndexIntegrityRows: missingIndexRows });
+      expect(missingIndexReport).toMatchObject({
+        ok: false,
+        r2CleanupIndexesValid: false,
+        missingR2CleanupIndexes: Object.keys(R2_CLEANUP_INDEX_DEFINITIONS)
+      });
+
+      db.exec(`
+        CREATE INDEX idx_r2_cleanup_created
+          ON R2ObjectCleanupOutbox(next_attempt_at, created_at, cleanup_id);
+        CREATE INDEX idx_r2_cleanup_tenant_created
+          ON R2ObjectCleanupOutbox(tenant_id, next_attempt_at, created_at, cleanup_id);
+      `);
+
+      const validIndexRows = db.prepare(getR2CleanupIndexIntegritySql()).all();
+      const validIndexReport = compareD1Drift({ r2CleanupIndexIntegrityRows: validIndexRows });
+      expect(validIndexReport).toMatchObject({
+        r2CleanupIndexesValid: true,
+        missingR2CleanupIndexes: []
+      });
+
+      const globalPlan = db.prepare(`EXPLAIN QUERY PLAN ${R2_CLEANUP_SQL.selectAll}`).all(50);
+      const tenantPlan = db.prepare(`EXPLAIN QUERY PLAN ${R2_CLEANUP_SQL.selectTenant}`).all('tenant-a', 50);
+      expect(globalPlan.some((row) => String(row.detail).includes('idx_r2_cleanup_created'))).toBe(true);
+      expect(tenantPlan.some((row) => String(row.detail).includes('idx_r2_cleanup_tenant_created'))).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+
   it('reads tenant-scoped primary key order from SQLite metadata', () => {
     const db = new DatabaseSync(':memory:');
     try {
@@ -172,7 +223,10 @@ describe('D1 drift diagnostics', () => {
 
       const rows = db.prepare(getTenantIntegrityTriggerSql()).all();
       expect(rows).toHaveLength(TENANT_INTEGRITY_TRIGGER_NAMES.length);
-      const completeReport = compareD1Drift({ tenantIntegrityTriggerNames: rows.map((row) => row.trigger_name) });
+      const completeReport = compareD1Drift({
+        tenantIntegrityTriggerNames: rows.map((row) => row.trigger_name),
+        r2CleanupIndexIntegrityRows: createValidR2CleanupIndexIntegrityRows()
+      });
       const incompleteReport = compareD1Drift({
         tenantIntegrityTriggerNames: rows
           .filter((row) => row.trigger_name !== TENANT_INTEGRITY_TRIGGER_NAMES[0])
@@ -201,6 +255,7 @@ describe('D1 drift diagnostics', () => {
       duplicateKeyGroups: 0,
       duplicateUserEmailGroups: 0,
       normalizedUserEmailIndexValid: true,
+      r2CleanupIndexIntegrityRows: createValidR2CleanupIndexIntegrityRows(),
       orphanCounts: { transaction_assessment_orphans: 0 },
       foreignKeyViolations: 0,
       tenantPrimaryKeyRows: createTenantPrimaryKeyRows(),
