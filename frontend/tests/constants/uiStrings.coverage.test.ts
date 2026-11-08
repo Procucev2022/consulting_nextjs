@@ -213,6 +213,10 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module2.paymentTerms.httpFailure', () => UI_STRINGS.module2.paymentTerms.httpFailure(503, 'req-5'), ['503', 'Retry', 'req-5']],
   ['module2.paymentTerms.responseFailure', () => UI_STRINGS.module2.paymentTerms.responseFailure('invalid data', 'req-6'), ['invalid data', 'Retry', 'req-6']],
   ['module2.paymentTerms.unexpectedFailure', () => UI_STRINGS.module2.paymentTerms.unexpectedFailure('req-7'), ['failure details', 'Retry', 'req-7']],
+  ['module2.paymentTerms.transactionsAnalysed', () => UI_STRINGS.module2.paymentTerms.transactionsAnalysed('1,000'), ['1,000', 'transactions analysed']],
+  ['module2.paymentTerms.verifiedRecords', () => UI_STRINGS.module2.paymentTerms.verifiedRecords('250'), ['250', 'verified records']],
+  ['module2.paymentTerms.verifiedAndMissingPercentages', () => UI_STRINGS.module2.paymentTerms.verifiedAndMissingPercentages('40.0', '60.0'), ['40.0', '60.0']],
+  ['module2.paymentTerms.planningScenarioMetrics', () => UI_STRINGS.module2.paymentTerms.planningScenarioMetrics('1.20', '0.15'), ['1.20', '0.15']],
 
   ['module2VendorConsolidation.breadcrumbSupplier', () => UI_STRINGS.module2VendorConsolidation.breadcrumbSupplier('Packaging'), ['Packaging']],
   ['module2VendorConsolidation.breadcrumbMaterial', () => UI_STRINGS.module2VendorConsolidation.breadcrumbMaterial('MAT-1'), ['MAT-1']],

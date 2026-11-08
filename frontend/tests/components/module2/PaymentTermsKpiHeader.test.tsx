@@ -57,15 +57,15 @@ describe('PaymentTermsKpiHeader Component', () => {
     ).toBeInTheDocument();
 
     // Actual Working Capital Benefit & Financing Benefit
-    expect(screen.getByText('Actual Working Capital Benefit')).toBeInTheDocument();
-    expect(screen.getByText('Actual Annual Financing Benefit')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualWorkingCapitalBenefitLabel)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualAnnualFinancingBenefitLabel)).toBeInTheDocument();
     expect(
       screen.getAllByText(UI_STRINGS.module2.paymentTerms.actualWorkingCapitalBenefitUnavailable).length
     ).toBe(2);
 
     // Subtitle notes
-    expect(screen.getByText('Commercially validated: ₹0')).toBeInTheDocument();
-    expect(screen.getByText('Additional credit days: DATA UNAVAILABLE')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.commerciallyValidatedZero)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.additionalCreditDaysUnavailable)).toBeInTheDocument();
 
     // Illustrative Planning Scenario Callout & Disclaimer
     expect(
@@ -84,7 +84,7 @@ describe('PaymentTermsKpiHeader Component', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.paymentTerms.kpiWorkingCapitalReleased)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.paymentTerms.kpiFinancingBenefit)).toBeInTheDocument();
-    expect(screen.getByText('₹16.4384 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹3.0000 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('16.4384'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('3.0000'))).toBeInTheDocument();
   });
 });
