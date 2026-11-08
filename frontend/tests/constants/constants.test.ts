@@ -5,6 +5,7 @@ import * as CurrencyConstants from '../../src/constants/currency';
 import * as LoggerConstants from '../../src/constants/logger';
 import * as PipelineConstants from '../../src/constants/pipeline';
 import * as ModalsConstants from '../../src/constants/modals';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '../../src/constants/module2VendorConsolidation';
 
 describe('Frontend Constants Modules', () => {
@@ -23,6 +24,12 @@ describe('Frontend Constants Modules', () => {
     expect(ConstantsIndex.DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT).toBe(14200);
     expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_ACTION).toBe('ingestion.upload.record-count.fallback');
     expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_MESSAGE).toContain('record-count fallback');
+  });
+
+  it('centralizes actionable dataset upload and analysis copy', () => {
+    expect(UI_STRINGS.module1.uploadSignInRequired).toContain('sign in and retry');
+    expect(UI_STRINGS.module1.uploadAnalysisTitle('spend.csv')).toContain('spend.csv');
+    expect(UI_STRINGS.module1.uploadAnalysisSubtitle).toContain('UNSPSC');
   });
 
   it('exports the savings API parse fallback diagnostics', () => {

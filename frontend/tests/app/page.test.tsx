@@ -1192,7 +1192,13 @@ describe('Home Page Component', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['Vendor,Qty,Price\nAcme,10,100'], 'test.csv', { type: 'text/csv' });
     if (fileInput) {
-      await chooseDataset(fileInput, file);
+      const completedUploads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.length;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      expect(await screen.findByText(UI_STRINGS.module1.uploadAnalysisTitle(file.name))).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module1.uploadAnalysisSubtitle)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(completedUploads + 1);
+      });
     }
   });
 

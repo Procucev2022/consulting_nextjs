@@ -1410,7 +1410,7 @@ export default function Home() {
     }
     const loggedUser = currentUser || authApiClient.getStoredUser();
     if (!loggedUser) {
-      showToast('Please sign in to upload datasets');
+      showToast(UI_STRINGS.module1.uploadSignInRequired);
       router.push('/login');
       return;
     }
@@ -1433,8 +1433,8 @@ export default function Home() {
 
     setAnalyzingLoaderState({
       isOpen: true,
-      title: `Analyzing Uploaded File "${file.name}"`,
-      subtitle: 'Running multi-currency normalizations, ERP document deduplication and UNSPSC matching...',
+      title: UI_STRINGS.module1.uploadAnalysisTitle(file.name),
+      subtitle: UI_STRINGS.module1.uploadAnalysisSubtitle,
       metrics: {
         totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),

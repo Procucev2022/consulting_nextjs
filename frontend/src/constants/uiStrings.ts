@@ -449,6 +449,9 @@ export const UI_STRINGS = {
     dropzoneTitle: 'Drag & drop ERP spend extracts or purchase histories',
     dropzoneSupported: 'Supported formats: CSV, XLSX, XML, JSON exports from SAP S/4HANA, Oracle ERP, Infor LN, or Microsoft Dynamics 365',
     browseFiles: 'Browse Files',
+    uploadSignInRequired: 'Sign in before uploading a dataset. Your file was not submitted; sign in and retry.',
+    uploadAnalysisTitle: (fileName: string): string => `Analyzing uploaded file "${fileName}"`,
+    uploadAnalysisSubtitle: 'Normalizing currencies, checking duplicate ERP documents, and matching UNSPSC codes...',
     byCategories: 'By Categories',
     byVendors: 'By Vendors',
     actions: {
