@@ -139,15 +139,7 @@ import type {
   RejectedDashboardRequest
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
-
-const SUPERSEDED_REPORT_STATUS: ReportVersion['status'] = 'SUPERSEDED';
-
-// Newest report that has not been superseded. The API lists reports in ascending sequence order, so sort by generation time.
-const selectActiveReport = (reports: ReportVersion[]): ReportVersion | null => {
-  const candidates = reports.filter((report) => report.status !== SUPERSEDED_REPORT_STATUS);
-  const [newest] = [...candidates].sort((a, b) => Date.parse(b.generatedAt) - Date.parse(a.generatedAt));
-  return newest ?? null;
-};
+import { selectActiveReport } from '@/utils/reportSelection';
 
 export default function Home() {
   useUNSPSCTaxonomy();
