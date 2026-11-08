@@ -118,8 +118,8 @@ describe('PaymentTermsComponents', () => {
 
   it('renders PaymentTermsCoverageTab with complete, partial, and missing counts', () => {
     render(<PaymentTermsCoverageTab coverageSummary={mockCoverageSummary} />);
-    expect(screen.getByText('COMPLETE RECORDS')).toBeInTheDocument();
-    expect(screen.getByText('MISSING RECORDS')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageCompleteRecordsLabel)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageMissingRecordsLabel)).toBeInTheDocument();
     expect(screen.getByText('FIELD_NOT_IN_SOURCE_ERP')).toBeInTheDocument();
   });
 

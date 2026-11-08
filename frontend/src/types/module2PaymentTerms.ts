@@ -128,6 +128,10 @@ export interface PaymentTermsKpiHeaderProps {
   coverageSummary: PaymentTermsCoverageSummary;
 }
 
+export interface PaymentTermsCoverageTabProps {
+  coverageSummary: PaymentTermsCoverageSummary;
+}
+
 export interface PaymentTermsOpportunitiesTabProps {
   opportunities: PaymentTermsOpportunity[];
   coverageSummary: PaymentTermsCoverageSummary;

@@ -217,6 +217,10 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module2.paymentTerms.verifiedRecords', () => UI_STRINGS.module2.paymentTerms.verifiedRecords('250'), ['250', 'verified records']],
   ['module2.paymentTerms.verifiedAndMissingPercentages', () => UI_STRINGS.module2.paymentTerms.verifiedAndMissingPercentages('40.0', '60.0'), ['40.0', '60.0']],
   ['module2.paymentTerms.planningScenarioMetrics', () => UI_STRINGS.module2.paymentTerms.planningScenarioMetrics('1.20', '0.15'), ['1.20', '0.15']],
+  ['module2.paymentTerms.coveragePercentages', () => UI_STRINGS.module2.paymentTerms.coveragePercentages('40.00', '60.00'), ['40.00', '60.00']],
+  ['module2.paymentTerms.coverageVerifiedSpend', () => UI_STRINGS.module2.paymentTerms.coverageVerifiedSpend('12.3456'), ['12.3456', 'Verified Spend']],
+  ['module2.paymentTerms.coverageMissingSpend', () => UI_STRINGS.module2.paymentTerms.coverageMissingSpend('7.6543'), ['7.6543', 'Missing Spend']],
+  ['module2.paymentTerms.coverageGapPercentage', () => UI_STRINGS.module2.paymentTerms.coverageGapPercentage('25.00'), ['25.00']],
 
   ['module2VendorConsolidation.breadcrumbSupplier', () => UI_STRINGS.module2VendorConsolidation.breadcrumbSupplier('Packaging'), ['Packaging']],
   ['module2VendorConsolidation.breadcrumbMaterial', () => UI_STRINGS.module2VendorConsolidation.breadcrumbMaterial('MAT-1'), ['MAT-1']],
