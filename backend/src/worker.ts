@@ -139,11 +139,10 @@ export const fetch = async (
   }
 };
 
-export const scheduled = (
+export const scheduled = async (
   controller: CloudflareScheduledController,
-  environment: CloudflareEnvironment,
-  executionContext: CloudflareExecutionContext
-): void => {
+  environment: CloudflareEnvironment
+): Promise<void> => {
   const requestId = crypto.randomUUID();
   logger.info(R2_CLEANUP_LOG_MESSAGES.cronStarted, {
     action: R2_CLEANUP_ACTIONS.cron,
@@ -151,7 +150,9 @@ export const scheduled = (
     cron: controller.cron,
     scheduledTime: controller.scheduledTime
   });
-  const cleanupTask = processR2ObjectCleanupOutbox(environment, { requestId }).catch((error: unknown) => {
+  try {
+    await processR2ObjectCleanupOutbox(environment, { requestId });
+  } catch (error: unknown) {
     logger.error(R2_CLEANUP_LOG_MESSAGES.queueReadFailed, {
       action: R2_CLEANUP_ACTIONS.cron,
       requestId,
@@ -159,8 +160,7 @@ export const scheduled = (
       scheduledTime: controller.scheduledTime
     }, error);
     throw error;
-  });
-  executionContext.waitUntil(cleanupTask);
+  }
 };
 
 export default { fetch, scheduled };
