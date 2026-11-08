@@ -1,23 +1,23 @@
-import { apiFetch } from '../../utils/apiFetch';
 /**
  * Module 2 — Lever 4: Volume Aggregation Primary View Component
  * Compliant with Rule 7, 8, 9, 11, 15, max 300 lines, cyclomatic complexity <= 10
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import type { VolumeAggregationResult } from '../../types/module2VolumeAggregation';
-import { VOLUME_AGGREGATION_UI_STRINGS } from '../../constants/module2VolumeAggregation';
+import type {
+  VolumeAggregationResult,
+  VolumeAggregationTab,
+  VolumeAggregationViewProps
+} from '../../types/module2VolumeAggregation';
+import { UI_STRINGS } from '../../constants/uiStrings';
+import { VOLUME_AGGREGATION_EXPORT_ENDPOINT } from '../../constants/module2VolumeAggregation';
+import { loadVolumeAggregation } from '../../utils/volumeAggregationApi';
 import { VolumeAggregationOverviewTab } from './VolumeAggregationOverviewTab';
 import { VolumeAggregationPlantTab } from './VolumeAggregationPlantTab';
 import { VolumeAggregationMaterialTab } from './VolumeAggregationMaterialTab';
 import { VolumeAggregationTransactionTab } from './VolumeAggregationTransactionTab';
 import { VolumeAggregationPoConsolidationTab } from './VolumeAggregationPoConsolidationTab';
 import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
-
-interface VolumeAggregationViewProps {
-  assessmentId: string;
-  onBackToOverview?: () => void;
-}
 
 export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   assessmentId,
@@ -26,9 +26,7 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   const [data, setData] = useState<VolumeAggregationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'plants' | 'materials' | 'transactions' | 'poConsolidation'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<VolumeAggregationTab>('overview');
   const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
@@ -37,21 +35,12 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
     setError(null);
     setData(null);
     try {
-      const res = await apiFetch(`/api/module2/sourcing/volume-aggregation?assessmentId=${assessmentId}`);
-      if (!res.ok) {
-        throw new Error(`Failed to load Volume Aggregation analysis (HTTP ${res.status})`);
-      }
-      const json = await res.json();
+      const result = await loadVolumeAggregation(assessmentId);
       if (!isCurrentRequest(requestId)) return;
-      if (json.success && json.data) {
-        setData(json.data);
-      } else {
-        throw new Error(json.message || 'Invalid server response structure');
-      }
+      setData(result);
     } catch (err: unknown) {
       if (!isCurrentRequest(requestId)) return;
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      setError(err instanceof Error ? err.message : UI_STRINGS.module2.volumeAggregation.unexpectedFailure);
     } finally {
       if (isCurrentRequest(requestId)) setLoading(false);
     }
@@ -66,9 +55,9 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
     return (
       <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
         <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
-          {VOLUME_AGGREGATION_UI_STRINGS.LOADING_TEXT}
+          {UI_STRINGS.module2.volumeAggregation.loadingText}
         </div>
-        <div style={{ fontSize: '13px' }}>Evaluating cross-plant demand pooling and UOM compatibility...</div>
+        <div style={{ fontSize: '13px' }}>{UI_STRINGS.module2.volumeAggregation.loadingDescription}</div>
       </div>
     );
   }
@@ -85,8 +74,12 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
           color: '#991b1b'
         }}
       >
-        <div style={{ fontWeight: 600, fontSize: '15px', marginBottom: '4px' }}>Analysis Load Failed</div>
-        <div style={{ fontSize: '13px', marginBottom: '12px' }}>{error || 'Unable to load dataset.'}</div>
+        <div style={{ fontWeight: 600, fontSize: '15px', marginBottom: '4px' }}>
+          {UI_STRINGS.module2.volumeAggregation.errorTitle}
+        </div>
+        <div style={{ fontSize: '13px', marginBottom: '12px' }}>
+          {error || UI_STRINGS.module2.volumeAggregation.unexpectedFailure}
+        </div>
         <button
           onClick={fetchData}
           style={{
@@ -99,17 +92,17 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
             fontSize: '13px'
           }}
         >
-          Retry Analysis
+          {UI_STRINGS.module2.volumeAggregation.retry}
         </button>
       </div>
     );
   }
 
   const cov = data.coverageSummary;
+  const exportQuery = new URLSearchParams({ assessmentId: data.assessmentId });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
-      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -136,21 +129,21 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
                 gap: '4px'
               }}
             >
-              ← Back to Levers Overview
+              {UI_STRINGS.module2.volumeAggregation.backToOverview}
             </button>
           )}
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.TITLE}
+            {UI_STRINGS.module2.volumeAggregation.title}
           </h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.SUBTITLE}
+            {UI_STRINGS.module2.volumeAggregation.subtitle}
           </p>
         </div>
 
         {/* Declarative Virtual DOM Excel Download (Rule 15 Compliant) */}
         <a
-          href={`/api/module2/sourcing/volume-aggregation/export-excel?assessmentId=${assessmentId}`}
-          download={`Volume_Aggregation_${assessmentId}.xlsx`}
+          href={`${VOLUME_AGGREGATION_EXPORT_ENDPOINT}?${exportQuery.toString()}`}
+          download={`Volume_Aggregation_${data.assessmentId}.xlsx`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -165,7 +158,7 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
           }}
         >
-          📊 {VOLUME_AGGREGATION_UI_STRINGS.EXPORT_BUTTON}
+          📊 {UI_STRINGS.module2.volumeAggregation.exportButton}
         </a>
       </div>
 
@@ -179,75 +172,94 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
       >
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.KPI_TOTAL_INCURRED_SPEND}
+            {UI_STRINGS.module2.volumeAggregation.totalIncurredSpend}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
-            ₹{cov.totalIncurredSpendCr.toFixed(4)} Cr
+            {UI_STRINGS.common.croreAmount(cov.totalIncurredSpendCr.toFixed(4))}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {cov.grossMaterialSpendCr ? `Gross: ₹${cov.grossMaterialSpendCr.toFixed(4)} Cr` : `${cov.totalTransactionsCount.toLocaleString()} txs`}
-            {cov.unmatchedAdjustmentsCount > 0 ? ` (Adj: ₹${(cov.unmatchedAdjustmentsSpendInr / 10000000).toFixed(4)} Cr)` : ''}
+            {cov.grossMaterialSpendCr
+              ? UI_STRINGS.module2.volumeAggregation.grossSpend(
+                UI_STRINGS.common.croreAmount(cov.grossMaterialSpendCr.toFixed(4))
+              )
+              : UI_STRINGS.module2.volumeAggregation.transactionCount(cov.totalTransactionsCount.toLocaleString())}
+            {cov.unmatchedAdjustmentsCount > 0
+              ? UI_STRINGS.module2.volumeAggregation.adjustmentSpend(
+                UI_STRINGS.common.croreAmount((cov.unmatchedAdjustmentsSpendInr / 10000000).toFixed(4))
+              )
+              : ''}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.KPI_GENUINE_OPPORTUNITIES}
+            {UI_STRINGS.module2.volumeAggregation.genuineOpportunities}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#2563eb', marginTop: '4px' }}>
-            ₹{(cov.genuineOpportunitySpendCr ?? cov.potentiallyAggregatableSpendCr).toFixed(4)} Cr
+            {UI_STRINGS.common.croreAmount(
+              (cov.genuineOpportunitySpendCr ?? cov.potentiallyAggregatableSpendCr).toFixed(4)
+            )}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {cov.genuineOpportunitiesCount || cov.genuineTier1OpportunitiesCount || cov.tier1IdenticalCount} genuine multi-plant opportunities
+            {UI_STRINGS.module2.volumeAggregation.genuineOpportunityCount(
+              cov.genuineOpportunitiesCount || cov.genuineTier1OpportunitiesCount || cov.tier1IdenticalCount
+            )}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.KPI_UOM_COMPATIBLE}
+            {UI_STRINGS.module2.volumeAggregation.uomCompatibleSpend}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
-            ₹{(cov.uomCompatibleSpendCr ?? cov.eligiblePhysicalAggregationSpendCr ?? cov.totalIncurredSpendCr).toFixed(4)} Cr
+            {UI_STRINGS.common.croreAmount(
+              (cov.uomCompatibleSpendCr ?? cov.eligiblePhysicalAggregationSpendCr ?? cov.totalIncurredSpendCr).toFixed(4)
+            )}
           </div>
           <div style={{ fontSize: '11px', color: '#059669', marginTop: '2px' }}>
-            Includes ₹{(cov.limitedHistorySpendCr ?? cov.singleIsolatedPurchaseSpendCr).toFixed(4)} Cr limited history
+            {UI_STRINGS.module2.volumeAggregation.limitedHistorySpend(
+              UI_STRINGS.common.croreAmount((cov.limitedHistorySpendCr ?? cov.singleIsolatedPurchaseSpendCr).toFixed(4))
+            )}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.KPI_EXCLUDED_PHYSICAL}
+            {UI_STRINGS.module2.volumeAggregation.excludedPhysical}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#b45309', marginTop: '4px' }}>
-            ₹{(cov.excludedPhysicalAggregationSpendCr ?? cov.uomIncompatibleSpendCr).toFixed(4)} Cr
+            {UI_STRINGS.common.croreAmount(
+              (cov.excludedPhysicalAggregationSpendCr ?? cov.uomIncompatibleSpendCr).toFixed(4)
+            )}
           </div>
           <div style={{ fontSize: '11px', color: '#d97706', marginTop: '2px' }}>
-            {cov.excludedUnresolvedUomCount ?? cov.uomIncompatibleCount} records (Ambiguous UOM)
+            {UI_STRINGS.module2.volumeAggregation.unresolvedUomCount(
+              cov.excludedUnresolvedUomCount ?? cov.uomIncompatibleCount
+            )}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.KPI_SAVINGS_STATUS}
+            {UI_STRINGS.module2.volumeAggregation.savingsStatus}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#475569', marginTop: '6px' }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.SAVINGS_STATUS_VALUE}
+            {UI_STRINGS.module2.volumeAggregation.savingsStatusValue}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {VOLUME_AGGREGATION_UI_STRINGS.SAVINGS_STATUS_SUB}
+            {UI_STRINGS.module2.volumeAggregation.savingsStatusSub}
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px' }}>
         {(
           [
-            { id: 'overview', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_OVERVIEW },
-            { id: 'plants', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_PLANTS },
-            { id: 'materials', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_MATERIALS },
-            { id: 'transactions', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_TRANSACTIONS },
-            { id: 'poConsolidation', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_PO_CONSOLIDATION }
+            { id: 'overview', label: UI_STRINGS.module2.volumeAggregation.tabOverview },
+            { id: 'plants', label: UI_STRINGS.module2.volumeAggregation.tabPlants },
+            { id: 'materials', label: UI_STRINGS.module2.volumeAggregation.tabMaterials },
+            { id: 'transactions', label: UI_STRINGS.module2.volumeAggregation.tabTransactions },
+            { id: 'poConsolidation', label: UI_STRINGS.module2.volumeAggregation.tabPoConsolidation }
           ] as const
         ).map((t) => (
           <button
@@ -269,7 +281,6 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
         ))}
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'overview' && (
         <VolumeAggregationOverviewTab
           tier1={data.tier1Opportunities}

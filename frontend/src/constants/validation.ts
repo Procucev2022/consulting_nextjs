@@ -35,7 +35,7 @@ export const apiRequestIdSchema = z.string()
   .max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH)
   .regex(/^[A-Za-z0-9._-]+$/u);
 
-export const module2LogisticsPackagingQuerySchema = z.object({
+export const assessmentIdQuerySchema = z.object({
   assessmentId: z.string().trim().min(1).max(120)
 });
 

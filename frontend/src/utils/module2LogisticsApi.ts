@@ -1,5 +1,5 @@
 import { apiFetch } from './apiFetch';
-import { BACKEND_API_BASE_URL, UI_STRINGS, module2LogisticsPackagingQuerySchema } from '../constants';
+import { BACKEND_API_BASE_URL, UI_STRINGS, assessmentIdQuerySchema } from '../constants';
 import type { Module2LogisticsPackagingResponse } from '../types/module2Logistics';
 import { logger } from './logger';
 import { authApiClient } from './authApi';
@@ -16,7 +16,7 @@ const parseLogisticsEnvelope = (payload: unknown): Module2LogisticsPackagingResp
 export const loadModule2LogisticsCandidates = async (
   assessmentId: string
 ): Promise<Module2LogisticsPackagingResponse> => {
-  const parsed = module2LogisticsPackagingQuerySchema.safeParse({ assessmentId });
+  const parsed = assessmentIdQuerySchema.safeParse({ assessmentId });
   if (!parsed.success) throw new Error(UI_STRINGS.module2Logistics.assessmentMissing);
   try {
     const query = new URLSearchParams({ assessmentId: parsed.data.assessmentId });

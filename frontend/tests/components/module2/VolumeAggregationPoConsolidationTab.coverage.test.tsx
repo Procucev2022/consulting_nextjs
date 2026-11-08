@@ -2,7 +2,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { VolumeAggregationPoConsolidationTab } from '../../../src/components/module2/VolumeAggregationPoConsolidationTab';
 import { calculatePoConsolidation } from '../../../src/utils/step2Calculators';
-import { VOLUME_AGGREGATION_UI_STRINGS } from '../../../src/constants/module2VolumeAggregation';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type { VolumeAggregationTransactionItem } from '../../../src/types/module2VolumeAggregation';
 import type { LineItemMapping } from '../../../src/types';
 
@@ -56,7 +56,7 @@ describe('VolumeAggregationPoConsolidationTab coverage paths', () => {
   it('shows the cadence note and skips the calculation when there are no transactions', () => {
     render(<VolumeAggregationPoConsolidationTab transactions={[]} />);
 
-    expect(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.PO_CONSOLIDATION_SIGNAL_NOTE)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.poConsolidationSignalNote)).toBeInTheDocument();
     expect(calculatePoConsolidation).not.toHaveBeenCalled();
   });
 
@@ -105,7 +105,7 @@ describe('VolumeAggregationPoConsolidationTab coverage paths', () => {
   it('keeps the cadence note on screen alongside the consolidation section for populated input', () => {
     render(<VolumeAggregationPoConsolidationTab transactions={[populatedTransaction, sparseTransaction]} />);
 
-    expect(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.PO_CONSOLIDATION_SIGNAL_NOTE)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.poConsolidationSignalNote)).toBeInTheDocument();
     expect(mappedLineItems()).toHaveLength(2);
   });
 });
