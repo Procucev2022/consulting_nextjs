@@ -1076,7 +1076,7 @@ export default function Home() {
 
   const handleUpgradeTier = (targetTier: SubscriptionTier) => {
     handleSelectSimulatedTier(targetTier);
-    showToast(`Upgraded to ${targetTier} Customer!`);
+    showToast(UI_STRINGS.subscription.upgradeSuccess(targetTier));
   };
 
   // Handlers for Module 1
@@ -1148,7 +1148,7 @@ export default function Home() {
         return r;
       })
     );
-    showToast(`Analyst confirmed dataset base currency: ${confirmedCurrency}`);
+    showToast(UI_STRINGS.module1.datasetBaseCurrencyConfirmed(confirmedCurrency));
   };
 
   const handleMergeVendor = (record: ValidationPreCheckRecord) => {

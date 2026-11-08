@@ -1334,6 +1334,7 @@ describe('Home page: Module 1 data actions', () => {
     await renderPage();
 
     await runProp('module1', 'onConfirmDatasetBaseCurrency');
+    expect(screen.getByText(UI_STRINGS.module1.datasetBaseCurrencyConfirmed('INR'))).toBeInTheDocument();
 
     const records = readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords');
     expect(records.map((record) => record.raw_currency)).toEqual(['INR', 'INR', 'INR', 'USD']);
@@ -1341,6 +1342,7 @@ describe('Home page: Module 1 data actions', () => {
 
     await runProp('module1', 'onConfirmDatasetBaseCurrency', 'USD');
     expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')[0].raw_currency).toBe('INR');
+    expect(screen.getByText(UI_STRINGS.module1.datasetBaseCurrencyConfirmed('USD'))).toBeInTheDocument();
   });
 
   it('saves a supplier correction without claiming the master merge or total recalculation', async () => {
@@ -2211,6 +2213,7 @@ describe('Home page: tiers, theme, and assessment toggle', () => {
 
     await runProp('module1', 'onUpgrade', 'GOLD');
     expect(apiClient.setSimulatedTier).toHaveBeenLastCalledWith('GOLD');
+    expect(screen.getByText(UI_STRINGS.subscription.upgradeSuccess('GOLD'))).toBeInTheDocument();
   });
 
   it('switches the theme and persists the choice', async () => {
