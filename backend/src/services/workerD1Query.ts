@@ -50,6 +50,8 @@ export const runD1Statements = async (
     }
     return;
   }
+  // D1 auto-commits a standalone .run() statement; batch() is required only
+  // when multiple statements must succeed or roll back as one transaction.
   if (statements.length > 1) requireD1AtomicBatch(db, context, statements.length);
   try {
     await statements[0].run();

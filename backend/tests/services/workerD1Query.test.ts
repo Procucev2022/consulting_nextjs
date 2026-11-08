@@ -67,7 +67,7 @@ describe('audited Worker D1 dataset reads', () => {
       expect.any(Error));
   });
 
-  it('allows a single statement and treats an empty write set as a no-op without batch support', async () => {
+  it('runs a standalone D1 statement atomically and treats an empty write set as a no-op without batch support', async () => {
     const single = { run: vi.fn().mockResolvedValue(undefined) } as unknown as CloudflareD1PreparedStatement;
     const binding = { prepare: vi.fn() } as unknown as CloudflareD1Database;
     await runD1Statements(binding, [single], { operation: 'assessment.single_write' });
@@ -75,6 +75,7 @@ describe('audited Worker D1 dataset reads', () => {
     await runD1Statements(binding, [single], {});
     await runD1Statements(binding, [], { operation: 'assessment.empty_write' });
     expect(single.run).toHaveBeenCalledTimes(3);
+    expect(logger.error).not.toHaveBeenCalled();
   });
 
   it('logs and rethrows a single-statement fallback failure', async () => {
