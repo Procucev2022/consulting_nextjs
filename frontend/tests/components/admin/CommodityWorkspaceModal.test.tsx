@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CommodityWorkspaceModal } from '../../../src/components/admin/pcbi/CommodityWorkspaceModal';
 import { pcbiCommodityDataLabApi } from '../../../src/utils/pcbiCommodityDataLabApi';
-import { COMMODITY_DATA_UPLOAD_BANNER } from '../../../src/constants/pcbiCommodityDataLab';
 import { UI_STRINGS } from '../../../src/constants';
 
 describe('CommodityWorkspaceModal Unit Tests', () => {
@@ -107,7 +106,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     vi.spyOn(pcbiCommodityDataLabApi, 'uploadCommoditySource').mockResolvedValue({
       success: true,
       source: mockWorkspace.sources[0] as any,
-      banner: COMMODITY_DATA_UPLOAD_BANNER,
+      banner: UI_STRINGS.pcbiCommodityDataLab.uploadBannerText,
       message: 'Source staged'
     });
     vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData').mockResolvedValue({
@@ -143,7 +142,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
       <CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />
     );
 
-    expect(screen.getByText(COMMODITY_DATA_UPLOAD_BANNER)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.uploadBannerText)).toBeInTheDocument();
     const heading = await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
     expect(heading).toBeInTheDocument();
     expect(screen.getByText('PCBI-FEMO-65-001')).toBeInTheDocument();
@@ -157,19 +156,19 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
     // Switch to Upload Data tab
-    const uploadTabBtn = screen.getByText('3. Upload Data');
+    const uploadTabBtn = screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA);
     fireEvent.click(uploadTabBtn);
-    expect(screen.getByText('Select Commodity Research File')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceSelectResearchFile)).toBeInTheDocument();
 
     // Switch to Source Register tab
-    const sourceRegBtn = screen.getByText('4. Source Register');
+    const sourceRegBtn = screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.SOURCE_REGISTER);
     fireEvent.click(sourceRegBtn);
     expect(screen.getByText('Minerals & Metals Review')).toBeInTheDocument();
 
     // Switch to Approval tab
-    const approvalTabBtn = screen.getByText('10. Approval');
+    const approvalTabBtn = screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL);
     fireEvent.click(approvalTabBtn);
-    expect(screen.getByText('Admin Governance Approval Gate')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceApprovalHeading)).toBeInTheDocument();
   });
 
   it('triggers admin approval when clicking approve button in approval tab', async () => {
@@ -185,7 +184,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
-    fireEvent.click(screen.getByText('10. Approval'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL));
     const approveBtn = screen.getByRole('button', { name: /ADMIN APPROVAL — PROMOTE TO PCBI CATALOG/i });
     fireEvent.click(approveBtn);
 
@@ -220,39 +219,39 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
     // Tab 2: Research Queue
-    fireEvent.click(screen.getByText('2. Research Queue'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.RESEARCH_QUEUE));
     expect(screen.getByText(new RegExp(UI_STRINGS.pcbiCommodityDataLab.workspacePriorityLabel))).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreLabel(100))).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).toBeInTheDocument();
 
     // Tab 5: Extracted Observations
-    fireEvent.click(screen.getByText('5. Extracted Observations'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.EXTRACTED_OBSERVATIONS));
     expect(screen.getByText('OBS-001')).toBeInTheDocument();
     expect(screen.getByText(/3250/)).toBeInTheDocument();
 
     // Tab 6: Standardization Preview
-    fireEvent.click(screen.getByText('6. Standardization Preview'));
-    expect(screen.getByText(/Harmonization & Transformation Pipeline/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.STANDARDIZATION_PREVIEW));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTransformationHeading)).toBeInTheDocument();
 
     // Tab 7: Source Comparison
-    fireEvent.click(screen.getByText('7. Source Comparison'));
-    expect(screen.getByText(/Multi-Source Cross-Publisher Correlation/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.SOURCE_COMPARISON));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceSourceComparisonHeading)).toBeInTheDocument();
 
     // Tab 8: Methodology
-    fireEvent.click(screen.getByText('8. Methodology'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.METHODOLOGY));
     expect(screen.getByText(/Ferro Molybdenum Derivation Methodology/i)).toBeInTheDocument();
 
     // Tab 9: Validation
-    fireEvent.click(screen.getByText('9. Validation'));
-    expect(screen.getByText(/Data Lab Quality & Validation Check/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.VALIDATION));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceValidationHeading)).toBeInTheDocument();
 
     // Tab 11: Version History
-    fireEvent.click(screen.getByText('11. Version History'));
-    expect(screen.getByText(/Staged Research Iteration History/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.VERSION_HISTORY));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceVersionHistoryHeading)).toBeInTheDocument();
 
     // Tab 12: PCBI History
-    fireEvent.click(screen.getByText('12. PCBI History'));
-    expect(screen.getByText(/Historical Index Trajectory/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.PCBI_HISTORY));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspacePcbiHistoryHeading)).toBeInTheDocument();
   });
 
   it('marks unlinked workspace spend as unscored and removes its high-impact designation', async () => {
@@ -272,7 +271,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     });
     render(<CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('2. Research Queue'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.RESEARCH_QUEUE));
     expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreNotScored)).toBeInTheDocument();
     expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).not.toBeInTheDocument();
   });
@@ -294,7 +293,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     });
     render(<CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('2. Research Queue'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.RESEARCH_QUEUE));
     expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreResolved)).toBeInTheDocument();
     expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).not.toBeInTheDocument();
   });
@@ -307,7 +306,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
     // Go to upload tab
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
 
     // Mock file input
     const file = new File(['content,date,price\n3200,2024-01-01,3200'], 'MMR_Research_Data.csv', {
@@ -319,10 +318,10 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
-      expect(screen.getByText(/Selected: MMR_Research_Data.csv/i)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceSelectedFile('MMR_Research_Data.csv', '0.0'))).toBeInTheDocument();
     });
 
-    const uploadBtn = screen.getByRole('button', { name: /Upload & Stage Evidence Object/i });
+    const uploadBtn = screen.getByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.workspaceUploadEvidence });
     fireEvent.click(uploadBtn);
 
     await waitFor(() => {
@@ -350,7 +349,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
 
     const file = new File(['po number,vendor,spend'], 'Customer_PO_History.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -376,7 +375,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
-    fireEvent.click(screen.getByText('10. Approval'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL));
     const approveBtn = screen.getByRole('button', { name: /ADMIN APPROVAL — PROMOTE TO PCBI CATALOG/i });
     fireEvent.click(approveBtn);
 
@@ -405,11 +404,11 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     );
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [] } });
-    expect(screen.queryByText(/Selected:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.workspaceSelectedFile('file.csv', '0.0'))).not.toBeInTheDocument();
   });
 
   it('handles upload errors when uploadCommoditySource rejects with customer data, master data, or generic error', async () => {
@@ -423,13 +422,13 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     );
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['test'], 'data.csv', { type: 'text/csv' });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    const uploadBtn = screen.getByRole('button', { name: /Upload & Stage Evidence Object/i });
+    const uploadBtn = screen.getByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.workspaceUploadEvidence });
 
     // 1st error: CUSTOMER DATA DETECTED
     fireEvent.click(uploadBtn);
@@ -481,12 +480,12 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
     // Check Source Register shows ADMIN_APPROVED badge
-    fireEvent.click(screen.getByText('4. Source Register'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.SOURCE_REGISTER));
     expect(screen.getByText('ADMIN_APPROVED')).toBeInTheDocument();
 
     // Check Approval tab shows YES for catalog write and approver name
-    fireEvent.click(screen.getByText('10. Approval'));
-    expect(screen.getByText('YES')).toBeInTheDocument();
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceApprovalYes)).toBeInTheDocument();
     expect(screen.getByText(/Lead PCBI Auditor/i)).toBeInTheDocument();
   });
 
@@ -502,14 +501,14 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     );
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
 
     // File with unknown extension (falls back to CSV)
     const file = new File(['data'], 'raw_data_nodot', { type: 'application/octet-stream' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    const uploadBtn = screen.getByRole('button', { name: /Upload & Stage Evidence Object/i });
+    const uploadBtn = screen.getByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.workspaceUploadEvidence });
     fireEvent.click(uploadBtn);
 
     await waitFor(() => {
@@ -518,17 +517,17 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     // Test non-Error rejection on upload
     vi.spyOn(pcbiCommodityDataLabApi, 'uploadCommoditySource').mockRejectedValueOnce('Network dropped completely');
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
     const uploadInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(uploadInput, { target: { files: [file] } });
-    fireEvent.click(screen.getByRole('button', { name: /Upload & Stage Evidence Object/i }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.workspaceUploadEvidence }));
     await waitFor(() => {
       expect(screen.getByText('Network dropped completely')).toBeInTheDocument();
     });
 
     // Test non-Error rejection on approval
     vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData').mockRejectedValueOnce('Approval string error');
-    fireEvent.click(screen.getByText('10. Approval'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL));
     const approveBtn = screen.getByRole('button', { name: /ADMIN APPROVAL — PROMOTE TO PCBI CATALOG/i });
     fireEvent.click(approveBtn);
     await waitFor(() => {
@@ -537,7 +536,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     // Test non-Error rejection on workspace load
     vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockRejectedValueOnce('Failed workspace load');
-    fireEvent.click(screen.getByText('1. Overview'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.OVERVIEW));
   });
 
   it('uses the domain-specific fallback guidance when preflight detection omits its messages', async () => {
@@ -553,12 +552,12 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     render(<CommodityWorkspaceModal isOpen pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
 
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('3. Upload Data'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.UPLOAD_DATA));
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['rows'], 'purchases.csv', { type: 'text/csv' })] } });
 
     expect(await screen.findByText('CUSTOMER DATA DETECTED')).toBeInTheDocument();
-    expect(screen.getByText('Customer purchase history must be uploaded through Module 1.')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.customerDataDetectedMsg)).toBeInTheDocument();
   });
 
   it('keeps the current workspace when D1 returns an unsuccessful payload and ignores rejected approval payloads', async () => {
@@ -577,7 +576,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     });
     const approvalView = render(<CommodityWorkspaceModal isOpen pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
     await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
-    fireEvent.click(screen.getByText('10. Approval'));
+    fireEvent.click(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.workspaceTabLabels.APPROVAL));
     fireEvent.click(screen.getByRole('button', { name: /ADMIN APPROVAL — PROMOTE TO PCBI CATALOG/i }));
     await waitFor(() => expect(pcbiCommodityDataLabApi.approveCommodityData).toHaveBeenCalled());
     approvalView.unmount();

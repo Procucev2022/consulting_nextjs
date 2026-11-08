@@ -196,7 +196,7 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
     fireEvent.click(researchBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('COMMODITY PCBI WORKSPACE')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.commodityWorkspaceTitle)).toBeInTheDocument();
     });
   });
 
@@ -393,15 +393,15 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
     fireEvent.click(researchBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('COMMODITY PCBI WORKSPACE')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.commodityWorkspaceTitle)).toBeInTheDocument();
     });
 
     // Close Workspace via aria-label
-    const closeWorkspaceBtn = screen.getByLabelText('Close workspace modal');
+    const closeWorkspaceBtn = screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.workspaceCloseLabel);
     fireEvent.click(closeWorkspaceBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText('COMMODITY PCBI WORKSPACE')).not.toBeInTheDocument();
+      expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.commodityWorkspaceTitle)).not.toBeInTheDocument();
     });
 
     // Open Upload Workflow

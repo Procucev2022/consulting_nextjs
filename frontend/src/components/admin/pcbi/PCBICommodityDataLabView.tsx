@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Layers,
   RefreshCw,
@@ -30,7 +31,6 @@ import {
 import { UI_STRINGS } from '../../../constants';
 import { pcbiCommodityDataLabApi } from '../../../utils/pcbiCommodityDataLabApi';
 import frontendLogger from '../../../utils/logger';
-import { CommodityWorkspaceModal } from './CommodityWorkspaceModal';
 import { PCBICommodityResearchQueueTable } from './PCBICommodityResearchQueueTable';
 import { PCBISourceLibraryView } from './PCBISourceLibraryView';
 import { CommodityPCBIUploadWorkflowModal } from './CommodityPCBIUploadWorkflowModal';
@@ -45,6 +45,11 @@ import type {
   PCBICommodityPromotionHistory,
   PCBIResearchWorkflowUpdate
 } from '../../../types/pcbiCommodityDataLab';
+
+const CommodityWorkspaceModal = dynamic(
+  () => import('./CommodityWorkspaceModal').then((module) => module.CommodityWorkspaceModal),
+  { loading: () => null }
+);
 
 export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> = ({
   onNavigateToMaster
@@ -413,16 +418,18 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       )}
 
       {/* 12-Tab Commodity PCBI Workspace Modal */}
-      <CommodityWorkspaceModal
-        isOpen={isWorkspaceModalOpen}
-        pcbiId={selectedCommodityPcbiId}
-        onClose={() => {
-          setIsWorkspaceModalOpen(false);
-          setSelectedCommodityPcbiId(null);
-        }}
-        onSourceUploaded={handleDataChanged}
-        onDataApproved={handleDataChanged}
-      />
+      {isWorkspaceModalOpen && selectedCommodityPcbiId !== null && (
+        <CommodityWorkspaceModal
+          isOpen
+          pcbiId={selectedCommodityPcbiId}
+          onClose={() => {
+            setIsWorkspaceModalOpen(false);
+            setSelectedCommodityPcbiId(null);
+          }}
+          onSourceUploaded={handleDataChanged}
+          onDataApproved={handleDataChanged}
+        />
+      )}
 
       {/* Governed 10-Step Commodity PCBI Upload Workflow Modal */}
       <CommodityPCBIUploadWorkflowModal
