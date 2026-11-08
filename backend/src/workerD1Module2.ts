@@ -1,9 +1,7 @@
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { WorkerD1Result } from './types/d1';
-import { eAuctionPlanningAssumptionSchema } from './constants/validation';
 import logger from './utils/logger';
-import { clearScopedModule2Cache, handleScopedModule2Route } from './services/workerD1Module2Scoped';
-import { authenticateWorkerUser } from './workerAuth';
+import { handleScopedModule2Route } from './services/workerD1Module2Scoped';
 import type { EAuctionResult } from './types/module2EAuction';
 import {
   MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES, MODULE2_D1_SCOPED_MESSAGES
@@ -12,16 +10,11 @@ import {
   handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleSpecificationReview
 } from './workerD1Module2ReviewRoutes';
 import { handleModule2ReportRoute } from './workerD1Module2ReportRoutes';
-import {
-  loadEAuctionPlanningAssumptions, saveEAuctionPlanningAssumption
-} from './services/workerD1EAuctionPlanningAssumptions';
-import { readJson, requestJsonFailureResult } from './workerHttp';
+import { loadEAuctionPlanningAssumptions } from './services/workerD1EAuctionPlanningAssumptions';
+import { requestJsonFailureResult } from './workerHttp';
 import { handleModule2DataRoute } from './workerD1Module2DataRoutes';
 import { handleProcurementComplianceRoute } from './workerD1Module2ComplianceRoutes';
-
-const readRequestBody = async (request: Request): Promise<unknown> => {
-  return readJson(request);
-};
+import { handleEAuctionPlanningAssumptionsRoute } from './workerD1Module2EAuctionRoutes';
 
 export const handleModule2Route = async (
   db: CloudflareD1Database | undefined,
@@ -35,37 +28,10 @@ export const handleModule2Route = async (
   try {
   const normalized = subPath.replace(/^\/(sourcing|levers)/, '') || '/';
   const tenantId = request.headers.get('x-resolved-tenant-id') || '';
-  if (normalized === '/e-auction/planning-assumptions') {
-    if (request.method === 'GET') return { data: await loadEAuctionPlanningAssumptions(db) };
-    if (request.method !== 'PUT') return { status: 405, data: {
-      success: false, message: MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionMethod
-    } };
-    const parsed = eAuctionPlanningAssumptionSchema.safeParse(await readRequestBody(request));
-    if (!parsed.success) return { status: 400, data: {
-      success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidEAuctionPlanningAssumption,
-      errors: parsed.error.issues
-    } };
-    const authentication = await authenticateWorkerUser(request, { DB: db, AUTH_SECRET: authSecret }, true);
-    if (!authentication.user) return { status: authentication.status, data: {
-      success: false, message: authentication.message || MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionAdminOnly
-    } };
-    const updatedAt = new Date().toISOString();
-    const reviewedAssumption = {
-      ...parsed.data,
-      ...(parsed.data.approvalStatus === 'APPROVED'
-        ? { approvedBy: authentication.user.name, approvedDate: updatedAt }
-        : { approvedBy: undefined, approvedDate: undefined })
-    };
-    const assumption = await saveEAuctionPlanningAssumption(
-      db, reviewedAssumption, authentication.user.email, updatedAt
-    );
-    clearScopedModule2Cache();
-    logger.info('Persisted D1 e-auction planning assumption', {
-      assumptionId: assumption.id, categoryOrMaterial: assumption.categoryOrMaterial,
-      approved: assumption.approvalStatus === 'APPROVED', updatedBy: authentication.user.id
-    });
-    return { data: { success: true, message: MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionSaved, assumption } };
-  }
+  const planningAssumptionsRoute = await handleEAuctionPlanningAssumptionsRoute(
+    db, normalized, request, authSecret
+  );
+  if (planningAssumptionsRoute) return planningAssumptionsRoute;
   if (normalized === '/specification-rationalisation/review') {
     if (request.method !== 'POST') return {
       status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }

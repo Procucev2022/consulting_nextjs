@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
 import { handleModule2Route as handleModule2RouteImpl } from '../src/workerD1Module2';
 import { handleProcurementComplianceRoute } from '../src/workerD1Module2ComplianceRoutes';
+import { handleEAuctionPlanningAssumptionsRoute } from '../src/workerD1Module2EAuctionRoutes';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
@@ -784,6 +785,9 @@ describe('workerD1Module2 handler', () => {
       const adminToken = await issueEvidenceToken({ userId: 'auction-admin' }, WORKER_CORE_SECRET);
       const userToken = await issueEvidenceToken({ userId: 'auction-user' }, WORKER_CORE_SECRET);
       const list = req('/sourcing/e-auction/planning-assumptions');
+      expect(await handleEAuctionPlanningAssumptionsRoute(
+        fixture.d1, '/dashboard', list, WORKER_CORE_SECRET
+      )).toBeNull();
       expect((await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', list,
         new URL(list.url))).data).toEqual([]);
       expect(MODULE2_D1_PENDING_ROUTES.has('/e-auction/planning-assumptions')).toBe(false);
@@ -841,6 +845,18 @@ describe('workerD1Module2 handler', () => {
       expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toContainEqual(
         expect.objectContaining({ categoryOrMaterial: 'Packaging', approvalStatus: 'APPROVED', approvedBy: 'Auction Admin' })
       );
+
+      const proposedUpdate = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ ...assumption, id: 'ASSUMP-2', approvalStatus: 'PENDING_APPROVAL',
+          approvedBy: 'Forged reviewer', approvedDate: '2020-01-01T00:00:00.000Z' })
+      });
+      const proposed = await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions',
+        proposedUpdate, new URL(proposedUpdate.url), WORKER_CORE_SECRET);
+      expect(proposed.data).toMatchObject({ success: true, assumption: {
+        id: 'ASSUMP-2', approvalStatus: 'PENDING_APPROVAL', isPlanningAssumptionOnly: true,
+        approvedBy: undefined, approvedDate: undefined
+      } });
 
       const wrongMethod = req('/sourcing/e-auction/planning-assumptions', { method: 'POST' });
       expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', wrongMethod,
