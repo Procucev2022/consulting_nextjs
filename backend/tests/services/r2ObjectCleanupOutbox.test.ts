@@ -179,12 +179,14 @@ describe('R2 object cleanup outbox', () => {
         return fixture.d1.prepare(query);
       }
     };
+    const deleteObject = vi.fn(async () => undefined);
 
     await expect(processR2ObjectCleanupOutbox(runtimeEnvironment({
-      DB: brokenDatabase, OBJECTS: bucketWithDelete(vi.fn(async () => undefined))
+      DB: brokenDatabase, OBJECTS: bucketWithDelete(deleteObject)
     }))).resolves.toEqual({ selected: 0, deleted: 0, failed: 1, skipped: false });
 
     expect(error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ action: expect.any(String) }), expect.any(Error));
+    expect(deleteObject).not.toHaveBeenCalled();
     expect(await queueCount()).toBe(1);
   });
 

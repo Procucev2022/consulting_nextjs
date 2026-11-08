@@ -236,7 +236,10 @@ export const processR2ObjectCleanupOutbox = async (
   if (limit === 0) return buildCleanupResult(0, 0, 0, true);
 
   const jobs = await selectCleanupJobs(database, options, limit);
-  if (!jobs) return buildCleanupResult(0, 0, 1);
+  if (jobs === null) {
+    // A failed queue read is different from a successful query with no jobs; never touch R2 on read failure.
+    return buildCleanupResult(0, 0, 1);
+  }
   const attempts = await attemptCleanupJobs(database, objectStore, jobs, options.requestId);
   const finalized = await finalizeCleanupAttempts(database, options, jobs.length, attempts);
   logCleanupBatchResult(jobs, options, finalized);
