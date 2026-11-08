@@ -190,19 +190,26 @@ describe('R2 object cleanup outbox', () => {
     expect(await queueCount()).toBe(1);
   });
 
-  it('keeps jobs if R2 deletion succeeds but the atomic D1 finalize batch fails', async () => {
-    await seedJob('TNT-1', 'tenant/TNT-1/finalize-failure.csv');
+  it('reports every retained job as retryable if the atomic D1 finalize batch fails', async () => {
+    await seedJob('TNT-1', 'tenant/TNT-1/finalize-success.csv');
+    await seedJob('TNT-1', 'tenant/TNT-1/finalize-r2-failure.csv');
     const error = vi.spyOn(logger, 'error');
-    const brokenDatabase = { ...fixture.d1, batch: async () => { throw new Error('D1 batch unavailable'); } };
+    const finalizeError = new Error('D1 batch unavailable');
+    const brokenDatabase = { ...fixture.d1, batch: async () => { throw finalizeError; } };
+    const deleteObject = vi.fn(async (objectKey: string | string[]) => {
+      if (objectKey === 'tenant/TNT-1/finalize-r2-failure.csv') throw new Error('R2 delete unavailable');
+    });
 
     await expect(processR2ObjectCleanupOutbox(runtimeEnvironment({
-      DB: brokenDatabase, OBJECTS: bucketWithDelete(vi.fn(async () => undefined))
-    }))).resolves.toEqual({ selected: 1, deleted: 0, failed: 1, skipped: false });
+      DB: brokenDatabase, OBJECTS: bucketWithDelete(deleteObject)
+    }))).resolves.toEqual({ selected: 2, deleted: 0, failed: 2, skipped: false });
 
     expect(error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
-      action: expect.any(String), objectCount: 1
-    }), expect.any(Error));
-    expect(await queueCount()).toBe(1);
+      action: expect.any(String), objectCount: 1, r2DeletesSucceeded: 1, r2DeletesFailed: 1,
+      documentCount: 2, pendingQueueJobs: 2
+    }), finalizeError);
+    expect(deleteObject).toHaveBeenCalledTimes(2);
+    expect(await queueCount()).toBe(2);
   });
 
   it('reports a missing D1 binding and returns without touching R2', async () => {

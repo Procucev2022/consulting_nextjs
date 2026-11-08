@@ -180,10 +180,15 @@ const finalizeCleanupAttempts = async (
       requestId: options.requestId,
       tenantId: options.tenantId,
       objectCount: aggregate.deleted,
+      r2DeletesSucceeded: aggregate.deleted,
+      r2DeletesFailed: aggregate.failed,
       documentCount: jobCount,
+      pendingQueueJobs: jobCount,
       statementCount: aggregate.statements.length
     }, error);
-    return { statements: aggregate.statements, deleted: 0, failed: aggregate.failed + aggregate.deleted };
+    // The atomic D1 batch leaves every queue row pending, so no selected job is complete.
+    // Preserve the per-object outcome counts in the error log and report every job as retryable.
+    return { statements: aggregate.statements, deleted: 0, failed: jobCount };
   }
 };
 
