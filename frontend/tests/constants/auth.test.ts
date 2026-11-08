@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   AUTH_ROLES,
   AUTH_STATUS,
+  PASSWORD_MINIMUM_LENGTH,
   AUTH_STORAGE_KEYS,
   AUTH_API_ENDPOINTS
 } from '../../src/constants/auth';
@@ -16,6 +17,10 @@ describe('Frontend Auth Constants', () => {
     expect(AUTH_STATUS.ACTIVE).toBe('ACTIVE');
     expect(AUTH_STATUS.SUSPENDED).toBe('SUSPENDED');
     expect(AUTH_STATUS.PENDING).toBe('PENDING');
+  });
+
+  it('should keep the password minimum length explicit', () => {
+    expect(PASSWORD_MINIMUM_LENGTH).toBe(6);
   });
 
   it('should define valid localStorage keys', () => {
