@@ -39,7 +39,7 @@ export const R2_CLEANUP_SQL = {
     FROM ObjectMetadata WHERE ObjectMetadata.tenant_id = ? AND EXISTS (
       SELECT 1 FROM RawDocumentIngestion AS document
       WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
-        AND substr(ObjectMetadata.object_key, 1, length(document.doc_id) + 1) = document.doc_id || '_'
+        AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
     ) ON CONFLICT(tenant_id, object_key) DO NOTHING`,
   enqueueForTenantReset: `INSERT INTO R2ObjectCleanupOutbox (cleanup_id, tenant_id, object_key, reason)
     SELECT lower(hex(randomblob(16))), tenant_id, object_key, ? FROM ObjectMetadata WHERE tenant_id = ?

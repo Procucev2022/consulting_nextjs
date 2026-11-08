@@ -356,13 +356,13 @@ const deleteIngestion = async (
     ? { results: [] as Array<{ object_key: string }> }
     : documentId
       ? await database.prepare(`SELECT object_key FROM ObjectMetadata
-        WHERE tenant_id = ? AND substr(object_key, 1, length(?) + 1) = ? || '_'`)
-        .bind(tenantId, documentId, documentId).all<{ object_key: string }>()
+        WHERE tenant_id = ? AND instr(object_key, ? || '_') = 1`)
+        .bind(tenantId, documentId).all<{ object_key: string }>()
       : await database.prepare(`SELECT object_key FROM ObjectMetadata
         WHERE tenant_id = ? AND EXISTS (
           SELECT 1 FROM RawDocumentIngestion AS document
           WHERE document.tenant_id = ?
-            AND substr(ObjectMetadata.object_key, 1, length(document.doc_id) + 1) = document.doc_id || '_'
+            AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
         )`).bind(tenantId, tenantId).all<{ object_key: string }>();
   if (documents.results.length) {
     const documentScope = documentId || null;
@@ -387,7 +387,7 @@ const deleteIngestion = async (
         WHERE tenant_id = ? AND EXISTS (
           SELECT 1 FROM RawDocumentIngestion AS document
           WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
-            AND substr(ObjectMetadata.object_key, 1, length(document.doc_id) + 1) = document.doc_id || '_'
+            AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
         )`).bind(tenantId, tenantId, documentScope, documentScope),
       database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ? AND (? IS NULL OR doc_id = ?)')
         .bind(tenantId, documentScope, documentScope)

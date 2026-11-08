@@ -1580,6 +1580,37 @@ describe('Cloudflare worker core routes', () => {
       expect((((await bodyOf(response)).data) as Array<{ doc_id: string }>).map((row) => row.doc_id)).toEqual(['DOC-2']);
     });
 
+    it('matches object keys only when the exact document id is followed by its separator', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
+        ['DOC-1', 'TNT-1', 'one.csv', '2026-01-01T00:00:00Z'],
+        ['DOC-10', 'TNT-1', 'ten.csv', '2026-01-02T00:00:00Z']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+        ['DOC-1_one.csv', 'TNT-1', 'one.csv', 'text/csv', 3, 'hash-one', 'consulting-docs'],
+        ['DOC-10_ten.csv', 'TNT-1', 'ten.csv', 'text/csv', 3, 'hash-ten', 'consulting-docs'],
+        ['DOC-1x_extra.csv', 'TNT-1', 'extra.csv', 'text/csv', 3, 'hash-extra', 'consulting-docs'],
+        ['prefix_DOC-1_extra.csv', 'TNT-1', 'prefixed.csv', 'text/csv', 3, 'hash-prefixed', 'consulting-docs']
+      ]);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject };
+
+      const response = await send('/api/ingestion/document/DOC-1?tenantId=TNT-1', { method: 'DELETE' }, environmentWithDb({ OBJECTS: bucket }));
+
+      expect(response.status).toBe(200);
+      expect(deleteObject).toHaveBeenCalledExactlyOnceWith('DOC-1_one.csv');
+      await expect(fixture.d1.prepare('SELECT doc_id FROM RawDocumentIngestion ORDER BY doc_id').all()).resolves.toEqual({
+        results: [{ doc_id: 'DOC-10' }]
+      });
+      await expect(fixture.d1.prepare('SELECT object_key FROM ObjectMetadata ORDER BY object_key').all()).resolves.toEqual({
+        results: [
+          { object_key: 'DOC-10_ten.csv' },
+          { object_key: 'DOC-1x_extra.csv' },
+          { object_key: 'prefix_DOC-1_extra.csv' }
+        ]
+      });
+    });
+
     it.each([
       ['document deletion', '/api/ingestion/document/DOC-ATOMIC?tenantId=TNT-1', 'DELETE', D1_LOG_ACTIONS.ingestionDelete],
       ['tenant reset', '/api/ingestion/reset?tenantId=TNT-1', 'POST', D1_LOG_ACTIONS.ingestionReset]
