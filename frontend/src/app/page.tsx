@@ -59,7 +59,7 @@ import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { INR_CRORES_DIVISOR } from '@/constants/currency';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
-import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
+import { DEFAULT_PIPELINE_TAB, UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
 import { EMPTY_TENANT } from '@/constants/app';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
@@ -71,6 +71,11 @@ import {
   INGESTION_RECORD_COUNT_FALLBACK_MESSAGE
 } from '@/constants/ingestion';
 import { createClientRequestId } from '@/utils/requestId';
+import {
+  getInitialPipelineTab,
+  getPipelineTabFromHash,
+  resolvePipelineTabForOperatingMode
+} from '@/utils/pipelineNavigation';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -167,20 +172,9 @@ export default function Home() {
   });
 
   const [operatingMode, setOperatingMode] = useState<OperatingModeConfig | null>(null);
-  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.replace('#', '');
-      if (['module1', 'module2', 'module3', 'module4', 'assessment'].includes(hash)) {
-        return hash as PipelineActiveTab;
-      }
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab');
-      if (tabParam && ['module1', 'module2', 'module3', 'module4', 'assessment'].includes(tabParam)) {
-        return tabParam as PipelineActiveTab;
-      }
-    }
-    return 'module1';
-  });
+  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => typeof window === 'undefined'
+    ? DEFAULT_PIPELINE_TAB
+    : getInitialPipelineTab(window.location.hash, window.location.search));
   const [activeAssessment, setActiveAssessment] = useState<AssessmentRecord | null>(null);
   const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
   const activeAssessmentIdRef = useRef<string | null>(null);
@@ -618,10 +612,8 @@ export default function Home() {
 
     const handleHash = () => {
       if (typeof window !== 'undefined') {
-        const rawHash = window.location.hash.replace('#', '');
-        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema', 'assessment'].includes(rawHash)) {
-          setActiveTab(rawHash as PipelineActiveTab);
-        }
+        const tab = getPipelineTabFromHash(window.location.hash);
+        if (tab) setActiveTab(tab);
       }
     };
 
@@ -670,11 +662,8 @@ export default function Home() {
           const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
           const currentTabParam = currentParams?.get('tab') || '';
           const effectiveNav = currentHash || currentTabParam;
-          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
-            setActiveTab('assessment');
-          } else if (effectiveNav && ['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
-            setActiveTab(effectiveNav as PipelineActiveTab);
-          }
+          const modeTab = resolvePipelineTabForOperatingMode(effectiveNav, modeRes.isInternalAssessment);
+          if (modeTab) setActiveTab(modeTab);
         } catch {
           modeRes = {
             mode: 'INTERNAL_ASSESSMENT',

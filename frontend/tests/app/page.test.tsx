@@ -410,6 +410,17 @@ describe('Home Page Component', () => {
     await screen.findByTitle(UI_STRINGS.module1.fxReferenceTooltip('US Dollar'));
   }, 20000);
 
+  it('opens Module 5 when its URL hash is present on initial load', async () => {
+    window.location.hash = '#module5';
+
+    await act(async () => {
+      render(<Home />);
+      for (let flush = 0; flush < 8; flush += 1) await Promise.resolve();
+    });
+
+    expect(await screen.findByText(UI_STRINGS.module5.heading)).toBeInTheDocument();
+  });
+
   it('handles batch file upload with CSV and XLSX formats', async () => {
     const { container } = await renderHome();
 

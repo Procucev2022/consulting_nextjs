@@ -30,6 +30,17 @@ describe('Frontend Constants Modules', () => {
     expect(ConstantsIndex.SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE).toContain('not valid JSON');
   });
 
+  it('exports one canonical set of navigable and workspace tabs', () => {
+    expect(PipelineConstants.DEFAULT_PIPELINE_TAB).toBe('module1');
+    expect(PipelineConstants.PIPELINE_WORKSPACE_TABS).toEqual([
+      'module1', 'module2', 'module3', 'module4', 'module5', 'schema'
+    ]);
+    expect(PipelineConstants.PIPELINE_NAVIGATION_TABS).toEqual([
+      ...PipelineConstants.PIPELINE_WORKSPACE_TABS,
+      'assessment'
+    ]);
+  });
+
   describe('Currency Constants', () => {
     it('should define correct currency constants and FX rate mappings', () => {
       expect(CurrencyConstants.DEFAULT_BASE_CURRENCY).toBe('INR');

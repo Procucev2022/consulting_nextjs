@@ -4,6 +4,15 @@
 
 import type { PipelineActiveTab } from '../types/components';
 
+export const DEFAULT_PIPELINE_TAB: PipelineActiveTab = 'module1';
+export const PIPELINE_WORKSPACE_TABS: readonly PipelineActiveTab[] = [
+  'module1', 'module2', 'module3', 'module4', 'module5', 'schema'
+] as const;
+export const PIPELINE_NAVIGATION_TABS: readonly PipelineActiveTab[] = [
+  ...PIPELINE_WORKSPACE_TABS,
+  'assessment'
+];
+
 export const TIMELINE_MONTHS = [
   'M1 (Q1-23)', 'M4', 'M8 (Q3-23)', 'M12 (Q4-23)',
   'M16 (Q2-24)', 'M20', 'M24 (Q4-24)', 'M28 (Q2-25)',
