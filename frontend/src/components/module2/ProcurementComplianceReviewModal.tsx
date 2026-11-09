@@ -6,7 +6,9 @@ import type {
   ProcurementComplianceReviewPayload,
   ProcurementComplianceStatus
 } from '../../types/module2ProcurementCompliance';
-import { COMPLIANCE_UI_STRINGS } from '../../constants/module2ProcurementCompliance';
+import { UI_STRINGS } from '../../constants/uiStrings';
+
+const REVIEW_STRINGS = UI_STRINGS.module2.procurementComplianceReview;
 
 export const ProcurementComplianceReviewModal: React.FC<
   ProcurementComplianceReviewModalProps
@@ -31,7 +33,7 @@ export const ProcurementComplianceReviewModal: React.FC<
       setReviewerName('');
       setReviewerRole('');
       setTechnicalJustification('');
-      setCorrectiveActionPlan('Commercial investigation and supplier rate audit');
+      setCorrectiveActionPlan(REVIEW_STRINGS.defaultCorrectiveActionPlan);
       setDismissalReason('');
       setFormError(null);
     }
@@ -42,15 +44,15 @@ export const ProcurementComplianceReviewModal: React.FC<
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!reviewerName.trim()) {
-      setFormError('Please provide the authorised reviewer full name.');
+      setFormError(REVIEW_STRINGS.validation.reviewerNameRequired);
       return;
     }
     if (!technicalJustification.trim()) {
-      setFormError('Audit justification is mandatory to record an authorized decision.');
+      setFormError(REVIEW_STRINGS.validation.justificationRequired);
       return;
     }
     if (status === 'NOT_AN_EXCEPTION' && !dismissalReason.trim()) {
-      setFormError('Dismissal reason is strictly mandatory when exception is dismissed.');
+      setFormError(REVIEW_STRINGS.validation.dismissalReasonRequired);
       return;
     }
 
@@ -68,7 +70,7 @@ export const ProcurementComplianceReviewModal: React.FC<
     try {
       await onSubmitReview(payload);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to record review decision. Please check authorization.';
+      const msg = err instanceof Error ? err.message : REVIEW_STRINGS.validation.submissionFailureFallback;
       setFormError(msg);
     }
   };
@@ -82,44 +84,45 @@ export const ProcurementComplianceReviewModal: React.FC<
               {exceptionItem.exceptionId}
             </span>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
-              {COMPLIANCE_UI_STRINGS.MODAL_TITLE}
+              {REVIEW_STRINGS.title}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {COMPLIANCE_UI_STRINGS.MODAL_SUBTITLE}
+              {REVIEW_STRINGS.subtitle}
             </p>
           </div>
           <button
             type="button"
             data-testid="compliance-modal-close-btn"
+            aria-label={REVIEW_STRINGS.closeButtonLabel}
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1"
           >
-            &times;
+            {REVIEW_STRINGS.closeGlyph}
           </button>
         </div>
 
         <div className="mt-4 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div>
-              <span className="text-slate-400 block font-medium">Check Type:</span>
+              <span className="text-slate-400 block font-medium">{REVIEW_STRINGS.summaryLabels.checkType}</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{exceptionItem.checkTitle}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Supplier:</span>
+              <span className="text-slate-400 block font-medium">{REVIEW_STRINGS.summaryLabels.supplier}</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{exceptionItem.vendorName}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Spend Under Review:</span>
+              <span className="text-slate-400 block font-medium">{REVIEW_STRINGS.summaryLabels.spendUnderReview}</span>
               <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
-                ₹{exceptionItem.expenditureUnderReviewCr.toFixed(2)} Cr
+                {REVIEW_STRINGS.amountInrCrore(exceptionItem.expenditureUnderReviewCr.toFixed(2))}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Potential Exposure:</span>
+              <span className="text-slate-400 block font-medium">{REVIEW_STRINGS.summaryLabels.potentialExposure}</span>
               <span className="font-bold text-amber-600 dark:text-amber-400 font-mono">
                 {exceptionItem.potentialFinancialExposureCr > 0
-                  ? `₹${exceptionItem.potentialFinancialExposureCr.toFixed(4)} Cr`
-                  : 'N/A (Non-Quantifiable)'}
+                  ? REVIEW_STRINGS.amountInrCrore(exceptionItem.potentialFinancialExposureCr.toFixed(4))
+                  : REVIEW_STRINGS.nonQuantifiableExposure}
               </span>
             </div>
           </div>
@@ -128,18 +131,18 @@ export const ProcurementComplianceReviewModal: React.FC<
 
         <div className="mt-4">
           <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-            Supporting Transactions Evidence ({exceptionItem.supportingTransactions.length})
+            {REVIEW_STRINGS.supportingTransactionsTitle(exceptionItem.supportingTransactions.length)}
           </h3>
           <div className="max-h-36 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-lg">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 <tr>
-                  <th className="p-1.5 font-semibold">PO Number</th>
-                  <th className="p-1.5 font-semibold">Date</th>
-                  <th className="p-1.5 font-semibold">Material</th>
-                  <th className="p-1.5 font-semibold text-right">Quantity</th>
-                  <th className="p-1.5 font-semibold text-right">Unit Rate</th>
-                  <th className="p-1.5 font-semibold text-right">Spend (INR)</th>
+                  <th className="p-1.5 font-semibold">{REVIEW_STRINGS.transactionHeaders.poNumber}</th>
+                  <th className="p-1.5 font-semibold">{REVIEW_STRINGS.transactionHeaders.date}</th>
+                  <th className="p-1.5 font-semibold">{REVIEW_STRINGS.transactionHeaders.material}</th>
+                  <th className="p-1.5 font-semibold text-right">{REVIEW_STRINGS.transactionHeaders.quantity}</th>
+                  <th className="p-1.5 font-semibold text-right">{REVIEW_STRINGS.transactionHeaders.unitRate}</th>
+                  <th className="p-1.5 font-semibold text-right">{REVIEW_STRINGS.transactionHeaders.spendInr}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -151,11 +154,11 @@ export const ProcurementComplianceReviewModal: React.FC<
                       {tx.materialDesc}
                     </td>
                     <td className="p-1.5 text-right font-mono text-[11px]">
-                      {tx.quantity} {tx.uom}
+                      {REVIEW_STRINGS.transactionQuantity(tx.quantity, tx.uom)}
                     </td>
-                    <td className="p-1.5 text-right font-mono text-[11px]">₹{tx.unitPrice.toFixed(2)}</td>
+                    <td className="p-1.5 text-right font-mono text-[11px]">{REVIEW_STRINGS.amountInr(tx.unitPrice.toFixed(2))}</td>
                     <td className="p-1.5 text-right font-mono text-[11px] font-semibold">
-                      ₹{tx.totalSpendInr.toLocaleString('en-IN')}
+                      {REVIEW_STRINGS.amountInr(tx.totalSpendInr.toLocaleString('en-IN'))}
                     </td>
                   </tr>
                 ))}
@@ -177,7 +180,7 @@ export const ProcurementComplianceReviewModal: React.FC<
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="comp-decision" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {COMPLIANCE_UI_STRINGS.FIELD_DECISION} *
+                {REVIEW_STRINGS.requiredFieldLabel(REVIEW_STRINGS.fieldLabels.decision)}
               </label>
               <select
                 id="comp-decision"
@@ -186,14 +189,14 @@ export const ProcurementComplianceReviewModal: React.FC<
                 onChange={(e) => setStatus(e.target.value as ProcurementComplianceStatus)}
                 className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               >
-                <option value="VERIFIED_EXCEPTION">VERIFIED_EXCEPTION (Valid Control Anomaly)</option>
-                <option value="NOT_AN_EXCEPTION">NOT_AN_EXCEPTION (Dismiss After Review)</option>
-                <option value="AWAITING_REVIEW">AWAITING_REVIEW (Pending Additional Info)</option>
+                <option value="VERIFIED_EXCEPTION">{REVIEW_STRINGS.statusOptions.VERIFIED_EXCEPTION}</option>
+                <option value="NOT_AN_EXCEPTION">{REVIEW_STRINGS.statusOptions.NOT_AN_EXCEPTION}</option>
+                <option value="AWAITING_REVIEW">{REVIEW_STRINGS.statusOptions.AWAITING_REVIEW}</option>
               </select>
             </div>
             <div>
               <label htmlFor="comp-reviewer-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {COMPLIANCE_UI_STRINGS.FIELD_REVIEWER_NAME} *
+                {REVIEW_STRINGS.requiredFieldLabel(REVIEW_STRINGS.fieldLabels.reviewerName)}
               </label>
               <input
                 id="comp-reviewer-name"
@@ -201,13 +204,13 @@ export const ProcurementComplianceReviewModal: React.FC<
                 data-testid="compliance-input-reviewer-name"
                 value={reviewerName}
                 onChange={(e) => setReviewerName(e.target.value)}
-                placeholder="e.g. S. Sharma"
+                placeholder={REVIEW_STRINGS.placeholders.reviewerName}
                 className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
               <label htmlFor="comp-reviewer-role" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {COMPLIANCE_UI_STRINGS.FIELD_REVIEWER_ROLE}
+                {REVIEW_STRINGS.fieldLabels.reviewerRole}
               </label>
               <input
                 id="comp-reviewer-role"
@@ -215,7 +218,7 @@ export const ProcurementComplianceReviewModal: React.FC<
                 data-testid="compliance-input-reviewer-role"
                 value={reviewerRole}
                 onChange={(e) => setReviewerRole(e.target.value)}
-                placeholder="e.g. Internal Audit Director"
+                placeholder={REVIEW_STRINGS.placeholders.reviewerRole}
                 className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -223,7 +226,7 @@ export const ProcurementComplianceReviewModal: React.FC<
 
           <div>
             <label htmlFor="comp-justification" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              {COMPLIANCE_UI_STRINGS.FIELD_JUSTIFICATION} *
+              {REVIEW_STRINGS.requiredFieldLabel(REVIEW_STRINGS.fieldLabels.justification)}
             </label>
             <textarea
               id="comp-justification"
@@ -231,7 +234,7 @@ export const ProcurementComplianceReviewModal: React.FC<
               value={technicalJustification}
               onChange={(e) => setTechnicalJustification(e.target.value)}
               rows={2}
-              placeholder="Detail investigation findings, underlying PO reconciliation, and justification..."
+              placeholder={REVIEW_STRINGS.placeholders.justification}
               className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             />
           </div>
@@ -239,7 +242,7 @@ export const ProcurementComplianceReviewModal: React.FC<
           {status === 'NOT_AN_EXCEPTION' ? (
             <div>
               <label htmlFor="comp-dismissal-reason" className="block text-xs font-semibold text-amber-600 dark:text-amber-400 mb-1">
-                {COMPLIANCE_UI_STRINGS.FIELD_DISMISSAL_REASON} *
+                {REVIEW_STRINGS.requiredFieldLabel(REVIEW_STRINGS.fieldLabels.dismissalReason)}
               </label>
               <textarea
                 id="comp-dismissal-reason"
@@ -247,14 +250,14 @@ export const ProcurementComplianceReviewModal: React.FC<
                 value={dismissalReason}
                 onChange={(e) => setDismissalReason(e.target.value)}
                 rows={2}
-                placeholder="Explain why this transaction does not represent an anomaly or control breach..."
+                placeholder={REVIEW_STRINGS.placeholders.dismissalReason}
                 className="w-full text-xs p-2 rounded border border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 text-slate-900 dark:text-slate-100"
               />
             </div>
           ) : (
             <div>
               <label htmlFor="comp-action-plan" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {COMPLIANCE_UI_STRINGS.FIELD_ACTION_PLAN}
+                {REVIEW_STRINGS.fieldLabels.actionPlan}
               </label>
               <input
                 id="comp-action-plan"
@@ -262,7 +265,7 @@ export const ProcurementComplianceReviewModal: React.FC<
                 data-testid="compliance-input-action-plan"
                 value={correctiveActionPlan}
                 onChange={(e) => setCorrectiveActionPlan(e.target.value)}
-                placeholder="e.g. Correct PO reference; recover price differential; supplier renegotiation"
+                placeholder={REVIEW_STRINGS.placeholders.actionPlan}
                 className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -275,7 +278,7 @@ export const ProcurementComplianceReviewModal: React.FC<
               disabled={isSubmitting}
               className="px-3 py-1.5 text-xs font-semibold rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              {COMPLIANCE_UI_STRINGS.BTN_CANCEL}
+              {REVIEW_STRINGS.cancelButton}
             </button>
             <button
               type="submit"
@@ -283,7 +286,7 @@ export const ProcurementComplianceReviewModal: React.FC<
               disabled={isSubmitting}
               className="px-4 py-1.5 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white shadow disabled:opacity-50"
             >
-              {isSubmitting ? COMPLIANCE_UI_STRINGS.SUBMITTING : COMPLIANCE_UI_STRINGS.BTN_SUBMIT_REVIEW}
+              {isSubmitting ? REVIEW_STRINGS.submittingButton : REVIEW_STRINGS.submitButton}
             </button>
           </div>
         </form>

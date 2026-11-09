@@ -57,6 +57,16 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.module2.taxonomyVerifiedFooter).toBe('Multi-Year Spend Taxonomy verified against UNSPSC official commodity catalog');
   });
 
+  it('should provide procurement compliance review copy and actionable failure details', () => {
+    const review = UI_STRINGS.module2.procurementComplianceReview;
+    expect(review.supportingTransactionsTitle(2)).toBe('Supporting Transactions Evidence (2)');
+    expect(review.amountInr('1,000.00')).toBe('₹1,000.00');
+    expect(review.amountInrCrore('0.25')).toBe('₹0.25 Cr');
+    expect(review.requiredFieldLabel(review.fieldLabels.reviewerName)).toBe('Reviewer Full Name *');
+    expect(review.transactionQuantity(10, 'kg')).toBe('10 kg');
+    expect(review.submission.failed('HTTP 409', 'Review lock held by another reviewer', 'req-review-1')).toContain('req-review-1');
+  });
+
   it('should correctly format module3 volatility and creep templates', () => {
     expect(UI_STRINGS.module3.volatilityIndex(4)).toBe('Volatility Index: 4');
     expect(UI_STRINGS.module3.priceCreepPct(12.5)).toBe('+12.5% Creep');

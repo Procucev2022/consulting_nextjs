@@ -148,6 +148,10 @@ export interface ProcurementComplianceReviewPayload {
   dismissalReason?: string;
 }
 
+export interface ProcurementComplianceReviewErrorResponse {
+  message?: string;
+}
+
 export interface ProcurementComplianceResult {
   assessmentId: string;
   customerName: string;

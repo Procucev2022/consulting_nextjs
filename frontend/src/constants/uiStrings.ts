@@ -1442,6 +1442,69 @@ export const UI_STRINGS = {
       httpFailure: (statusCode: number, requestId: string) => `The payment-terms analysis could not be loaded because the server returned HTTP ${statusCode}. Retry the analysis. If the issue continues, contact support with request reference ${requestId}.`,
       responseFailure: (detail: string, requestId: string) => `The payment-terms analysis returned invalid or unsuccessful data: ${detail}. Retry the analysis. If the issue continues, contact support with request reference ${requestId}.`,
       unexpectedFailure: (requestId: string) => `The payment-terms analysis could not be loaded because failure details are unavailable. Retry the analysis and contact support with request reference ${requestId}.`
+    },
+    procurementComplianceReview: {
+      title: 'Procurement Control Exception Review & Sign-Off',
+      subtitle: 'Inspect underlying transaction evidence, assess control risks, and record formal audit review',
+      closeButtonLabel: 'Close review dialog',
+      closeGlyph: '×',
+      summaryLabels: {
+        checkType: 'Check Type:',
+        supplier: 'Supplier:',
+        spendUnderReview: 'Spend Under Review:',
+        potentialExposure: 'Potential Exposure:'
+      },
+      amountInr: (amount: string) => `₹${amount}`,
+      amountInrCrore: (amount: string) => `₹${amount} Cr`,
+      nonQuantifiableExposure: 'N/A (Non-Quantifiable)',
+      supportingTransactionsTitle: (count: number) => `Supporting Transactions Evidence (${count})`,
+      transactionHeaders: {
+        poNumber: 'PO Number',
+        date: 'Date',
+        material: 'Material',
+        quantity: 'Quantity',
+        unitRate: 'Unit Rate',
+        spendInr: 'Spend (INR)'
+      },
+      transactionQuantity: (quantity: number, unit: string) => `${quantity} ${unit}`,
+      fieldLabels: {
+        decision: 'Audit Decision',
+        reviewerName: 'Reviewer Full Name',
+        reviewerRole: 'Reviewer Title / Professional Role',
+        justification: 'Audit Justification & Investigation Scope',
+        actionPlan: 'Corrective Action Plan / Control Remediation',
+        dismissalReason: 'Dismissal Reason (Mandatory if dismissed)'
+      },
+      requiredFieldLabel: (label: string) => `${label} *`,
+      statusOptions: {
+        VERIFIED_EXCEPTION: 'VERIFIED_EXCEPTION (Valid Control Anomaly)',
+        NOT_AN_EXCEPTION: 'NOT_AN_EXCEPTION (Dismiss After Review)',
+        AWAITING_REVIEW: 'AWAITING_REVIEW (Pending Additional Info)'
+      },
+      placeholders: {
+        reviewerName: 'e.g. S. Sharma',
+        reviewerRole: 'e.g. Internal Audit Director',
+        justification: 'Detail investigation findings, underlying PO reconciliation, and justification...',
+        dismissalReason: 'Explain why this transaction does not represent an anomaly or control breach...',
+        actionPlan: 'e.g. Correct PO reference; recover price differential; supplier renegotiation'
+      },
+      defaultCorrectiveActionPlan: 'Commercial investigation and supplier rate audit',
+      validation: {
+        reviewerNameRequired: 'Please provide the authorised reviewer full name.',
+        justificationRequired: 'Audit justification is mandatory to record an authorized decision.',
+        dismissalReasonRequired: 'Dismissal reason is strictly mandatory when exception is dismissed.',
+        submissionFailureFallback: 'The review could not be submitted because failure details are unavailable. Check reviewer access and retry.'
+      },
+      submission: {
+        serverDidNotProvideDetails: 'the server did not provide a failure detail',
+        networkFailureDetail: 'no response was received from the server',
+        httpStatus: (statusCode: number) => `HTTP ${statusCode}`,
+        failed: (statusDetail: string, reason: string, requestId: string) =>
+          `Could not record the compliance review because ${reason} (${statusDetail}). Review the failure details, confirm your network connection and reviewer access, refresh the assessment, then retry. If the issue continues, contact support with request reference ${requestId}.`
+      },
+      cancelButton: 'Cancel',
+      submitButton: 'Record Audit Decision',
+      submittingButton: 'Recording Decision...'
     }
   },
 

@@ -2,8 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ProcurementComplianceReviewModal } from '../../../src/components/module2/ProcurementComplianceReviewModal';
-import { COMPLIANCE_UI_STRINGS } from '../../../src/constants/module2ProcurementCompliance';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type { ProcurementComplianceExceptionItem } from '../../../src/types/module2ProcurementCompliance';
+
+const REVIEW_STRINGS = UI_STRINGS.module2.procurementComplianceReview;
 
 const sampleItem: ProcurementComplianceExceptionItem = {
   exceptionId: 'EXC-MODAL-001',
@@ -55,7 +57,7 @@ describe('ProcurementComplianceReviewModal Component', () => {
         isSubmitting={false}
       />
     );
-    expect(screen.queryByText(COMPLIANCE_UI_STRINGS.MODAL_TITLE)).not.toBeInTheDocument();
+    expect(screen.queryByText(REVIEW_STRINGS.title)).not.toBeInTheDocument();
 
     rerender(
       <ProcurementComplianceReviewModal
@@ -67,7 +69,7 @@ describe('ProcurementComplianceReviewModal Component', () => {
         isSubmitting={false}
       />
     );
-    expect(screen.queryByText(COMPLIANCE_UI_STRINGS.MODAL_TITLE)).not.toBeInTheDocument();
+    expect(screen.queryByText(REVIEW_STRINGS.title)).not.toBeInTheDocument();
   });
 
   it('initializes status for VERIFIED_EXCEPTION and NOT_AN_EXCEPTION items', () => {
@@ -111,7 +113,7 @@ describe('ProcurementComplianceReviewModal Component', () => {
 
     // Empty reviewer name
     fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
-    expect(screen.getByText(/Please provide the authorised reviewer full name/)).toBeInTheDocument();
+    expect(screen.getByText(REVIEW_STRINGS.validation.reviewerNameRequired)).toBeInTheDocument();
 
     // Fill reviewer name
     fireEvent.change(screen.getByTestId('compliance-input-reviewer-name'), {
@@ -120,7 +122,7 @@ describe('ProcurementComplianceReviewModal Component', () => {
 
     // Empty justification
     fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
-    expect(screen.getByText(/Audit justification is mandatory/)).toBeInTheDocument();
+    expect(screen.getByText(REVIEW_STRINGS.validation.justificationRequired)).toBeInTheDocument();
 
     // Select NOT_AN_EXCEPTION without dismissal reason
     fireEvent.change(screen.getByTestId('compliance-select-decision'), {
@@ -131,7 +133,27 @@ describe('ProcurementComplianceReviewModal Component', () => {
     });
 
     fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
-    expect(screen.getByText(/Dismissal reason is strictly mandatory/)).toBeInTheDocument();
+    expect(screen.getByText(REVIEW_STRINGS.validation.dismissalReasonRequired)).toBeInTheDocument();
+  });
+
+  it('shows a localized fallback when review submission rejects without an Error', async () => {
+    const handleSubmit = vi.fn().mockRejectedValueOnce('unexpected rejection');
+    render(
+      <ProcurementComplianceReviewModal
+        isOpen={true}
+        exceptionItem={sampleItem}
+        assessmentId="AIC-2026-0002"
+        onClose={vi.fn()}
+        onSubmitReview={handleSubmit}
+        isSubmitting={false}
+      />
+    );
+
+    fireEvent.change(screen.getByTestId('compliance-input-reviewer-name'), { target: { value: 'Officer Jane' } });
+    fireEvent.change(screen.getByTestId('compliance-input-justification'), { target: { value: 'Review evidence' } });
+    fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
+
+    expect(await screen.findByText(REVIEW_STRINGS.validation.submissionFailureFallback)).toBeInTheDocument();
   });
 
   it('submits review successfully with action plan for verified exception and dismissal reason for not an exception', async () => {
@@ -227,7 +249,7 @@ describe('ProcurementComplianceReviewModal Component', () => {
     fireEvent.click(screen.getByTestId('compliance-modal-close-btn'));
     expect(handleClose).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByText(COMPLIANCE_UI_STRINGS.BTN_CANCEL));
+    fireEvent.click(screen.getByText(REVIEW_STRINGS.cancelButton));
     expect(handleClose).toHaveBeenCalledTimes(2);
 
     rerender(
@@ -241,6 +263,6 @@ describe('ProcurementComplianceReviewModal Component', () => {
       />
     );
     expect(screen.getByTestId('compliance-submit-review-btn')).toBeDisabled();
-    expect(screen.getByText(COMPLIANCE_UI_STRINGS.SUBMITTING)).toBeInTheDocument();
+    expect(screen.getByText(REVIEW_STRINGS.submittingButton)).toBeInTheDocument();
   });
 });
