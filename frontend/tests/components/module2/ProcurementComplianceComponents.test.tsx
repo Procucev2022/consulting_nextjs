@@ -9,6 +9,8 @@ import {
   COMPLIANCE_DISCLOSURES,
   COMPLIANCE_FINANCIAL_LABELS
 } from '../../../src/constants/module2ProcurementCompliance';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../../../src/constants/app';
 import type {
   ProcurementComplianceResult,
   ProcurementComplianceExceptionItem
@@ -349,7 +351,7 @@ describe('ProcurementComplianceView Component', () => {
 
     // 1. Open and submit review
     fireEvent.click(screen.getByTestId('compliance-review-btn-EXC-AIC-2026-0002-0001'));
-    expect(screen.getByText(COMPLIANCE_UI_STRINGS.MODAL_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.procurementComplianceReview.title)).toBeInTheDocument();
 
     fireEvent.change(screen.getByTestId('compliance-input-reviewer-name'), {
       target: { value: 'Officer Jane' }
@@ -366,7 +368,9 @@ describe('ProcurementComplianceView Component', () => {
     // 2. Open and test review failure
     fireEvent.click(screen.getByTestId('compliance-review-btn-EXC-AIC-2026-0002-0001'));
     fetchMock.mockImplementationOnce((url: string) => {
-      if (url.includes('/review')) return Promise.resolve({ ok: false, status: 500 });
+      if (url.includes('/review')) {
+        return Promise.resolve({ ok: false, status: 500, json: async () => ({ message: 'Review service unavailable' }) });
+      }
       return Promise.resolve({ ok: true, json: async () => ({ success: true, data: mockResult }) });
     });
 
@@ -378,17 +382,24 @@ describe('ProcurementComplianceView Component', () => {
     });
     fireEvent.click(screen.getByTestId('compliance-submit-review-btn'));
 
+    const reviewCalls = fetchMock.mock.calls.filter(([url]) => url.includes('/review'));
+    const [, reviewInit] = reviewCalls[reviewCalls.length - 1] as [string, RequestInit];
+    const requestId = new Headers(reviewInit.headers).get(API_REQUEST_ID_HEADER);
     await waitFor(() => {
-      expect(screen.getByText('Failed to record review decision.')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.procurementComplianceReview.submission.failed(
+        UI_STRINGS.module2.procurementComplianceReview.submission.httpStatus(500),
+        'Review service unavailable',
+        requestId ?? ''
+      ))).toBeInTheDocument();
     });
 
     // 3. Retry clears error; modal remains open so we close it via close button
     fireEvent.click(screen.getByText(COMPLIANCE_UI_STRINGS.BTN_RETRY));
     await waitFor(() => {
-      expect(screen.getByText(COMPLIANCE_UI_STRINGS.MODAL_TITLE)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.procurementComplianceReview.title)).toBeInTheDocument();
     });
     fireEvent.click(screen.getByTestId('compliance-modal-close-btn'));
-    expect(screen.queryByText(COMPLIANCE_UI_STRINGS.MODAL_TITLE)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.module2.procurementComplianceReview.title)).not.toBeInTheDocument();
   });
 });
 

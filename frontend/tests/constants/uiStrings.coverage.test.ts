@@ -200,6 +200,38 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module2DirectPrice.drilldownCategoryTitle', () => UI_STRINGS.module2DirectPrice.drilldownCategoryTitle('Packaging'), ['Packaging']],
   ['module2EAuction.categoryDrilldownTitle', () => UI_STRINGS.module2EAuction.categoryDrilldownTitle('Packaging'), ['Packaging']],
   ['module2EAuction.materialEvidenceTitle', () => UI_STRINGS.module2EAuction.materialEvidenceTitle('MAT-1'), ['MAT-1']],
+  ['module2.volumeAggregation.networkFailure', () => UI_STRINGS.module2.volumeAggregation.networkFailure('req-1'), ['connection', 'retry', 'req-1']],
+  ['module2.volumeAggregation.httpFailure', () => UI_STRINGS.module2.volumeAggregation.httpFailure(503, 'req-2'), ['503', 'Retry', 'req-2']],
+  ['module2.volumeAggregation.responseFailure', () => UI_STRINGS.module2.volumeAggregation.responseFailure('invalid payload', 'req-3'), ['invalid payload', 'Retry', 'req-3']],
+  ['module2.volumeAggregation.grossSpend', () => UI_STRINGS.module2.volumeAggregation.grossSpend(UI_STRINGS.common.croreAmount('1.20')), ['Gross', '1.20']],
+  ['module2.volumeAggregation.transactionCount', () => UI_STRINGS.module2.volumeAggregation.transactionCount('1,000'), ['1,000']],
+  ['module2.volumeAggregation.adjustmentSpend', () => UI_STRINGS.module2.volumeAggregation.adjustmentSpend(UI_STRINGS.common.croreAmount('0.50')), ['Adj', '0.50']],
+  ['module2.volumeAggregation.genuineOpportunityCount', () => UI_STRINGS.module2.volumeAggregation.genuineOpportunityCount(7), ['7', 'multi-plant']],
+  ['module2.volumeAggregation.limitedHistorySpend', () => UI_STRINGS.module2.volumeAggregation.limitedHistorySpend(UI_STRINGS.common.croreAmount('2.50')), ['2.50', 'limited history']],
+  ['module2.volumeAggregation.unresolvedUomCount', () => UI_STRINGS.module2.volumeAggregation.unresolvedUomCount(4), ['4', 'Ambiguous UOM']],
+  ['module2.paymentTerms.networkFailure', () => UI_STRINGS.module2.paymentTerms.networkFailure('offline', 'req-4'), ['offline', 'retry', 'req-4']],
+  ['module2.paymentTerms.httpFailure', () => UI_STRINGS.module2.paymentTerms.httpFailure(503, 'req-5'), ['503', 'Retry', 'req-5']],
+  ['module2.paymentTerms.responseFailure', () => UI_STRINGS.module2.paymentTerms.responseFailure('invalid data', 'req-6'), ['invalid data', 'Retry', 'req-6']],
+  ['module2.paymentTerms.unexpectedFailure', () => UI_STRINGS.module2.paymentTerms.unexpectedFailure('req-7'), ['failure details', 'Retry', 'req-7']],
+  ['module2.paymentTerms.transactionsAnalysed', () => UI_STRINGS.module2.paymentTerms.transactionsAnalysed('1,000'), ['1,000', 'transactions analysed']],
+  ['module2.paymentTerms.verifiedRecords', () => UI_STRINGS.module2.paymentTerms.verifiedRecords('250'), ['250', 'verified records']],
+  ['module2.paymentTerms.verifiedAndMissingPercentages', () => UI_STRINGS.module2.paymentTerms.verifiedAndMissingPercentages('40.0', '60.0'), ['40.0', '60.0']],
+  ['module2.paymentTerms.planningScenarioMetrics', () => UI_STRINGS.module2.paymentTerms.planningScenarioMetrics('1.20', '0.15'), ['1.20', '0.15']],
+  ['module2.paymentTerms.coveragePercentages', () => UI_STRINGS.module2.paymentTerms.coveragePercentages('40.00', '60.00'), ['40.00', '60.00']],
+  ['module2.paymentTerms.coverageVerifiedSpend', () => UI_STRINGS.module2.paymentTerms.coverageVerifiedSpend('12.3456'), ['12.3456', 'Verified Spend']],
+  ['module2.paymentTerms.coverageMissingSpend', () => UI_STRINGS.module2.paymentTerms.coverageMissingSpend('7.6543'), ['7.6543', 'Missing Spend']],
+  ['module2.paymentTerms.coverageGapPercentage', () => UI_STRINGS.module2.paymentTerms.coverageGapPercentage('25.00'), ['25.00']],
+  ['module2.paymentTerms.scenarioAdditionalDaysOption', () => UI_STRINGS.module2.paymentTerms.scenarioAdditionalDaysOption(45), ['45', 'Illustrative Scenario']],
+  ['module2.paymentTerms.scenarioFinancingFormula', () => UI_STRINGS.module2.paymentTerms.scenarioFinancingFormula(60, '1.5', 30), ['60', '1.5', '30']],
+  ['module2.paymentTerms.scenarioWorkingCapitalFormula', () => UI_STRINGS.module2.paymentTerms.scenarioWorkingCapitalFormula(60, 365), ['60', '365']],
+  ['module2.paymentTerms.scenarioRateNote', () => UI_STRINGS.module2.paymentTerms.scenarioRateNote('1.5', 30), ['1.5', '30', 'non-compounded']],
+  ['module2.paymentTerms.unavailableOpportunitySummary', () => UI_STRINGS.module2.paymentTerms.unavailableOpportunitySummary('Partial', '₹1.00 Cr', '20'), ['Partial', '₹1.00 Cr', '20']],
+  ['module2.paymentTerms.opportunitiesHeading', () => UI_STRINGS.module2.paymentTerms.opportunitiesHeading(4), ['4', 'Verified Payment Terms Opportunities']],
+  ['module2.paymentTerms.additionalCreditDays', () => UI_STRINGS.module2.paymentTerms.additionalCreditDays(15), ['+15', 'days']],
+  ['module2.paymentTerms.currentTermsWithCreditDays', () => UI_STRINGS.module2.paymentTerms.currentTermsWithCreditDays('Net 30', 30), ['Net 30', '30d']],
+  ['module2.paymentTerms.supplierProfilesButton', () => UI_STRINGS.module2.paymentTerms.supplierProfilesButton(3), ['3', 'Supplier Profiles']],
+  ['module2.paymentTerms.creditDays', () => UI_STRINGS.module2.paymentTerms.creditDays(45), ['45d']],
+  ['module2.paymentTerms.inrAmount', () => UI_STRINGS.module2.paymentTerms.inrAmount('5,000'), ['₹', '5,000']],
 
   ['module2VendorConsolidation.breadcrumbSupplier', () => UI_STRINGS.module2VendorConsolidation.breadcrumbSupplier('Packaging'), ['Packaging']],
   ['module2VendorConsolidation.breadcrumbMaterial', () => UI_STRINGS.module2VendorConsolidation.breadcrumbMaterial('MAT-1'), ['MAT-1']],
@@ -466,6 +498,13 @@ describe('UI_STRINGS branch-specific helpers', () => {
   it('explains that development sign-in uses registered database accounts', () => {
     expect(UI_STRINGS.auth.developmentAuthNotice).toContain('D1 database');
     expect(UI_STRINGS.auth.developmentAuthNotice).toContain('database-assigned administrator role');
+  });
+
+  it('provides display copy for every Payment Terms availability and coverage status', () => {
+    expect(Object.keys(UI_STRINGS.module2.paymentTerms.availabilityLabels)).toHaveLength(5);
+    expect(Object.keys(UI_STRINGS.module2.paymentTerms.coverageStatusLabels)).toHaveLength(3);
+    expect(UI_STRINGS.module2.paymentTerms.availabilityLabels.DATA_UNAVAILABLE)
+      .toContain('Payment Terms Not Found in Source Data');
   });
 
   it('does not publish predefined-account or administrator-bypass labels in production builds', async () => {

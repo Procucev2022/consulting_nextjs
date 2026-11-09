@@ -12,7 +12,9 @@ import { VolumeAggregationPlantTab } from '../../../src/components/module2/Volum
 import { VolumeAggregationMaterialTab } from '../../../src/components/module2/VolumeAggregationMaterialTab';
 import { VolumeAggregationTransactionTab } from '../../../src/components/module2/VolumeAggregationTransactionTab';
 import { VolumeAggregationView } from '../../../src/components/module2/VolumeAggregationView';
-import { VOLUME_AGGREGATION_UI_STRINGS } from '../../../src/constants/module2VolumeAggregation';
+import * as volumeAggregationApi from '../../../src/utils/volumeAggregationApi';
+import { API_REQUEST_ID_HEADER } from '../../../src/constants/app';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type {
   VolumeAggregationOpportunity,
   PlantVolumeBreakdown,
@@ -393,36 +395,38 @@ describe('VolumeAggregationView', () => {
     render(<VolumeAggregationView assessmentId="AIC-2026-0002" onBackToOverview={onBack} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Lever 4: Volume Aggregation/i)).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.title)).toBeDefined();
     });
 
     // 5 KPI cards
-    expect(screen.getByText('NOT YET QUANTIFIABLE')).toBeDefined();
-    expect(screen.getByText(/Download 8-Sheet Auditable Excel Report/i)).toBeDefined();
+    expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.savingsStatusValue)).toBeDefined();
+    expect(screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    })).toBeDefined();
 
     // Back to overview button
-    const backBtn = screen.getByText(/Back to Levers Overview/i);
+    const backBtn = screen.getByText(UI_STRINGS.module2.volumeAggregation.backToOverview);
     fireEvent.click(backBtn);
     expect(onBack).toHaveBeenCalled();
 
     // Switch to Plants Tab
-    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_PLANTS));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.tabPlants));
     expect(screen.getByText('Central Spinning Mill')).toBeDefined();
 
     // Switch to Materials Tab
-    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_MATERIALS));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.tabMaterials));
     expect(screen.getByText('Bearing 6204')).toBeDefined();
 
     // Switch to Transactions Tab
-    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_TRANSACTIONS));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.tabTransactions));
     expect(screen.getByText('PO-9001-1')).toBeDefined();
 
     // Switch to PO Consolidation Tab
-    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_PO_CONSOLIDATION));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.tabPoConsolidation));
     expect(screen.getByText('Operational Demand Cadence & Batch Lot Sizing Analysis')).toBeDefined();
 
     // Switch back to Overview Tab
-    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_OVERVIEW));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.tabOverview));
     expect(screen.getByText('L4-T1-MAT_01')).toBeDefined();
   });
 
@@ -430,47 +434,60 @@ describe('VolumeAggregationView', () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
       status: 500,
-      statusText: 'Internal Server Error'
+      statusText: 'Internal Server Error',
+      headers: new Headers({ [API_REQUEST_ID_HEADER]: 'req-volume-500' })
     } as unknown as Response);
 
     render(<VolumeAggregationView assessmentId="AIC-2026-0002" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Analysis Load Failed')).toBeDefined();
-      expect(screen.getByText('Retry Analysis')).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.errorTitle)).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.httpFailure(500, 'req-volume-500'))).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.retry)).toBeDefined();
     });
 
     // Retry with invalid json structure
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: false, message: 'Invalid token' })
+      json: async () => ({ success: false, message: 'Invalid token' }),
+      headers: new Headers({ [API_REQUEST_ID_HEADER]: 'req-volume-invalid' })
     } as unknown as Response);
 
-    fireEvent.click(screen.getByText('Retry Analysis'));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.retry));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid token')).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.responseFailure(
+        'Invalid token',
+        'req-volume-invalid'
+      ))).toBeDefined();
     });
   });
 
   it('handles non-Error rejection, missing json message, and zero count KPI fallbacks', async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce('Raw string network failure');
+    const networkFetch = vi.fn().mockRejectedValueOnce('Raw string network failure');
+    global.fetch = networkFetch;
     render(<VolumeAggregationView assessmentId="AIC-2026-0002" />);
+    const networkRequestId = new Headers(networkFetch.mock.calls[0]?.[1]?.headers)
+      .get(API_REQUEST_ID_HEADER) || UI_STRINGS.common.notAvailable;
 
     await waitFor(() => {
-      expect(screen.getByText('Raw string network failure')).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.networkFailure(networkRequestId))).toBeDefined();
     });
 
     // Server response with success=false and no message
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: false })
+      json: async () => ({ success: false }),
+      headers: new Headers({ [API_REQUEST_ID_HEADER]: 'req-volume-empty' })
     } as unknown as Response);
 
-    fireEvent.click(screen.getByText('Retry Analysis'));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.retry));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid server response structure')).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.responseFailure(
+        UI_STRINGS.module2.volumeAggregation.invalidResponseDetail,
+        'req-volume-empty'
+      ))).toBeDefined();
     });
 
     // Zero counts to exercise KPI fallbacks
@@ -480,7 +497,10 @@ describe('VolumeAggregationView', () => {
         ...mockResult.coverageSummary,
         genuineTier1OpportunitiesCount: 0,
         totalMaterialRecordsCount: 0,
-        tier1IdenticalCount: 5
+        tier1IdenticalCount: 5,
+        grossMaterialSpendCr: 1.25,
+        unmatchedAdjustmentsCount: 1,
+        unmatchedAdjustmentsSpendInr: 250000
       }
     };
 
@@ -489,11 +509,71 @@ describe('VolumeAggregationView', () => {
       json: async () => ({ success: true, data: zeroCountsResult })
     } as unknown as Response);
 
-    fireEvent.click(screen.getByText('Retry Analysis'));
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.retry));
 
     await waitFor(() => {
-      expect(screen.getByText(/5 genuine multi-plant opportunities/i)).toBeDefined();
-      expect(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.KPI_UOM_COMPATIBLE)).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.genuineOpportunityCount(5))).toBeDefined();
+      expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.uomCompatibleSpend)).toBeDefined();
     });
+  });
+
+  it('ignores stale success and failure responses after the assessment changes', async () => {
+    let resolveStaleSuccess!: (response: Response) => void;
+    let rejectStaleFailure!: (error: unknown) => void;
+    const staleSuccess = new Promise<Response>((resolve) => { resolveStaleSuccess = resolve; });
+    const staleFailure = new Promise<Response>((_resolve, reject) => { rejectStaleFailure = reject; });
+    const responseFor = (assessmentId: string): Response => ({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { ...mockResult, assessmentId }
+      })
+    } as unknown as Response);
+
+    global.fetch = vi.fn()
+      .mockImplementationOnce(() => staleSuccess)
+      .mockResolvedValueOnce(responseFor('AIC-current-success'))
+      .mockImplementationOnce(() => staleFailure)
+      .mockResolvedValueOnce(responseFor('AIC-current-failure'));
+
+    const { rerender } = render(<VolumeAggregationView assessmentId="AIC-stale-success" />);
+    rerender(<VolumeAggregationView assessmentId="AIC-current-success" />);
+
+    await screen.findByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    });
+    await waitFor(() => expect(screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    }).getAttribute('href')).toContain('AIC-current-success'));
+    resolveStaleSuccess(responseFor('AIC-stale-success'));
+    await waitFor(() => expect(screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    }).getAttribute('href')).toContain('AIC-current-success'));
+
+    rerender(<VolumeAggregationView assessmentId="AIC-stale-failure" />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(3));
+    rerender(<VolumeAggregationView assessmentId="AIC-current-failure" />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    }).getAttribute('href')).toContain('AIC-current-failure'));
+    rejectStaleFailure(new Error('Stale response should not replace the current assessment'));
+    await waitFor(() => expect(screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    }).getAttribute('href')).toContain('AIC-current-failure'));
+    expect(screen.queryByText(UI_STRINGS.module2.volumeAggregation.errorTitle)).toBeNull();
+  });
+
+  it('uses safe fallback copy for non-Error rejections and an empty API result', async () => {
+    const loadSpy = vi.spyOn(volumeAggregationApi, 'loadVolumeAggregation');
+    loadSpy.mockRejectedValueOnce('Unexpected raw rejection');
+    render(<VolumeAggregationView assessmentId="AIC-2026-0002" />);
+
+    await screen.findByText(UI_STRINGS.module2.volumeAggregation.unexpectedFailure);
+    loadSpy.mockResolvedValueOnce(null as unknown as VolumeAggregationResult);
+    fireEvent.click(screen.getByText(UI_STRINGS.module2.volumeAggregation.retry));
+
+    await screen.findByText(UI_STRINGS.module2.volumeAggregation.unexpectedFailure);
+    expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.errorTitle)).toBeDefined();
   });
 });

@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
+import { R2_CLEANUP_SQL } from '../../src/constants/r2Cleanup';
 
 const require = createRequire(import.meta.url);
 const {
@@ -14,7 +15,10 @@ const {
   getSchemaTablesSql,
   getSeedLedgerSql,
   getDuplicateTransactionKeysSql,
+  getAssessmentDataVersionIntegritySql,
   getUserIntegritySql,
+  R2_CLEANUP_INDEX_DEFINITIONS,
+  getR2CleanupIndexIntegritySql,
   getOrphanReferenceSql,
   getTenantScopedPrimaryKeySql,
   getTenantIntegrityTriggerSql,
@@ -28,6 +32,8 @@ const createTenantPrimaryKeyRows = (overrides: Record<string, string[]> = {}) =>
       column_name: columnName,
       position: index + 1
     })));
+const createValidR2CleanupIndexIntegrityRows = () => Object.keys(R2_CLEANUP_INDEX_DEFINITIONS)
+  .map((check_name) => ({ check_name, violation_count: 0 }));
 
 describe('D1 drift diagnostics', () => {
   it('builds compact read-only table, seed ledger, duplicate, and orphan queries', () => {
@@ -46,20 +52,26 @@ describe('D1 drift diagnostics', () => {
     expect(getDuplicateTransactionKeysSql()).toContain('WHERE/**/assessment_id/**/IS/**/NOT/**/NULL');
     expect(getDuplicateTransactionKeysSql()).toContain('source_document_id/**/IS/**/NOT/**/NULL');
     expect(getDuplicateTransactionKeysSql()).toContain('source_row_number/**/IS/**/NOT/**/NULL');
+    expect(getAssessmentDataVersionIntegritySql()).toContain('GROUP/**/BY/**/assessment_id,/**/version_number');
+    expect(getAssessmentDataVersionIntegritySql()).toContain('idx_data_version_assessment_number');
     expect(getUserIntegritySql()).toContain('GROUP/**/BY/**/lower(email)');
     expect(getUserIntegritySql()).toContain('idx_user_email_normalized');
     expect(getUserIntegritySql()).toContain('lower(email))');
     expect(getUserIntegritySql()).toContain('char(32)');
     expect(getUserIntegritySql()).not.toContain("'/**/'");
+    expect(getR2CleanupIndexIntegritySql()).toContain('idx_r2_cleanup_created');
+    expect(getR2CleanupIndexIntegritySql()).toContain('idx_r2_cleanup_tenant_created');
+    expect(getR2CleanupIndexIntegritySql()).toContain('sqlite_schema');
     expect(getOrphanReferenceSql()).toContain('assessment_customer_orphans');
     expect(getOrphanReferenceSql()).toContain('transaction_tenant_orphans');
     expect(getTenantScopedPrimaryKeySql()).toContain("pragma_table_info('VendorPriceRank')");
     expect(getTenantScopedPrimaryKeySql()).toContain("pragma_table_info('Module1CurrencyBreakdown')");
     expect(getTenantIntegrityTriggerSql()).toContain('sqlite_schema');
-    expect(TENANT_INTEGRITY_TRIGGER_NAMES).toHaveLength(48);
-    expect(new Set(TENANT_INTEGRITY_TRIGGER_NAMES).size).toBe(48);
+    expect(TENANT_INTEGRITY_TRIGGER_NAMES).toHaveLength(50);
+    expect(new Set(TENANT_INTEGRITY_TRIGGER_NAMES).size).toBe(50);
     expect(Object.keys(TENANT_SCOPED_PRIMARY_KEYS)).toHaveLength(5);
-    expect(TENANT_REFERENCE_TABLES).toHaveLength(21);
+    expect(TENANT_REFERENCE_TABLES).toHaveLength(22);
+    expect(TENANT_REFERENCE_TABLES).toContain('R2ObjectCleanupOutbox');
     expect(new Set(TENANT_REFERENCE_TABLES).size).toBe(TENANT_REFERENCE_TABLES.length);
     for (const tableName of TENANT_REFERENCE_TABLES) {
       expect(getOrphanReferenceSql()).toContain(`FROM/**/${tableName}/**/AS/**/scoped`);
@@ -109,6 +121,74 @@ describe('D1 drift diagnostics', () => {
     }
   });
 
+  it('detects duplicate assessment version keys and verifies the matching unique index', () => {
+    const db = new DatabaseSync(':memory:');
+    try {
+      db.exec(`
+        CREATE TABLE AssessmentDataVersion (
+          data_version_id TEXT PRIMARY KEY, assessment_id TEXT NOT NULL, version_number INTEGER NOT NULL
+        );
+        INSERT INTO AssessmentDataVersion VALUES ('DV-A', 'A-1', 1), ('DV-B', 'A-1', 1);
+      `);
+      expect(db.prepare(getAssessmentDataVersionIntegritySql()).all()).toEqual([
+        { check_name: 'duplicate_assessment_data_version_groups', violation_count: 1 },
+        { check_name: 'assessment_data_version_index_invalid', violation_count: 1 }
+      ]);
+
+      db.prepare("DELETE FROM AssessmentDataVersion WHERE data_version_id = 'DV-B'").run();
+      db.exec('CREATE UNIQUE INDEX idx_data_version_assessment_number ON AssessmentDataVersion(assessment_id, version_number)');
+      expect(db.prepare(getAssessmentDataVersionIntegritySql()).all()).toEqual([
+        { check_name: 'duplicate_assessment_data_version_groups', violation_count: 0 },
+        { check_name: 'assessment_data_version_index_invalid', violation_count: 0 }
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('validates both R2 cleanup queue indexes and their ordered query plans', () => {
+    const db = new DatabaseSync(':memory:');
+    try {
+      db.exec(`
+        CREATE TABLE R2ObjectCleanupOutbox (
+          cleanup_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL, object_key TEXT NOT NULL,
+          reason TEXT NOT NULL, attempt_count INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT NOT NULL, created_at TEXT NOT NULL,
+          UNIQUE (tenant_id, object_key)
+        );
+      `);
+
+      const missingIndexRows = db.prepare(getR2CleanupIndexIntegritySql()).all();
+      const missingIndexReport = compareD1Drift({ r2CleanupIndexIntegrityRows: missingIndexRows });
+      expect(missingIndexReport).toMatchObject({
+        ok: false,
+        r2CleanupIndexesValid: false,
+        missingR2CleanupIndexes: Object.keys(R2_CLEANUP_INDEX_DEFINITIONS)
+      });
+
+      db.exec(`
+        CREATE INDEX idx_r2_cleanup_created
+          ON R2ObjectCleanupOutbox(next_attempt_at, created_at, cleanup_id);
+        CREATE INDEX idx_r2_cleanup_tenant_created
+          ON R2ObjectCleanupOutbox(tenant_id, next_attempt_at, created_at, cleanup_id);
+      `);
+
+      const validIndexRows = db.prepare(getR2CleanupIndexIntegritySql()).all();
+      const validIndexReport = compareD1Drift({ r2CleanupIndexIntegrityRows: validIndexRows });
+      expect(validIndexReport).toMatchObject({
+        r2CleanupIndexesValid: true,
+        missingR2CleanupIndexes: []
+      });
+
+      const globalPlan = db.prepare(`EXPLAIN QUERY PLAN ${R2_CLEANUP_SQL.selectAll}`).all(50);
+      const tenantPlan = db.prepare(`EXPLAIN QUERY PLAN ${R2_CLEANUP_SQL.selectTenant}`).all('tenant-a', 50);
+      expect(globalPlan.some((row) => String(row.detail).includes('idx_r2_cleanup_created'))).toBe(true);
+      expect(tenantPlan.some((row) => String(row.detail).includes('idx_r2_cleanup_tenant_created'))).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+
   it('reads tenant-scoped primary key order from SQLite metadata', () => {
     const db = new DatabaseSync(':memory:');
     try {
@@ -143,7 +223,10 @@ describe('D1 drift diagnostics', () => {
 
       const rows = db.prepare(getTenantIntegrityTriggerSql()).all();
       expect(rows).toHaveLength(TENANT_INTEGRITY_TRIGGER_NAMES.length);
-      const completeReport = compareD1Drift({ tenantIntegrityTriggerNames: rows.map((row) => row.trigger_name) });
+      const completeReport = compareD1Drift({
+        tenantIntegrityTriggerNames: rows.map((row) => row.trigger_name),
+        r2CleanupIndexIntegrityRows: createValidR2CleanupIndexIntegrityRows()
+      });
       const incompleteReport = compareD1Drift({
         tenantIntegrityTriggerNames: rows
           .filter((row) => row.trigger_name !== TENANT_INTEGRITY_TRIGGER_NAMES[0])
@@ -172,6 +255,7 @@ describe('D1 drift diagnostics', () => {
       duplicateKeyGroups: 0,
       duplicateUserEmailGroups: 0,
       normalizedUserEmailIndexValid: true,
+      r2CleanupIndexIntegrityRows: createValidR2CleanupIndexIntegrityRows(),
       orphanCounts: { transaction_assessment_orphans: 0 },
       foreignKeyViolations: 0,
       tenantPrimaryKeyRows: createTenantPrimaryKeyRows(),
@@ -184,6 +268,8 @@ describe('D1 drift diagnostics', () => {
       rowCountMismatches: [],
       seedLedger: { missingFiles: [], checksumMismatches: [], unexpectedFiles: [] },
       duplicateTransactionKeyGroups: 0,
+      duplicateAssessmentDataVersionGroups: 0,
+      assessmentDataVersionIndexValid: true,
       duplicateUserEmailGroups: 0,
       normalizedUserEmailIndexValid: true,
       orphanCounts: { transaction_assessment_orphans: 0 },
@@ -263,6 +349,21 @@ describe('D1 drift diagnostics', () => {
 
     expect(missingIndex).toMatchObject({ ok: false, normalizedUserEmailIndexValid: false });
     expect(duplicateAccounts).toMatchObject({ ok: false, duplicateUserEmailGroups: 1 });
+  });
+
+  it('fails closed when assessment version numbering is duplicated or lacks the unique index', () => {
+    const report = compareD1Drift({
+      expectedTables: ['AssessmentDataVersion'],
+      actualTables: ['AssessmentDataVersion'],
+      duplicateAssessmentDataVersionGroups: 1,
+      assessmentDataVersionIndexValid: false
+    });
+
+    expect(report).toMatchObject({
+      ok: false,
+      duplicateAssessmentDataVersionGroups: 1,
+      assessmentDataVersionIndexValid: false
+    });
   });
 
   it('reports globally keyed tenant aggregates as schema drift', () => {

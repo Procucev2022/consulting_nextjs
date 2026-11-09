@@ -8,6 +8,8 @@ import type { z } from 'zod';
 import type {
   clientErrorReportSchema,
   apiRequestIdSchema,
+  assessmentIdQuerySchema,
+  paymentTermsResponseSchema,
   taxonomyPageRequestSchema,
   taxonomyPageResponseSchema,
   conversionStagesResponseSchema,
@@ -52,6 +54,8 @@ import type { pcbiGapResolutionRequestSchema } from '../constants/orchestrationV
 export type TaxonomyPageRequest = z.infer<typeof taxonomyPageRequestSchema>;
 export type ClientErrorReport = z.infer<typeof clientErrorReportSchema>;
 export type ApiRequestId = z.infer<typeof apiRequestIdSchema>;
+export type AssessmentIdQuery = z.infer<typeof assessmentIdQuerySchema>;
+export type PaymentTermsResponse = z.infer<typeof paymentTermsResponseSchema>;
 export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
 export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
 export type ApiDataEnvelopeResponse = z.infer<typeof apiDataEnvelopeResponseSchema>;

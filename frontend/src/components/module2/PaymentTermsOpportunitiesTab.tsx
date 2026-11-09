@@ -1,25 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { PaymentTermsOpportunity, PaymentTermsCoverageSummary } from '../../types/module2PaymentTerms';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../constants/module2PaymentTerms';
-
-interface PaymentTermsOpportunitiesTabProps {
-  opportunities: PaymentTermsOpportunity[];
-  coverageSummary: PaymentTermsCoverageSummary;
-}
+import type { PaymentTermsOpportunitiesTabProps } from '../../types/module2PaymentTerms';
+import { UI_STRINGS } from '../../constants/uiStrings';
+import {
+  DAYS_IN_STANDARD_YEAR,
+  PAYMENT_TERMS_SIMULATION_CREDIT_DAY_OPTIONS,
+  PAYMENT_TERMS_SIMULATION_DEFAULT_CREDIT_DAYS,
+  PAYMENT_TERMS_SIMULATION_DEFAULT_SPEND_CR,
+  PROCUCEV_STANDARD_FINANCING_RATE_PER_30_DAYS,
+  STANDARD_CREDIT_INTERVAL_DAYS
+} from '../../constants/module2PaymentTerms';
 
 export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTabProps> = ({
   opportunities,
   coverageSummary
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [simSpendCr, setSimSpendCr] = useState<number>(120);
-  const [simAdditionalDays, setSimAdditionalDays] = useState<number>(30);
+  const [simSpendCr, setSimSpendCr] = useState<number>(PAYMENT_TERMS_SIMULATION_DEFAULT_SPEND_CR);
+  const [simAdditionalDays, setSimAdditionalDays] = useState<number>(PAYMENT_TERMS_SIMULATION_DEFAULT_CREDIT_DAYS);
 
   // Procucev standard linear calculation verification (Prompt 448 Section B & C)
-  const simFinancingBenefitCr = Number((simSpendCr * 0.015 * (simAdditionalDays / 30)).toFixed(4));
-  const simWcReleasedCr = Number(((simSpendCr / 365) * simAdditionalDays).toFixed(4));
+  const standardRatePercent = (PROCUCEV_STANDARD_FINANCING_RATE_PER_30_DAYS * 100).toFixed(1);
+  const simFinancingBenefitCr = Number((simSpendCr * PROCUCEV_STANDARD_FINANCING_RATE_PER_30_DAYS *
+    (simAdditionalDays / STANDARD_CREDIT_INTERVAL_DAYS)).toFixed(4));
+  const simWcReleasedCr = Number(((simSpendCr / DAYS_IN_STANDARD_YEAR) * simAdditionalDays).toFixed(4));
 
   const filteredOpps = opportunities.filter((o) => {
     const q = searchTerm.toLowerCase();
@@ -36,7 +41,7 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-            {PAYMENT_TERMS_UI_STRINGS.SCENARIO_BOX_TITLE}
+            {UI_STRINGS.module2.paymentTerms.scenarioBoxTitle}
           </div>
           <span
             style={{
@@ -50,17 +55,18 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
               letterSpacing: '0.03em'
             }}
           >
-            {PAYMENT_TERMS_UI_STRINGS.SCENARIO_GOVERNANCE_TAG}
+            {UI_STRINGS.module2.paymentTerms.scenarioGovernanceTag}
           </span>
         </div>
         <p style={{ fontSize: '12px', color: '#64748b', margin: '6px 0 12px 0', lineHeight: 1.5 }}>
-          {PAYMENT_TERMS_UI_STRINGS.SCENARIO_DISCLAIMER} {PAYMENT_TERMS_UI_STRINGS.SCENARIO_RATE_NOTE}
+          {UI_STRINGS.module2.paymentTerms.scenarioDisclaimer}{' '}
+          {UI_STRINGS.module2.paymentTerms.scenarioRateNote(standardRatePercent, STANDARD_CREDIT_INTERVAL_DAYS)}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
-              Eligible Annual Spend (₹ Cr)
+              {UI_STRINGS.module2.paymentTerms.scenarioEligibleSpendLabel}
             </label>
             <input
               type="number"
@@ -79,7 +85,7 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
 
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
-              Illustrative Additional Credit Days (Unapproved)
+              {UI_STRINGS.module2.paymentTerms.scenarioAdditionalCreditDaysLabel}
             </label>
             <select
               value={simAdditionalDays}
@@ -93,28 +99,40 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
                 fontSize: '13px'
               }}
             >
-              <option value={15}>15 Additional Days (Illustrative Scenario)</option>
-              <option value={30}>30 Additional Days (Illustrative Scenario)</option>
-              <option value={45}>45 Additional Days (Illustrative Scenario)</option>
-              <option value={60}>60 Additional Days (Illustrative Scenario)</option>
-              <option value={90}>90 Additional Days (Illustrative Scenario)</option>
+              {PAYMENT_TERMS_SIMULATION_CREDIT_DAY_OPTIONS.map((days) => (
+                <option value={days} key={days}>
+                  {UI_STRINGS.module2.paymentTerms.scenarioAdditionalDaysOption(days)}
+                </option>
+              ))}
             </select>
           </div>
 
           <div style={{ backgroundColor: '#f8fafc', padding: '10px 14px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>ILLUSTRATIVE FINANCING BENEFIT</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#047857', marginTop: '2px' }}>
-              ₹{simFinancingBenefitCr.toFixed(4)} Cr
+            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+              {UI_STRINGS.module2.paymentTerms.scenarioFinancingBenefitLabel}
             </div>
-            <div style={{ fontSize: '10px', color: '#64748b' }}>Spend × 1.5% × ({simAdditionalDays}/30) [Unapproved]</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#047857', marginTop: '2px' }}>
+              {UI_STRINGS.common.croreAmount(simFinancingBenefitCr.toFixed(4))}
+            </div>
+            <div style={{ fontSize: '10px', color: '#64748b' }}>
+              {UI_STRINGS.module2.paymentTerms.scenarioFinancingFormula(
+                simAdditionalDays,
+                standardRatePercent,
+                STANDARD_CREDIT_INTERVAL_DAYS
+              )}
+            </div>
           </div>
 
           <div style={{ backgroundColor: '#f8fafc', padding: '10px 14px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>ILLUSTRATIVE WC RELEASED</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
-              ₹{simWcReleasedCr.toFixed(4)} Cr
+            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+              {UI_STRINGS.module2.paymentTerms.scenarioWorkingCapitalReleasedLabel}
             </div>
-            <div style={{ fontSize: '10px', color: '#64748b' }}>Spend / 365 × {simAdditionalDays}d [Unapproved]</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
+              {UI_STRINGS.common.croreAmount(simWcReleasedCr.toFixed(4))}
+            </div>
+            <div style={{ fontSize: '10px', color: '#64748b' }}>
+              {UI_STRINGS.module2.paymentTerms.scenarioWorkingCapitalFormula(simAdditionalDays, DAYS_IN_STANDARD_YEAR)}
+            </div>
           </div>
         </div>
       </div>
@@ -131,24 +149,28 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
           }}
         >
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#92400e' }}>
-            {PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_MESSAGE}
+            {UI_STRINGS.module2.paymentTerms.dataUnavailableMessage}
           </div>
           <p style={{ fontSize: '13px', color: '#b45309', margin: '8px auto 0 auto', maxWidth: '600px' }}>
-            {PAYMENT_TERMS_UI_STRINGS.DATA_UNAVAILABLE_SUB}
+            {UI_STRINGS.module2.paymentTerms.dataUnavailableSub}
           </p>
           <div style={{ marginTop: '12px', fontSize: '12px', color: '#78350f', fontWeight: 500 }}>
-            Status: {coverageSummary.overallStatusDisplayText} | Analysed Spend: ₹{coverageSummary.totalSpendAnalysedCr.toFixed(4)} Cr ({coverageSummary.totalRecordsCount.toLocaleString()} transactions)
+            {UI_STRINGS.module2.paymentTerms.unavailableOpportunitySummary(
+              coverageSummary.overallStatusDisplayText,
+              UI_STRINGS.common.croreAmount(coverageSummary.totalSpendAnalysedCr.toFixed(4)),
+              coverageSummary.totalRecordsCount.toLocaleString()
+            )}
           </div>
         </div>
       ) : (
         <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 600, fontSize: '13px', color: '#0f172a' }}>
-              Verified Payment Terms Opportunities ({filteredOpps.length})
+              {UI_STRINGS.module2.paymentTerms.opportunitiesHeading(filteredOpps.length)}
             </div>
             <input
               type="text"
-              placeholder={PAYMENT_TERMS_UI_STRINGS.SEARCH_PLACEHOLDER}
+              placeholder={UI_STRINGS.module2.paymentTerms.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -164,15 +186,23 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                <th style={{ padding: '10px 16px' }}>Supplier</th>
-                <th style={{ padding: '10px 16px' }}>Category</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Annual Spend</th>
-                <th style={{ padding: '10px 16px' }}>Current Terms</th>
-                <th style={{ padding: '10px 16px' }}>Target Terms</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Extension</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>Financing Benefit</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right' }}>WC Released</th>
-                <th style={{ padding: '10px 16px' }}>Status</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.opportunityHeaders.supplier}</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.opportunityHeaders.category}</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.opportunityHeaders.annualSpend}
+                </th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.opportunityHeaders.currentTerms}</th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.opportunityHeaders.targetTerms}</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.opportunityHeaders.extension}
+                </th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.opportunityHeaders.financingBenefit}
+                </th>
+                <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                  {UI_STRINGS.module2.paymentTerms.opportunityHeaders.workingCapitalReleased}
+                </th>
+                <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.opportunityHeaders.status}</th>
               </tr>
             </thead>
             <tbody>
@@ -184,22 +214,24 @@ export const PaymentTermsOpportunitiesTab: React.FC<PaymentTermsOpportunitiesTab
                   </td>
                   <td style={{ padding: '10px 16px', color: '#475569' }}>{o.spendCategory}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
-                    ₹{o.annualSpendCr.toFixed(4)} Cr
+                    {UI_STRINGS.common.croreAmount(o.annualSpendCr.toFixed(4))}
                   </td>
-                  <td style={{ padding: '10px 16px', color: '#334155' }}>{o.currentPaymentTerms} ({o.currentCreditDays}d)</td>
+                  <td style={{ padding: '10px 16px', color: '#334155' }}>
+                    {UI_STRINGS.module2.paymentTerms.currentTermsWithCreditDays(o.currentPaymentTerms, o.currentCreditDays)}
+                  </td>
                   <td style={{ padding: '10px 16px', color: '#047857', fontWeight: 600 }}>{o.targetPaymentTerms}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', color: '#2563eb', fontWeight: 600 }}>
-                    +{o.additionalCreditDays} days
+                    {UI_STRINGS.module2.paymentTerms.additionalCreditDays(o.additionalCreditDays)}
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', color: '#047857', fontWeight: 600 }}>
-                    ₹{o.indicativeAnnualFinancingBenefitCr.toFixed(4)} Cr
+                    {UI_STRINGS.common.croreAmount(o.indicativeAnnualFinancingBenefitCr.toFixed(4))}
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', color: '#2563eb', fontWeight: 600 }}>
-                    ₹{o.indicativeWorkingCapitalReleasedCr.toFixed(4)} Cr
+                    {UI_STRINGS.common.croreAmount(o.indicativeWorkingCapitalReleasedCr.toFixed(4))}
                   </td>
                   <td style={{ padding: '10px 16px' }}>
                     <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: '#dcfce7', color: '#166534' }}>
-                      {o.statusLabel}
+                      {UI_STRINGS.module2.paymentTerms.availabilityLabels[o.availabilityStatus]}
                     </span>
                   </td>
                 </tr>

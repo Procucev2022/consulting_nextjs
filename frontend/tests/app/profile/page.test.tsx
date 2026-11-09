@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import ProfilePage from '../../../src/app/profile/page';
 import { authApiClient } from '../../../src/utils/authApi';
 import { apiClient } from '../../../src/utils/api';
+import { UI_STRINGS } from '../../../src/constants';
 
 const mockPush = vi.fn();
 const mockRouter = {
@@ -147,7 +148,7 @@ describe('Enterprise Profile Page Component', () => {
 
     // Verify own uploaded document is rendered
     expect(screen.getByText('FY25_Purchase_Data.xlsx')).toBeInTheDocument();
-    expect(screen.getByText('2.4 MB')).toBeInTheDocument();
+    expect(screen.getByText(`${mockDocuments[0].file_size_mb} ${UI_STRINGS.profile.fileSizeUnit}`)).toBeInTheDocument();
     expect(screen.getByText('1,250')).toBeInTheDocument();
 
     // Verify other buyer's document is filtered out
@@ -171,7 +172,7 @@ describe('Enterprise Profile Page Component', () => {
       expect(screen.getByText('FY25_Purchase_Data.xlsx')).toBeInTheDocument();
     });
 
-    const useDocBtn = screen.getByRole('button', { name: /Use this Document/i });
+    const useDocBtn = screen.getByRole('button', { name: UI_STRINGS.profile.useDocument });
     fireEvent.click(useDocBtn);
 
     expect(mockPush).toHaveBeenCalledWith('/?documentId=DOC-1001');
@@ -182,13 +183,13 @@ describe('Enterprise Profile Page Component', () => {
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('mock-token');
     const changePasswordSpy = vi.spyOn(authApiClient, 'changePassword').mockResolvedValue({
       success: true,
-      message: 'Your password has been successfully updated.'
+      message: UI_STRINGS.auth.passwordChangedSuccess
     });
 
     const { container } = render(<ProfilePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Change Account Password')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.auth.changePasswordHeading)).toBeInTheDocument();
     });
 
     const currInput = container.querySelector('#curr-password') as HTMLInputElement;
@@ -199,7 +200,7 @@ describe('Enterprise Profile Page Component', () => {
     fireEvent.change(newInput, { target: { value: 'NewPassword@456' } });
     fireEvent.change(confInput, { target: { value: 'NewPassword@456' } });
 
-    const submitBtn = screen.getByRole('button', { name: /Update Password/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.auth.changePasswordButton });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -207,7 +208,7 @@ describe('Enterprise Profile Page Component', () => {
         currentPassword: 'OldPassword@123',
         newPassword: 'NewPassword@456'
       });
-      expect(screen.getByText('Your password has been successfully updated.')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.auth.passwordChangedSuccess)).toBeInTheDocument();
     });
   });
 
@@ -217,7 +218,7 @@ describe('Enterprise Profile Page Component', () => {
     const { container } = render(<ProfilePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Change Account Password')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.auth.changePasswordHeading)).toBeInTheDocument();
     });
 
     const currInput = container.querySelector('#curr-password') as HTMLInputElement;
@@ -228,7 +229,7 @@ describe('Enterprise Profile Page Component', () => {
     fireEvent.change(newInput, { target: { value: 'NewPassword@456' } });
     fireEvent.change(confInput, { target: { value: 'DifferentPassword@789' } });
 
-    const submitBtn = screen.getByRole('button', { name: /Update Password/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.auth.changePasswordButton });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -260,7 +261,7 @@ describe('Enterprise Profile Page Component', () => {
       expect(screen.getByText('FY25_Purchase_Data.xlsx')).toBeInTheDocument();
     });
 
-    const deleteBtn = screen.getByRole('button', { name: /Delete/i });
+    const deleteBtn = screen.getByRole('button', { name: UI_STRINGS.profile.deleteDocument });
     await act(async () => {
       fireEvent.click(deleteBtn);
     });
@@ -270,8 +271,8 @@ describe('Enterprise Profile Page Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Document successfully removed from repository.')).toBeInTheDocument();
-      expect(screen.getByText('No Ingested Documents Found for this Account')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.profile.documentDeleted)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.profile.noIngestedDocuments)).toBeInTheDocument();
     });
   });
 
@@ -282,10 +283,10 @@ describe('Enterprise Profile Page Component', () => {
     render(<ProfilePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Back to Dashboard')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.profile.backToDashboard)).toBeInTheDocument();
     });
 
-    const logoutBtn = screen.getByRole('button', { name: /Sign Out/i });
+    const logoutBtn = screen.getByRole('button', { name: UI_STRINGS.auth.logout });
     fireEvent.click(logoutBtn);
 
     expect(clearSpy).toHaveBeenCalled();

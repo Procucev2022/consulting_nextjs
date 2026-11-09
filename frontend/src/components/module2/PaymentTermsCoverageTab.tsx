@@ -1,12 +1,9 @@
 'use client';
 
 import React from 'react';
-import type { PaymentTermsCoverageSummary } from '../../types/module2PaymentTerms';
+import type { PaymentTermsCoverageTabProps } from '../../types/module2PaymentTerms';
 import { PAYMENT_TERMS_DATA_GAP_DESCRIPTIONS } from '../../constants/module2PaymentTerms';
-
-interface PaymentTermsCoverageTabProps {
-  coverageSummary: PaymentTermsCoverageSummary;
-}
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const PaymentTermsCoverageTab: React.FC<PaymentTermsCoverageTabProps> = ({ coverageSummary }) => {
   const sum = coverageSummary;
@@ -17,42 +14,50 @@ export const PaymentTermsCoverageTab: React.FC<PaymentTermsCoverageTabProps> = (
       {/* Coverage Breakdown Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>COMPLETE RECORDS</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+            {UI_STRINGS.module2.paymentTerms.coverageCompleteRecordsLabel}
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
             {sum.completeRecordsCount.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Verified terms & eligible
+            {UI_STRINGS.module2.paymentTerms.coverageCompleteRecordsDescription}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>PARTIAL RECORDS</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+            {UI_STRINGS.module2.paymentTerms.coveragePartialRecordsLabel}
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#b45309', marginTop: '4px' }}>
             {sum.partialRecordsCount.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Incomplete or conflicting
+            {UI_STRINGS.module2.paymentTerms.coveragePartialRecordsDescription}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>MISSING RECORDS</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+            {UI_STRINGS.module2.paymentTerms.coverageMissingRecordsLabel}
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#dc2626', marginTop: '4px' }}>
             {sum.missingRecordsCount.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Terms absent in ERP
+            {UI_STRINGS.module2.paymentTerms.coverageMissingRecordsDescription}
           </div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>REQUIRING VALIDATION</div>
+          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+            {UI_STRINGS.module2.paymentTerms.coverageRequiringValidationLabel}
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#6366f1', marginTop: '4px' }}>
             {sum.recordsRequiringValidationCount.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Commercial audit needed
+            {UI_STRINGS.module2.paymentTerms.coverageRequiringValidationDescription}
           </div>
         </div>
       </div>
@@ -60,38 +65,47 @@ export const PaymentTermsCoverageTab: React.FC<PaymentTermsCoverageTabProps> = (
       {/* Coverage Progress Bar */}
       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
-          <span>Payment Terms Data Coverage</span>
-          <span>{sum.verifiedSpendPct.toFixed(2)}% Verified ({sum.missingSpendPct.toFixed(2)}% Missing)</span>
+          <span>{UI_STRINGS.module2.paymentTerms.coverageHeading}</span>
+          <span>
+            {UI_STRINGS.module2.paymentTerms.coveragePercentages(
+              sum.verifiedSpendPct.toFixed(2),
+              sum.missingSpendPct.toFixed(2)
+            )}
+          </span>
         </div>
         <div style={{ height: '8px', width: '100%', backgroundColor: '#fee2e2', borderRadius: '4px', overflow: 'hidden', marginTop: '8px', display: 'flex' }}>
           <div style={{ width: `${sum.verifiedSpendPct}%`, backgroundColor: '#059669' }} />
           <div style={{ width: `${sum.missingSpendPct}%`, backgroundColor: '#ef4444' }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-          <span>Verified Spend: ₹{sum.verifiedSpendCr.toFixed(4)} Cr</span>
-          <span>Missing Spend: ₹{sum.missingSpendCr.toFixed(4)} Cr</span>
+          <span>{UI_STRINGS.module2.paymentTerms.coverageVerifiedSpend(sum.verifiedSpendCr.toFixed(4))}</span>
+          <span>{UI_STRINGS.module2.paymentTerms.coverageMissingSpend(sum.missingSpendCr.toFixed(4))}</span>
         </div>
       </div>
 
       {/* Data Gap Reasons Table */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', fontWeight: 600, fontSize: '13px', color: '#0f172a' }}>
-          Identified Data Gaps & Root Cause Analysis
+          {UI_STRINGS.module2.paymentTerms.coverageGapTableTitle}
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-              <th style={{ padding: '10px 16px' }}>Data Gap Classification</th>
-              <th style={{ padding: '10px 16px' }}>Description & Provenance</th>
-              <th style={{ padding: '10px 16px', textAlign: 'right' }}>Affected Records</th>
-              <th style={{ padding: '10px 16px', textAlign: 'right' }}>Share (%)</th>
+              <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.coverageGapClassificationHeader}</th>
+              <th style={{ padding: '10px 16px' }}>{UI_STRINGS.module2.paymentTerms.coverageGapDescriptionHeader}</th>
+              <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                {UI_STRINGS.module2.paymentTerms.coverageGapAffectedRecordsHeader}
+              </th>
+              <th style={{ padding: '10px 16px', textAlign: 'right' }}>
+                {UI_STRINGS.module2.paymentTerms.coverageGapShareHeader}
+              </th>
             </tr>
           </thead>
           <tbody>
             {gapEntries.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
-                  No data gaps detected. 100% of records possess complete, verified payment terms.
+                  {UI_STRINGS.module2.paymentTerms.coverageEmptyGaps}
                 </td>
               </tr>
             ) : (
@@ -108,7 +122,7 @@ export const PaymentTermsCoverageTab: React.FC<PaymentTermsCoverageTabProps> = (
                       {count.toLocaleString()}
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', color: '#64748b' }}>
-                      {pct}%
+                      {UI_STRINGS.module2.paymentTerms.coverageGapPercentage(pct)}
                     </td>
                   </tr>
                 );

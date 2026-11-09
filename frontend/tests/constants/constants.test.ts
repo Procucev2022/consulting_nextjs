@@ -5,6 +5,7 @@ import * as CurrencyConstants from '../../src/constants/currency';
 import * as LoggerConstants from '../../src/constants/logger';
 import * as PipelineConstants from '../../src/constants/pipeline';
 import * as ModalsConstants from '../../src/constants/modals';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '../../src/constants/module2VendorConsolidation';
 
 describe('Frontend Constants Modules', () => {
@@ -17,6 +18,34 @@ describe('Frontend Constants Modules', () => {
       expect(AppConstants.AICEV_LOGO_SRC).toBe('/images/aicev-logo.png');
       expect(AppConstants.AICEV_LOGO_WHITE_SRC).toBe('/images/aicev-logo-white.png');
     });
+  });
+
+  it('exports the text upload record-count fallback contract', () => {
+    expect(ConstantsIndex.DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT).toBe(14200);
+    expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_ACTION).toBe('ingestion.upload.record-count.fallback');
+    expect(ConstantsIndex.INGESTION_RECORD_COUNT_FALLBACK_MESSAGE).toContain('record-count fallback');
+  });
+
+  it('centralizes actionable dataset upload and analysis copy', () => {
+    expect(UI_STRINGS.module1.uploadSignInRequired).toContain('sign in and retry');
+    expect(UI_STRINGS.module1.uploadAnalysisTitle('spend.csv')).toContain('spend.csv');
+    expect(UI_STRINGS.module1.uploadAnalysisSubtitle).toContain('UNSPSC');
+  });
+
+  it('exports the savings API parse fallback diagnostics', () => {
+    expect(ConstantsIndex.SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION).toBe('savings.api.response.json.fallback');
+    expect(ConstantsIndex.SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE).toContain('not valid JSON');
+  });
+
+  it('exports one canonical set of navigable and workspace tabs', () => {
+    expect(PipelineConstants.DEFAULT_PIPELINE_TAB).toBe('module1');
+    expect(PipelineConstants.PIPELINE_WORKSPACE_TABS).toEqual([
+      'module1', 'module2', 'module3', 'module4', 'module5', 'schema'
+    ]);
+    expect(PipelineConstants.PIPELINE_NAVIGATION_TABS).toEqual([
+      ...PipelineConstants.PIPELINE_WORKSPACE_TABS,
+      'assessment'
+    ]);
   });
 
   describe('Currency Constants', () => {

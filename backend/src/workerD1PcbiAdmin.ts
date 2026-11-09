@@ -1,4 +1,4 @@
-import { D1_LOG_ACTIONS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
 import { DEFAULT_CACHE_TTL_MS, D1_REFERENCE_CACHE_KEYS } from './constants/db';
 import { PCBI_PUBLISHED_PAYLOAD_QUERY } from './constants/pcbiHistorical';
 import { pcbiAdminImportSchema, pcbiAdminPublishSchema } from './constants/validation';
@@ -261,11 +261,19 @@ const publishVersion = async (
     .bind(version);
   const activate = db.prepare(`UPDATE ${D1_TABLES.pcbiMasterVersions} SET status = 'PUBLISHED', published_at = ?, published_by = ? WHERE version = ?`)
     .bind(now, parsed.data.published_by, version);
-  if (db.batch) await db.batch([deactivate, activate]);
-  else {
-    await deactivate.run();
-    await activate.run();
+  if (!db.batch) {
+    const error = new Error(D1_ROUTE_MESSAGES.pcbiPublishBatchUnavailable);
+    logger.error(D1_LOG_MESSAGES.pcbiPublishBatchUnavailable, {
+      action: D1_LOG_ACTIONS.pcbiPublishBatchUnavailable,
+      requestId,
+      version,
+      statementCount: 2,
+      writesStarted: false,
+      fallback: D1_LOG_FALLBACKS.failClosed
+    }, error);
+    return { status: 503, data: { success: false, message: D1_ROUTE_MESSAGES.pcbiPublishBatchUnavailable } };
   }
+  await db.batch([deactivate, activate]);
   logger.info('Published active PCBI master version from D1', { requestId, version, publishedBy: parsed.data.published_by });
   return {
     data: {
@@ -354,8 +362,10 @@ export const handlePcbiAdminRoute = async (
   const publishMatch = path.match(/^\/publish\/([^/]+)$/);
   if (publishMatch && request.method === 'POST') {
     const result = await publishVersion(database, request, decodeURIComponent(publishMatch[1]), requestId);
-    clearPublishedPcbiPayloadCache(database);
-    clearD1ReferenceDataCache(database, D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS);
+    if (result.status === undefined || result.status < 400) {
+      clearPublishedPcbiPayloadCache(database);
+      clearD1ReferenceDataCache(database, D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS);
+    }
     return result;
   }
   const versionMatch = path.match(/^\/versions\/([^/]+)$/);

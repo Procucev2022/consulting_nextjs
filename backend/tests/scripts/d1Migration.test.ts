@@ -222,6 +222,72 @@ describe('batched D1 compatibility migrations', () => {
     }
   });
 
+  it('preflights duplicate assessment version keys before migrating and installs a unique key when clean', () => {
+    const duplicateDatabase = new DatabaseSync(':memory:');
+    try {
+      duplicateDatabase.exec(`
+        CREATE TABLE AssessmentDataVersion (
+          data_version_id TEXT PRIMARY KEY, assessment_id TEXT NOT NULL, version_number INTEGER NOT NULL
+        );
+        CREATE INDEX idx_data_version_assessment ON AssessmentDataVersion(assessment_id);
+        INSERT INTO AssessmentDataVersion VALUES ('DV-A', 'A-1', 1), ('DV-B', 'A-1', 1);
+      `);
+      const { executeSqlCommand, writeCommands } = createMigrationExecutor(duplicateDatabase);
+
+      expect(() => applyD1CompatibilityMigrations(executeSqlCommand))
+        .toThrow(/1 duplicate assessment\/version group/u);
+      expect(writeCommands).toHaveLength(0);
+      expect(duplicateDatabase.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_data_version_assessment'").get())
+        .toEqual({ name: 'idx_data_version_assessment' });
+    } finally {
+      duplicateDatabase.close();
+    }
+
+    const cleanDatabase = new DatabaseSync(':memory:');
+    try {
+      cleanDatabase.exec(`
+        CREATE TABLE AssessmentDataVersion (
+          data_version_id TEXT PRIMARY KEY, assessment_id TEXT NOT NULL, version_number INTEGER NOT NULL
+        );
+        CREATE INDEX idx_data_version_assessment ON AssessmentDataVersion(assessment_id);
+        INSERT INTO AssessmentDataVersion VALUES ('DV-A', 'A-1', 1), ('DV-B', 'A-1', 2);
+      `);
+      const { executeSqlCommand, writeCommands } = createMigrationExecutor(cleanDatabase);
+
+      expect(applyD1CompatibilityMigrations(executeSqlCommand)).toEqual({
+        metadataQueries: 2, writeCommands: 1, statements: 2, migratedTables: 0
+      });
+      expect(cleanDatabase.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_data_version_assessment_number'").get())
+        .toEqual({ name: 'idx_data_version_assessment_number' });
+      expect(cleanDatabase.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_data_version_assessment'").get())
+        .toBeUndefined();
+      expect(() => cleanDatabase.prepare(`INSERT INTO AssessmentDataVersion VALUES ('DV-C', 'A-1', 2)`).run()).toThrow(/UNIQUE constraint failed/u);
+      expect(applyD1CompatibilityMigrations(executeSqlCommand)).toEqual({
+        metadataQueries: 1, writeCommands: 0, statements: 0, migratedTables: 0
+      });
+      expect(writeCommands).toHaveLength(1);
+    } finally {
+      cleanDatabase.close();
+    }
+  });
+
+  it('rejects an unexpected assessment version uniqueness index definition before writes', () => {
+    const database = new DatabaseSync(':memory:');
+    try {
+      database.exec(`
+        CREATE TABLE AssessmentDataVersion (
+          data_version_id TEXT PRIMARY KEY, assessment_id TEXT NOT NULL, version_number INTEGER NOT NULL
+        );
+        CREATE INDEX idx_data_version_assessment_number ON AssessmentDataVersion(version_number);
+      `);
+      const { executeSqlCommand, writeCommands } = createMigrationExecutor(database);
+      expect(() => applyD1CompatibilityMigrations(executeSqlCommand)).toThrow(/unexpected definition/u);
+      expect(writeCommands).toHaveLength(0);
+    } finally {
+      database.close();
+    }
+  });
+
   it('fails closed when the legacy user table is missing the email field or has a malformed index', () => {
     const missingEmailDatabase = new DatabaseSync(':memory:');
     try {

@@ -10,7 +10,9 @@ import { PaymentTermsView } from '../../../src/components/module2/PaymentTermsVi
 import { PaymentTermsCoverageTab } from '../../../src/components/module2/PaymentTermsCoverageTab';
 import { PaymentTermsOpportunitiesTab } from '../../../src/components/module2/PaymentTermsOpportunitiesTab';
 import { PaymentTermsSupplierTab } from '../../../src/components/module2/PaymentTermsSupplierTab';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../../src/constants/module2PaymentTerms';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../../../src/constants/app';
+import { logger } from '../../../src/utils/logger';
 import type { PaymentTermsResult, PaymentTermsCoverageSummary } from '../../../src/types/module2PaymentTerms';
 
 const mockCoverageSummary: PaymentTermsCoverageSummary = {
@@ -32,7 +34,7 @@ const mockCoverageSummary: PaymentTermsCoverageSummary = {
     FIELD_NOT_IN_SOURCE_ERP: 23570
   },
   overallDataAvailabilityStatus: 'DATA_UNAVAILABLE',
-  overallStatusDisplayText: 'Data Unavailable — Payment Terms Not Found in Source Data',
+  overallStatusDisplayText: UI_STRINGS.module2.paymentTerms.availabilityLabels.DATA_UNAVAILABLE,
   reconciliationDeltaInr: 0.0,
   procucevModellingRatePctPer30Days: 1.5,
   totalWorkingCapitalReleasedCr: 0.0,
@@ -95,19 +97,21 @@ describe('PaymentTermsComponents', () => {
   it('renders PaymentTermsView with 5 KPI cards and data unavailable notice', async () => {
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
     await waitFor(() => {
-      expect(screen.getByText('Lever 5: Payment Terms Optimisation')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.title)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('₹613.8805 Cr')).toBeInTheDocument();
-    expect(screen.getByText('DATA UNAVAILABLE')).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('613.8805'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualCreditDaysUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.planningScenarioTitle)).toBeInTheDocument();
   });
 
   it('renders declarative virtual DOM Excel download link', async () => {
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
     await waitFor(() => {
-      const link = screen.getByText(/Download 8-Sheet Auditable Excel Report/i);
-      expect(link.closest('a')).toHaveAttribute(
+      const link = screen.getByRole('link', {
+        name: new RegExp(UI_STRINGS.module2.paymentTerms.exportButton)
+      });
+      expect(link).toHaveAttribute(
         'href',
         '/api/module2/sourcing/payment-terms/export-excel?assessmentId=AIC-2026-0002'
       );
@@ -116,8 +120,8 @@ describe('PaymentTermsComponents', () => {
 
   it('renders PaymentTermsCoverageTab with complete, partial, and missing counts', () => {
     render(<PaymentTermsCoverageTab coverageSummary={mockCoverageSummary} />);
-    expect(screen.getByText('COMPLETE RECORDS')).toBeInTheDocument();
-    expect(screen.getByText('MISSING RECORDS')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageCompleteRecordsLabel)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageMissingRecordsLabel)).toBeInTheDocument();
     expect(screen.getByText('FIELD_NOT_IN_SOURCE_ERP')).toBeInTheDocument();
   });
 
@@ -128,19 +132,19 @@ describe('PaymentTermsComponents', () => {
         coverageSummary={mockCoverageSummary}
       />
     );
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.SCENARIO_BOX_TITLE)).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.SCENARIO_GOVERNANCE_TAG)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.scenarioBoxTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.scenarioGovernanceTag)).toBeInTheDocument();
     expect(screen.getAllByText(/Data Unavailable — Payment Terms Not Found in Source Data/i).length).toBeGreaterThan(0);
 
     // Verify simulation formula: 120 Cr * 1.5% * (30/30) = 1.8000 Cr; WC = 120 / 365 * 30 = 9.8630 Cr
-    expect(screen.getByText('₹1.8000 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹9.8630 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('1.8000'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('9.8630'))).toBeInTheDocument();
 
     // Change additional days to 60 days -> 120 Cr * 1.5% * (60/30) = 3.6000 Cr
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: '60' } });
-    expect(screen.getByText('₹3.6000 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹19.7260 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('3.6000'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('19.7260'))).toBeInTheDocument();
   });
 
   it('renders PaymentTermsSupplierTab and toggles between suppliers and transactions', () => {
@@ -151,20 +155,29 @@ describe('PaymentTermsComponents', () => {
       />
     );
     expect(screen.getByText('Acme Fibers Ltd')).toBeInTheDocument();
-    expect(screen.getByText('₹50.0000 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('50.0000'))).toBeInTheDocument();
 
     const txBtn = screen.getByText(/Transaction Register Preview/i);
     fireEvent.click(txBtn);
     expect(screen.getByText('PO-1001')).toBeInTheDocument();
-    expect(screen.getByText('₹5,00,000')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.inrAmount('5,00,000'))).toBeInTheDocument();
   });
 
   it('handles fetch error gracefully in PaymentTermsView', async () => {
-    vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network offline'));
+    const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network offline'));
+    vi.spyOn(logger, 'error').mockImplementation((message) => ({
+      timestamp: '2026-11-08T00:00:00.000Z',
+      level: 'error',
+      service: 'consulting-frontend',
+      message
+    }));
     render(<PaymentTermsView assessmentId="AIC-2026-0002" />);
+    const requestInit = fetchSpy.mock.calls[0]?.[1];
+    const requestId = new Headers(requestInit?.headers).get(API_REQUEST_ID_HEADER) || '';
     await waitFor(() => {
-      expect(screen.getByText('Unable to load Payment Terms analysis')).toBeInTheDocument();
-      expect(screen.getByText('Network offline')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.errorTitle)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module2.paymentTerms.networkFailure('Network offline', requestId)))
+        .toBeInTheDocument();
     });
   });
 });

@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
 import { handleModule2Route as handleModule2RouteImpl } from '../src/workerD1Module2';
+import { handleProcurementComplianceRoute } from '../src/workerD1Module2ComplianceRoutes';
+import { handleEAuctionPlanningAssumptionsRoute } from '../src/workerD1Module2EAuctionRoutes';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
@@ -115,6 +117,29 @@ const handleModule2Route = async (
 };
 
 describe('workerD1Module2 handler', () => {
+  it('models D1 batch execution as an atomic SQLite transaction', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const first = fixture.d1.prepare(`INSERT INTO AssessmentMaterialMapping (
+        assessment_id, source_material_id, payload_json, reviewed_by, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`)
+        .bind('A1', 'MAT-ROLLBACK', '{}', 'reviewer@example.test', '2026-11-07T00:00:00Z');
+      const invalid = fixture.d1.prepare(`INSERT INTO AssessmentMaterialMapping (
+        assessment_id, source_material_id, payload_json, reviewed_by, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`)
+        .bind('A1', 'MAT-INVALID', null, 'reviewer@example.test', '2026-11-07T00:00:00Z');
+
+      const batch = fixture.d1.batch;
+      if (!batch) throw new Error('SQLite D1 fixture does not provide batch execution.');
+      await expect(batch([first, invalid])).rejects.toThrow();
+      expect(fixture.db.prepare(
+        'SELECT COUNT(*) AS count FROM AssessmentMaterialMapping WHERE assessment_id = ?'
+      ).get('A1')).toMatchObject({ count: 0 });
+    } finally {
+      fixture.close();
+    }
+  });
+
   it('scopes uploaded transaction reads to bound assessment and tenant identifiers', async () => {
     const statement = { bind: vi.fn().mockReturnThis(), first: vi.fn().mockResolvedValue({ ok: 1 }),
       all: vi.fn().mockResolvedValue({ results: [{ transaction_id: 'DB-ROW', total_inr_raw: 10000000 }] }) };
@@ -450,6 +475,13 @@ describe('workerD1Module2 handler', () => {
       );
       const token = await issueEvidenceToken({ userId: 'usr-compliance-reviewer' }, WORKER_CORE_SECRET);
       const get = req('/sourcing/procurement-compliance?assessmentId=A1&tenantId=T1');
+      expect(await handleProcurementComplianceRoute(fixture.d1, '/dashboard', get, new URL(get.url)))
+        .toBeNull();
+      const untrustedRequest = new Request(
+        'https://consulting.edge/api/module2/sourcing/procurement-compliance?assessmentId=A1'
+      );
+      expect(await handleProcurementComplianceRoute(fixture.d1, '/procurement-compliance', untrustedRequest,
+        new URL(untrustedRequest.url))).toMatchObject({ status: 403 });
       const report = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', get, new URL(get.url));
       const result = report.data as { assessmentId: string; summary: Record<string, unknown>;
         exceptions: Array<{ exceptionId: string; checkType: string }> };
@@ -458,6 +490,12 @@ describe('workerD1Module2 handler', () => {
         totalExceptionsIdentifiedCount: 1, totalPotentialFinancialExposureInr: 200
       }, exceptions: [expect.objectContaining({ checkType: 'PRICE_INCONSISTENCY' })] });
       expect(MODULE2_D1_PENDING_ROUTES.has('/procurement-compliance')).toBe(false);
+
+      const headerScoped = req('/sourcing/procurement-compliance', {
+        headers: { 'x-assessment-id': 'A1', 'x-tenant-id': 'T1' }
+      });
+      expect((await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', headerScoped,
+        new URL(headerScoped.url))).data).toMatchObject({ assessmentId: 'A1' });
 
       const exportRequest = req('/sourcing/procurement-compliance/export-excel?assessmentId=A1&tenantId=T1');
       const exported = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/export-excel',
@@ -747,6 +785,9 @@ describe('workerD1Module2 handler', () => {
       const adminToken = await issueEvidenceToken({ userId: 'auction-admin' }, WORKER_CORE_SECRET);
       const userToken = await issueEvidenceToken({ userId: 'auction-user' }, WORKER_CORE_SECRET);
       const list = req('/sourcing/e-auction/planning-assumptions');
+      expect(await handleEAuctionPlanningAssumptionsRoute(
+        fixture.d1, '/dashboard', list, WORKER_CORE_SECRET
+      )).toBeNull();
       expect((await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', list,
         new URL(list.url))).data).toEqual([]);
       expect(MODULE2_D1_PENDING_ROUTES.has('/e-auction/planning-assumptions')).toBe(false);
@@ -804,6 +845,18 @@ describe('workerD1Module2 handler', () => {
       expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toContainEqual(
         expect.objectContaining({ categoryOrMaterial: 'Packaging', approvalStatus: 'APPROVED', approvedBy: 'Auction Admin' })
       );
+
+      const proposedUpdate = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ ...assumption, id: 'ASSUMP-2', approvalStatus: 'PENDING_APPROVAL',
+          approvedBy: 'Forged reviewer', approvedDate: '2020-01-01T00:00:00.000Z' })
+      });
+      const proposed = await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions',
+        proposedUpdate, new URL(proposedUpdate.url), WORKER_CORE_SECRET);
+      expect(proposed.data).toMatchObject({ success: true, assumption: {
+        id: 'ASSUMP-2', approvalStatus: 'PENDING_APPROVAL', isPlanningAssumptionOnly: true,
+        approvedBy: undefined, approvedDate: undefined
+      } });
 
       const wrongMethod = req('/sourcing/e-auction/planning-assumptions', { method: 'POST' });
       expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', wrongMethod,

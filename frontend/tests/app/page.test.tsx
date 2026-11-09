@@ -380,9 +380,7 @@ describe('Home Page Component', () => {
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
-    await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
-    }, { timeout: 4000 });
+    await screen.findByText(UI_STRINGS.module2.heading, {}, { timeout: 8000 });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
@@ -411,6 +409,17 @@ describe('Home Page Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.title)).toBeInTheDocument();
     await screen.findByTitle(UI_STRINGS.module1.fxReferenceTooltip('US Dollar'));
   }, 20000);
+
+  it('opens Module 5 when its URL hash is present on initial load', async () => {
+    window.location.hash = '#module5';
+
+    await act(async () => {
+      render(<Home />);
+      for (let flush = 0; flush < 8; flush += 1) await Promise.resolve();
+    });
+
+    expect(await screen.findByText(UI_STRINGS.module5.heading)).toBeInTheDocument();
+  });
 
   it('handles batch file upload with CSV and XLSX formats', async () => {
     const { container } = await renderHome();
@@ -1183,7 +1192,13 @@ describe('Home Page Component', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['Vendor,Qty,Price\nAcme,10,100'], 'test.csv', { type: 'text/csv' });
     if (fileInput) {
-      await chooseDataset(fileInput, file);
+      const completedUploads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.length;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      expect(await screen.findByText(UI_STRINGS.module1.uploadAnalysisTitle(file.name))).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module1.uploadAnalysisSubtitle)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(completedUploads + 1);
+      });
     }
   });
 

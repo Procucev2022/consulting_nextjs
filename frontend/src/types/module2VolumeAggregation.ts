@@ -3,6 +3,8 @@
  * Compliant with Rule 8, 9, max 300 lines, line length <= 120 chars
  */
 
+import type { ErrorCategory } from './errors';
+
 export type VolumeAggregationOpportunityTier = 'TIER_1_IDENTICAL' | 'TIER_2_COMPARABLE' | 'TIER_3_CATEGORY';
 
 export type VolumeAggregationDemandClassification =
@@ -234,4 +236,27 @@ export interface VolumeAggregationResult {
   unmatchedAdjustments: UnmatchedAdjustmentItem[];
   methodologyDisclosures: string[];
   transactions: VolumeAggregationTransactionItem[];
+}
+
+export type VolumeAggregationTab = 'overview' | 'plants' | 'materials' | 'transactions' | 'poConsolidation';
+
+export interface VolumeAggregationViewProps {
+  assessmentId: string;
+  onBackToOverview?: () => void;
+}
+
+export interface VolumeAggregationPoConsolidationTabProps {
+  transactions: VolumeAggregationTransactionItem[];
+}
+
+export interface VolumeAggregationApiFailureDetails {
+  errorCategory: ErrorCategory;
+  requestId: string;
+  statusCode?: number;
+}
+
+export interface VolumeAggregationFailurePresentation {
+  errorCategory: ErrorCategory;
+  message: string;
+  statusCode?: number;
 }

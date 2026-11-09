@@ -1,7 +1,6 @@
 import { D1_TABLES } from '../constants/d1';
 import {
   SAVINGS_D1_ACTION_STATUS,
-  SAVINGS_D1_ACTION_STATUS_STORAGE,
   SAVINGS_D1_ENGINE_BY_LEVER,
   SAVINGS_D1_INR_PER_CRORE,
   SAVINGS_D1_MESSAGES,
@@ -11,8 +10,9 @@ import {
 import { updateActionPlanSchema, updateOpportunityStatusSchema } from '../constants/validation';
 import type { ActionOwner, ActionPlanItem, SavingsOpportunityItem, SavingsWaterfallMetrics } from '../types/savings';
 import type { D1SavingsActionPlanRow, D1SavingsAssessmentRow, D1SavingsOpportunityRow } from '../types/savingsD1';
-import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../types/cloudflare';
+import type { CloudflareD1Database } from '../types/cloudflare';
 import type { WorkerD1Result } from '../types/d1';
+import { buildActionPlanUpdateStatements, persistActionPlanStatements } from './workerD1SavingsActions';
 import { parsePersistedSavingsMetrics } from './workerD1SavingsMetrics';
 import { queryD1Rows } from './workerD1Query';
 
@@ -202,55 +202,11 @@ export const loadAssessmentSavingsFromD1 = async (
   } };
 };
 
-const buildActionPlanUpdateStatements = (
-  db: CloudflareD1Database,
-  actionId: string,
-  tenantId: string,
-  updates: Omit<ReturnType<typeof updateActionPlanSchema.parse>, 'actionId'>
-): CloudflareD1PreparedStatement[] => {
-  const statements = [];
-  const coreUpdates: string[] = [];
-  const coreValues: unknown[] = [];
-  if (updates.status !== undefined) {
-    coreUpdates.push('status = ?');
-    coreValues.push(SAVINGS_D1_ACTION_STATUS_STORAGE[updates.status]);
-  }
-  if (updates.owner !== undefined) {
-    coreUpdates.push('owner = ?');
-    coreValues.push(updates.owner);
-  }
-  if (coreUpdates.length > 0) {
-    coreValues.push(new Date().toISOString(), actionId);
-    const sql = `UPDATE ${D1_TABLES.actionPlans} SET ${coreUpdates.join(', ')}, updated_at = ? WHERE id = ? ` +
-      `AND EXISTS (SELECT 1 FROM ${D1_TABLES.opportunityTenantScope} AS scope ` +
-      `WHERE scope.opp_id = ${D1_TABLES.actionPlans}.opp_id AND scope.tenant_id = ?)`;
-    statements.push(db.prepare(sql).bind(...coreValues, tenantId));
-  }
-  if (updates.priority !== undefined || updates.comments !== undefined) {
-    statements.push(db.prepare(
-      `INSERT INTO ${D1_TABLES.actionPlanDetails} (action_id, priority, comments, updated_at) ` +
-      'SELECT ?, COALESCE(?, \'MEDIUM\'), ?, CURRENT_TIMESTAMP WHERE EXISTS (' +
-      'SELECT 1 FROM ' + D1_TABLES.actionPlans + ' AS plan INNER JOIN ' + D1_TABLES.opportunityTenantScope + ' AS scope ' +
-      'ON scope.opp_id = plan.opp_id WHERE plan.id = ? AND scope.tenant_id = ?) ' +
-      'ON CONFLICT(action_id) DO UPDATE SET ' +
-      `priority = COALESCE(excluded.priority, ${D1_TABLES.actionPlanDetails}.priority), ` +
-      `comments = COALESCE(excluded.comments, ${D1_TABLES.actionPlanDetails}.comments), updated_at = CURRENT_TIMESTAMP`
-    ).bind(actionId, updates.priority ?? null, updates.comments ?? null, actionId, tenantId));
-  }
-  return statements;
-};
-
-const persistActionPlanStatements = async (
-  db: CloudflareD1Database, statements: CloudflareD1PreparedStatement[]
-): Promise<void> => {
-  if (db.batch && statements.length > 1) await db.batch(statements);
-  else for (const statement of statements) await statement.run();
-};
-
 export const updateActionPlanInD1 = async (
   db: CloudflareD1Database,
   input: unknown,
-  tenantId: string
+  tenantId: string,
+  requestId?: string
 ): Promise<WorkerD1Result> => {
   const parsed = updateActionPlanSchema.safeParse(input);
   if (!parsed.success) return {
@@ -271,7 +227,15 @@ export const updateActionPlanInD1 = async (
     status: 404,
     data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanNotFound(actionId) }
   };
-  await persistActionPlanStatements(db, buildActionPlanUpdateStatements(db, actionId, tenantId, updates));
+  const persisted = await persistActionPlanStatements(
+    db,
+    buildActionPlanUpdateStatements(db, actionId, tenantId, updates),
+    { actionId, tenantId, requestId }
+  );
+  if (!persisted) return {
+    status: 503,
+    data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanBatchUnavailable }
+  };
 
   const refreshed = await db.prepare(
     `SELECT plan.*, details.target_date, details.priority, details.comments FROM ${D1_TABLES.actionPlans} AS plan ` +

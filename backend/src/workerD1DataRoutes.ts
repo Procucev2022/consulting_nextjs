@@ -7,11 +7,12 @@ import {
   mergeVendorSchema
 } from './constants/validation';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
-import type { CloudflareD1MutationResult, CloudflareEnvironment } from './types/cloudflare';
+import type { CloudflareEnvironment } from './types/cloudflare';
 import { getTenantD1Data, invalidateTenantD1Data } from './services/d1TenantDataCache';
 import { getCurrencyRatesFromD1, requireD1Binding } from './workerD1';
 import logger from './utils/logger';
 import { apiData, jsonResponse, readJson } from './workerHttp';
+import { executeVendorMergeInD1 } from './services/workerD1VendorMerge';
 
 const handleConversion = async (
   request: Request,
@@ -70,21 +71,10 @@ const handleStaticDataRoute = async (
       if (!parsed.success) return jsonResponse({ success: false, message: 'Vendor merge request is invalid.', errors: parsed.error.issues }, 400, request);
       const { targetName, masterId, canonicalName } = parsed.data;
       const tenantId = environment.REQUEST_TENANT_ID || '';
-      const statements = [
-        database.prepare('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId),
-        database.prepare('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ? AND tenant_id = ?').bind(canonicalName, masterId, tenantId)
-      ];
-      let updateResults: CloudflareD1MutationResult[];
-      try {
-        updateResults = database.batch
-          ? await database.batch(statements) as CloudflareD1MutationResult[]
-          : await Promise.all(statements.map(async (statement) => await statement.run() as CloudflareD1MutationResult));
-      } finally {
-        invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
-        invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);
-      }
-      const affected = updateResults.reduce((total, result) =>
-        total + Number(result.meta?.changes ?? result.changes ?? 0), 0);
+      const affected = await executeVendorMergeInD1(
+        database, canonicalName, masterId, tenantId, request.headers.get('x-request-id') || undefined
+      );
+      if (affected === null) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable }, 503, request);
       if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
       logger.info('Supplier master name updated in D1', {
         targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined

@@ -1,7 +1,7 @@
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import {
   D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATED_RECORDS_QUERY,
-  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES
+  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES, D1_LOG_ACTIONS, D1_LOG_MESSAGES
 } from './constants/d1';
 import {
   ingestionDataQuerySchema, updateValidationRecordSchema, addIngestionFileSchema,
@@ -16,6 +16,9 @@ import {
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
 import { clearScopedModule2Cache } from './services/workerD1Module2Cache';
+import { enqueueR2ObjectCleanup, processR2ObjectCleanupOutbox } from './services/r2ObjectCleanupOutbox';
+import { R2_CLEANUP_REASONS, R2_CLEANUP_SQL } from './constants';
+import { requireD1AtomicBatch, runD1Statements } from './services/workerD1Query';
 
 const getIngestionData = async (
   environment: CloudflareEnvironment,
@@ -77,19 +80,32 @@ const remediateIngestion = async (environment: CloudflareEnvironment, requestId?
   }
 
   const updatedRecordIds: string[] = [];
-  if (database.batch && updateStatements.length) {
-    const results = await database.batch(updateStatements) as CloudflareD1MutationResult[];
+  if (updateStatements.length) {
+    const operationContext = {
+      action: D1_LOG_ACTIONS.ingestionRemediation,
+      operation: D1_LOG_ACTIONS.ingestionRemediation,
+      requestId,
+      tenantId,
+      statementCount: updateStatements.length
+    };
+    if (updateStatements.length > 1 && !database.batch) {
+      requireD1AtomicBatch(database, operationContext, updateStatements.length);
+    }
+    let results: CloudflareD1MutationResult[];
+    try {
+      results = database.batch
+        ? await database.batch(updateStatements) as CloudflareD1MutationResult[]
+        : await Promise.all(updateStatements.map(async (statement) =>
+          await statement.run() as CloudflareD1MutationResult));
+    } catch (error: unknown) {
+      logger.error(D1_LOG_MESSAGES.atomicWriteFailed, operationContext, error);
+      throw error;
+    }
     candidateRecordIds.forEach((recordId, index) => {
       const result = results[index];
       const affected = Number(result?.meta?.changes ?? result?.changes);
       if (affected > 0) updatedRecordIds.push(recordId);
     });
-  } else {
-    for (const [index, statement] of updateStatements.entries()) {
-      const result = await statement.run() as CloudflareD1MutationResult;
-      const affected = Number(result?.meta?.changes ?? result?.changes);
-      if (affected > 0) updatedRecordIds.push(candidateRecordIds[index] as string);
-    }
   }
   const updatedRecords = updatedRecordIds.length
     ? (await database.prepare(D1_INGESTION_REMEDIATED_RECORDS_QUERY)
@@ -151,6 +167,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   const fileName = body.fileName;
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
+  const requestId = request.headers.get('x-request-id') || undefined;
   if (body.assessment_id) {
     const assessment = await database.prepare(
       'SELECT assessment_id FROM AssessmentRecord WHERE assessment_id = ? AND tenant_id = ?'
@@ -178,6 +195,11 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
         : fileType === 'XLS' ? 'application/vnd.ms-excel'
           : fileType === 'CSV' ? 'text/csv'
             : fileType === 'PDF' ? 'application/pdf' : 'application/octet-stream';
+      await enqueueR2ObjectCleanup(database, {
+        tenantId,
+        objectKey,
+        reason: R2_CLEANUP_REASONS.uploadStaging
+      }, requestId);
       await environment.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType } });
       objectStored = true;
       if (parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType)) {
@@ -188,7 +210,8 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
           fileType,
           docId,
           tenantId,
-          assessmentId: body.assessment_id
+          assessmentId: body.assessment_id,
+          requestId
         });
       }
     }
@@ -201,33 +224,49 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     const isSupportedExtraction = Boolean(bytes) && parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType);
     const extractionStatus = isSupportedExtraction ? 'Completed' : 'Pending';
     const extractionProgress = isSupportedExtraction ? 100 : 0;
-    await database.prepare(`
+    const persistenceStatements: CloudflareD1PreparedStatement[] = [database.prepare(`
       INSERT INTO RawDocumentIngestion (
         doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies)).run();
+    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies))];
 
     if (bytes) {
-      await database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-        .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || '').run();
+      persistenceStatements.push(database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || ''));
+      persistenceStatements.push(database.prepare(R2_CLEANUP_SQL.deleteJobByObject).bind(tenantId, objectKey));
     }
+    await runD1Statements(database, persistenceStatements, {
+      action: D1_LOG_ACTIONS.ingestionUploadPersist,
+      operation: D1_LOG_ACTIONS.ingestionUploadPersist,
+      requestId,
+      tenantId,
+      documentId: docId
+    });
   } catch (error) {
     try {
-      await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(docId, tenantId).run();
-      clearScopedModule2Cache(database, tenantId);
-      await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${docId}-ROW-%`, tenantId).run();
-      await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(docId, tenantId).run();
-      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(objectKey, tenantId).run();
+      await runD1Statements(database, [
+        database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(docId, tenantId),
+        database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${docId}-ROW-%`, tenantId),
+        database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(docId, tenantId),
+        database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(objectKey, tenantId)
+      ], {
+        action: D1_LOG_ACTIONS.ingestionUploadRollback,
+        operation: D1_LOG_ACTIONS.ingestionUploadRollback,
+        requestId,
+        tenantId,
+        documentId: docId
+      });
     } catch (cleanupError) {
-      logger.error('Failed to roll back a D1 ingestion upload', { docId }, cleanupError);
+      logger.error(D1_LOG_MESSAGES.ingestionUploadRollbackFailed, {
+        action: D1_LOG_ACTIONS.ingestionUploadRollback,
+        requestId,
+        tenantId,
+        docId
+      }, cleanupError);
     }
     clearScopedModule2Cache(database, tenantId);
     if (objectStored) {
-      try {
-        await environment.OBJECTS?.delete(objectKey);
-      } catch (cleanupError) {
-        logger.error('Failed to remove the uploaded object after a D1 import failure', { docId }, cleanupError);
-      }
+      await processR2ObjectCleanupOutbox(environment, { requestId, tenantId, objectKey, limit: 1 });
     }
     if (error instanceof Error && /workbook|row import limit|Only XLSX/u.test(error.message)) {
       return { data: { success: false, message: error.message }, status: 400 };
@@ -236,7 +275,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   }
 
   logger.info('Persisted uploaded ingestion dataset in D1', {
-    requestId: request.headers.get('x-request-id') || undefined,
+    requestId,
     docId,
     tenantId,
     importedCount: imported.importedCount,
@@ -248,7 +287,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   const ingestionQueue = queueRows.results.map((row) => ({
     ...row,
     detected_currencies: parseStoredDetectedCurrencies(row.detected_currencies, {
-      requestId: request.headers.get('x-request-id') || undefined,
+      requestId,
       tenantId,
       documentId: String(row.doc_id)
     })
@@ -297,7 +336,11 @@ const updateIngestion = async (request: Request, environment: CloudflareEnvironm
   return updated ? { data: { ...updated, resolved: Boolean((updated as Record<string, unknown>).resolved) } } : { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
-const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
+const deleteIngestion = async (
+  url: URL,
+  environment: CloudflareEnvironment,
+  requestId?: string
+): Promise<{ data: unknown; status?: number }> => {
   const database = requireD1Binding(environment.DB);
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
@@ -309,18 +352,62 @@ const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Pr
   const documents = documentId
     ? await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(documentId, tenantId).all<{ doc_id: string }>()
     : await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).all<{ doc_id: string }>();
-  for (const document of documents.results) {
-    const objectRows = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE tenant_id = ? AND object_key LIKE ?').bind(tenantId, `${document.doc_id}_%`).all<{ object_key: string }>();
-    for (const object of objectRows.results) {
-      if (environment.OBJECTS) await environment.OBJECTS.delete(object.object_key);
-      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(object.object_key, tenantId).run();
-    }
-    await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(document.doc_id, tenantId).run();
+  const objects = !documents.results.length
+    ? { results: [] as Array<{ object_key: string }> }
+    : documentId
+      ? await database.prepare(`SELECT object_key FROM ObjectMetadata
+        WHERE tenant_id = ? AND instr(object_key, ? || '_') = 1`)
+        .bind(tenantId, documentId).all<{ object_key: string }>()
+      : await database.prepare(`SELECT object_key FROM ObjectMetadata
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ?
+            AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
+        )`).bind(tenantId, tenantId).all<{ object_key: string }>();
+  if (documents.results.length) {
+    const documentScope = documentId || null;
+    const enqueueStatements = objects.results.length
+      ? [database.prepare(R2_CLEANUP_SQL.enqueueForIngestionDelete)
+        .bind(R2_CLEANUP_REASONS.ingestionDelete, tenantId, tenantId, documentScope, documentScope)]
+      : [];
+    await runD1Statements(database, [
+      ...enqueueStatements,
+      database.prepare(`DELETE FROM ProcurementTransaction
+        WHERE tenant_id = ? AND source_document_id IN (
+          SELECT doc_id FROM RawDocumentIngestion
+          WHERE tenant_id = ? AND (? IS NULL OR doc_id = ?)
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare(`DELETE FROM ValidationPreCheckRecord
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
+            AND substr(ValidationPreCheckRecord.record_id, 1, length('REC-' || document.doc_id || '-ROW-')) = 'REC-' || document.doc_id || '-ROW-'
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare(`DELETE FROM ObjectMetadata
+        WHERE tenant_id = ? AND EXISTS (
+          SELECT 1 FROM RawDocumentIngestion AS document
+          WHERE document.tenant_id = ? AND (? IS NULL OR document.doc_id = ?)
+            AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
+        )`).bind(tenantId, tenantId, documentScope, documentScope),
+      database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ? AND (? IS NULL OR doc_id = ?)')
+        .bind(tenantId, documentScope, documentScope)
+    ], {
+      action: D1_LOG_ACTIONS.ingestionDelete,
+      operation: D1_LOG_ACTIONS.ingestionDelete,
+      requestId,
+      tenantId,
+      documentId: documentId || undefined,
+      documentCount: documents.results.length,
+      objectCount: objects.results.length
+    });
     clearScopedModule2Cache(database, tenantId);
-    await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${document.doc_id}-ROW-%`, tenantId).run();
-    await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(document.doc_id, tenantId).run();
   }
+  if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
+    requestId, tenantId, limit: objects.results.length
+  });
   logger.info('Deleted D1 ingestion documents and linked data', {
+    action: D1_LOG_ACTIONS.ingestionDelete,
+    requestId,
     documentCount: documents.results.length,
     requestedDocumentId: documentId || undefined,
     tenantId
@@ -340,32 +427,48 @@ const resetValidationRecords = async (environment: CloudflareEnvironment): Promi
   return { data: records.results || [] };
 };
 
-const resetIngestionDataset = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+const resetIngestionDataset = async (
+  environment: CloudflareEnvironment,
+  requestId?: string
+): Promise<{ data: unknown }> => {
   const database = requireD1Binding(environment.DB);
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
   const documents = await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).all<{ doc_id: string }>();
   const objects = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId).all<{ object_key: string }>();
-  for (const object of objects.results) {
-    try {
-      await environment.OBJECTS?.delete(object.object_key);
-    } catch (error) {
-      logger.warn('Failed to remove a tenant object during ingestion reset; metadata cleanup will continue', {
-        tenantId, objectKey: object.object_key
-      }, error);
-    }
-  }
   const documentIds = documents.results.map((document) => document.doc_id);
+  const deleteStatements: CloudflareD1PreparedStatement[] = [];
+  if (objects.results.length) deleteStatements.push(database.prepare(R2_CLEANUP_SQL.enqueueForTenantReset)
+    .bind(tenantId, R2_CLEANUP_REASONS.ingestionReset, tenantId));
   if (documentIds.length) {
-    const placeholders = documentIds.map(() => '?').join(', ');
-    await database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (${placeholders})`)
-      .bind(tenantId, ...documentIds).run();
-    clearScopedModule2Cache(database, tenantId);
+    deleteStatements.push(database.prepare(`DELETE FROM ProcurementTransaction WHERE tenant_id = ? AND source_document_id IN (
+      SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?
+    )`).bind(tenantId, tenantId));
   }
-  await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId).run();
-  await database.prepare('DELETE FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId).run();
-  await database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).run();
-  logger.info('Reset tenant ingestion dataset', { tenantId, documentCount: documentIds.length, objectCount: objects.results.length });
+  deleteStatements.push(
+    database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId),
+    database.prepare('DELETE FROM ObjectMetadata WHERE tenant_id = ?').bind(tenantId),
+    database.prepare('DELETE FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId)
+  );
+  await runD1Statements(database, deleteStatements, {
+    action: D1_LOG_ACTIONS.ingestionReset,
+    operation: D1_LOG_ACTIONS.ingestionReset,
+    requestId,
+    tenantId,
+    documentCount: documentIds.length,
+    objectCount: objects.results.length
+  });
+  if (documentIds.length) clearScopedModule2Cache(database, tenantId);
+  if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
+    requestId, tenantId, limit: objects.results.length
+  });
+  logger.info('Reset tenant ingestion dataset', {
+    action: D1_LOG_ACTIONS.ingestionReset,
+    requestId,
+    tenantId,
+    documentCount: documentIds.length,
+    objectCount: objects.results.length
+  });
   return { data: { success: true, tenantId, deletedDocuments: documentIds.length, deletedObjects: objects.results.length } };
 };
 
@@ -385,11 +488,15 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
   if (request.method === 'POST' && url.pathname.endsWith('/remediate')) {
     return remediateIngestion(environment, request.headers.get('x-request-id') || undefined);
   }
-  if (request.method === 'POST' && url.pathname.endsWith('/reset')) return resetIngestionDataset(environment);
+  if (request.method === 'POST' && url.pathname.endsWith('/reset')) {
+    return resetIngestionDataset(environment, request.headers.get('x-request-id') || undefined);
+  }
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);
   if (request.method === 'DELETE' && url.pathname.endsWith('/validation-records')) return resetValidationRecords(environment);
-  if (request.method === 'DELETE') return deleteIngestion(url, environment);
+  if (request.method === 'DELETE') {
+    return deleteIngestion(url, environment, request.headers.get('x-request-id') || undefined);
+  }
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
 

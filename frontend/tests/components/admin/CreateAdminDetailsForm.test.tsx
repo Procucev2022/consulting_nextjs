@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CreateAdminDetailsForm from '../../../src/components/admin/CreateAdminDetailsForm';
 import { apiClient } from '../../../src/utils/api';
+import frontendLogger from '../../../src/utils/logger';
 import { UI_STRINGS } from '../../../src/constants';
 
 describe('CreateAdminDetailsForm Component', () => {
@@ -74,12 +75,14 @@ describe('CreateAdminDetailsForm Component', () => {
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.passwordMismatchMessage)).toBeInTheDocument();
     });
   });
 
   it('displays API error message on creation failure', async () => {
-    vi.spyOn(apiClient, 'createAdminUser').mockRejectedValueOnce(new Error('Server error provisioning admin'));
+    const provisioningError = new Error('Server error provisioning admin');
+    const warningSpy = vi.spyOn(frontendLogger, 'warn');
+    vi.spyOn(apiClient, 'createAdminUser').mockRejectedValueOnce(provisioningError);
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
@@ -87,6 +90,7 @@ describe('CreateAdminDetailsForm Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Server error provisioning admin')).toBeInTheDocument();
     });
+    expect(warningSpy).toHaveBeenCalledWith('Admin provisioning failed', { fallbackMessageUsed: false }, provisioningError);
   });
 
   it('triggers onSwitchToLogin callback when switch button is clicked', () => {
@@ -113,14 +117,20 @@ describe('CreateAdminDetailsForm Component', () => {
   });
 
   it('handles non-Error rejection gracefully when createAdminUser rejects', async () => {
+    const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'createAdminUser').mockRejectedValueOnce('Network failure raw string');
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.common.error)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.provisioningFailureFallback)).toBeInTheDocument();
     });
+    expect(warningSpy).toHaveBeenCalledWith(
+      'Admin provisioning failed',
+      { fallbackMessageUsed: true },
+      'Network failure raw string'
+    );
   });
 });
 

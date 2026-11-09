@@ -226,8 +226,8 @@ export const PCBIAdminMasterView: React.FC = () => {
       {/* Breadcrumb Navigation (Part P) */}
       <PCBIBreadcrumb
         items={[
-          { label: 'Admin', href: '/admin/pcbi' },
-          { label: 'PCBI Master', isCurrent: true }
+          { label: UI_STRINGS.pcbiAdmin.breadcrumbAdmin, href: '/admin/pcbi' },
+          { label: UI_STRINGS.pcbiAdmin.breadcrumbMaster, isCurrent: true }
         ]}
       />
 

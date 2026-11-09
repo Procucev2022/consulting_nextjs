@@ -281,7 +281,7 @@ export const handleSavingsRoute = async (
     const input = await readJson(request);
     const tenantId = environment.REQUEST_TENANT_ID;
     if (!tenantId) return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
-    const result = await updateActionPlanInD1(database, input, tenantId);
+    const result = await updateActionPlanInD1(database, input, tenantId, request.headers.get('x-request-id') || undefined);
     if (result.status === undefined) logger.info('Savings action plan updated in D1', {
       requestId: request.headers.get('x-request-id'), actionId: (result.data as { id?: string } | null)?.id
     });

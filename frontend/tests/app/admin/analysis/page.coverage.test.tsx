@@ -5,6 +5,7 @@ import { apiClient } from '../../../../src/utils/api';
 import { orchestrationApi } from '../../../../src/utils/orchestrationApi';
 import frontendLogger from '../../../../src/utils/logger';
 import type { UserProfile } from '../../../../src/types';
+import { UI_STRINGS } from '../../../../src/constants';
 
 const mockPush = vi.fn();
 // The router must be a stable object: the page's session effect depends on it.
@@ -24,9 +25,8 @@ const ADMIN_USER: UserProfile = {
   created_at: '2026-01-01T00:00:00.000Z'
 };
 
-// Production labels for these two fallbacks are not yet defined in UI_STRINGS.
-const FALLBACK_ADMIN_LABEL = 'Administrator';
-const LOGOUT_BUTTON_TITLE = 'Logout';
+const FALLBACK_ADMIN_LABEL = UI_STRINGS.admin.analysisRoute.fallbackName;
+const LOGOUT_BUTTON_TITLE = UI_STRINGS.auth.logout;
 
 describe('AdminAnalysisPage coverage', () => {
   beforeEach(() => {
@@ -79,12 +79,35 @@ describe('AdminAnalysisPage coverage', () => {
   });
 
   it('rejects an expired or forged token when the authentication API fails', async () => {
-    vi.mocked(apiClient.getMe).mockRejectedValue(new Error('Session expired'));
+    const failure = new Error('Session expired');
+    vi.mocked(apiClient.getMe).mockRejectedValue(failure);
     render(<AdminAnalysisPage />);
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin/login'));
-    expect(frontendLogger.warn).toHaveBeenCalled();
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      UI_STRINGS.admin.analysisRoute.sessionVerificationFailedLog,
+      expect.objectContaining({
+        action: 'adminAnalysisAuthentication',
+        userId: ADMIN_USER.id,
+        tenantId: ADMIN_USER.tenant_id
+      }),
+      failure
+    );
     expect(apiClient.clearStoredSession).toHaveBeenCalledOnce();
     expect(orchestrationApi.getJobs).not.toHaveBeenCalled();
+  });
+
+  it('serializes non-Error authentication failures and keeps the login fallback', async () => {
+    vi.mocked(apiClient.getMe).mockRejectedValue('gateway timeout');
+    render(<AdminAnalysisPage />);
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin/login'));
+
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      UI_STRINGS.admin.analysisRoute.sessionVerificationFailedLog,
+      expect.objectContaining({ action: 'adminAnalysisAuthentication' }),
+      'gateway timeout'
+    );
+    expect(apiClient.clearStoredSession).toHaveBeenCalledOnce();
   });
 
   it.each(['resolve', 'reject'])('ignores a late authentication %s after leaving the page', async (outcome) => {

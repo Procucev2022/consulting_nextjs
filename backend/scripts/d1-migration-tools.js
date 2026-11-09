@@ -14,12 +14,17 @@ const TENANT_OWNED_TABLE_MIGRATIONS = [
   ['AssessmentRecord', 'idx_assessment_tenant_created', 'tenant_id, created_at DESC']
 ];
 
-const REDUNDANT_TENANT_KEY_INDEXES = [
+const LEGACY_INDEXES_TO_DROP = [
   'idx_conversion_funnel_tenant_phase',
   'idx_dataset_metric_tenant_key',
   'idx_module1_monthly_tenant_month',
-  'idx_module1_currency_tenant_currency'
+  'idx_module1_currency_tenant_currency',
+  'idx_data_version_assessment'
 ];
+
+const ASSESSMENT_DATA_VERSION_INDEX_NAME = 'idx_data_version_assessment_number';
+const ASSESSMENT_DATA_VERSION_INDEX_DEFINITION =
+  'createuniqueindexidx_data_version_assessment_numberonassessmentdataversion(assessment_id,version_number)';
 
 const TENANT_SCOPED_PRIMARY_KEY_MIGRATIONS = [
   {
@@ -66,13 +71,14 @@ const TENANT_SCOPED_PRIMARY_KEY_MIGRATIONS = [
 ];
 
 const TABLES_TO_INSPECT = [
-  'TenantMaster', 'RawDocumentIngestion',
+  'TenantMaster', 'RawDocumentIngestion', 'AssessmentDataVersion',
   ...new Set(TENANT_OWNED_TABLE_MIGRATIONS.map(([tableName]) => tableName))
 ];
 
 const INDEX_NAMES_TO_INSPECT = [
   ...TENANT_OWNED_TABLE_MIGRATIONS.map(([, indexName]) => indexName).filter(Boolean),
-  ...REDUNDANT_TENANT_KEY_INDEXES,
+  ...LEGACY_INDEXES_TO_DROP,
+  ASSESSMENT_DATA_VERSION_INDEX_NAME,
   'idx_user_email_normalized',
   'idx_user_email'
 ];
@@ -182,6 +188,31 @@ const applyD1CompatibilityMigrations = (executeSqlCommand) => {
     }
   }
 
+  const dataVersionIndex = indexesByName.get(ASSESSMENT_DATA_VERSION_INDEX_NAME);
+  if (dataVersionIndex && normalizeIndexDefinition(dataVersionIndex.definition) !== ASSESSMENT_DATA_VERSION_INDEX_DEFINITION) {
+    throw new Error('Cannot enforce unique assessment data version numbering: the index has an unexpected definition.');
+  }
+  if (tableNames.has('AssessmentDataVersion') && !dataVersionIndex) {
+    const versionColumns = columnsByTable.get('AssessmentDataVersion');
+    if (!versionColumns?.has('assessment_id') || !versionColumns.has('version_number')) {
+      throw new Error('Cannot enforce unique assessment data version numbering: required key columns are missing.');
+    }
+    const duplicateRows = executeSqlCommand(
+      'SELECT COUNT(*) AS duplicate_groups FROM (SELECT assessment_id, version_number FROM AssessmentDataVersion GROUP BY assessment_id, version_number HAVING COUNT(*) > 1);',
+      true
+    );
+    metadataQueries += 1;
+    const duplicateGroups = Number(duplicateRows[0]?.duplicate_groups || 0);
+    if (duplicateGroups > 0) {
+      throw new Error(
+        `Cannot enforce unique assessment data version numbering: ${duplicateGroups} duplicate assessment/version group(s) exist. Resolve version identities before syncing the schema.`
+      );
+    }
+    statements.push(
+      `CREATE UNIQUE INDEX IF NOT EXISTS ${ASSESSMENT_DATA_VERSION_INDEX_NAME} ON AssessmentDataVersion(assessment_id, version_number);`
+    );
+  }
+
   for (const [tableName, indexName, indexColumns] of TENANT_OWNED_TABLE_MIGRATIONS) {
     if (!tableNames.has(tableName)) continue;
     addTenantColumn(tableName);
@@ -212,7 +243,7 @@ const applyD1CompatibilityMigrations = (executeSqlCommand) => {
     }
   }
 
-  for (const indexName of REDUNDANT_TENANT_KEY_INDEXES) {
+  for (const indexName of LEGACY_INDEXES_TO_DROP) {
     if (indexesByName.has(indexName)) statements.push(`DROP INDEX IF EXISTS ${indexName};`);
   }
 

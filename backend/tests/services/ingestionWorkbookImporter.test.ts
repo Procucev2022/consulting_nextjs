@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
 import { importIngestionWorkbook } from '../../src/services/ingestionWorkbookImporter';
+import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import { createWorkerDatabase, insertRows } from '../helpers/workerCoreFixtures';
 
 const asBytes = (
@@ -163,6 +164,23 @@ describe('importIngestionWorkbook', () => {
     });
     expect(batch).toHaveBeenCalledTimes(1);
     expect(batch.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it('rejects an import before inserting transaction or validation rows when batching is unavailable', async () => {
+    const fixture = createFixture();
+    const db = { prepare: (sql: string) => fixture.d1.prepare(sql) } as CloudflareD1Database;
+    await expect(importIngestionWorkbook({
+      db,
+      bytes: asBytes([['Supplier', 'Quantity', 'Net Price', 'Currency'], ['Acme', 1, 1, 'INR']]),
+      fileName: 'no-batch.xlsx',
+      fileType: 'XLSX',
+      docId: 'DOC-NO-BATCH',
+      tenantId: 'TNT-1',
+      assessmentId: 'AIC-1',
+      requestId: 'req-import-no-batch'
+    })).rejects.toThrow('Cloudflare D1 transactional batch support is unavailable');
+    expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get()).toEqual({ count: 0 });
+    expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM ValidationPreCheckRecord').get()).toEqual({ count: 0 });
   });
 
   it('rejects unsupported file types and malformed workbooks', async () => {

@@ -6,15 +6,11 @@
 
 import React, { useMemo } from 'react';
 import { Info } from 'lucide-react';
-import type { VolumeAggregationTransactionItem } from '../../types/module2VolumeAggregation';
+import type { VolumeAggregationPoConsolidationTabProps } from '../../types/module2VolumeAggregation';
 import type { LineItemMapping } from '../../types';
 import { calculatePoConsolidation } from '../../utils/step2Calculators';
 import { PoConsolidationSection } from '../poConsolidation';
-import { VOLUME_AGGREGATION_UI_STRINGS } from '../../constants/module2VolumeAggregation';
-
-interface VolumeAggregationPoConsolidationTabProps {
-  transactions: VolumeAggregationTransactionItem[];
-}
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const VolumeAggregationPoConsolidationTab: React.FC<VolumeAggregationPoConsolidationTabProps> = ({
   transactions
@@ -28,13 +24,13 @@ export const VolumeAggregationPoConsolidationTab: React.FC<VolumeAggregationPoCo
         mapping_id: `MAP-AGG-${idx + 1}`,
         line_item_id: t.id || `TX-${idx + 1}`,
         material_code: t.material_code || `MAT-${idx + 1}`,
-        material_desc: t.material_desc || 'Material Line Item',
-        raw_desc: t.material_desc || 'Material Line Item',
-        vendor_identified: t.vendor_name || 'Supplier',
+        material_desc: t.material_desc || UI_STRINGS.module2.volumeAggregation.materialLineItemFallback,
+        raw_desc: t.material_desc || UI_STRINGS.module2.volumeAggregation.materialLineItemFallback,
+        vendor_identified: t.vendor_name || UI_STRINGS.module2.volumeAggregation.supplierFallback,
         master_supplier_id: t.vendor_code || 'VND-001',
         unspsc_code: t.unspsc_code || '14111500',
-        unspsc_category_name: t.spend_category || 'Direct Materials',
-        core_bucket: t.spend_category || 'Direct Materials',
+        unspsc_category_name: t.spend_category || UI_STRINGS.module2.volumeAggregation.directMaterialsFallback,
+        core_bucket: t.spend_category || UI_STRINGS.module2.volumeAggregation.directMaterialsFallback,
         ai_confidence: 95,
         status: 'Confirmed',
         unit_price: t.unit_price ?? 0,
@@ -71,9 +67,9 @@ export const VolumeAggregationPoConsolidationTab: React.FC<VolumeAggregationPoCo
         <Info style={{ width: '18px', height: '18px', flexShrink: 0, marginTop: '2px', color: '#2563eb' }} />
         <div>
           <div style={{ fontWeight: 700, marginBottom: '2px' }}>
-            Operational Demand Cadence & Batch Lot Sizing Analysis
+            {UI_STRINGS.module2.volumeAggregation.poConsolidationHeading}
           </div>
-          <div>{VOLUME_AGGREGATION_UI_STRINGS.PO_CONSOLIDATION_SIGNAL_NOTE}</div>
+          <div>{UI_STRINGS.module2.volumeAggregation.poConsolidationSignalNote}</div>
         </div>
       </div>
 

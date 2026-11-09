@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CloudflareD1PreparedStatement } from '../../src/types/cloudflare';
 import type { OrchestrationDatabase, OrchestrationRuntime } from '../../src/types/orchestrationD1';
+import logger from '../../src/utils/logger';
 import {
   buildAuditEvent,
   buildNotificationInput,
@@ -12,7 +13,8 @@ import {
   listCorrectionRows,
   listJobRows,
   nextReportSequence,
-  runAtomically
+  runAtomically,
+  runCompareAndSetAtomically
 } from '../../src/workerD1OrchestrationStore';
 import {
   createHarness,
@@ -50,7 +52,10 @@ const fakeStatement = (values: { first?: unknown; all?: unknown[]; run?: unknown
 
 const fakeDatabase = (statement: CloudflareD1PreparedStatement, withBatch: boolean): OrchestrationDatabase => ({
   prepare: () => statement,
-  batch: withBatch ? vi.fn(async (statements: CloudflareD1PreparedStatement[]) => statements.map(() => ({}))) : undefined
+  batch: withBatch
+    ? vi.fn(async (statements: CloudflareD1PreparedStatement[]) =>
+      statements.map((_statement, index) => index === 0 ? { meta: { changes: 1 } } : {}))
+    : undefined
 });
 
 const runtime: OrchestrationRuntime = {
@@ -88,17 +93,105 @@ describe('runAtomically', () => {
     const first = fakeStatement();
     const second = fakeStatement();
     const database = fakeDatabase(first.statement, true);
-    await runAtomically(database, [first.statement, second.statement]);
+    await runAtomically(database, [first.statement, second.statement], {
+      requestId: 'req-atomic-batch',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-BATCH',
+      action: '/api/orchestration/jobs/AIC-BATCH/write'
+    });
     expect(database.batch).toHaveBeenCalledTimes(1);
     expect(first.runs()).toBe(0);
   });
 
-  it('runs each statement in order when the binding has no batch', async () => {
+  it('rejects a multi-statement write before running any statement when batch is unavailable', async () => {
     const first = fakeStatement();
     const second = fakeStatement();
-    await runAtomically(fakeDatabase(first.statement, false), [first.statement, second.statement]);
+    await expect(runAtomically(fakeDatabase(first.statement, false), [first.statement, second.statement], {
+      requestId: 'req-atomic-test',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-ATOMIC',
+      action: '/api/orchestration/jobs/AIC-ATOMIC/quality-gate'
+    })).rejects.toMatchObject({ statusCode: 503 });
+    expect(first.runs()).toBe(0);
+    expect(second.runs()).toBe(0);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('transactional D1 batch support is unavailable'),
+      expect.objectContaining({
+        requestId: 'req-atomic-test',
+        tenantId: TEST_TENANT_ID,
+        assessmentId: 'AIC-ATOMIC',
+        action: '/api/orchestration/jobs/AIC-ATOMIC/quality-gate',
+        statementCount: 2
+      }),
+      expect.any(Error)
+    );
+  });
+
+  it('allows a single independent statement when batch is unavailable', async () => {
+    const first = fakeStatement();
+    await runAtomically(fakeDatabase(first.statement, false), [first.statement], {
+      requestId: 'req-atomic-single',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-SINGLE',
+      action: '/api/orchestration/jobs/AIC-SINGLE/write'
+    });
     expect(first.runs()).toBe(1);
-    expect(second.runs()).toBe(1);
+  });
+
+  it('logs and rethrows a failed batch with request and tenant context', async () => {
+    const failure = new Error('audit storage unavailable');
+    const statement = fakeStatement();
+    const database = fakeDatabase(statement.statement, true);
+    database.batch = vi.fn(async () => { throw failure; });
+
+    await expect(runAtomically(database, [statement.statement, statement.statement], {
+      requestId: 'req-atomic-failure',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-ATOMIC-FAILURE',
+      action: '/api/orchestration/jobs/AIC-ATOMIC-FAILURE/submit'
+    })).rejects.toBe(failure);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Orchestration D1 atomic write failed',
+      expect.objectContaining({
+        requestId: 'req-atomic-failure',
+        tenantId: TEST_TENANT_ID,
+        assessmentId: 'AIC-ATOMIC-FAILURE',
+        statementCount: 2,
+        batch: true,
+        durationMs: expect.any(Number)
+      }),
+      failure
+    );
+  });
+});
+
+describe('runCompareAndSetAtomically', () => {
+  it('returns true only when the state transition changes exactly one row', async () => {
+    const statement = fakeStatement();
+    const database = fakeDatabase(statement.statement, true);
+
+    await expect(runCompareAndSetAtomically(database, statement.statement, [statement.statement], {
+      requestId: 'req-cas-atomic',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-CAS-ATOMIC',
+      action: '/api/orchestration/jobs/AIC-CAS-ATOMIC/submit'
+    })).resolves.toBe(true);
+    expect(database.batch).toHaveBeenCalledWith([statement.statement, statement.statement]);
+  });
+
+  it('returns false and still executes the guarded transaction when the state transition changes no rows', async () => {
+    const statement = fakeStatement();
+    const database = fakeDatabase(statement.statement, true);
+    database.batch = vi.fn(async () => [{ meta: { changes: 0 } }, {}]);
+
+    await expect(runCompareAndSetAtomically(database, statement.statement, [statement.statement], {
+      requestId: 'req-cas-conflict',
+      tenantId: TEST_TENANT_ID,
+      assessmentId: 'AIC-CAS-CONFLICT',
+      action: '/api/orchestration/jobs/AIC-CAS-CONFLICT/submit'
+    })).resolves.toBe(false);
+    expect(database.batch).toHaveBeenCalledTimes(1);
   });
 });
 

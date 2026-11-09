@@ -6,7 +6,8 @@ import type {
 } from '../src/types/cloudflare';
 import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME } from '../src/constants/cloudflare';
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
-import { D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { R2_CLEANUP_LOG_MESSAGES } from '../src/constants';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
 import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
 import { WORKER_JSON_BODY_MAX_BYTES } from '../src/constants/validation';
@@ -170,7 +171,10 @@ describe('Cloudflare backend worker', () => {
     const response = await workerFetch(request('/api/telemetry/client-error', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-request-id': 'server-1' },
       body: JSON.stringify(report)
-    }), { FRONTEND_URL: 'https://app.example.com' }, executionContext);
+    }), {
+      FRONTEND_URL: 'https://app.example.com',
+      CLIENT_ERROR_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) }
+    }, executionContext);
 
     expect(response.status).toBe(202);
     expect(response.headers.get('x-request-id')).toBe('server-1');
@@ -814,6 +818,7 @@ describe('Cloudflare worker core routes', () => {
       expect(prepareSpy.mock.calls).toHaveLength(1);
       expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       await expect(bodyOf(updated)).resolves.toMatchObject({
+        success: true,
         data: {
           enterprise_name: 'Beta Holdings', region: 'APAC', base_currency: 'INR',
           total_spend_evaluated: 500, total_spend_evaluated_inr: 450
@@ -903,6 +908,13 @@ describe('Cloudflare worker core routes', () => {
 
       expect((await send('/api/tenant', {}, environment)).status).toBe(503);
       expect((await send('/api/tenant', jsonBody('PUT', {}), environment)).status).toBe(503);
+    });
+
+    it('preserves the shared not-found response for unsupported tenant methods', async () => {
+      const response = await send('/api/tenant', { method: 'DELETE' });
+
+      expect(response.status).toBe(404);
+      await expect(bodyOf(response)).resolves.toMatchObject({ success: false });
     });
 
     it('scopes the ingestion queue to the buyer named in the query string', async () => {
@@ -1209,6 +1221,7 @@ describe('Cloudflare worker core routes', () => {
         }
       });
       const errorLog = vi.spyOn(logger, 'error');
+      const warning = vi.spyOn(logger, 'warn');
 
       const response = await send('/api/ingestion/upload-object', jsonBody('POST', {
         tenant_id: 'TNT-1',
@@ -1224,15 +1237,48 @@ describe('Cloudflare worker core routes', () => {
       expect(docId).toMatch(/^DOC-INGEST-/u);
       expect(deleteObject).toHaveBeenCalledWith(objectKey);
       expect(errorLog).toHaveBeenCalledWith(
-        'Failed to roll back a D1 ingestion upload',
-        { docId },
+        D1_LOG_MESSAGES.ingestionUploadRollbackFailed,
+        expect.objectContaining({ action: D1_LOG_ACTIONS.ingestionUploadRollback, requestId: expect.any(String), tenantId: 'TNT-1', docId }),
         expect.objectContaining({ message: 'D1 rollback unavailable' })
       );
-      expect(errorLog).toHaveBeenCalledWith(
-        'Failed to remove the uploaded object after a D1 import failure',
-        { docId },
+      expect(warning).toHaveBeenCalledWith(
+        R2_CLEANUP_LOG_MESSAGES.objectDeleteFailed,
+        expect.objectContaining({ action: expect.any(String), requestId: expect.any(String), tenantId: 'TNT-1', cleanupId: expect.any(String), objectKey }),
         expect.objectContaining({ message: 'R2 cleanup unavailable' })
       );
+    });
+
+    it('rejects binary metadata persistence without D1 batching and removes the staged object', async () => {
+      const put = vi.fn<CloudflareR2Bucket['put']>(async () => undefined);
+      const deleteObject = vi.fn<CloudflareR2Bucket['delete']>(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put, get: vi.fn(async () => null), delete: deleteObject };
+      const databaseWithoutBatch = { prepare: (sql: string) => fixture.d1.prepare(sql) };
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'ingestion-upload-no-batch-1';
+
+      const response = await send('/api/ingestion/upload-object', {
+        ...jsonBody('POST', {
+          tenant_id: 'TNT-1', fileName: 'no-batch.csv', fileType: 'CSV', fileBase64: Buffer.from('col\nvalue').toString('base64')
+        }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': requestId }
+      }, environmentWithDb({ DB: databaseWithoutBatch, OBJECTS: bucket }));
+
+      const objectKey = String(put.mock.calls[0]?.[0]);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toMatchObject({ message: D1_ROUTE_MESSAGES.atomicBatchUnavailable });
+      expect(deleteObject).toHaveBeenCalledWith(objectKey);
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 0 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata').first()).resolves.toEqual({ total: 0 });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionUploadPersist,
+        operation: D1_LOG_ACTIONS.ingestionUploadPersist,
+        requestId,
+        tenantId: 'TNT-1',
+        documentId: expect.any(String),
+        statementCount: 3
+      }), expect.any(Error));
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM R2ObjectCleanupOutbox').first()).resolves.toEqual({ total: 1 });
     });
 
     it.each([
@@ -1317,7 +1363,7 @@ describe('Cloudflare worker core routes', () => {
       expect(untouched).toEqual({ amount_inr: null, issue_flag: 'Currency Review', resolved: 0 });
     });
 
-    it('keeps remediation working when the D1 adapter does not expose batch', async () => {
+    it('keeps a single-record remediation working when the D1 adapter does not expose batch', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
         ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
@@ -1335,6 +1381,80 @@ describe('Cloudflare worker core routes', () => {
 
       expect(data).toMatchObject({ updatedCount: 1, skippedCount: 0 });
       expect(persisted).toEqual({ amount_inr: 8500, fx_rate_applied: 85 });
+    });
+
+    it('rejects multi-record remediation before writes when atomic D1 batching is unavailable', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['USD', '2025-06-30', 85, 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-FX-NO-BATCH-1', 'TNT-1', 'PO-NO-BATCH-1', 'Acme', 'First item', 100, 'USD', '2025-06-30', 'Currency Review', 'Review', 0],
+        ['REC-FX-NO-BATCH-2', 'TNT-1', 'PO-NO-BATCH-2', 'Acme', 'Second item', 200, 'USD', '2025-06-30', 'Currency Review', 'Review', 0]
+      ]);
+      fixture.d1.batch = undefined;
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'remediate-no-batch-1';
+
+      const response = await send('/api/ingestion/remediate?tenantId=TNT-1', {
+        method: 'POST', headers: { 'x-request-id': requestId }
+      });
+
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false, message: D1_ROUTE_MESSAGES.atomicBatchUnavailable
+      });
+      await expect(fixture.d1.prepare('SELECT amount_inr, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id IN (?, ?) ORDER BY record_id')
+        .bind('REC-FX-NO-BATCH-1', 'REC-FX-NO-BATCH-2').all()).resolves.toEqual({
+        results: [{ amount_inr: null, fx_rate_applied: null }, { amount_inr: null, fx_rate_applied: null }]
+      });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionRemediation,
+        operation: D1_LOG_ACTIONS.ingestionRemediation,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2,
+        fallback: 'none'
+      }), expect.any(Error));
+    });
+
+    it('logs and preserves validation records when the remediation batch fails', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['USD', 'US Dollar', 'FULL', 'RBI', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['USD', '2025-06-30', 85, 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-FX-BATCH-FAIL-1', 'TNT-1', 'PO-BATCH-FAIL-1', 'Acme', 'First item', 100, 'USD', '2025-06-30', 'Currency Review', 'Review', 0],
+        ['REC-FX-BATCH-FAIL-2', 'TNT-1', 'PO-BATCH-FAIL-2', 'Acme', 'Second item', 200, 'USD', '2025-06-30', 'Currency Review', 'Review', 0]
+      ]);
+      const batchError = new Error('D1 remediation batch failed');
+      fixture.d1.batch = vi.fn(async () => { throw batchError; });
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'remediate-batch-failed-1';
+
+      const response = await send('/api/ingestion/remediate?tenantId=TNT-1', {
+        method: 'POST', headers: { 'x-request-id': requestId }
+      });
+
+      expect(response.status).toBe(500);
+      await expect(fixture.d1.prepare('SELECT amount_inr, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id IN (?, ?) ORDER BY record_id')
+        .bind('REC-FX-BATCH-FAIL-1', 'REC-FX-BATCH-FAIL-2').all()).resolves.toEqual({
+        results: [{ amount_inr: null, fx_rate_applied: null }, { amount_inr: null, fx_rate_applied: null }]
+      });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicWriteFailed, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionRemediation,
+        operation: D1_LOG_ACTIONS.ingestionRemediation,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2
+      }), batchError);
     });
 
     it('reports zero updates when there are no validation records to remediate', async () => {
@@ -1461,6 +1581,128 @@ describe('Cloudflare worker core routes', () => {
       expect((((await bodyOf(response)).data) as Array<{ doc_id: string }>).map((row) => row.doc_id)).toEqual(['DOC-2']);
     });
 
+    it('matches object keys only when the exact document id is followed by its separator', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
+        ['DOC-1', 'TNT-1', 'one.csv', '2026-01-01T00:00:00Z'],
+        ['DOC-10', 'TNT-1', 'ten.csv', '2026-01-02T00:00:00Z']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+        ['DOC-1_one.csv', 'TNT-1', 'one.csv', 'text/csv', 3, 'hash-one', 'consulting-docs'],
+        ['DOC-10_ten.csv', 'TNT-1', 'ten.csv', 'text/csv', 3, 'hash-ten', 'consulting-docs'],
+        ['DOC-1x_extra.csv', 'TNT-1', 'extra.csv', 'text/csv', 3, 'hash-extra', 'consulting-docs'],
+        ['prefix_DOC-1_extra.csv', 'TNT-1', 'prefixed.csv', 'text/csv', 3, 'hash-prefixed', 'consulting-docs']
+      ]);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject };
+
+      const response = await send('/api/ingestion/document/DOC-1?tenantId=TNT-1', { method: 'DELETE' }, environmentWithDb({ OBJECTS: bucket }));
+
+      expect(response.status).toBe(200);
+      expect(deleteObject).toHaveBeenCalledExactlyOnceWith('DOC-1_one.csv');
+      await expect(fixture.d1.prepare('SELECT doc_id FROM RawDocumentIngestion ORDER BY doc_id').all()).resolves.toEqual({
+        results: [{ doc_id: 'DOC-10' }]
+      });
+      await expect(fixture.d1.prepare('SELECT object_key FROM ObjectMetadata ORDER BY object_key').all()).resolves.toEqual({
+        results: [
+          { object_key: 'DOC-10_ten.csv' },
+          { object_key: 'DOC-1x_extra.csv' },
+          { object_key: 'prefix_DOC-1_extra.csv' }
+        ]
+      });
+    });
+
+    it.each([
+      ['document deletion', '/api/ingestion/document/DOC-ATOMIC?tenantId=TNT-1', 'DELETE', D1_LOG_ACTIONS.ingestionDelete],
+      ['tenant reset', '/api/ingestion/reset?tenantId=TNT-1', 'POST', D1_LOG_ACTIONS.ingestionReset]
+    ])('fails closed before %s side effects when D1 batching is unavailable', async (_label, path, method, action) => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
+        ['DOC-ATOMIC', 'TNT-1', 'atomic.csv', '2026-01-01T00:00:00Z']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+        ['DOC-ATOMIC_atomic.csv', 'TNT-1', 'atomic.csv', 'text/csv', 5, 'hash', 'consulting-docs']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ProcurementTransaction (transaction_id, tenant_id, source_document_id, supplier_name, currency, raw_json) VALUES (?, ?, ?, ?, ?, ?)', [
+        ['DOC-ATOMIC-ROW-1', 'TNT-1', 'DOC-ATOMIC', 'Supplier A', 'INR', '{}']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc) VALUES (?, ?, ?, ?, ?)', [
+        ['REC-DOC-ATOMIC-ROW-1', 'TNT-1', 'PO-1', 'Supplier A', 'Item A']
+      ]);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject };
+      const databaseWithoutBatch = { prepare: (sql: string) => fixture.d1.prepare(sql) };
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = `ingestion-${method.toLowerCase()}-no-batch-1`;
+
+      const response = await send(path, { method, headers: { 'x-request-id': requestId } },
+        environmentWithDb({ DB: databaseWithoutBatch, OBJECTS: bucket }));
+
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      expect(deleteObject).not.toHaveBeenCalled();
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion WHERE doc_id = ?').bind('DOC-ATOMIC').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata WHERE object_key = ?').bind('DOC-ATOMIC_atomic.csv').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ProcurementTransaction WHERE source_document_id = ?').bind('DOC-ATOMIC').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ValidationPreCheckRecord WHERE record_id = ?')
+        .bind('REC-DOC-ATOMIC-ROW-1').first()).resolves.toEqual({ total: 1 });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicBatchUnavailable, expect.objectContaining({
+        action,
+        operation: action,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 5,
+        fallback: 'none'
+      }), expect.any(Error));
+    });
+
+    it('rolls back linked D1 deletes and leaves R2 untouched when a document delete batch fails', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
+        ['DOC-ROLLBACK', 'TNT-1', 'rollback.csv', '2026-01-01T00:00:00Z']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+        ['DOC-ROLLBACK_rollback.csv', 'TNT-1', 'rollback.csv', 'text/csv', 5, 'hash', 'consulting-docs']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ProcurementTransaction (transaction_id, tenant_id, source_document_id, supplier_name, currency, raw_json) VALUES (?, ?, ?, ?, ?, ?)', [
+        ['DOC-ROLLBACK-ROW-1', 'TNT-1', 'DOC-ROLLBACK', 'Supplier A', 'INR', '{}']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc) VALUES (?, ?, ?, ?, ?)', [
+        ['REC-DOC-ROLLBACK-ROW-1', 'TNT-1', 'PO-1', 'Supplier A', 'Item A']
+      ]);
+      fixture.db.exec(`CREATE TRIGGER reject_ingestion_validation_delete BEFORE DELETE ON ValidationPreCheckRecord
+        WHEN OLD.record_id = 'REC-DOC-ROLLBACK-ROW-1' BEGIN SELECT RAISE(ABORT, 'validation delete rejected'); END`);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = { put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject };
+      const errorLog = vi.spyOn(logger, 'error');
+      const requestId = 'ingestion-delete-batch-failed-1';
+
+      const response = await send('/api/ingestion/document/DOC-ROLLBACK?tenantId=TNT-1', {
+        method: 'DELETE', headers: { 'x-request-id': requestId }
+      }, environmentWithDb({ OBJECTS: bucket }));
+
+      expect(response.status).toBe(500);
+      expect(deleteObject).not.toHaveBeenCalled();
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion WHERE doc_id = ?').bind('DOC-ROLLBACK').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata WHERE object_key = ?').bind('DOC-ROLLBACK_rollback.csv').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ProcurementTransaction WHERE source_document_id = ?').bind('DOC-ROLLBACK').first())
+        .resolves.toEqual({ total: 1 });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ValidationPreCheckRecord WHERE record_id = ?')
+        .bind('REC-DOC-ROLLBACK-ROW-1').first()).resolves.toEqual({ total: 1 });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.atomicWriteFailed, expect.objectContaining({
+        action: D1_LOG_ACTIONS.ingestionDelete,
+        operation: D1_LOG_ACTIONS.ingestionDelete,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 5
+      }), expect.any(Error));
+    });
+
     it('refuses a document delete with an empty identifier and keeps every row', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
@@ -1514,14 +1756,43 @@ describe('Cloudflare worker core routes', () => {
       });
       expect(deleteObject).toHaveBeenCalledWith('tenant/TNT-1/reset.csv');
       expect(warning).toHaveBeenCalledWith(
-        'Failed to remove a tenant object during ingestion reset; metadata cleanup will continue',
-        { tenantId: 'TNT-1', objectKey: 'tenant/TNT-1/reset.csv' },
+        R2_CLEANUP_LOG_MESSAGES.objectDeleteFailed,
+        expect.objectContaining({
+          action: expect.any(String),
+          requestId: response.headers.get('x-request-id'),
+          tenantId: 'TNT-1', cleanupId: expect.any(String), objectKey: 'tenant/TNT-1/reset.csv'
+        }),
         expect.objectContaining({ message: 'R2 unavailable' })
       );
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 0 });
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ObjectMetadata').first()).resolves.toEqual({ total: 0 });
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ProcurementTransaction').first()).resolves.toEqual({ total: 0 });
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM ValidationPreCheckRecord').first()).resolves.toEqual({ total: 0 });
+      await expect(fixture.d1.prepare('SELECT attempt_count FROM R2ObjectCleanupOutbox').first()).resolves.toEqual({ attempt_count: 1 });
+    });
+
+    it('resets only the authorized tenant objects when multiple tenants have metadata', async () => {
+      seedTenant('TNT-1');
+      seedTenant('TNT-2');
+      insertRows(fixture.db,
+        'INSERT INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          ['tenant/TNT-1/reset.csv', 'TNT-1', 'reset.csv', 'text/csv', 5, 'hash-1', 'consulting-docs'],
+          ['tenant/TNT-2/keep.csv', 'TNT-2', 'keep.csv', 'text/csv', 5, 'hash-2', 'consulting-docs']
+        ]);
+      const deleteObject = vi.fn(async () => undefined);
+      const bucket: CloudflareR2Bucket = {
+        put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: deleteObject
+      };
+
+      const response = await send('/api/ingestion/reset?tenantId=TNT-1', { method: 'POST' }, environmentWithDb({ OBJECTS: bucket }));
+
+      expect(response.status).toBe(200);
+      expect(deleteObject).toHaveBeenCalledExactlyOnceWith('tenant/TNT-1/reset.csv');
+      await expect(fixture.d1.prepare('SELECT tenant_id, object_key FROM ObjectMetadata').all())
+        .resolves.toMatchObject({ results: [{ tenant_id: 'TNT-2', object_key: 'tenant/TNT-2/keep.csv' }] });
+      await expect(fixture.d1.prepare('SELECT tenant_id, object_key FROM R2ObjectCleanupOutbox').all())
+        .resolves.toMatchObject({ results: [] });
     });
 
     it('resets an empty tenant ingestion dataset without issuing a document cleanup query', async () => {
@@ -1863,20 +2134,37 @@ describe('Cloudflare worker core routes', () => {
         .toEqual(['Acme Steel']);
     });
 
-    it('updates supplier records when the D1 binding does not support batch writes', async () => {
-      insertRows(fixture.db, 'INSERT INTO VendorYearDetail (id, rank, vendor_name, master_vendor_id, primary_category) VALUES (?, ?, ?, ?, ?)', [
-        ['VD-NO-BATCH', 1, 'Acme Steel Ltd', 'MV-NO-BATCH', 'Steel']
+    it('fails closed without changing either supplier table when atomic D1 batching is unavailable', async () => {
+      insertRows(fixture.db, 'INSERT INTO VendorYearDetail (id, rank, vendor_name, master_vendor_id, primary_category, tenant_id) VALUES (?, ?, ?, ?, ?, ?)', [
+        ['VD-NO-BATCH', 1, 'Acme Steel Ltd', 'MV-NO-BATCH', 'Steel', 'TNT-1']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO VendorPriceRank (vendor_name, master_id, category, tenant_id) VALUES (?, ?, ?, ?)', [
+        ['Acme Steel Ltd', 'MV-NO-BATCH', 'Steel', 'TNT-1']
       ]);
       const databaseWithoutBatch = { prepare: (sql: string) => fixture.d1.prepare(sql) };
+      const errorLog = vi.spyOn(logger, 'error');
 
-      const response = await send('/api/vendors', jsonBody('POST', {
-        targetName: 'Acme Steel Ltd', masterId: 'MV-NO-BATCH', canonicalName: 'Acme Steel'
-      }), runtimeEnvironment({ DB: databaseWithoutBatch }));
+      const requestId = 'vendor-merge-no-batch-1';
+      const response = await send('/api/vendors', {
+        ...jsonBody('POST', { targetName: 'Acme Steel Ltd', masterId: 'MV-NO-BATCH', canonicalName: 'Acme Steel' }),
+        headers: { 'Content-Type': 'application/json', 'x-request-id': requestId, 'x-tenant-id': 'TNT-1' }
+      }, runtimeEnvironment({ DB: databaseWithoutBatch, REQUEST_TENANT_ID: 'TNT-1' }));
 
-      expect(response.status).toBe(200);
-      await expect(bodyOf(response)).resolves.toMatchObject({ success: true, data: { success: true, affected: 1 } });
+      expect(response.status).toBe(503);
+      expect(response.headers.get('x-request-id')).toBe(requestId);
+      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable });
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorYearDetail WHERE id = ?')
-        .bind('VD-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel' });
+        .bind('VD-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel Ltd' });
+      await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorPriceRank WHERE master_id = ?')
+        .bind('MV-NO-BATCH').first()).resolves.toEqual({ vendor_name: 'Acme Steel Ltd' });
+      expect(errorLog).toHaveBeenCalledWith(D1_LOG_MESSAGES.vendorMergeBatchUnavailable, expect.objectContaining({
+        action: D1_LOG_ACTIONS.vendorMergeBatchUnavailable,
+        requestId,
+        tenantId: 'TNT-1',
+        statementCount: 2,
+        writesStarted: false,
+        fallback: D1_LOG_FALLBACKS.failClosed
+      }), expect.any(Error));
     });
 
     it('uses a D1 batch when the binding supports batched supplier updates', async () => {

@@ -30,13 +30,14 @@ import {
 } from './workerD1OrchestrationDerive';
 import {
   buildAuditEvent,
-  compareAndSet,
   countOpenCorrections,
   insertAuditStatement,
+  insertAuditStatementAfterChange,
   insertChecklistStatement,
   insertReportStatement,
   listPcbiGapRows,
   nextReportSequence,
+  runCompareAndSetAtomically,
   runAtomically,
   supersedeReportStatement
 } from './workerD1OrchestrationStore';
@@ -80,7 +81,12 @@ export const recordQualityGate: OrchestrationHandler = async (context) => {
       newState: null,
       metadata: { reportVersionId: reportId, unconfirmedCount, complete }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Quality gate checklist saved', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -156,7 +162,12 @@ export const generateReport: OrchestrationHandler = async (context) => {
       newState: 'ADMIN_REVIEW',
       metadata: { analysisRunId: job.run_id, dataVersionId: job.run_version_id }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Report generated and placed in admin review', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -178,28 +189,30 @@ export const supersedeReport: OrchestrationHandler = async (context) => {
   if (report.workflow_state === 'SUPERSEDED') {
     throw conflictError(ORCHESTRATION_MESSAGES.reportAlreadySuperseded(report.report_version_id));
   }
-  const superseded = await compareAndSet(supersedeReportStatement(
+  const superseded = await runCompareAndSetAtomically(context.database, supersedeReportStatement(
     context.database,
     report.report_version_id,
     context.actor.userId,
     context.runtime.now(),
     body.reason
-  ));
+  ), [insertAuditStatementAfterChange(context.database, buildAuditEvent(context.runtime, {
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    actorId: context.actor.userId,
+    actorRole: 'ADMIN',
+    eventType: ORCHESTRATION_EVENT_TYPES.REPORT_SUPERSEDED,
+    entityType: ORCHESTRATION_ENTITY_TYPES.REPORT_VERSION,
+    entityId: report.report_version_id,
+    previousState: report.workflow_state,
+    newState: 'SUPERSEDED',
+    metadata: { reason: body.reason }
+  }))], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   if (!superseded) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
-  await runAtomically(context.database, [
-    insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
-      tenantId: job.tenant_id,
-      assessmentId: job.assessment_id,
-      actorId: context.actor.userId,
-      actorRole: 'ADMIN',
-      eventType: ORCHESTRATION_EVENT_TYPES.REPORT_SUPERSEDED,
-      entityType: ORCHESTRATION_ENTITY_TYPES.REPORT_VERSION,
-      entityId: report.report_version_id,
-      previousState: report.workflow_state,
-      newState: 'SUPERSEDED',
-      metadata: { reason: body.reason }
-    }))
-  ]);
   logger.info('Report superseded by administrator', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,

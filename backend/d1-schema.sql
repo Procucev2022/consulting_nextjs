@@ -383,7 +383,8 @@ CREATE TABLE IF NOT EXISTS AssessmentDataVersion (
   is_superseded INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_data_version_assessment ON AssessmentDataVersion(assessment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_data_version_assessment_number
+  ON AssessmentDataVersion(assessment_id, version_number);
 
 CREATE TABLE IF NOT EXISTS OrchestrationDatasetCorrection (
   data_version_id TEXT PRIMARY KEY NOT NULL,
@@ -829,6 +830,22 @@ CREATE TABLE IF NOT EXISTS ObjectMetadata (
 );
 
 CREATE INDEX IF NOT EXISTS idx_object_metadata_tenant ON ObjectMetadata(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS R2ObjectCleanupOutbox (
+  cleanup_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+  last_error TEXT,
+  next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (tenant_id, object_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_r2_cleanup_created ON R2ObjectCleanupOutbox(next_attempt_at, created_at, cleanup_id);
+CREATE INDEX IF NOT EXISTS idx_r2_cleanup_tenant_created ON R2ObjectCleanupOutbox(tenant_id, next_attempt_at, created_at, cleanup_id);
 
 CREATE TABLE IF NOT EXISTS PCBICommoditySnapshot (
   pcbi_id TEXT PRIMARY KEY NOT NULL,
@@ -1407,6 +1424,24 @@ END;
 
 CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_object_metadata_update
 BEFORE UPDATE OF tenant_id ON ObjectMetadata
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_r2_object_cleanup_outbox_insert
+BEFORE INSERT ON R2ObjectCleanupOutbox
+WHEN NOT EXISTS (
+  SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
+)
+BEGIN
+  SELECT RAISE(ABORT, 'TENANT_ID_NOT_FOUND');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_tenant_integrity_r2_object_cleanup_outbox_update
+BEFORE UPDATE OF tenant_id ON R2ObjectCleanupOutbox
 WHEN NOT EXISTS (
   SELECT 1 FROM TenantMaster AS tenant WHERE tenant.tenant_id = NEW.tenant_id
 )

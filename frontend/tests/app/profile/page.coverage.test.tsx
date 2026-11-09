@@ -4,7 +4,7 @@ import ProfilePage from '../../../src/app/profile/page';
 import { authApiClient } from '../../../src/utils/authApi';
 import { apiClient } from '../../../src/utils/api';
 import frontendLogger from '../../../src/utils/logger';
-import { UI_STRINGS } from '../../../src/constants';
+import { PASSWORD_MINIMUM_LENGTH, UI_STRINGS } from '../../../src/constants';
 import type { RawDocumentIngestion, TenantMaster, UserProfile } from '../../../src/types';
 
 const mockPush = vi.fn();
@@ -21,11 +21,10 @@ vi.mock('next/image', async () => {
   };
 });
 
-// Labels and storage keys that the page defines inline rather than in UI_STRINGS.
-const DELETE_BUTTON_LABEL = 'Delete';
-const USE_DOCUMENT_BUTTON_LABEL = 'Use this Document';
-const DARK_THEME_TITLE = 'Switch to Dark Theme';
-const LIGHT_THEME_TITLE = 'Switch to Light Theme';
+const DELETE_BUTTON_LABEL = UI_STRINGS.profile.deleteDocument;
+const USE_DOCUMENT_BUTTON_LABEL = UI_STRINGS.profile.useDocument;
+const DARK_THEME_TITLE = UI_STRINGS.profile.themeDarkTitle;
+const LIGHT_THEME_TITLE = UI_STRINGS.profile.themeLightTitle;
 const THEME_STORAGE_KEY = 'procucev_theme';
 const SESSION_TOKEN = 'session-token-123';
 
@@ -267,9 +266,9 @@ describe('ProfilePage coverage', () => {
     await renderProfile();
 
     expect(screen.getByText(DOC_SPARSE.file_name)).toBeInTheDocument();
-    expect(screen.getByText('XLSX')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
-    expect(screen.getByText('INR')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.profile.fileTypeFallback)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.completed)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.profile.fallbackCurrency)).toBeInTheDocument();
   });
 
   it('shows fallback initials and join date for a profile without a name or creation date', async () => {
@@ -280,7 +279,7 @@ describe('ProfilePage coverage', () => {
     render(<ProfilePage />);
 
     expect(await screen.findByText(PROFILE_USER.id)).toBeInTheDocument();
-    expect(screen.getByText('U')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.profile.fallbackInitials)).toBeInTheDocument();
   });
 
   it('keeps the stored profile when the tenant, refresh, and ingestion lookups fail', async () => {
@@ -464,11 +463,14 @@ describe('ProfilePage coverage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.changePasswordButton }));
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.profile.passwordMinimumLengthError(PASSWORD_MINIMUM_LENGTH)
+    );
     expect(authApiClient.changePassword).not.toHaveBeenCalled();
   });
 
   it('shows the service error message when the password change is rejected', async () => {
+    const warningLog = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(authApiClient, 'changePassword').mockRejectedValue(new Error('Current password is incorrect'));
     await renderProfile();
     fireEvent.change(screen.getByLabelText(new RegExp(UI_STRINGS.auth.currentPasswordLabel)), { target: { value: 'wrong' } });
@@ -478,9 +480,15 @@ describe('ProfilePage coverage', () => {
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.changePasswordButton }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Current password is incorrect');
+    expect(warningLog).toHaveBeenCalledWith(
+      'Profile password update failed',
+      expect.objectContaining({ action: 'profile.password.change', fallback: 'caught-error-message' }),
+      expect.any(Error)
+    );
   });
 
   it('shows a generic failure when the password change rejects with a non-Error value', async () => {
+    const warningLog = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(authApiClient, 'changePassword').mockRejectedValue('gateway timeout');
     await renderProfile();
     fireEvent.change(screen.getByLabelText(new RegExp(UI_STRINGS.auth.currentPasswordLabel)), { target: { value: 'old' } });
@@ -489,7 +497,12 @@ describe('ProfilePage coverage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.changePasswordButton }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to change password');
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.profile.passwordChangeFallbackError);
+    expect(warningLog).toHaveBeenCalledWith(
+      'Profile password update failed',
+      expect.objectContaining({ action: 'profile.password.change', fallback: 'localized-guidance' }),
+      'gateway timeout'
+    );
   });
 
   it('shows the pending state while the password change is in flight', async () => {
@@ -580,12 +593,22 @@ describe('ProfilePage coverage', () => {
   });
 
   it('shows a generic message when a document deletion rejects with a non-Error value', async () => {
+    const errorLog = vi.spyOn(frontendLogger, 'error');
     vi.mocked(apiClient.deleteIngestionDocument).mockRejectedValueOnce('connection reset');
     await renderProfile();
 
     fireEvent.click(screen.getAllByRole('button', { name: DELETE_BUTTON_LABEL })[0]);
 
-    expect(await screen.findByText('Failed to delete document')).toBeInTheDocument();
+    expect(await screen.findByText(UI_STRINGS.profile.deleteDocumentFallbackError)).toBeInTheDocument();
+    expect(errorLog).toHaveBeenCalledWith(
+      'Profile ingestion document deletion failed',
+      expect.objectContaining({
+        action: 'profile.ingestion.delete',
+        documentId: DOC_OWN.doc_id,
+        fallback: 'localized-guidance'
+      }),
+      'connection reset'
+    );
   });
 
   it('does not call the delete service for a document without an identifier', async () => {

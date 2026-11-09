@@ -7,6 +7,8 @@ import {
   COMPLIANCE_DISCLOSURES,
   COMPLIANCE_FINANCIAL_LABELS
 } from '../../../src/constants/module2ProcurementCompliance';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { API_REQUEST_ID_HEADER } from '../../../src/constants/app';
 import type {
   ProcurementComplianceExceptionItem,
   ProcurementComplianceResult,
@@ -19,6 +21,7 @@ const ASSESSMENT_ID = 'AIC-2026-0003';
 const SESSION_TOKEN = 'session-token-123';
 const LOAD_URL = `/api/module2/sourcing/procurement-compliance?assessmentId=${ASSESSMENT_ID}`;
 const REVIEW_URL = '/api/module2/sourcing/procurement-compliance/review';
+const REVIEW_STRINGS = UI_STRINGS.module2.procurementComplianceReview;
 const EXPORT_URL_PART = 'procurement-compliance/export-excel';
 const BLOB_URL = 'blob:procurement-compliance-export';
 const AWAITING_ID = 'EXC-AIC-2026-0003-0001';
@@ -174,6 +177,7 @@ function stubLoadOnlyFetch(result: ProcurementComplianceResult = buildResult()):
 
 async function openReviewModalAndSubmit(exceptionId: string, justification: string): Promise<void> {
   fireEvent.click(screen.getByTestId(`compliance-review-btn-${exceptionId}`));
+  await screen.findByTestId('compliance-input-reviewer-name');
   fireEvent.change(screen.getByTestId('compliance-input-reviewer-name'), { target: { value: 'Officer Jane' } });
   fireEvent.change(screen.getByTestId('compliance-input-justification'), { target: { value: justification } });
   await act(async () => {
@@ -271,9 +275,10 @@ describe('ProcurementComplianceView coverage paths', () => {
     expect(screen.getByText(COMPLIANCE_UI_STRINGS.BTN_RETRY)).toBeInTheDocument();
   });
 
-  it('logs the server message when a review submission is rejected with a JSON body', async () => {
+  it('logs safe review context and shows an actionable error when the server rejects a review', async () => {
     const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
-    const fetchMock = vi.fn((url: string) => {
+    const fetchMock = vi.fn((url: string, requestInit?: RequestInit) => {
+      void requestInit;
       if (url === REVIEW_URL) {
         return Promise.resolve({
           ok: false,
@@ -290,23 +295,40 @@ describe('ProcurementComplianceView coverage paths', () => {
 
     await openReviewModalAndSubmit(AWAITING_ID, 'Pricing deviation verified');
 
+    const reviewCall = fetchMock.mock.calls.find(([url]) => url === REVIEW_URL);
+    const requestId = new Headers(reviewCall?.[1]?.headers).get(API_REQUEST_ID_HEADER);
+    expect(requestId).toMatch(/^[A-Za-z0-9._:-]+$/u);
+
     await waitFor(() =>
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          payload: expect.any(Object),
           assessmentId: ASSESSMENT_ID,
+          candidateId: AWAITING_ID,
+          status: 'AWAITING_REVIEW',
+          requestId,
+          statusCode: 409,
           staleRequest: false
         }),
         expect.objectContaining({ message: 'Review lock held by another reviewer' })
       )
     );
-    expect(screen.getByText(COMPLIANCE_UI_STRINGS.BTN_RETRY)).toBeInTheDocument();
+    const reviewLogContext = loggerSpy.mock.calls.find(([message]) => message === 'Failed to submit compliance review')?.[1];
+    expect(reviewLogContext).not.toHaveProperty('payload');
+    expect(JSON.stringify(reviewLogContext)).not.toContain('Officer Jane');
+    expect(JSON.stringify(reviewLogContext)).not.toContain('Pricing deviation verified');
+    expect(screen.getByText(REVIEW_STRINGS.submission.failed(
+      REVIEW_STRINGS.submission.httpStatus(409),
+      'Review lock held by another reviewer',
+      requestId ?? ''
+    ))).toBeInTheDocument();
   });
 
-  it('falls back to the HTTP status when a rejected review response has no readable body', async () => {
+  it('logs response parsing errors and the HTTP status when a review response body is unreadable', async () => {
     const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
-    const fetchMock = vi.fn((url: string) => {
+    const loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    const fetchMock = vi.fn((url: string, requestInit?: RequestInit) => {
+      void requestInit;
       if (url === REVIEW_URL) {
         return Promise.resolve({
           ok: false,
@@ -323,13 +345,56 @@ describe('ProcurementComplianceView coverage paths', () => {
 
     await openReviewModalAndSubmit(AWAITING_ID, 'Pricing deviation verified');
 
+    const reviewCall = fetchMock.mock.calls.find(([url]) => url === REVIEW_URL);
+    const requestId = new Headers(reviewCall?.[1]?.headers).get(API_REQUEST_ID_HEADER);
+
     await waitFor(() =>
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.any(Object),
-        expect.objectContaining({ message: 'HTTP error 502' })
+        expect.objectContaining({ requestId, statusCode: 502, candidateId: AWAITING_ID }),
+        expect.objectContaining({ message: REVIEW_STRINGS.submission.serverDidNotProvideDetails })
       )
     );
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      'Compliance review failure response could not be parsed',
+      expect.objectContaining({ requestId, statusCode: 502, candidateId: AWAITING_ID }),
+      expect.objectContaining({ message: 'Unexpected end of JSON input' })
+    );
+    expect(screen.getByText(REVIEW_STRINGS.submission.failed(
+      REVIEW_STRINGS.submission.httpStatus(502),
+      REVIEW_STRINGS.submission.serverDidNotProvideDetails,
+      requestId ?? ''
+    ))).toBeInTheDocument();
+  });
+
+  it('logs the correlation id and gives recovery steps when review submission has no response', async () => {
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const fetchMock = vi.fn((url: string, requestInit?: RequestInit) => {
+      void requestInit;
+      if (url === REVIEW_URL) return Promise.reject(new TypeError('Failed to fetch'));
+      return jsonResponse({ success: true, data: buildResult() });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ProcurementComplianceView assessmentId={ASSESSMENT_ID} />);
+    await waitFor(() => expect(screen.getByTestId(`compliance-review-btn-${AWAITING_ID}`)).toBeInTheDocument());
+    await openReviewModalAndSubmit(AWAITING_ID, 'Pricing deviation verified');
+
+    const reviewCall = fetchMock.mock.calls.find(([url]) => url === REVIEW_URL);
+    const requestId = new Headers(reviewCall?.[1]?.headers).get(API_REQUEST_ID_HEADER);
+    expect(requestId).toMatch(/^[A-Za-z0-9._:-]+$/u);
+    await waitFor(() =>
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Failed to submit compliance review',
+        expect.objectContaining({ requestId, statusCode: null, candidateId: AWAITING_ID, staleRequest: false }),
+        expect.objectContaining({ message: 'Failed to fetch' })
+      )
+    );
+    expect(screen.getByText(REVIEW_STRINGS.submission.failed(
+      REVIEW_STRINGS.submission.networkFailureDetail,
+      'Failed to fetch',
+      requestId ?? ''
+    ))).toBeInTheDocument();
   });
 
   it('falls back to the total expenditure and zero values when optional KPI totals are missing', async () => {

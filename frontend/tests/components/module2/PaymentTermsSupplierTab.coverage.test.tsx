@@ -6,6 +6,11 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { PaymentTermsSupplierTab } from '../../../src/components/module2/PaymentTermsSupplierTab';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import {
+  PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT,
+  PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT
+} from '../../../src/constants/module2PaymentTerms';
 import type {
   PaymentTermsRecordCoverage,
   SupplierPaymentTermsProfile
@@ -119,23 +124,29 @@ describe('PaymentTermsSupplierTab coverage', () => {
 
     expect(screen.getAllByRole('row')).toHaveLength(SUPPLIERS.length + 1);
     expect(within(getRow('Acme Fibers Ltd')).getByText('Net 30, Net 45')).toBeInTheDocument();
-    expect(within(getRow('Acme Fibers Ltd')).getByText('38d')).toBeInTheDocument();
-    expect(within(getRow('Acme Fibers Ltd')).getByText('OPPORTUNITY_IDENTIFIED')).toBeInTheDocument();
-    expect(within(getRow('Coastal Logistics Pvt Ltd')).getByText('DATA_PARTIALLY_AVAILABLE')).toBeInTheDocument();
-    expect(within(getRow('Bharat Packaging Co')).getByText('DATA_UNAVAILABLE')).toBeInTheDocument();
+    expect(within(getRow('Acme Fibers Ltd')).getByText(UI_STRINGS.module2.paymentTerms.creditDays(38))).toBeInTheDocument();
+    expect(within(getRow('Acme Fibers Ltd')).getByText(
+      UI_STRINGS.module2.paymentTerms.availabilityLabels.OPPORTUNITY_IDENTIFIED
+    )).toBeInTheDocument();
+    expect(within(getRow('Coastal Logistics Pvt Ltd')).getByText(
+      UI_STRINGS.module2.paymentTerms.availabilityLabels.DATA_PARTIALLY_AVAILABLE
+    )).toBeInTheDocument();
+    expect(within(getRow('Bharat Packaging Co')).getByText(
+      UI_STRINGS.module2.paymentTerms.availabilityLabels.DATA_UNAVAILABLE
+    )).toBeInTheDocument();
   });
 
   it('shows placeholders for a supplier with no observed terms and no credit days', () => {
     render(<PaymentTermsSupplierTab supplierProfiles={SUPPLIERS} coverageRecords={RECORDS} />);
 
     const row = getRow('Bharat Packaging Co');
-    expect(within(row).getByText('Not Found in Source Data')).toBeInTheDocument();
-    expect(within(row).getByText('—')).toBeInTheDocument();
+    expect(within(row).getByText(UI_STRINGS.module2.paymentTerms.observedTermsUnavailable)).toBeInTheDocument();
+    expect(within(row).getByText(UI_STRINGS.module2.paymentTerms.creditDaysUnavailable)).toBeInTheDocument();
   });
 
   it('filters suppliers by name, supplier code, or spend category', () => {
     render(<PaymentTermsSupplierTab supplierProfiles={SUPPLIERS} coverageRecords={RECORDS} />);
-    const search = screen.getByRole('textbox');
+    const search = screen.getByPlaceholderText(UI_STRINGS.module2.paymentTerms.supplierSearchPlaceholder);
 
     fireEvent.change(search, { target: { value: 'coastal' } });
     expect(screen.getAllByRole('row')).toHaveLength(2);
@@ -158,19 +169,27 @@ describe('PaymentTermsSupplierTab coverage', () => {
     openTransactionRegister();
 
     expect(screen.getAllByRole('row')).toHaveLength(RECORDS.length + 1);
-    expect(within(getRow('PO-1001')).getByText('COMPLETE')).toBeInTheDocument();
-    expect(within(getRow('PO-1002')).getByText('PARTIAL')).toBeInTheDocument();
-    expect(within(getRow('PO-1003')).getByText('MISSING')).toBeInTheDocument();
+    expect(within(getRow('PO-1001')).getByText(
+      UI_STRINGS.module2.paymentTerms.coverageStatusLabels.COMPLETE
+    )).toBeInTheDocument();
+    expect(within(getRow('PO-1002')).getByText(
+      UI_STRINGS.module2.paymentTerms.coverageStatusLabels.PARTIAL
+    )).toBeInTheDocument();
+    expect(within(getRow('PO-1003')).getByText(
+      UI_STRINGS.module2.paymentTerms.coverageStatusLabels.MISSING
+    )).toBeInTheDocument();
     expect(within(getRow('PO-1002')).getByText('INCONSISTENT_HEADER_AND_LINE_TERMS')).toBeInTheDocument();
     expect(within(getRow('PO-1003')).getByText('FIELD_NOT_IN_SOURCE_ERP')).toBeInTheDocument();
-    expect(within(getRow('PO-1002')).getByText('MISSING IN ERP')).toBeInTheDocument();
-    expect(within(getRow('PO-1001')).getByText('None (Verified)')).toBeInTheDocument();
+    expect(within(getRow('PO-1002')).getByText(UI_STRINGS.module2.paymentTerms.paymentTermsMissingInErp))
+      .toBeInTheDocument();
+    expect(within(getRow('PO-1001')).getByText(UI_STRINGS.module2.paymentTerms.verifiedCoverageGapNone))
+      .toBeInTheDocument();
   });
 
   it('filters the transaction register by PO number or vendor name', () => {
     render(<PaymentTermsSupplierTab supplierProfiles={SUPPLIERS} coverageRecords={RECORDS} />);
     openTransactionRegister();
-    const search = screen.getByRole('textbox');
+    const search = screen.getByPlaceholderText(UI_STRINGS.module2.paymentTerms.supplierSearchPlaceholder);
 
     fireEvent.change(search, { target: { value: 'PO-1002' } });
     expect(screen.getAllByRole('row')).toHaveLength(2);
@@ -192,13 +211,42 @@ describe('PaymentTermsSupplierTab coverage', () => {
   });
 
   it('caps the transaction register at the first 100 records', () => {
-    const many = Array.from({ length: 120 }, (_, index) =>
+    const many = Array.from({ length: PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT + 20 }, (_, index) =>
       buildRecord({ recordId: `TX-${index}`, poNumber: `PO-${index}` })
     );
     render(<PaymentTermsSupplierTab supplierProfiles={SUPPLIERS} coverageRecords={many} />);
 
     openTransactionRegister();
 
-    expect(screen.getAllByRole('row')).toHaveLength(101);
+    expect(screen.getAllByRole('row')).toHaveLength(PAYMENT_TERMS_TRANSACTION_PREVIEW_LIMIT + 1);
+  });
+
+  it('limits visible supplier profiles to the configured preview size', () => {
+    const many = Array.from({ length: PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT + 5 }, (_, index) => ({
+      ...SUPPLIERS[0],
+      supplierCode: `V-${index}`,
+      supplierName: `Supplier ${index}`
+    }));
+    render(<PaymentTermsSupplierTab supplierProfiles={many} coverageRecords={RECORDS} />);
+
+    expect(screen.getAllByRole('row')).toHaveLength(PAYMENT_TERMS_SUPPLIER_PREVIEW_LIMIT + 1);
+  });
+
+  it('renders control labels and supplier/transaction headers from the centralized catalog', () => {
+    render(<PaymentTermsSupplierTab supplierProfiles={SUPPLIERS} coverageRecords={RECORDS} />);
+
+    const paymentTerms = UI_STRINGS.module2.paymentTerms;
+    expect(screen.getByRole('button', { name: paymentTerms.supplierProfilesButton(SUPPLIERS.length) }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: paymentTerms.transactionRegisterButton })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(paymentTerms.supplierSearchPlaceholder)).toBeInTheDocument();
+    Object.values(paymentTerms.supplierHeaders).forEach((header) => {
+      expect(screen.getByText(header)).toBeInTheDocument();
+    });
+
+    openTransactionRegister();
+    Object.values(paymentTerms.transactionHeaders).forEach((header) => {
+      expect(screen.getByText(header)).toBeInTheDocument();
+    });
   });
 });

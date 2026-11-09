@@ -19,6 +19,7 @@ import {
 import { PCBI_HISTORICAL_QUERY_DEFAULT_LIMIT, PCBI_HISTORICAL_QUERY_MAX_LIMIT } from './pcbiHistorical';
 
 export const WORKER_JSON_BODY_MAX_BYTES = 1024 * 1024;
+export const REQUEST_ID_HEADER = 'x-request-id';
 
 export const clientErrorReportSchema = z.object({
   level: z.enum(['warn', 'error']),
@@ -97,7 +98,7 @@ export const vendorConsolidationQuerySchema = z.object({
 });
 
 export const requestHeadersSchema = z.object({
-  'x-request-id': z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/u).optional(),
+  [REQUEST_ID_HEADER]: z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/u).optional(),
   'content-type': z.string().optional(),
   authorization: z.string().optional()
 }).passthrough();

@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import { PaymentTermsCoverageTab } from '../../../src/components/module2/PaymentTermsCoverageTab';
 import {
   PAYMENT_TERMS_DATA_GAP_DESCRIPTIONS,
@@ -58,9 +59,10 @@ describe('PaymentTermsCoverageTab coverage', () => {
   it('shows the verified and missing spend split from the summary', () => {
     render(<PaymentTermsCoverageTab coverageSummary={buildCoverageSummary({})} />);
 
-    expect(screen.getByText(/37\.50%/)).toBeInTheDocument();
-    expect(screen.getByText(/₹37\.5000 Cr/)).toBeInTheDocument();
-    expect(screen.getByText(/₹62\.5000 Cr/)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coveragePercentages('37.50', '62.50')))
+      .toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageVerifiedSpend('37.5000'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageMissingSpend('62.5000'))).toBeInTheDocument();
   });
 
   it('uses the gap code as its description when no description is defined, and a zero share with no records', () => {
@@ -82,11 +84,34 @@ describe('PaymentTermsCoverageTab coverage', () => {
 
     expect(screen.getAllByRole('row')).toHaveLength(2);
     expect(screen.queryByText(PAYMENT_TERMS_DATA_GAP_DESCRIPTIONS.FIELD_NOT_IN_SOURCE_ERP)).not.toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.coverageEmptyGaps)).toBeInTheDocument();
   });
 
   it('treats a missing gap reason map as empty', () => {
     render(<PaymentTermsCoverageTab coverageSummary={buildCoverageSummary({ gapReasonCounts: undefined })} />);
 
     expect(screen.getAllByRole('row')).toHaveLength(2);
+  });
+
+  it('renders labels and helper copy from the centralized Payment Terms catalog', () => {
+    render(<PaymentTermsCoverageTab coverageSummary={buildCoverageSummary({})} />);
+
+    const paymentTerms = UI_STRINGS.module2.paymentTerms;
+    [
+      paymentTerms.coverageCompleteRecordsLabel,
+      paymentTerms.coverageCompleteRecordsDescription,
+      paymentTerms.coveragePartialRecordsLabel,
+      paymentTerms.coveragePartialRecordsDescription,
+      paymentTerms.coverageMissingRecordsLabel,
+      paymentTerms.coverageMissingRecordsDescription,
+      paymentTerms.coverageRequiringValidationLabel,
+      paymentTerms.coverageRequiringValidationDescription,
+      paymentTerms.coverageHeading,
+      paymentTerms.coverageGapTableTitle,
+      paymentTerms.coverageGapClassificationHeader,
+      paymentTerms.coverageGapDescriptionHeader,
+      paymentTerms.coverageGapAffectedRecordsHeader,
+      paymentTerms.coverageGapShareHeader
+    ].forEach((copy) => expect(screen.getByText(copy)).toBeInTheDocument());
   });
 });

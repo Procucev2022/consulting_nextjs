@@ -7,13 +7,15 @@ import {
   PCBI_EXCLUSION_REASON_CODES,
   PCBI_RESOLUTION_ACTIONS,
   REANALYSIS_REASONS,
-  DEFAULT_QUALITY_GATE_CHECKLIST
+  DEFAULT_QUALITY_GATE_CHECKLIST,
+  SUPERSEDED_REPORT_STATUS
 } from '../../src/constants/analysisOrchestration';
 
 describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
   it('should export correct default SLA and coverage thresholds', () => {
     expect(DEFAULT_SLA_HOURS).toBe(48);
     expect(MIN_SPEND_COVERAGE_FOR_REPORT_PCT).toBe(85.0);
+    expect(SUPERSEDED_REPORT_STATUS).toBe('SUPERSEDED');
   });
 
   it('should export all 13 analysis job statuses', () => {

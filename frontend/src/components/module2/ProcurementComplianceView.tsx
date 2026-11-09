@@ -2,19 +2,27 @@
 import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Download, ArrowLeft, AlertTriangle, Search } from 'lucide-react';
 import type {
   ProcurementComplianceViewProps,
   ProcurementComplianceResult,
   ProcurementComplianceExceptionItem,
-  ProcurementComplianceReviewPayload
+  ProcurementComplianceReviewPayload,
+  ProcurementComplianceReviewErrorResponse
 } from '../../types/module2ProcurementCompliance';
 import { COMPLIANCE_UI_STRINGS } from '../../constants/module2ProcurementCompliance';
-import { ProcurementComplianceReviewModal } from './ProcurementComplianceReviewModal';
 import { ProcurementComplianceTable } from './ProcurementComplianceTable';
 import { logger } from '../../utils/logger';
 import { authApiClient } from '../../utils/authApi';
 import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
+import { API_REQUEST_ID_HEADER } from '../../constants/app';
+import { UI_STRINGS } from '../../constants/uiStrings';
+import { createClientRequestId } from '../../utils/requestId';
+
+const ProcurementComplianceReviewModal = dynamic(() =>
+  import('./ProcurementComplianceReviewModal').then((module) => module.ProcurementComplianceReviewModal)
+);
 
 export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps> = ({
   assessmentId = '',
@@ -77,36 +85,64 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
   }, [loadData, invalidateRequests]);
 
   const handleReviewSubmit = async (payload: ProcurementComplianceReviewPayload): Promise<void> => {
-    const requestId = beginReviewRequest();
+    const reviewSequenceId = beginReviewRequest();
+    const requestId = createClientRequestId();
     const submittedAssessmentId = assessmentId;
+    let statusCode: number | null = null;
     setIsSubmittingReview(true);
     try {
       const token = authApiClient.getStoredToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        [API_REQUEST_ID_HEADER]: requestId
+      };
       if (token) headers.Authorization = `Bearer ${token}`;
       const res = await apiFetch('/api/module2/sourcing/procurement-compliance/review', {
         method: 'POST',
         headers,
         body: JSON.stringify({ ...payload, assessmentId })
       });
+      statusCode = res.status;
       if (!res.ok) {
-        const errorJson = (await res.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(errorJson?.message || `HTTP error ${res.status}`);
+        const errorJson = (await res.json().catch((responseError: unknown) => {
+          logger.warn('Compliance review failure response could not be parsed', {
+            action: 'compliance.review.error-response.parse',
+            assessmentId: submittedAssessmentId,
+            candidateId: payload.candidateId,
+            requestId,
+            statusCode
+          }, responseError);
+          return null;
+        })) as ProcurementComplianceReviewErrorResponse | null;
+        throw new Error(
+          errorJson?.message || UI_STRINGS.module2.procurementComplianceReview.submission.serverDidNotProvideDetails
+        );
       }
-      if (!isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId) return;
+      if (!isCurrentReviewRequest(reviewSequenceId) || activeAssessmentIdRef.current !== submittedAssessmentId) return;
       setIsReviewModalOpen(false);
       await loadData();
     } catch (err) {
+      const staleRequest =
+        !isCurrentReviewRequest(reviewSequenceId) || activeAssessmentIdRef.current !== submittedAssessmentId;
+      const failureDetail = err instanceof Error
+        ? err.message
+        : UI_STRINGS.module2.procurementComplianceReview.validation.submissionFailureFallback;
       logger.error('Failed to submit compliance review', {
         assessmentId: submittedAssessmentId,
-        payload,
-        staleRequest: !isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId
+        candidateId: payload.candidateId,
+        status: payload.status,
+        requestId,
+        statusCode,
+        staleRequest
       }, err);
-      if (!isCurrentReviewRequest(requestId) || activeAssessmentIdRef.current !== submittedAssessmentId) return;
-      setError('Failed to record review decision.');
+      if (staleRequest) return;
+      const statusDetail = statusCode === null
+        ? UI_STRINGS.module2.procurementComplianceReview.submission.networkFailureDetail
+        : UI_STRINGS.module2.procurementComplianceReview.submission.httpStatus(statusCode);
+      setError(UI_STRINGS.module2.procurementComplianceReview.submission.failed(statusDetail, failureDetail, requestId));
       throw err;
     } finally {
-      if (isCurrentReviewRequest(requestId) && activeAssessmentIdRef.current === submittedAssessmentId) {
+      if (isCurrentReviewRequest(reviewSequenceId) && activeAssessmentIdRef.current === submittedAssessmentId) {
         setIsSubmittingReview(false);
       }
     }

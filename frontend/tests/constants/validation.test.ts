@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   apiRequestIdSchema,
+  assessmentIdQuerySchema,
+  paymentTermsResponseSchema,
   headerTenantSchema,
   headerCurrencySchema,
   d1CurrencyRatesResponseSchema,
@@ -47,6 +49,44 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
     expect(apiRequestIdSchema.safeParse('client_123.request-1').success).toBe(true);
     expect(apiRequestIdSchema.safeParse('invalid request id').success).toBe(false);
     expect(apiRequestIdSchema.safeParse('x'.repeat(129)).success).toBe(false);
+  });
+
+  it('trims and bounds assessment IDs before Module 2 API requests', () => {
+    expect(assessmentIdQuerySchema.parse({ assessmentId: ' AIC-2026-0001 ' })).toEqual({
+      assessmentId: 'AIC-2026-0001'
+    });
+    expect(assessmentIdQuerySchema.safeParse({ assessmentId: ' ' }).success).toBe(false);
+    expect(assessmentIdQuerySchema.safeParse({ assessmentId: 'A'.repeat(121) }).success).toBe(false);
+  });
+
+  it('validates the payment-terms response envelope and required coverage metrics', () => {
+    const coverageSummary = {
+      assessmentId: 'AIC-2026-0002', totalSpendAnalysedInr: 100, totalSpendAnalysedCr: 1,
+      verifiedSpendInr: 50, verifiedSpendCr: 0.5, missingSpendInr: 50, missingSpendCr: 0.5,
+      verifiedSpendPct: 50, missingSpendPct: 50, totalRecordsCount: 2, completeRecordsCount: 1,
+      partialRecordsCount: 0, missingRecordsCount: 1, recordsRequiringValidationCount: 0,
+      gapReasonCounts: { FIELD_NOT_IN_SOURCE_ERP: 1 }, overallDataAvailabilityStatus: 'DATA_PARTIALLY_AVAILABLE',
+      overallStatusDisplayText: 'Data partially available', reconciliationDeltaInr: 0,
+      procucevModellingRatePctPer30Days: 1.5, totalWorkingCapitalReleasedCr: 0.1,
+      totalFinancingBenefitCr: 0.01, totalEarlyPaymentDiscountsCr: 0
+    };
+    const response = {
+      success: true,
+      data: {
+        assessmentId: 'AIC-2026-0002', coverageSummary, opportunities: [], supplierProfiles: [],
+        coverageRecords: [], methodologyDisclosures: ['Verified from source records']
+      }
+    };
+    expect(paymentTermsResponseSchema.safeParse(response).success).toBe(true);
+    expect(paymentTermsResponseSchema.safeParse({ ...response, success: false }).success).toBe(false);
+    expect(paymentTermsResponseSchema.safeParse({
+      ...response,
+      data: { ...response.data, coverageSummary: { ...coverageSummary, totalRecordsCount: -1 } }
+    }).success).toBe(false);
+    expect(paymentTermsResponseSchema.safeParse({
+      ...response,
+      data: { ...response.data, coverageRecords: [null] }
+    }).success).toBe(false);
   });
 
   it('keeps the browser ingestion limit aligned with the Worker upload cap', () => {

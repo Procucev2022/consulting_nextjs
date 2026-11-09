@@ -34,11 +34,12 @@ import {
   buildAuditEvent,
   buildNotificationInput,
   buildNotificationRow,
-  compareAndSet,
-  insertAcknowledgementStatement,
+  insertAcknowledgementStatementAfterChange,
   insertAuditStatement,
+  insertAuditStatementAfterChange,
   insertCorrectionStatement,
   insertNotificationStatement,
+  runCompareAndSetAtomically,
   runAtomically,
   viewReportStatement
 } from './workerD1OrchestrationStore';
@@ -54,12 +55,9 @@ export const recordCustomerView: OrchestrationHandler = async (context) => {
   if (report.workflow_state !== 'SUBMITTED_TO_CUSTOMER') {
     throw conflictError(ORCHESTRATION_MESSAGES.reportNotVisible(report.report_version_id, report.workflow_state));
   }
-  const viewed = await compareAndSet(
-    viewReportStatement(context.database, report.report_version_id, context.runtime.now())
-  );
-  if (!viewed) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
-  await runAtomically(context.database, [
-    insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
+  const viewed = await runCompareAndSetAtomically(context.database,
+    viewReportStatement(context.database, report.report_version_id, context.runtime.now()),
+    [insertAuditStatementAfterChange(context.database, buildAuditEvent(context.runtime, {
       tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
       actorId: context.actor.userId,
@@ -70,8 +68,13 @@ export const recordCustomerView: OrchestrationHandler = async (context) => {
       previousState: 'SUBMITTED_TO_CUSTOMER',
       newState: 'CUSTOMER_VIEWED',
       metadata: null
-    }))
-  ]);
+    }))], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
+  if (!viewed) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   logger.info('Customer viewed submitted report', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -117,26 +120,30 @@ export const acknowledgeReport: OrchestrationHandler = async (context) => {
   const job = await loadAccessibleJob(context, context.params.jobId);
   const report = await loadReportForJob(context.database, job, body.reportVersionId);
   assertAcknowledgeable(report);
-  const acknowledged = await compareAndSet(
-    acknowledgeReportStatement(context.database, report.report_version_id, context.runtime.now())
-  );
-  if (!acknowledged) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   const acknowledgement = buildAcknowledgement(context, job, report.report_version_id, body.notes);
-  await runAtomically(context.database, [
-    insertAcknowledgementStatement(context.database, acknowledgement),
-    insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
+  const acknowledged = await runCompareAndSetAtomically(context.database,
+    acknowledgeReportStatement(context.database, report.report_version_id, context.runtime.now()),
+    [
+      insertAcknowledgementStatementAfterChange(context.database, acknowledgement),
+      insertAuditStatementAfterChange(context.database, buildAuditEvent(context.runtime, {
+        tenantId: job.tenant_id,
+        assessmentId: job.assessment_id,
+        actorId: context.actor.userId,
+        actorRole: 'CUSTOMER',
+        eventType: ORCHESTRATION_EVENT_TYPES.REPORT_ACKNOWLEDGED,
+        entityType: ORCHESTRATION_ENTITY_TYPES.ACKNOWLEDGEMENT,
+        entityId: acknowledgement.acknowledgement_id,
+        previousState: 'CUSTOMER_VIEWED',
+        newState: 'CUSTOMER_ACKNOWLEDGED',
+        metadata: { reportVersionId: report.report_version_id }
+      }))
+    ], {
+      requestId: context.requestId,
       tenantId: job.tenant_id,
       assessmentId: job.assessment_id,
-      actorId: context.actor.userId,
-      actorRole: 'CUSTOMER',
-      eventType: ORCHESTRATION_EVENT_TYPES.REPORT_ACKNOWLEDGED,
-      entityType: ORCHESTRATION_ENTITY_TYPES.ACKNOWLEDGEMENT,
-      entityId: acknowledgement.acknowledgement_id,
-      previousState: 'CUSTOMER_VIEWED',
-      newState: 'CUSTOMER_ACKNOWLEDGED',
-      metadata: { reportVersionId: report.report_version_id }
-    }))
-  ]);
+      action: context.url.pathname
+    });
+  if (!acknowledged) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
   logger.info('Customer acknowledged report', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -202,7 +209,12 @@ export const requestCorrection: OrchestrationHandler = async (context) => {
       newState: 'OPEN',
       metadata: { category: body.category }
     }))
-  ]);
+  ], {
+    requestId: context.requestId,
+    tenantId: job.tenant_id,
+    assessmentId: job.assessment_id,
+    action: context.url.pathname
+  });
   logger.info('Customer requested analysis correction', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,

@@ -43,8 +43,13 @@ export interface CloudflareR2Object {
   httpEtag?: string;
 }
 
+export interface CloudflareRateLimiter {
+  limit(input: { key: string }): Promise<{ success: boolean }>;
+}
+
 export interface CloudflareEnvironment {
   DB?: CloudflareD1Database;
+  CLIENT_ERROR_RATE_LIMITER?: CloudflareRateLimiter;
   REQUEST_TENANT_ID?: string;
   REQUEST_USER_ID?: string;
   REQUEST_USER_ROLE?: string;
@@ -81,4 +86,10 @@ export interface AuthRouteResult {
 export interface CloudflareExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
+}
+
+export interface CloudflareScheduledController {
+  scheduledTime: number;
+  cron: string;
+  noRetry?: boolean;
 }

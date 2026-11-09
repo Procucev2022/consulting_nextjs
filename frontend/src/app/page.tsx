@@ -59,12 +59,24 @@ import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { INR_CRORES_DIVISOR } from '@/constants/currency';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
-import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
+import { DEFAULT_PIPELINE_TAB, UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
 import { EMPTY_TENANT } from '@/constants/app';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '@/constants/validation';
+import {
+  DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+  INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+  INGESTION_RECORD_COUNT_FALLBACK_MESSAGE
+} from '@/constants/ingestion';
+import { createClientRequestId } from '@/utils/requestId';
+import {
+  getInitialPipelineTab,
+  getLockedPipelineTabMessage,
+  getPipelineTabFromHash,
+  resolvePipelineTabForOperatingMode
+} from '@/utils/pipelineNavigation';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -133,15 +145,7 @@ import type {
   RejectedDashboardRequest
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
-
-const SUPERSEDED_REPORT_STATUS: ReportVersion['status'] = 'SUPERSEDED';
-
-// Newest report that has not been superseded. The API lists reports in ascending sequence order, so sort by generation time.
-const selectActiveReport = (reports: ReportVersion[]): ReportVersion | null => {
-  const candidates = reports.filter((report) => report.status !== SUPERSEDED_REPORT_STATUS);
-  const [newest] = [...candidates].sort((a, b) => Date.parse(b.generatedAt) - Date.parse(a.generatedAt));
-  return newest ?? null;
-};
+import { selectActiveReport } from '@/utils/reportSelection';
 
 export default function Home() {
   useUNSPSCTaxonomy();
@@ -169,20 +173,9 @@ export default function Home() {
   });
 
   const [operatingMode, setOperatingMode] = useState<OperatingModeConfig | null>(null);
-  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.replace('#', '');
-      if (['module1', 'module2', 'module3', 'module4', 'assessment'].includes(hash)) {
-        return hash as PipelineActiveTab;
-      }
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab');
-      if (tabParam && ['module1', 'module2', 'module3', 'module4', 'assessment'].includes(tabParam)) {
-        return tabParam as PipelineActiveTab;
-      }
-    }
-    return 'module1';
-  });
+  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => typeof window === 'undefined'
+    ? DEFAULT_PIPELINE_TAB
+    : getInitialPipelineTab(window.location.hash, window.location.search));
   const [activeAssessment, setActiveAssessment] = useState<AssessmentRecord | null>(null);
   const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
   const activeAssessmentIdRef = useRef<string | null>(null);
@@ -547,14 +540,6 @@ export default function Home() {
       : (completedSteps.step4 && isStep3Complete)
   );
 
-  const getLockedTabMessage = (tab: PipelineActiveTab): string => {
-    if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
-    if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
-    if (tab === 'module4') return UI_STRINGS.pipeline.lockedStep3Required;
-    if (tab === 'module5') return UI_STRINGS.pipeline.lockedStep4Required;
-    return UI_STRINGS.pipeline.lockedStep1Required;
-  };
-
   const handleSelectTab = (tab: PipelineActiveTab) => {
     setActiveTab(tab);
     if (typeof window !== 'undefined') {
@@ -620,10 +605,8 @@ export default function Home() {
 
     const handleHash = () => {
       if (typeof window !== 'undefined') {
-        const rawHash = window.location.hash.replace('#', '');
-        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema', 'assessment'].includes(rawHash)) {
-          setActiveTab(rawHash as PipelineActiveTab);
-        }
+        const tab = getPipelineTabFromHash(window.location.hash);
+        if (tab) setActiveTab(tab);
       }
     };
 
@@ -672,11 +655,8 @@ export default function Home() {
           const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
           const currentTabParam = currentParams?.get('tab') || '';
           const effectiveNav = currentHash || currentTabParam;
-          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
-            setActiveTab('assessment');
-          } else if (effectiveNav && ['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
-            setActiveTab(effectiveNav as PipelineActiveTab);
-          }
+          const modeTab = resolvePipelineTabForOperatingMode(effectiveNav, modeRes.isInternalAssessment);
+          if (modeTab) setActiveTab(modeTab);
         } catch {
           modeRes = {
             mode: 'INTERNAL_ASSESSMENT',
@@ -1096,7 +1076,7 @@ export default function Home() {
 
   const handleUpgradeTier = (targetTier: SubscriptionTier) => {
     handleSelectSimulatedTier(targetTier);
-    showToast(`Upgraded to ${targetTier} Customer!`);
+    showToast(UI_STRINGS.subscription.upgradeSuccess(targetTier));
   };
 
   // Handlers for Module 1
@@ -1168,7 +1148,7 @@ export default function Home() {
         return r;
       })
     );
-    showToast(`Analyst confirmed dataset base currency: ${confirmedCurrency}`);
+    showToast(UI_STRINGS.module1.datasetBaseCurrencyConfirmed(confirmedCurrency));
   };
 
   const handleMergeVendor = (record: ValidationPreCheckRecord) => {
@@ -1430,7 +1410,7 @@ export default function Home() {
     }
     const loggedUser = currentUser || authApiClient.getStoredUser();
     if (!loggedUser) {
-      showToast('Please sign in to upload datasets');
+      showToast(UI_STRINGS.module1.uploadSignInRequired);
       router.push('/login');
       return;
     }
@@ -1453,8 +1433,8 @@ export default function Home() {
 
     setAnalyzingLoaderState({
       isOpen: true,
-      title: `Analyzing Uploaded File "${file.name}"`,
-      subtitle: 'Running multi-currency normalizations, ERP document deduplication and UNSPSC matching...',
+      title: UI_STRINGS.module1.uploadAnalysisTitle(file.name),
+      subtitle: UI_STRINGS.module1.uploadAnalysisSubtitle,
       metrics: {
         totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
@@ -2028,8 +2008,15 @@ export default function Home() {
         const text = await file.text();
         const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
         recordsCount = Math.max(1, lines.length - 1);
-      } catch {
-        recordsCount = 14200;
+      } catch (error: unknown) {
+        frontendLogger.warn(INGESTION_RECORD_COUNT_FALLBACK_MESSAGE, {
+          action: INGESTION_RECORD_COUNT_FALLBACK_ACTION,
+          fileType: file.name.endsWith('.csv') ? 'CSV' : 'TXT',
+          fileSizeBytes: file.size,
+          fallbackRecordsCount: DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
+          requestId: createClientRequestId()
+        }, error);
+        recordsCount = DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT;
       }
     }
 
@@ -2430,7 +2417,7 @@ export default function Home() {
           isStep4Complete={isStep4Complete}
           unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
           onLockedTabClick={(tab) => {
-            showToast(getLockedTabMessage(tab));
+            showToast(getLockedPipelineTabMessage(tab));
           }}
           tenant={tenant}
           opportunities={opportunities}

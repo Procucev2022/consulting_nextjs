@@ -16,6 +16,7 @@ import type {
   IngestionWorkbookRow
 } from '../types/ingestionWorkbook';
 import { clearScopedModule2Cache } from './workerD1Module2Cache';
+import { requireD1AtomicBatch } from './workerD1Query';
 
 const TRANSACTION_INSERT_SQL = `
   INSERT INTO ProcurementTransaction (
@@ -103,21 +104,21 @@ const getFxRate = async (
 const runInBatches = async (
   db: IngestionWorkbookInput['db'],
   statements: CloudflareD1PreparedStatement[],
-  afterBatch: () => void
+  afterBatch: () => void,
+  context: IngestionWorkbookInput
 ): Promise<void> => {
+  requireD1AtomicBatch(db, {
+    operation: 'assessment.ingestion.import',
+    requestId: context.requestId,
+    tenantId: context.tenantId,
+    assessmentId: context.assessmentId,
+    documentId: context.docId
+  }, statements.length);
   const statementLimit = INGESTION_WORKBOOK_BATCH_ROWS * 2;
   for (let offset = 0; offset < statements.length; offset += statementLimit) {
     const batch = statements.slice(offset, offset + statementLimit);
-    if (db.batch) {
-      await db.batch(batch);
-      afterBatch();
-    }
-    else {
-      for (const statement of batch) {
-        await statement.run();
-        afterBatch();
-      }
-    }
+    await db.batch(batch);
+    afterBatch();
   }
 };
 
@@ -280,8 +281,8 @@ export const importIngestionWorkbook = async (input: IngestionWorkbookInput): Pr
     statements.push(prepared.transactionStatement, prepared.validationStatement);
   }
 
-  await runInBatches(input.db, statements, () =>
-    clearScopedModule2Cache(input.db, input.tenantId, input.assessmentId));
+  await runInBatches(input.db, statements,
+    () => clearScopedModule2Cache(input.db, input.tenantId, input.assessmentId), input);
   return {
     importedCount: rows.length,
     validationCount: rows.length,

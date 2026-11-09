@@ -3,6 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { savingsApiClient } from '../../src/utils/savingsApi';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import frontendLogger from '../../src/utils/logger';
+import {
+  SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION,
+  SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE
+} from '../../src/constants/savings';
 
 describe('savingsApiClient Unit Tests', () => {
   const originalFetch = global.fetch;
@@ -29,10 +33,24 @@ describe('savingsApiClient Unit Tests', () => {
   it('rejects missing data and a non-JSON gateway response with actionable savings context', async () => {
     global.fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }))
-      .mockResolvedValueOnce(new Response('Gateway unavailable', { status: 502 }));
+      .mockResolvedValueOnce(new Response('Gateway unavailable', {
+        status: 502,
+        headers: { 'x-request-id': 'req-savings-502' }
+      }));
     await expect(savingsApiClient.getConsolidatedSavings('AIC-1')).rejects.toThrow(UI_STRINGS.module4.apiNoDetails);
     await expect(savingsApiClient.getConsolidatedSavings('AIC-1')).rejects.toThrow(
-      UI_STRINGS.module4.apiRequestFailed(UI_STRINGS.module4.apiOperations.load, 502, UI_STRINGS.module4.apiNoDetails, UI_STRINGS.common.notAvailable)
+      UI_STRINGS.module4.apiRequestFailed(UI_STRINGS.module4.apiOperations.load, 502, UI_STRINGS.module4.apiNoDetails, 'req-savings-502')
+    );
+    expect(frontendLogger.warn).toHaveBeenCalledWith(
+      SAVINGS_API_RESPONSE_PARSE_FALLBACK_MESSAGE,
+      expect.objectContaining({
+        action: SAVINGS_API_RESPONSE_PARSE_FALLBACK_ACTION,
+        operation: UI_STRINGS.module4.apiOperations.load,
+        statusCode: 502,
+        requestId: 'req-savings-502',
+        parseFallback: true
+      }),
+      expect.any(SyntaxError)
     );
   });
 

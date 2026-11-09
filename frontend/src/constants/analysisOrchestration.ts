@@ -7,11 +7,13 @@ import type {
   PCBIExclusionReason,
   PCBIResolutionAction,
   ReanalysisReason,
-  AdminQualityGateChecklist
+  AdminQualityGateChecklist,
+  ReportVersion
 } from '../types/analysisOrchestration';
 
 export const DEFAULT_SLA_HOURS = 48;
 export const MIN_SPEND_COVERAGE_FOR_REPORT_PCT = 85.0;
+export const SUPERSEDED_REPORT_STATUS: ReportVersion['status'] = 'SUPERSEDED';
 
 export const ANALYSIS_JOB_STATUSES: readonly AnalysisJobStatus[] = [
   'UPLOADED',

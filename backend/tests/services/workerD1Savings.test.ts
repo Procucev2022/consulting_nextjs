@@ -1,7 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorkerDatabase, insertRows, type WorkerDatabaseFixture } from '../helpers/workerCoreFixtures';
 import { loadSavingsFromD1, updateActionPlanInD1, updateOpportunityStatusInD1 } from '../../src/services/workerD1Savings';
+import { D1_LOG_FALLBACKS } from '../../src/constants/d1';
+import { SAVINGS_D1_LOG_ACTIONS, SAVINGS_D1_LOG_MESSAGES, SAVINGS_D1_MESSAGES } from '../../src/constants/savingsD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
+import logger from '../../src/utils/logger';
+
+vi.mock('../../src/utils/logger', () => ({ default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 let fixture: WorkerDatabaseFixture;
 
@@ -154,6 +159,42 @@ describe('D1 savings updates', () => {
     };
     const batched = await updateActionPlanInD1(batchDb, { actionId: 'ACT-1', owner: 'SCM', priority: 'LOW' }, 'TNT-1');
     expect(batched).toMatchObject({ data: { owner: 'SCM', priority: 'LOW', comments: 'Needs review' } });
+  });
+
+  it('allows a single no-batch update and rejects multi-statement updates before any write', async () => {
+    insertActionPlan('ACT-1', 'OPP-1', 'Procurement', 'PLANNED');
+    const noBatchDb = { prepare: (query: string) => fixture.d1.prepare(query) } as CloudflareD1Database;
+    const requestId = 'req-savings-atomic';
+    vi.mocked(logger.error).mockClear();
+
+    const singleUpdate = await updateActionPlanInD1(noBatchDb, { actionId: 'ACT-1', owner: 'Finance' }, 'TNT-1');
+    expect(singleUpdate).toMatchObject({ data: { owner: 'Finance', status: 'Open' } });
+
+    const multiUpdate = await updateActionPlanInD1(
+      noBatchDb, { actionId: 'ACT-1', status: 'Completed', priority: 'LOW' }, 'TNT-1', requestId
+    );
+
+    expect(multiUpdate).toEqual({
+      status: 503,
+      data: { success: false, message: SAVINGS_D1_MESSAGES.actionPlanBatchUnavailable }
+    });
+    expect(fixture.db.prepare('SELECT owner, status FROM ActionPlanItem WHERE id = ?').get('ACT-1')).toEqual({
+      owner: 'Finance', status: 'PLANNED'
+    });
+    expect(fixture.db.prepare('SELECT priority FROM ActionPlanItemDetails WHERE action_id = ?').get('ACT-1')).toBeUndefined();
+    expect(logger.error).toHaveBeenCalledWith(
+      SAVINGS_D1_LOG_MESSAGES.actionPlanBatchUnavailable,
+      expect.objectContaining({
+        action: SAVINGS_D1_LOG_ACTIONS.actionPlanBatchUnavailable,
+        requestId,
+        actionId: 'ACT-1',
+        tenantId: 'TNT-1',
+        statementCount: 2,
+        writesStarted: false,
+        fallback: D1_LOG_FALLBACKS.failClosed
+      }),
+      expect.objectContaining({ message: SAVINGS_D1_MESSAGES.actionPlanBatchUnavailable })
+    );
   });
 
   it('validates opportunity status writes and rejects missing records', async () => {

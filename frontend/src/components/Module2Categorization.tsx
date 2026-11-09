@@ -619,14 +619,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   <tr>
                     <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
                     <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
-                    <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
-                    <th className="py-3 px-4 text-right" title={hasFY25 ? "1st April 2024 – 31st March 2025" : "No transactions for FY25 in uploaded dataset"}>
+                    <th className="py-3 px-4 text-right" title={UI_STRINGS.common.fiscalYearRanges.fy24}>{UI_STRINGS.module2.matrixHeaders.fy24}</th>
+                    <th className="py-3 px-4 text-right" title={hasFY25 ? UI_STRINGS.common.fiscalYearRanges.fy25 : UI_STRINGS.module2.matrixNoTransactionsInUpload('FY25')}>
                       {UI_STRINGS.module2.matrixHeaders.fy25}
-                      {!hasFY25 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                      {!hasFY25 && <span className="block text-[8px] font-normal text-slate-400 lowercase">{UI_STRINGS.module2.matrixUnavailableHeader}</span>}
                     </th>
-                    <th className="py-3 px-4 text-right" title={hasFY26 ? "1st April 2025 – 31st March 2026" : "No transactions for FY26 in uploaded dataset"}>
+                    <th className="py-3 px-4 text-right" title={hasFY26 ? UI_STRINGS.common.fiscalYearRanges.fy26 : UI_STRINGS.module2.matrixNoTransactionsInUpload('FY26')}>
                       {UI_STRINGS.module2.matrixHeaders.fy26}
-                      {!hasFY26 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                      {!hasFY26 && <span className="block text-[8px] font-normal text-slate-400 lowercase">{UI_STRINGS.module2.matrixUnavailableHeader}</span>}
                     </th>
                     <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
                     <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
@@ -637,7 +637,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   {dynamicCategoryDetails.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
-                        Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
+                        {UI_STRINGS.module2.categoryBreakdownEmptyState}
                       </td>
                     </tr>
                   ) : (
@@ -674,17 +674,17 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                           ₹{(fy24 || 0).toFixed(2)} Cr
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-800">
-                          {hasFY25 ? `₹${(fy25 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY25 in dataset">—</span>}
+                          {hasFY25 ? `₹${(fy25 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title={UI_STRINGS.module2.matrixNoTransactionsForYear('FY25')}>—</span>}
                         </td>
                         <td className="py-3.5 px-4 text-right text-slate-800">
-                          {hasFY26 ? `₹${(fy26 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY26 in dataset">—</span>}
+                          {hasFY26 ? `₹${(fy26 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title={UI_STRINGS.module2.matrixNoTransactionsForYear('FY26')}>—</span>}
                         </td>
                         <td className="py-3.5 px-4 text-right font-black text-slate-900">
                           ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <span className="inline-flex items-center space-x-1 text-slate-700 text-xs font-semibold">
-                            <span>{cat.yoy_growth_pct != null ? `+${cat.yoy_growth_pct}%` : (!hasFY25 && !hasFY26 ? 'Single Period' : 'Baseline (FY22)')}</span>
+                            <span>{cat.yoy_growth_pct != null ? `+${cat.yoy_growth_pct}%` : (!hasFY25 && !hasFY26 ? UI_STRINGS.module2.matrixSinglePeriod : UI_STRINGS.module2.vendorSupply.yoyUnavailable)}</span>
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-right">
@@ -706,10 +706,10 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         ₹{totalFY24.toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        {hasFY25 ? `₹${totalFY25.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                        {hasFY25 ? `₹${totalFY25.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">{UI_STRINGS.module2.matrixUnavailableTotal}</span>}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        {hasFY26 ? `₹${totalFY26.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                        {hasFY26 ? `₹${totalFY26.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">{UI_STRINGS.module2.matrixUnavailableTotal}</span>}
                       </td>
                       <td className="py-3.5 px-4 text-right font-black text-emerald-800">
                         ₹{dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.total_3yr_spend_inr_cr || c.spend_inr_crores || 0), 0).toFixed(2)} Cr

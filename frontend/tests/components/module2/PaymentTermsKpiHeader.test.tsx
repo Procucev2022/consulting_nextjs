@@ -9,7 +9,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { PaymentTermsKpiHeader } from '../../../src/components/module2/PaymentTermsKpiHeader';
-import { PAYMENT_TERMS_UI_STRINGS } from '../../../src/constants/module2PaymentTerms';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type { PaymentTermsCoverageSummary } from '../../../src/types/module2PaymentTerms';
 
 const mockUnavailableCoverage: PaymentTermsCoverageSummary = {
@@ -50,29 +50,29 @@ describe('PaymentTermsKpiHeader Component', () => {
     render(<PaymentTermsKpiHeader coverageSummary={mockUnavailableCoverage} />);
 
     expect(
-      screen.getByText(PAYMENT_TERMS_UI_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_TITLE)
+      screen.getByText(UI_STRINGS.module2.paymentTerms.benefitCannotBeAscertainedTitle)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(PAYMENT_TERMS_UI_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE)
+      screen.getByText(UI_STRINGS.module2.paymentTerms.benefitCannotBeAscertainedMessage)
     ).toBeInTheDocument();
 
     // Actual Working Capital Benefit & Financing Benefit
-    expect(screen.getByText('Actual Working Capital Benefit')).toBeInTheDocument();
-    expect(screen.getByText('Actual Annual Financing Benefit')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualWorkingCapitalBenefitLabel)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.actualAnnualFinancingBenefitLabel)).toBeInTheDocument();
     expect(
-      screen.getAllByText(PAYMENT_TERMS_UI_STRINGS.ACTUAL_WC_BENEFIT_UNAVAILABLE).length
+      screen.getAllByText(UI_STRINGS.module2.paymentTerms.actualWorkingCapitalBenefitUnavailable).length
     ).toBe(2);
 
     // Subtitle notes
-    expect(screen.getByText('Commercially validated: ₹0')).toBeInTheDocument();
-    expect(screen.getByText('Additional credit days: DATA UNAVAILABLE')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.commerciallyValidatedZero)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.additionalCreditDaysUnavailable)).toBeInTheDocument();
 
     // Illustrative Planning Scenario Callout & Disclaimer
     expect(
-      screen.getByText(PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_TITLE)
+      screen.getByText(UI_STRINGS.module2.paymentTerms.planningScenarioTitle)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_DISCLAIMER)
+      screen.getByText(UI_STRINGS.module2.paymentTerms.planningScenarioDisclaimer)
     ).toBeInTheDocument();
   });
 
@@ -80,11 +80,11 @@ describe('PaymentTermsKpiHeader Component', () => {
     render(<PaymentTermsKpiHeader coverageSummary={mockAvailableCoverage} />);
 
     expect(
-      screen.queryByText(PAYMENT_TERMS_UI_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_TITLE)
+      screen.queryByText(UI_STRINGS.module2.paymentTerms.benefitCannotBeAscertainedTitle)
     ).not.toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.KPI_WORKING_CAPITAL_RELEASED)).toBeInTheDocument();
-    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.KPI_FINANCING_BENEFIT)).toBeInTheDocument();
-    expect(screen.getByText('₹16.4384 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹3.0000 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.kpiWorkingCapitalReleased)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.paymentTerms.kpiFinancingBenefit)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('16.4384'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.croreAmount('3.0000'))).toBeInTheDocument();
   });
 });

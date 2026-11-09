@@ -65,6 +65,7 @@
     "PCBIWeeklyReference": 3960,
     "ProcurementTransaction": 95416,
     "RawDocumentIngestion": 1,
+    "R2ObjectCleanupOutbox": 0,
     "SavingsOpportunity": 10,
     "SpendCategorySummary": 10,
     "SubscriptionAuditEvent": 0,

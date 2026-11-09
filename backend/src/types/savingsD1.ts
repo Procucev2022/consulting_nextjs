@@ -1,3 +1,13 @@
+import type { UpdateActionPlanInput } from './validation';
+
+export type UpdateActionPlanFields = Omit<UpdateActionPlanInput, 'actionId'>;
+
+export interface SavingsActionPlanWriteContext {
+  actionId: string;
+  tenantId: string;
+  requestId?: string;
+}
+
 export interface D1SavingsOpportunityRow {
   opp_id: string;
   category: string;

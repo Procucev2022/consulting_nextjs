@@ -30,7 +30,19 @@ const wrapStatement = (statement: StatementSync, values: SQLInputValue[]): Cloud
 });
 
 export const createSqliteD1 = (db: DatabaseSync): CloudflareD1Database => ({
-  prepare: (sql: string): CloudflareD1PreparedStatement => wrapStatement(db.prepare(sql), [])
+  prepare: (sql: string): CloudflareD1PreparedStatement => wrapStatement(db.prepare(sql), []),
+  batch: async (statements: CloudflareD1PreparedStatement[]): Promise<unknown[]> => {
+    db.exec('BEGIN');
+    try {
+      const results: unknown[] = [];
+      for (const statement of statements) results.push(await statement.run());
+      db.exec('COMMIT');
+      return results;
+    } catch (error: unknown) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+  }
 });
 
 const insertRows = (db: DatabaseSync, sql: string, rows: SQLInputValue[][]): void => {
