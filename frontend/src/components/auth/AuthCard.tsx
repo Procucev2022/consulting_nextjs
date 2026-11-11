@@ -94,10 +94,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
   };
 
   return (
-    <div className="w-full max-w-[420px] xl:max-w-[450px] bg-white border border-[#DCE7F5] rounded-2xl p-4 sm:p-5 xl:p-6 shadow-[0_16px_36px_rgba(11,27,51,0.06),0_2px_8px_rgba(11,27,51,0.03)] transition-all">
+    <div className="w-full max-w-[420px] xl:max-w-[440px] bg-white border border-[#DCE7F5] rounded-2xl p-3.5 sm:p-4 xl:p-5 shadow-[0_16px_36px_rgba(11,27,51,0.06),0_2px_8px_rgba(11,27,51,0.03)] transition-all">
       {/* Top Conversion Anchor (Prompt 293 Section 4) */}
-      <div className="mb-2 sm:mb-2.5">
-        <div className="flex items-center justify-between mb-1">
+      <div className="mb-1.5 sm:mb-2">
+        <div className="flex items-center justify-between mb-0.5">
           <span className="inline-flex items-center gap-1 text-[10px] font-extrabold tracking-wider text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
             <Sparkles size={11} className="text-sky-600" />
             <span>{UI_STRINGS.auth.startWithYourDataBadge}</span>
@@ -106,13 +106,13 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
             {UI_STRINGS.header.engineVersion}
           </span>
         </div>
-        <h3 className="m-0 text-xs sm:text-sm font-extrabold text-[#0B1B33] leading-snug">
+        <h3 className="m-0 text-xs sm:text-[13px] font-extrabold text-[#0B1B33] leading-snug">
           {UI_STRINGS.auth.upgradeWhenNeededHeadline}
         </h3>
       </div>
 
       {/* Navigation Tabs (SIGN IN | CREATE ACCOUNT) */}
-      <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-lg mb-2.5 border border-slate-200">
+      <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-lg mb-2 border border-slate-200">
         <button
           type="button"
           id="tab-login"
@@ -136,24 +136,24 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
       </div>
 
       {/* Heading */}
-      <div className="mb-2 sm:mb-2.5">
-        <h2 className="m-0 mb-0.5 text-base sm:text-lg font-extrabold text-[#0B1B33]">
+      <div className="mb-1.5 sm:mb-2">
+        <h2 className="m-0 mb-0.5 text-sm sm:text-base font-extrabold text-[#0B1B33]">
           {activeTab === 'LOGIN' ? UI_STRINGS.auth.signInHeading : UI_STRINGS.auth.registerHeading}
         </h2>
-        <p className="m-0 text-[11px] sm:text-xs text-slate-500 leading-normal">
+        <p className="m-0 text-[11px] text-slate-500 leading-normal">
           {activeTab === 'LOGIN' ? UI_STRINGS.auth.signInSubheading : UI_STRINGS.auth.registerSubheading}
         </p>
       </div>
 
       {/* Alerts */}
       {errorMessage && (
-        <div className="mb-2.5 p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs font-medium">
+        <div className="mb-2 p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs font-medium">
           {errorMessage}
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-2.5 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-medium">
+        <div className="mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-medium">
           {successMessage}
         </div>
       )}
@@ -177,24 +177,26 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
         />
       )}
 
-      {/* Three Small Reassurance Items (Prompt 293 Section 4) */}
-      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between flex-wrap gap-1 text-[11px] text-slate-600 font-medium">
-        <span className="inline-flex items-center gap-1">
-          <ShieldCheck size={13} className="text-emerald-600" />
-          <span>{UI_STRINGS.auth.reassuranceStartDiscover}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <ShieldCheck size={13} className="text-emerald-600" />
-          <span>{UI_STRINGS.auth.reassuranceNoPayment}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <ShieldCheck size={13} className="text-emerald-600" />
-          <span>{UI_STRINGS.auth.reassuranceUpgradeLater}</span>
-        </span>
-      </div>
+      {/* Three Small Reassurance Items (Prompt 293 Section 4) - only on LOGIN tab to avoid duplication with RegisterForm */}
+      {activeTab === 'LOGIN' && (
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-1 text-[10.5px] text-slate-600 font-medium">
+          <span className="inline-flex items-center gap-1">
+            <ShieldCheck size={12} className="text-emerald-600" />
+            <span>{UI_STRINGS.auth.reassuranceStartDiscover}</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <ShieldCheck size={12} className="text-emerald-600" />
+            <span>{UI_STRINGS.auth.reassuranceNoPayment}</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <ShieldCheck size={12} className="text-emerald-600" />
+            <span>{UI_STRINGS.auth.reassuranceUpgradeLater}</span>
+          </span>
+        </div>
+      )}
 
       {/* Compact Reassurance Quote Strip */}
-      <div className="mt-1.5 py-1 px-2.5 bg-slate-50 border border-slate-200 rounded-md text-center text-[10px] text-slate-500 leading-snug font-medium">
+      <div className="mt-1.5 py-1 px-2 bg-slate-50 border border-slate-200 rounded-md text-center text-[9.5px] text-slate-500 leading-snug font-medium">
         {UI_STRINGS.auth.builtForEvidenceQuote}
       </div>
 
