@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Sign In Form Component (Prompt 290)
+ * Sign In Form Component (Prompt 290 & 605)
+ * Sleek, compact inputs and button to fit cleanly within 100% desktop viewports.
  */
 
 import React, { useState } from 'react';
@@ -27,10 +28,10 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <div>
         <label htmlFor="login-email" style={{
-          display: 'block', fontSize: '13px', fontWeight: 600, color: '#0B1B33', marginBottom: '6px'
+          display: 'block', fontSize: '11px', fontWeight: 600, color: '#0B1B33', marginBottom: '3px'
         }}>
           {UI_STRINGS.auth.emailLabel}
         </label>
@@ -43,13 +44,13 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           placeholder={UI_STRINGS.auth.emailPlaceholder}
           style={{
             width: '100%',
-            height: '52px',
-            padding: '0 16px',
+            height: '40px',
+            padding: '0 12px',
             backgroundColor: '#FFFFFF',
             border: '1.5px solid #CBD5E1',
-            borderRadius: '10px',
+            borderRadius: '8px',
             color: '#0B1B33',
-            fontSize: '14px',
+            fontSize: '13px',
             outline: 'none',
             boxSizing: 'border-box'
           }}
@@ -58,7 +59,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
       <div>
         <label htmlFor="login-password" style={{
-          display: 'block', fontSize: '13px', fontWeight: 600, color: '#0B1B33', marginBottom: '6px'
+          display: 'block', fontSize: '11px', fontWeight: 600, color: '#0B1B33', marginBottom: '3px'
         }}>
           {UI_STRINGS.auth.passwordLabel}
         </label>
@@ -72,13 +73,13 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             placeholder={UI_STRINGS.auth.passwordPlaceholder}
             style={{
               width: '100%',
-              height: '52px',
-              padding: '0 44px 0 16px',
+              height: '40px',
+              padding: '0 36px 0 12px',
               backgroundColor: '#FFFFFF',
               border: '1.5px solid #CBD5E1',
-              borderRadius: '10px',
+              borderRadius: '8px',
               color: '#0B1B33',
-              fontSize: '14px',
+              fontSize: '13px',
               outline: 'none',
               boxSizing: 'border-box'
             }}
@@ -90,7 +91,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             title={showPassword ? 'Hide password' : 'Show password'}
             style={{
               position: 'absolute',
-              right: '14px',
+              right: '10px',
               top: '50%',
               transform: 'translateY(-50%)',
               background: 'none',
@@ -103,7 +104,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
               padding: 0
             }}
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
       </div>
@@ -113,27 +114,27 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         id="btn-login-submit"
         disabled={loading}
         style={{
-          marginTop: '4px',
+          marginTop: '2px',
           width: '100%',
-          height: '52px',
+          height: '40px',
           backgroundColor: '#0284c7',
           border: 'none',
-          borderRadius: '10px',
+          borderRadius: '8px',
           color: '#ffffff',
           fontWeight: 700,
-          fontSize: '15px',
+          fontSize: '13px',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
           cursor: loading ? 'not-allowed' : 'pointer',
           opacity: loading ? 0.7 : 1,
-          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+          boxShadow: '0 2px 8px rgba(2, 132, 199, 0.2)',
           transition: 'all 0.2s ease'
         }}
       >
         {loading ? UI_STRINGS.auth.signingIn : UI_STRINGS.auth.signInButton}
       </button>
 
-      <div style={{ textAlign: 'center', marginTop: '2px' }}>
+      <div style={{ textAlign: 'center', marginTop: '1px' }}>
         <button
           type="button"
           onClick={onSwitchToRegister}
@@ -141,7 +142,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             background: 'none',
             border: 'none',
             color: '#0284c7',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 600,
             cursor: 'pointer'
           }}

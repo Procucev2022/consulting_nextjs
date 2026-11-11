@@ -540,7 +540,27 @@ export default function Home() {
       : (completedSteps.step4 && isStep3Complete)
   );
 
+  const isTabAccessible = (_tab: PipelineActiveTab): boolean => {
+    // Keep all modules completely unlocked and accessible during development
+    return true;
+  };
+
+  const userNavigatedRef = useRef(false);
+
+  const getLockedTabMessage = (tab: PipelineActiveTab): string => {
+    if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
+    if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
+    if (tab === 'module4') return UI_STRINGS.pipeline.lockedStep3Required;
+    if (tab === 'module5') return UI_STRINGS.pipeline.lockedStep4Required;
+    return UI_STRINGS.pipeline.lockedStep1Required;
+  };
+
   const handleSelectTab = (tab: PipelineActiveTab) => {
+    if (!isTabAccessible(tab)) {
+      showToast(getLockedTabMessage(tab));
+      return;
+    }
+    userNavigatedRef.current = true;
     setActiveTab(tab);
     if (typeof window !== 'undefined') {
       window.location.hash = tab;
@@ -548,6 +568,11 @@ export default function Home() {
   };
 
   const handleNavigateToSection = (targetModule: PipelineActiveTab, targetSectionId: string) => {
+    if (!isTabAccessible(targetModule)) {
+      showToast(getLockedTabMessage(targetModule));
+      return;
+    }
+    userNavigatedRef.current = true;
     setActiveTab(targetModule);
     setTargetSection(targetSectionId);
     showToast(UI_STRINGS.toasts.navigatingToInitiativeSection(targetSectionId));
@@ -616,7 +641,7 @@ export default function Home() {
     }
 
     try {
-      const user = apiClient.getStoredUser();
+      const user = authApiClient.getStoredUser();
       if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
         if (user.company_name) {
@@ -657,6 +682,9 @@ export default function Home() {
           const effectiveNav = currentHash || currentTabParam;
           const modeTab = resolvePipelineTabForOperatingMode(effectiveNav, modeRes.isInternalAssessment);
           if (modeTab) setActiveTab(modeTab);
+          if (!userNavigatedRef.current && modeRes.isInternalAssessment && !effectiveNav) {
+            setActiveTab('assessment');
+          }
         } catch {
           modeRes = {
             mode: 'INTERNAL_ASSESSMENT',
@@ -1173,12 +1201,12 @@ export default function Home() {
       prev.map((r) =>
         r.record_id === recordId
           ? {
-              ...r,
-              vendor_name: `${masterVendorName} (${masterVendorId})`,
-              issue_flag: 'Passed Clean',
-              action_status: 'Ready',
-              resolved: true
-            }
+            ...r,
+            vendor_name: `${masterVendorName} (${masterVendorId})`,
+            issue_flag: 'Passed Clean',
+            action_status: 'Ready',
+            resolved: true
+          }
           : r
       )
     );
@@ -1210,12 +1238,12 @@ export default function Home() {
       prev.map((r) =>
         r.record_id === recordId
           ? {
-              ...r,
-              raw_desc: `${masterItemName} (${masterItemCode})`,
-              issue_flag: 'Passed Clean',
-              action_status: 'Ready',
-              resolved: true
-            }
+            ...r,
+            raw_desc: `${masterItemName} (${masterItemCode})`,
+            issue_flag: 'Passed Clean',
+            action_status: 'Ready',
+            resolved: true
+          }
           : r
       )
     );
@@ -1242,11 +1270,11 @@ export default function Home() {
       prev.map((r) =>
         r.record_id === recordId
           ? {
-              ...r,
-              issue_flag: 'Passed Clean',
-              action_status: 'Reviewed',
-              resolved: true
-            }
+            ...r,
+            issue_flag: 'Passed Clean',
+            action_status: 'Reviewed',
+            resolved: true
+          }
           : r
       )
     );
@@ -1609,8 +1637,8 @@ export default function Home() {
               !isNaN(rawCr)
                 ? Math.max(0, rawCr)
                 : !isNaN(rawInr)
-                ? Math.max(0, rawInr / 10000000)
-                : Math.max(0, (rawQty * rawPrice * fxRate) / 10000000);
+                  ? Math.max(0, rawInr / 10000000)
+                  : Math.max(0, (rawQty * rawPrice * fxRate) / 10000000);
 
             const lineTotalINR = lineTotalCr * 10000000;
             cumulativeFileTotalINR += lineTotalINR;
@@ -1633,8 +1661,8 @@ export default function Home() {
 
             // Grouping by Material Group or Department
             const rawRowMg = (mgKey && r[mgKey] != null && String(r[mgKey]).trim()) ||
-                             (deptKey && r[deptKey] != null && String(r[deptKey]).trim()) ||
-                             '';
+              (deptKey && r[deptKey] != null && String(r[deptKey]).trim()) ||
+              '';
             const rowMg = (rawRowMg ? rawRowMg.toUpperCase() : 'UNKNOWN_CATEGORY').trim();
             const existingMg = mgMap.get(rowMg) || {
               count: 0,
@@ -2271,10 +2299,10 @@ export default function Home() {
     });
 
     const itemsToCategorize = lineItems.map((item) => ({
-        rawLineText: item.raw_desc,
-        vendorIdentified: item.vendor_identified,
-        amount: item.inr_crores || item.total_spend
-      }));
+      rawLineText: item.raw_desc,
+      vendorIdentified: item.vendor_identified,
+      amount: item.inr_crores || item.total_spend
+    }));
 
     const getAIClassification = async () => {
       try {
@@ -2463,44 +2491,45 @@ export default function Home() {
               />
             )}
             <Module1Ingestion
-            tenant={tenant}
-            onUpdateTenant={handleUpdateTenant}
-            ingestionQueue={ingestionQueue}
-            validationRecords={validationRecords}
-            validationDataSummary={validationDataSummary}
-            hasMoreValidationRecords={hasMoreValidationRecords}
-            isLoadingMoreValidationRecords={isLoadingMoreValidationRecords}
-            onLoadMoreValidationRecords={handleLoadMoreValidationRecords}
-            onFixCurrency={handleFixCurrency}
-            onMergeVendor={handleMergeVendor}
-            onApplyBlanketFixes={handleApplyBlanketFixes}
-            onResetValidationRecords={handleResetValidationRecords}
-            onRunAICategorization={async () => {
-              if (!activeAssessment?.assessmentId) {
-                showToast(UI_STRINGS.toasts.module2AssessmentRequired);
-                return;
-              }
-              setCompletedSteps((prev) => ({ ...prev, step1: true }));
-              setActiveTab('module2');
-              await handleStartAICategorization();
-            }}
-            onAddBatchUpload={handleAddBatchUpload}
-            materialGroupSummaries={uploadedMaterialGroups}
-            plantSummaries={uploadedPlants}
-            monthWiseSummaries={uploadedMonths}
-            uniqueItemsCount={uploadedUniqueItems}
-            uniqueVendorsCount={uploadedUniqueVendors}
-            onMergeItem={handleMergeItem}
-            onDeleteDocument={handleDeleteDocument}
-            isDataRefreshed={isDataRefreshed}
-            paretoSpendData={uploadedParetoData}
-            onRefreshWithFixes={handleRefreshWithFixes}
-            currentTier={effectiveTier}
-            onUpgrade={handleUpgradeTier}
-            canonicalViewModel={canonicalModule1}
-            onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
-            summarySectionRef={summarySectionRef}
-          />
+              tenant={tenant}
+              onUpdateTenant={handleUpdateTenant}
+              ingestionQueue={ingestionQueue}
+              validationRecords={validationRecords}
+              validationDataSummary={validationDataSummary}
+              hasMoreValidationRecords={hasMoreValidationRecords}
+              isLoadingMoreValidationRecords={isLoadingMoreValidationRecords}
+              onLoadMoreValidationRecords={handleLoadMoreValidationRecords}
+              onFixCurrency={handleFixCurrency}
+              onMergeVendor={handleMergeVendor}
+              onApplyBlanketFixes={handleApplyBlanketFixes}
+              onResetValidationRecords={handleResetValidationRecords}
+              onRunAICategorization={async () => {
+                userNavigatedRef.current = true;
+                if (!activeAssessment?.assessmentId) {
+                  showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+                  return;
+                }
+                setCompletedSteps((prev) => ({ ...prev, step1: true }));
+                setActiveTab('module2');
+                await handleStartAICategorization();
+              }}
+              onAddBatchUpload={handleAddBatchUpload}
+              materialGroupSummaries={uploadedMaterialGroups}
+              plantSummaries={uploadedPlants}
+              monthWiseSummaries={uploadedMonths}
+              uniqueItemsCount={uploadedUniqueItems}
+              uniqueVendorsCount={uploadedUniqueVendors}
+              onMergeItem={handleMergeItem}
+              onDeleteDocument={handleDeleteDocument}
+              isDataRefreshed={isDataRefreshed}
+              paretoSpendData={uploadedParetoData}
+              onRefreshWithFixes={handleRefreshWithFixes}
+              currentTier={effectiveTier}
+              onUpgrade={handleUpgradeTier}
+              canonicalViewModel={canonicalModule1}
+              onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
+              summarySectionRef={summarySectionRef}
+            />
           </>
         )}
 
@@ -2512,6 +2541,7 @@ export default function Home() {
             onConfirmMapping={handleConfirmMapping}
             onReassignMapping={(item) => setSelectedItemForReassign(item)}
             onProceedToTrend={() => {
+              userNavigatedRef.current = true;
               setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
               setActiveTab('module3');
               showToast(UI_STRINGS.toasts.transitioningToVolatility);
@@ -2531,6 +2561,7 @@ export default function Home() {
             vendorRankings={vendorRankings}
             assessmentId={activeAssessment?.assessmentId}
             onProceedToSavings={() => {
+              userNavigatedRef.current = true;
               setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true, step3: true }));
               setActiveTab('module4');
               showToast(UI_STRINGS.toasts.launchingSavings);
@@ -2548,6 +2579,7 @@ export default function Home() {
             onOpenProCPX={(opp) => setSelectedOppForProCPX(opp)}
             onOpenDPSNXT={(opp) => setSelectedOppForDPSNXT(opp)}
             onProceedToConversion={() => {
+              userNavigatedRef.current = true;
               setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true, step3: true, step4: true }));
               setActiveTab('module5');
               showToast(UI_STRINGS.toasts.openingConversion);
@@ -2688,8 +2720,8 @@ export default function Home() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0c1628] border border-slate-200 dark:border-slate-700/80 shadow-2xl text-xs font-semibold text-slate-900 dark:text-white animate-slide-up max-w-sm" style={{boxShadow: '0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(14,165,233,0.15)'}}>
-          <span className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0" style={{boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite'}} />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0c1628] border border-slate-200 dark:border-slate-700/80 shadow-2xl text-xs font-semibold text-slate-900 dark:text-white animate-slide-up max-w-sm" style={{ boxShadow: '0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(14,165,233,0.15)' }}>
+          <span className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0" style={{ boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite' }} />
           <span className="text-slate-700 dark:text-slate-200">{toastMessage}</span>
         </div>
       )}

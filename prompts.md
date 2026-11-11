@@ -114166,3 +114166,55 @@ resume
 ## Prompt 624
 
 resume
+
+---
+
+## Prompt 625
+
+<<<<<<< Updated upstream
+  const isTabAccessible = (_tab: PipelineActiveTab): boolean => {
+    // Keep all modules completely unlocked and accessible during development
+    return true;
+  };
+=======
+  const userNavigatedRef = useRef(false);
+>>>>>>> Stashed changes
+
+  const getLockedTabMessage = (tab: PipelineActiveTab): string => {
+    if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
+    if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;
+    if (tab === 'module4') return UI_STRINGS.pipeline.lockedStep3Required;
+    if (tab === 'module5') return UI_STRINGS.pipeline.lockedStep4Required;
+    return UI_STRINGS.pipeline.lockedStep1Required;
+  };
+
+  const handleSelectTab = (tab: PipelineActiveTab) => {
+<<<<<<< Updated upstream
+    if (!isTabAccessible(tab)) {
+      showToast(getLockedTabMessage(tab));
+      return;
+    }
+=======
+    userNavigatedRef.current = true;
+>>>>>>> Stashed changes
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      window.location.hash = tab;
+    }
+  };
+
+  const handleNavigateToSection = (targetModule: PipelineActiveTab, targetSectionId: string) => {
+<<<<<<< Updated upstream
+    if (!isTabAccessible(targetModule)) {
+      showToast(getLockedTabMessage(targetModule));
+      return;
+    }
+=======
+    userNavigatedRef.current = true;
+>>>>>>> Stashed changes
+    setActiveTab(targetModule);
+    setTargetSection(targetSectionId);
+    showToast(UI_STRINGS.toasts.navigatingToInitiativeSection(targetSectionId));
+  };
+their are merge conflict resolve them
+

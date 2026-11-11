@@ -20,22 +20,22 @@ export interface RegisterFormProps {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 14px',
+  padding: '7px 11px',
   backgroundColor: '#FFFFFF',
   border: '1.5px solid #CBD5E1',
   borderRadius: '8px',
   color: '#0B1B33',
-  fontSize: '13px',
+  fontSize: '12px',
   outline: 'none',
   boxSizing: 'border-box'
 };
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: '12px',
+  fontSize: '11px',
   fontWeight: 600,
   color: '#0B1B33',
-  marginBottom: '4px'
+  marginBottom: '2px'
 };
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -49,7 +49,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {/* Low-Friction Bronze Entry Reassurance Row */}
       <div style={{
         display: 'flex',
@@ -57,9 +57,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '8px',
-        padding: '10px 14px',
+        padding: '6px 10px',
         backgroundColor: '#F0F9FF',
-        borderRadius: '10px',
+        borderRadius: '8px',
         border: '1px solid #BAE6FD',
         fontSize: '11px',
         color: '#0369A1'
@@ -238,13 +238,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         style={{
           marginTop: '6px',
           width: '100%',
-          height: '50px',
+          height: '40px',
           backgroundColor: '#0284c7',
           border: 'none',
           borderRadius: '10px',
           color: '#ffffff',
           fontWeight: 700,
-          fontSize: '15px',
+          fontSize: '13px',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
           cursor: loading ? 'not-allowed' : 'pointer',
