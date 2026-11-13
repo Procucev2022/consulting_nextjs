@@ -61,7 +61,13 @@ const executeSqlCommand = (sql, jsonOutput = false) => {
       throw new Error(`Wrangler D1 command failed for ${databaseName}${details ? `: ${details}` : ''}`);
     }
     return jsonOutput ? parseWranglerJsonOutput(result.stdout) : [];
-  } finally {
+  } finally {Run exit 1
+  exit 1
+  shell: /usr/bin/bash -e {0}
+  env:
+    CI: true
+    NODE_OPTIONS: --max-old-space-size=4096
+Error: Process completed with exit code 1.
     if (!jsonOutput) fs.rmSync(commandFilePath, { force: true });
   }
 };
