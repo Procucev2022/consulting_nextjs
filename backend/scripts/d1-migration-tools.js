@@ -94,12 +94,14 @@ const buildMigrationInventorySql = () => {
   const tableRows = `WITH table_inventory(table_name) AS (VALUES ${tableValues})
     SELECT 'table' AS record_type, name AS table_name, NULL AS object_name, NULL AS definition
       FROM sqlite_master WHERE type = 'table' AND name IN (${tableNames})`;
-  const columnRows = `SELECT 'column' AS record_type, table_inventory.table_name,
-      pragma_table_info.name AS object_name, pragma_table_info.pk AS definition
-    FROM table_inventory CROSS JOIN pragma_table_info(table_inventory.table_name)`;
+  const columnRows = TABLES_TO_INSPECT.map((tableName) =>
+    `SELECT 'column' AS record_type, ${quoteSqlLiteral(tableName)} AS table_name,
+      name AS object_name, pk AS definition
+    FROM pragma_table_info(${quoteSqlLiteral(tableName)})`
+  );
   const indexRows = `SELECT 'index' AS record_type, tbl_name AS table_name, name AS object_name, sql AS definition
     FROM sqlite_master WHERE type = 'index' AND name IN (${indexNames})`;
-  return [tableRows, columnRows, indexRows].join('\nUNION ALL\n');
+  return [tableRows, ...columnRows, indexRows].join(';\n') + ';';
 };
 
 const normalizeIndexDefinition = (sql) => String(sql || '').toLowerCase().replace(/["`\s]/gu, '');
