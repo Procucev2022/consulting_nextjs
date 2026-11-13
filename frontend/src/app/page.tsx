@@ -607,6 +607,7 @@ export default function Home() {
   useEffect(() => {
     const storedUser = authApiClient.getStoredUser();
     const storedToken = authApiClient.getStoredToken();
+    let hydratedUser: UserProfile | null = null;
 
     // Redirect unauthenticated visitors to /login
     if (!storedUser && !storedToken) {
@@ -642,6 +643,7 @@ export default function Home() {
 
     try {
       const user = authApiClient.getStoredUser();
+      hydratedUser = user;
       if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
         if (user.company_name) {
@@ -657,8 +659,8 @@ export default function Home() {
       if (simTier) {
         setSimulatedTier(simTier);
       }
-    } catch {
-      // Safe fallback
+    } catch (error: unknown) {
+      frontendLogger.error('Failed to hydrate the stored user session', {}, error);
     }
 
     async function loadBackendData() {
@@ -765,7 +767,7 @@ export default function Home() {
             frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
           }
         } else {
-          const storedUser = authApiClient.getStoredUser();
+          const storedUser = hydratedUser;
           const buyerUser = storedUser?.role !== 'ADMIN' ? storedUser : null;
           const canReadTenantData = Boolean(storedUser?.tenant_id);
           if (storedUser && !storedUser.tenant_id) {
@@ -905,7 +907,7 @@ export default function Home() {
         }
 
         // Fetch analysis state only when the session carries an explicit tenant assignment.
-        const orchestrationUser = authApiClient.getStoredUser();
+        const orchestrationUser = hydratedUser;
         if (orchestrationUser?.tenant_id) {
           try {
             const jobs = await orchestrationApi.getJobs();

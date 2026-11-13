@@ -3,12 +3,16 @@ import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require('node:sqlite');
-const { applyD1CompatibilityMigrations } = require('../../scripts/d1-migration-tools');
+const { applyD1CompatibilityMigrations, buildMigrationInventorySql } = require('../../scripts/d1-migration-tools');
 
 const createMigrationExecutor = (database: InstanceType<typeof DatabaseSync>) => {
   const writeCommands: string[] = [];
   const executeSqlCommand = (sql: string, jsonOutput = false): unknown[] => {
-    if (jsonOutput) return database.prepare(sql).all() as unknown[];
+    if (jsonOutput) {
+      return sql.split(/;\s*(?=(?:WITH|SELECT)\b)/u)
+        .filter((statement) => statement.trim())
+        .flatMap((statement) => database.prepare(statement).all() as unknown[]);
+    }
     database.exec(sql);
     writeCommands.push(sql);
     return [];
@@ -48,6 +52,17 @@ const createAggregateTables = (database: InstanceType<typeof DatabaseSync>): voi
 };
 
 describe('batched D1 compatibility migrations', () => {
+  it('uses D1-compatible literal pragma table arguments for schema inventory', () => {
+    const inventorySql = buildMigrationInventorySql();
+
+    expect(inventorySql).toContain("FROM pragma_table_info('TenantMaster')");
+    expect(inventorySql).toContain("FROM pragma_table_info('AssessmentRecord')");
+    expect(inventorySql).toContain("FROM sqlite_master WHERE type = 'index'");
+    expect(inventorySql).toMatch(/;\s*SELECT 'column'/u);
+    expect(inventorySql).not.toContain('UNION ALL');
+    expect(inventorySql).not.toContain('pragma_table_info(table_inventory.table_name)');
+  });
+
   it('checks an empty database with one metadata query and no writes', () => {
     const database = new DatabaseSync(':memory:');
     try {

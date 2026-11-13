@@ -51,13 +51,23 @@ const executeSqlCommand = (sql, jsonOutput = false) => {
     if (isRemote) args.push('--remote');
     else args.push('--local', `--persist-to=${path.join(backendRoot, '.wrangler', 'state')}`);
     if (jsonOutput) args.push('--json');
-    const result = runNpx(args, jsonOutput ? 'pipe' : 'inherit');
+    const result = runNpx(args, 'pipe');
+    if (!jsonOutput) {
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+    }
     if (result.status !== 0) {
       const details = String(result.stderr || result.stdout || result.error?.message || '').trim();
       throw new Error(`Wrangler D1 command failed for ${databaseName}${details ? `: ${details}` : ''}`);
     }
     return jsonOutput ? parseWranglerJsonOutput(result.stdout) : [];
-  } finally {
+  } finally {Run exit 1
+  exit 1
+  shell: /usr/bin/bash -e {0}
+  env:
+    CI: true
+    NODE_OPTIONS: --max-old-space-size=4096
+Error: Process completed with exit code 1.
     if (!jsonOutput) fs.rmSync(commandFilePath, { force: true });
   }
 };
