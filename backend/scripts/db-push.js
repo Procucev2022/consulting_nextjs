@@ -23,7 +23,16 @@ const shouldSeedAll = process.argv.includes('--seed-all');
 const shouldSeed = shouldSeedDatabase(process.argv);
 const wranglerEntrypoint = path.join(backendRoot, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 const seedPartLimitBytes = 900000;
-const spawnOptions = { cwd: backendRoot, stdio: 'inherit', shell: false, env: { ...process.env, CI: process.env.CI || '1' } };
+const spawnOptions = {
+  cwd: backendRoot,
+  stdio: 'inherit',
+  shell: false,
+  env: {
+    ...process.env,
+    CI: process.env.CI || '1',
+    WRANGLER_LOG_PATH: path.join(backendRoot, '.wrangler', 'logs')
+  }
+};
 
 const runNpx = (args, stdio = 'inherit') => {
   const options = { ...spawnOptions, stdio };
@@ -61,13 +70,7 @@ const executeSqlCommand = (sql, jsonOutput = false) => {
       throw new Error(`Wrangler D1 command failed for ${databaseName}${details ? `: ${details}` : ''}`);
     }
     return jsonOutput ? parseWranglerJsonOutput(result.stdout) : [];
-  } finally {Run exit 1
-  exit 1
-  shell: /usr/bin/bash -e {0}
-  env:
-    CI: true
-    NODE_OPTIONS: --max-old-space-size=4096
-Error: Process completed with exit code 1.
+  } finally {
     if (!jsonOutput) fs.rmSync(commandFilePath, { force: true });
   }
 };

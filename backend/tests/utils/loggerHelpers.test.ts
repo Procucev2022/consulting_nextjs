@@ -81,6 +81,22 @@ describe('Logger Helpers Suite', () => {
         else process.env.LOG_PERSISTENCE = previousPersistence;
       }
     });
+
+    it('disables file persistence inside Cloudflare Worker runtime', () => {
+      const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis.navigator, 'userAgent');
+      try {
+        Object.defineProperty(globalThis.navigator, 'userAgent', {
+          value: 'Cloudflare-Workers',
+          configurable: true
+        });
+        const config = resolveLoggerConfig();
+        expect(config.enableFilePersistence).toBe(false);
+      } finally {
+        if (originalDescriptor) {
+          Object.defineProperty(globalThis.navigator, 'userAgent', originalDescriptor);
+        }
+      }
+    });
   });
 
   describe('purgeOldLogFiles', () => {

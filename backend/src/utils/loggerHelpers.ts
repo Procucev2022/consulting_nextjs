@@ -28,6 +28,10 @@ const resolveFilePersistence = (enable?: boolean): boolean => {
   const configuredPersistence = process.env.LOG_PERSISTENCE?.trim().toLowerCase();
   if (configuredPersistence === 'true') return true;
   if (configuredPersistence === 'false') return false;
+  const globalObj = globalThis as unknown as { navigator?: { userAgent?: string } };
+  if (globalObj.navigator?.userAgent === 'Cloudflare-Workers') {
+    return false;
+  }
   return process.env.NODE_ENV !== 'production';
 };
 
