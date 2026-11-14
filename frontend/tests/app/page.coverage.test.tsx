@@ -3065,4 +3065,62 @@ describe('Home page: FX and tenant mapping edge cases', () => {
     expect(savedMappings).toHaveLength(1);
     expect(savedMappings?.[0].sourceMaterialId).toBe('MAT-SHARED');
   });
+
+  it('syncs tenant updates from Module 1 and logs both success and warning', async () => {
+    await renderPage();
+    const onUpdateTenant = readProp<(t: TenantMaster) => Promise<void>>('module1', 'onUpdateTenant');
+    expect(onUpdateTenant).toBeDefined();
+
+    // Success path
+    vi.mocked(apiClient.updateTenant).mockResolvedValueOnce({
+      success: true,
+      data: mockTenant
+    } as any);
+    await act(async () => {
+      await onUpdateTenant(mockTenant);
+    });
+    expect(apiClient.updateTenant).toHaveBeenCalledWith(expect.objectContaining({
+      enterprise_name: mockTenant.enterprise_name
+    }));
+    expect(mocks.logger.info).toHaveBeenCalledWith(
+      'Tenant setup synced to database successfully',
+      expect.objectContaining({ enterprise: mockTenant.enterprise_name })
+    );
+
+    // Warning path
+    vi.mocked(apiClient.updateTenant).mockRejectedValueOnce(new Error('Tenant update network failure'));
+    await act(async () => {
+      await onUpdateTenant(mockTenant);
+    });
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      'Backend sync warning for tenant update',
+      expect.objectContaining({ error: expect.any(Error) })
+    );
+  });
+
+  it('handles load more validation records failure with both Error and non-Error values', async () => {
+    const cursor = 'CUR-FAIL';
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce(asIngestion({
+        ...defaultIngestion(),
+        validationRecords: [buildRecord('VAL-LOAD-MORE')],
+        pagination: { validationRecords: { hasMore: true, nextCursor: cursor } }
+      }))
+      .mockRejectedValueOnce(new Error('Pagination failed'))
+      .mockRejectedValueOnce('Network string failure');
+
+    await renderPage();
+
+    // Call 1: Error instance
+    await runProp('module1', 'onLoadMoreValidationRecords');
+    await waitFor(() => {
+      expect(screen.getByText('Pagination failed')).toBeInTheDocument();
+    });
+
+    // Call 2: Non-Error string
+    await runProp('module1', 'onLoadMoreValidationRecords');
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module1.loadMoreValidationRecordsFailed)).toBeInTheDocument();
+    });
+  });
 });

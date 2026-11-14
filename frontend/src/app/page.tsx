@@ -649,7 +649,7 @@ export default function Home() {
         if (user.company_name) {
           setTenant(prev => ({
             ...prev,
-            enterprise_name: user.company_name || 'Enterprise Client'
+            enterprise_name: user.company_name
           }));
         }
       } else {

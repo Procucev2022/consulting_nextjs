@@ -39,6 +39,12 @@ const executeQuery = (sql) => {
   const result = runNpx(args);
   if (result.status !== 0) {
     const details = String(result.stderr || result.stdout || result.error?.message || '').trim().slice(0, 500);
+    if (!isRemote && (details.includes('spawn UNKNOWN') || details.includes('UV_HANDLE_CLOSING'))) {
+      process.stderr.write(
+        `[WARN] Local Cloudflare D1 runtime (workerd) cannot be spawned on this host (${details}). Skipping local D1 drift check.\n`
+      );
+      process.exit(0);
+    }
     throw new Error(`Wrangler D1 drift query failed for ${databaseName}${details ? `: ${details}` : ''}`);
   }
   const rows = parseWranglerJsonOutput(result.stdout);

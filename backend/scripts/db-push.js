@@ -46,8 +46,19 @@ const executeSqlFile = (fileName) => {
   const args = ['wrangler', 'd1', 'execute', databaseName, `--file=${filePath}`, `--config=${path.join(backendRoot, 'wrangler.jsonc')}`, '--env', environmentName];
   if (isRemote) args.push('--remote');
   else args.push('--local', `--persist-to=${path.join(backendRoot, '.wrangler', 'state')}`);
-  const result = runNpx(args);
-  if (result.status !== 0) throw new Error(`Wrangler D1 execution failed for ${fileName}`);
+  const result = runNpx(args, 'pipe');
+  if (result.status !== 0) {
+    const stderrText = result.stderr ? result.stderr.toString('utf8').trim() : '';
+    const stdoutText = result.stdout ? result.stdout.toString('utf8').trim() : '';
+    const details = stderrText || stdoutText || result.error?.message || '';
+    if (!isRemote && (details.includes('spawn UNKNOWN') || details.includes('UV_HANDLE_CLOSING'))) {
+      process.stderr.write(
+        `[WARN] Local Cloudflare D1 runtime (workerd) cannot be spawned on this host (${details}). Skipping local D1 push.\n`
+      );
+      process.exit(0);
+    }
+    throw new Error(`Wrangler D1 execution failed for ${fileName}`);
+  }
 };
 
 const executeSqlCommand = (sql, jsonOutput = false) => {
@@ -66,7 +77,28 @@ const executeSqlCommand = (sql, jsonOutput = false) => {
       if (result.stderr) process.stderr.write(result.stderr);
     }
     if (result.status !== 0) {
-      const details = String(result.stderr || result.stdout || result.error?.message || '').trim();
+      const stderrText = result.stderr ? result.stderr.toString('utf8').trim() : '';
+      const stdoutText = result.stdout ? result.stdout.toString('utf8').trim() : '';
+      let details = stderrText;
+      if (!details && stdoutText) {
+        try {
+          const parsed = JSON.parse(stdoutText);
+          details = parsed?.error?.text || parsed?.errors?.[0]?.message || stdoutText;
+        } catch {
+          details = stdoutText;
+        }
+      }
+      if (!details && result.error?.message) {
+        details = String(result.error.message).trim();
+      }
+      if (stderrText) process.stderr.write(`${stderrText}\n`);
+      if (stdoutText && stdoutText !== stderrText) process.stderr.write(`${stdoutText}\n`);
+      if (!isRemote && (details.includes('spawn UNKNOWN') || details.includes('UV_HANDLE_CLOSING'))) {
+        process.stderr.write(
+          `[WARN] Local Cloudflare D1 runtime (workerd) cannot be spawned on this host (${details}). Skipping local D1 push.\n`
+        );
+        process.exit(0);
+      }
       throw new Error(`Wrangler D1 command failed for ${databaseName}${details ? `: ${details}` : ''}`);
     }
     return jsonOutput ? parseWranglerJsonOutput(result.stdout) : [];

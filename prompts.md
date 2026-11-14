@@ -114300,3 +114300,15 @@ why I am not able to login
 [backend]
 [backend] {"timestamp":"2026-11-13T08:03:28.545Z","level":"debug","service":"consulting-backend","environment":"development","message":"D1 request query summary","requestId":"1c9b730e-3e59-44a6-ae29-4205d0586adb","context":{"requestId":"1c9b730e-3e59-44a6-ae29-4205d0586adb","totalQueries":1,"failedQueries":0,"slowQueries":0,"cacheHits":0,"cacheMisses":0,"cacheHitRatio":0,"totalDurationMs":89,"averageDurationMs":89,"totalRowsRead":0,"totalRowsWritten":0}}
 [backend] [wrangler:inf] POST /api/auth/login 403 Forbidden (399ms)
+
+
+---
+
+## Prompt 628
+Please check why it's failing, how we can fix, also, remove any such data seeding?
+
+
+---
+
+## Prompt 629
+Please commit & push the chnages
