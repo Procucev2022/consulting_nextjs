@@ -6,6 +6,7 @@ import AdminSubscriptionsPage from '@/app/admin/subscriptions/page';
 import frontendLogger from '@/utils/logger';
 import { API_REQUEST_ID_HEADER } from '@/constants/app';
 import type { SubscriptionRecord, SubscriptionAuditEvent } from '@/types';
+import { authApiClient } from '@/utils/authApi';
 
 describe('AdminSubscriptionsPage Dashboard', () => {
   const mockSubscriptions: SubscriptionRecord[] = [
@@ -349,5 +350,53 @@ describe('AdminSubscriptionsPage Dashboard', () => {
       expect.objectContaining({ message: expect.stringContaining('HTTP 200') })
     );
     expect(screen.getByText('Corp One')).toBeInTheDocument();
+  });
+
+  it('sends a stored token and handles successful responses without collection fields', async () => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('admin-token');
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    let listCalls = 0;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/status')) {
+        return Promise.resolve({
+          ok: false,
+          status: 403,
+          json: async () => ({ success: false })
+        } as Response);
+      }
+      if (url.includes('/admin/list') && listCalls++ === 0) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, subscriptions: mockSubscriptions })
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true })
+      } as Response);
+    });
+
+    render(<AdminSubscriptionsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Corp One')).toBeInTheDocument();
+    });
+    const listCall = fetchMock.mock.calls.find(([url]) => url.includes('/api/subscription/admin/list'));
+    expect(listCall).toBeDefined();
+    const listHeaders = (listCall?.[1] as RequestInit).headers;
+    expect(listHeaders).toBeInstanceOf(Headers);
+    expect((listHeaders as Headers).get('Authorization')).toBe('Bearer admin-token');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+    await waitFor(() => expect(frontendLogger.error).toHaveBeenCalledWith(
+      'Admin subscription API operation failed',
+      expect.objectContaining({ statusCode: 403 }),
+      expect.any(Error)
+    ));
+
+    fireEvent.click(screen.getByTestId('refresh-subscriptions-btn'));
+    await waitFor(() => {
+      expect(screen.getByText('No subscription records found.')).toBeInTheDocument();
+    });
   });
 });

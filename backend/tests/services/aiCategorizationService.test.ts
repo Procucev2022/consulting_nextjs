@@ -84,7 +84,7 @@ describe('AiCategorizationService Unit Tests', () => {
       }
     ];
 
-    vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
+    generateSpy.mockResolvedValueOnce({
       status: EXTRACTION_STATUS.SUCCESS,
       data: { mappings: mockMappings },
       model: 'gemini-3.6-flash',

@@ -53,6 +53,22 @@ describe('ingestionApiClient', () => {
     expect(res).toEqual(mockData);
   });
 
+  it('encodes queue cursors when loading the next ingestion page', async () => {
+    const mockData = { queue: [], validationRecords: [], pagination: {}, summary: {} };
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
+      json: async () => ({ success: true, data: mockData })
+    });
+
+    await ingestionApiClient.getIngestionData('TENANT-100', {
+      queueCursor: { uploadedAt: '2026-04-01 00:00:00', docId: 'DOC/101' }
+    });
+
+    expectApiFetchCall(global.fetch,
+      '/api/ingestion?tenantId=TENANT-100&queueAfterUploadedAt=2026-04-01+00%3A00%3A00&queueAfterDocId=DOC%2F101');
+  });
+
   it('encodes a directly selected document identifier into the tenant-scoped ingestion request', async () => {
     const mockData = { queue: [], validationRecords: [], pagination: {}, summary: {} };
     (global.fetch as any).mockResolvedValueOnce({
@@ -368,6 +384,20 @@ describe('ingestionApiClient', () => {
     await expect(ingestionApiClient.deleteIngestionDocument('DOC-1'))
       .rejects.toThrow(UI_STRINGS.module4.apiRequestFailed(
         'delete the ingestion document', 503, UI_STRINGS.module4.apiNoDetails, 'REQ-503'
+      ));
+  });
+
+  it('uses fallback detail and request ID when deleting a document without response metadata', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      headers: new Headers(),
+      json: async () => ({})
+    });
+
+    await expect(ingestionApiClient.deleteIngestionDocument('DOC-1'))
+      .rejects.toThrow(UI_STRINGS.module4.apiRequestFailed(
+        'delete the ingestion document', 500, UI_STRINGS.module4.apiNoDetails, UI_STRINGS.common.notAvailable
       ));
   });
 
