@@ -115155,3 +115155,7 @@ Provide:
 7. Any configuration or onboarding issues requiring attention.
 
 Stop after Stage 3 and wait for approval before proceeding with the procurement data upload.
+
+## Prompt 637
+
+run locally on chrome
