@@ -103,7 +103,13 @@ const executeSqlCommand = (sql, jsonOutput = false) => {
     }
     return jsonOutput ? parseWranglerJsonOutput(result.stdout) : [];
   } finally {
-    if (!jsonOutput) fs.rmSync(commandFilePath, { force: true });
+    if (!jsonOutput) {
+      try {
+        fs.rmSync(commandFilePath, { force: true, maxRetries: 10, retryDelay: 200 });
+      } catch {
+        // Ignore transient file lock errors on Windows during cleanup
+      }
+    }
   }
 };
 
@@ -127,7 +133,13 @@ const executeGeneratedSeedInParts = (fileName, checksum) => {
     executeSqlCommand(getSeedFileLedgerWriteSql(fileName, checksum));
   } finally {
     if (process.env.KEEP_D1_PARTS !== 'true') {
-      for (const partFile of partFiles) fs.rmSync(path.join(backendRoot, partFile), { force: true });
+      for (const partFile of partFiles) {
+        try {
+          fs.rmSync(path.join(backendRoot, partFile), { force: true, maxRetries: 10, retryDelay: 200 });
+        } catch {
+          // Ignore transient file lock errors on Windows during cleanup
+        }
+      }
     }
   }
 };

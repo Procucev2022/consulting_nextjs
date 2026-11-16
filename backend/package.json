@@ -8,7 +8,7 @@
   "description": "Cloudflare Worker backend (D1 and R2) for the Consulting Platform",
   "scripts": {
     "build": "tsc",
-    "cloudflare:dev": "wrangler dev --env dev --persist-to .wrangler/state",
+    "cloudflare:dev": "node scripts/ensure-dev-vars.js && wrangler dev --env dev --persist-to .wrangler/state",
     "cloudflare:deploy": "wrangler deploy",
     "cloudflare:types": "wrangler types",
     "db:push": "node scripts/db-push.js",

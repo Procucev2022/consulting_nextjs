@@ -57,6 +57,8 @@ describe('authorizeTenantRequest', () => {
     const requests = [
       new Request('https://edge.example.test/'),
       new Request('https://edge.example.test/api/health'),
+      new Request('https://edge.example.test/api/taxonomy?limit=10'),
+      new Request('https://edge.example.test/api/procurement/category-mappings'),
       new Request('https://edge.example.test/api/auth/login', { method: 'POST' }),
       new Request('https://edge.example.test/api/admin/users'),
       new Request('https://edge.example.test/api/upgrade/request', { method: 'POST' })

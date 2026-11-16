@@ -15,7 +15,8 @@ const isSelfAuthorizedRoute = (path: string): boolean =>
   path.startsWith('/api/upgrade/') || path.startsWith('/api/subscription/');
 
 const isPublicRoute = (path: string): boolean =>
-  path === '/api/health' || path === '/api/telemetry/client-error';
+  path === '/api/health' || path === '/api/telemetry/client-error' ||
+  path.startsWith('/api/taxonomy') || path === '/api/procurement/category-mappings';
 
 const isAdminOnlyRoute = (request: Request, path: string): boolean =>
   path.startsWith('/api/db/') || (path === '/api/tenant' && request.method === 'PUT');

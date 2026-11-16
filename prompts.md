@@ -114312,3 +114312,846 @@ Please check why it's failing, how we can fix, also, remove any such data seedin
 
 ## Prompt 629
 Please commit & push the chnages
+
+
+---
+
+## Prompt 630
+run the application locally
+
+
+---
+
+## Prompt 631
+resolve the issue
+
+
+---
+
+## Prompt 632
+# PROJECT: PROCUCEV aiCEV
+# MASTER TASK: COMPLETE SOFTWARE TESTING, CLOUDFLARE VALIDATION, BUG FIXING & PRODUCTION STABILISATION
+
+## OBJECTIVE
+
+We have deployed the latest version of Procucev aiCEV on Cloudflare and made several changes since the previous Borosil assessment.
+
+Before onboarding our next customer, we want to conduct a complete independent software testing and stabilisation exercise.
+
+IMPORTANT:
+
+THIS EXERCISE IS STRICTLY FOR SOFTWARE TESTING.
+
+Do NOT create Viraj Profiles as a customer.
+Do NOT create any Viraj Profiles assessment.
+Do NOT upload Viraj Profiles procurement data.
+Do NOT modify existing customer records.
+Do NOT copy Borosil data or assessment results.
+Do NOT perform customer-specific analysis.
+
+The objective is to validate the existing software, its architecture, calculations, APIs, workflows, security and reporting functionality independently of any new customer.
+
+Treat this as a production-readiness and regression-testing exercise.
+
+==================================================
+PHASE 1 – UNDERSTAND THE CURRENT ARCHITECTURE
+==================================================
+
+Before modifying anything, inspect the complete current codebase.
+
+Identify:
+
+1. Frontend architecture.
+2. Backend architecture.
+3. Cloudflare deployment architecture.
+4. Cloudflare Workers / Pages configuration, as applicable.
+5. Database architecture and bindings.
+6. Storage architecture.
+7. API endpoints and routing.
+8. Authentication and authorization.
+9. Background jobs and queues.
+10. File upload and processing mechanisms.
+11. Report generation architecture.
+12. Environment configurations.
+13. Third-party integrations.
+14. Existing test suites.
+15. Recent changes since the previous Borosil release.
+
+Determine the actual production deployment architecture rather than assuming it.
+
+Inspect the latest deployed version and compare it with the local codebase.
+
+Identify deployment drift, outdated code, configuration mismatches and incomplete changes.
+
+Do not overwrite uncommitted work or discard existing changes.
+
+Prepare an initial technical assessment before making modifications.
+
+==================================================
+PHASE 2 – CLOUDFLARE DEPLOYMENT VALIDATION
+==================================================
+
+Test the currently deployed application.
+
+Validate:
+
+- Application availability.
+- Frontend loading.
+- API connectivity.
+- API response codes.
+- Database connectivity.
+- Database reads and writes using safe test records.
+- File storage connectivity.
+- File upload and retrieval.
+- Authentication.
+- Session persistence.
+- CORS.
+- Environment variables and bindings.
+- Background job execution.
+- Error handling.
+- Logging.
+- Application performance.
+
+Check for:
+
+- Localhost dependencies in production.
+- Incorrect API base URLs.
+- Development configuration leaking into production.
+- Missing Cloudflare bindings.
+- Exposed secrets.
+- Broken routes.
+- Failed database migrations.
+- Incorrect environment-specific configuration.
+- Browser console errors.
+
+Do not expose secrets in reports.
+
+Do not perform destructive operations on production.
+
+If staging or preview is available, use it for write-based testing.
+
+==================================================
+PHASE 3 – SECURITY & MULTI-TENANT ARCHITECTURE
+==================================================
+
+Validate the security architecture independently of any new customer.
+
+Test:
+
+1. Authentication.
+2. Session management.
+3. Role-based access.
+4. Backend authorization.
+5. Tenant ownership validation.
+6. API access restrictions.
+7. File access permissions.
+8. Report access permissions.
+9. Database query isolation.
+10. Background job ownership.
+11. Cache isolation.
+12. Secure error handling.
+
+Use synthetic test tenants and test users.
+
+Run controlled negative tests to confirm that one tenant cannot access another tenant's:
+
+- Customer records.
+- Assessments.
+- Uploaded files.
+- Reports.
+- Financial data.
+- Background job results.
+
+Verify authorization at the backend and data-access layers.
+
+Do not use real customer data for security testing.
+
+Do not alter or delete existing customer records.
+
+==================================================
+PHASE 4 – MODULE 1: SPEND HYGIENE & DATA INGESTION
+==================================================
+
+Test Module 1 independently using synthetic datasets.
+
+Validate:
+
+- Excel uploads.
+- CSV uploads.
+- Multiple worksheets.
+- Different column headers.
+- Missing fields.
+- Blank rows.
+- Duplicate transactions.
+- Duplicate PO lines.
+- Duplicate invoice references.
+- Negative and zero values.
+- Date formats.
+- Currency formats.
+- Quantity and unit-of-measure conversions.
+- Supplier normalization.
+- Material normalization.
+- Plant mapping.
+- Transaction-level traceability.
+- Baseline reconciliation.
+
+Test both normal and abnormal files.
+
+Verify that:
+
+1. Original uploaded data remains preserved.
+2. Normalized transactions retain source references.
+3. Duplicate removal does not eliminate legitimate purchases.
+4. Financial totals reconcile.
+5. Invalid records are flagged.
+6. Errors are communicated clearly.
+7. Large files are handled reliably.
+8. Processing does not silently stop midway.
+9. Retry mechanisms do not duplicate transactions.
+10. Module 1 results are accurate and repeatable.
+
+Prepare independent expected results for synthetic datasets and compare them with the application output.
+
+==================================================
+PHASE 5 – MODULE 2: AI CATEGORIZATION & SOURCING
+==================================================
+
+Test the complete Module 2 functionality.
+
+A. AI Categorization
+
+Validate:
+
+- UNSPSC mapping.
+- Commodity and class mapping.
+- Category and subcategory assignment.
+- Direct materials.
+- Indirect materials.
+- MRO.
+- Packing materials.
+- Services.
+- Unclassified items.
+- Ambiguous descriptions.
+- Confidence scores.
+- Manual corrections.
+- Category-level spend reconciliation.
+
+Ensure services are not incorrectly treated as benchmarkable commodities.
+
+B. Strategic Sourcing
+
+Test all sourcing levers currently implemented in the software.
+
+Include, wherever implemented:
+
+- PO consolidation.
+- Vendor consolidation.
+- Price harmonization.
+- Volume bundling.
+- Strategic sourcing.
+- Reverse e-auctions.
+- Supplier rationalization.
+- Other implemented sourcing levers.
+
+For every lever validate:
+
+- Eligible spend.
+- Qualified transaction population.
+- Calculation methodology.
+- Savings calculations.
+- Overlap deductions.
+- Double-counting prevention.
+- Package-level supporting records.
+- Exclusion rules.
+- Data provenance.
+- Final reconciliation.
+
+Do not introduce generic percentage-based savings assumptions.
+
+Do not fabricate supplier quotations, market alternatives or savings opportunities.
+
+==================================================
+PHASE 6 – MODULE 3: PCBI BENCHMARK ENGINE
+==================================================
+
+Validate the complete PCBI implementation.
+
+Test:
+
+1. PCBI technical ID mapping.
+2. UNSPSC mapping.
+3. Category mapping.
+4. Benchmark family mapping.
+5. Material and grade identification.
+6. Geography matching.
+7. Unit and price-basis matching.
+8. Historical data ingestion.
+9. Source provenance.
+10. Source access and licensing classification.
+11. Frequency conversion.
+12. Missing-data handling.
+13. Benchmark coverage.
+14. Benchmark-derived opportunity calculations.
+15. Module 3 output integration.
+
+Mandatory rules:
+
+- Never fabricate benchmark observations.
+- Never silently interpolate missing values.
+- Never substitute a different grade or specification without explicit methodology.
+- Preserve source provenance.
+- Distinguish public, paid and licensed data.
+- Show unavailable data transparently.
+- Never claim coverage without valid observations.
+
+Test both complete and incomplete benchmark datasets.
+
+==================================================
+PHASE 7 – MODULE 4: SAVINGS ENGINE & GOVERNANCE
+==================================================
+
+Validate all Module 4 calculations and workflows.
+
+Test:
+
+- Consolidated opportunity.
+- Gross opportunity.
+- Overlap deductions.
+- Net modelled opportunity.
+- Addressable spend.
+- Qualified execution spend.
+- Unquantified spend.
+- Governance reserve.
+- Opportunity for commercial validation.
+- Client-approved savings.
+- Implemented savings.
+- Realized savings.
+- Savings waterfall.
+- Executive summaries.
+- Management reports.
+- Audit trails.
+- Supporting exports.
+
+Financial controls:
+
+1. Gross opportunity minus overlap deductions must equal net opportunity.
+2. Individual sourcing levers must reconcile with the consolidated ledger.
+3. No double-counting across sourcing levers.
+4. All savings figures must have traceable supporting records.
+5. Modelled opportunities must remain separate from approved savings.
+6. Realized savings must require appropriate evidence and verification.
+7. All report figures must reconcile with backend data.
+
+Create independent calculation fixtures and verify expected outputs.
+
+==================================================
+PHASE 8 – END-TO-END WORKFLOW TESTING
+==================================================
+
+Run the complete software workflow using synthetic customers, synthetic assessments and synthetic procurement files.
+
+The test workflow must cover:
+
+1. Test customer creation.
+2. Test assessment creation.
+3. File upload.
+4. Module 1 processing.
+5. Baseline verification.
+6. Module 2 categorization.
+7. Sourcing analysis.
+8. Module 3 benchmark processing.
+9. Module 4 savings consolidation.
+10. Administrative review.
+11. Report generation.
+12. PDF export.
+13. PPTX export.
+14. Supporting data exports.
+15. Report retrieval and download.
+
+Test both successful and unsuccessful scenarios.
+
+Validate:
+
+- Job persistence.
+- Background processing.
+- Retry behaviour.
+- Duplicate job prevention.
+- Worker restart recovery.
+- Partial processing failures.
+- Error recovery.
+- Data consistency between modules.
+- Assessment status transitions.
+
+Respect the existing application workflow and approval gates.
+
+==================================================
+PHASE 9 – FRONTEND & BROWSER TESTING
+==================================================
+
+Open the actual deployed application in a browser.
+
+Test all major screens and workflows:
+
+- Login.
+- Dashboard.
+- Customer management.
+- Assessment management.
+- File upload.
+- Module 1.
+- Module 2.
+- Module 3.
+- Module 4.
+- Reports.
+- Downloads.
+- Administration.
+
+Check:
+
+- Buttons and actions.
+- Form validation.
+- Navigation.
+- Tables.
+- Filters.
+- Pagination.
+- Charts.
+- Loading indicators.
+- Error messages.
+- Empty states.
+- Responsive design.
+- Browser console.
+- API failures.
+- Recovery after failures.
+
+Confirm that frontend values match backend API responses and database records.
+
+Do not mark browser testing as completed unless the actual application has been exercised.
+
+==================================================
+PHASE 10 – PERFORMANCE & RELIABILITY
+==================================================
+
+Evaluate:
+
+- Large-file upload behaviour.
+- Processing time.
+- API response time.
+- Database query performance.
+- Worker execution limits.
+- Memory constraints.
+- Concurrent user behaviour.
+- Background job reliability.
+- Report generation time.
+- Browser responsiveness.
+
+Test realistic data volumes using synthetic datasets.
+
+Identify bottlenecks and fix only those that are demonstrably problematic.
+
+Do not run uncontrolled load tests against production.
+
+==================================================
+PHASE 11 – DEFECT IDENTIFICATION & FIXING
+==================================================
+
+For every issue identified:
+
+1. Reproduce the issue.
+2. Record the affected module and workflow.
+3. Identify the root cause.
+4. Implement the smallest appropriate fix.
+5. Add a regression test.
+6. Rerun the affected tests.
+7. Run relevant broader regression tests.
+
+Do not:
+
+- Suppress failing tests.
+- Weaken test assertions.
+- Hardcode expected outputs.
+- Hide errors.
+- Modify business calculations just to pass tests.
+- Refactor unrelated components.
+- Remove existing customer functionality.
+
+Preserve existing production customer data.
+
+==================================================
+PHASE 12 – AUTOMATED TESTING & RELEASE VALIDATION
+==================================================
+
+Run:
+
+- Production build.
+- TypeScript typecheck.
+- ESLint.
+- Unit tests.
+- Integration tests.
+- API tests.
+- Database tests.
+- Security tests.
+- Tenant isolation tests.
+- Module 1 regression tests.
+- Module 2 calculation tests.
+- Module 3 benchmark tests.
+- Module 4 financial reconciliation tests.
+- Report generation tests.
+- Browser end-to-end tests.
+
+Report actual results with test counts.
+
+Do not claim the complete test suite passed if only targeted tests were executed.
+
+After fixes, validate the production build and test it in a staging or preview environment before any production deployment.
+
+Do not deploy unverified code directly to production.
+
+Do not execute destructive migrations or modify real customer data without explicit authorization.
+
+==================================================
+PHASE 13 – FINAL SOFTWARE READINESS REPORT
+==================================================
+
+Prepare a detailed but concise final report containing:
+
+A. Current System Architecture.
+
+B. Cloudflare Deployment Health.
+
+C. Authentication and Security.
+
+D. Multi-Tenant Isolation.
+
+E. Module 1 Test Results.
+
+F. Module 2 Test Results.
+
+G. Module 3 Test Results.
+
+H. Module 4 Test Results.
+
+I. End-to-End Workflow Results.
+
+J. Browser and UI Results.
+
+K. Performance and Reliability.
+
+L. Defects Identified.
+
+M. Fixes Implemented.
+
+N. Regression Tests Added.
+
+O. Outstanding Issues.
+
+P. Deployment Status.
+
+Q. Final Software Readiness Verdict.
+
+Classify every test:
+
+- PASS
+- FAIL
+- BLOCKED
+- NOT TESTED
+
+Clearly distinguish:
+- Code reviewed.
+- Automated test passed.
+- API actually exercised.
+- Browser workflow actually tested.
+- Cloudflare production deployment actually verified.
+
+FINAL VERDICT:
+
+1. SOFTWARE READY FOR NEW CUSTOMER ONBOARDING.
+2. SOFTWARE READY WITH DOCUMENTED LIMITATIONS.
+3. SOFTWARE NOT READY – CRITICAL ISSUES REMAIN.
+
+IMPORTANT FINAL RESTRICTION:
+
+Do not create Viraj Profiles.
+Do not create any new real customer assessment.
+Do not upload actual customer procurement data.
+Do not initiate a customer-specific procurement analysis.
+
+This assignment ends when the existing aiCEV software has been comprehensively tested, defects have been fixed where safe, and a clear release-readiness report has been produced.
+
+Prioritize data integrity, security, financial accuracy and production reliability over cosmetic changes.
+
+
+---
+
+## Prompt 633
+resume
+
+
+---
+
+## Prompt 634
+# PROCUCEV aiCEV – FINAL PRODUCTION SMOKE TEST
+
+We have completed the comprehensive software testing exercise, with 5,345 tests reportedly passing.
+
+Now conduct a final production smoke test of the actual Cloudflare-hosted aiCEV application.
+
+IMPORTANT:
+This is a validation exercise, not a development or refactoring exercise.
+
+Do not modify existing customer data.
+Do not create Viraj Profiles.
+Do not upload actual customer procurement files.
+Do not alter production database records.
+Do not deploy code changes.
+Do not reset administrator credentials during this exercise.
+
+## STAGE 1 – PRODUCTION HEALTH CHECK
+
+Identify the actual production frontend and backend URLs from the current configuration.
+
+Test:
+
+1. Frontend availability.
+2. Backend health endpoint.
+3. Authentication endpoint.
+4. Taxonomy endpoint.
+5. Customer API.
+6. Assessment API.
+7. Module 1 API.
+8. Module 2 API.
+9. Module 3 API.
+10. Module 4 API.
+11. Report API.
+12. File storage availability.
+
+Record:
+- HTTP status.
+- Response time.
+- Error messages.
+- Whether the endpoint is operational.
+
+Do not assume that an endpoint works merely because its route exists.
+
+## STAGE 2 – ADMINISTRATOR AUTHENTICATION
+
+Verify:
+
+- Production administrator login.
+- Session creation.
+- Session persistence.
+- Authenticated API access.
+- Logout.
+- Session invalidation.
+
+Check whether default administrator credentials remain active.
+
+Do not expose passwords or password hashes.
+
+If a default credential is found, report it as a security blocker. Do not change credentials without authorization.
+
+## STAGE 3 – BROWSER VALIDATION
+
+Open the actual production application in a browser.
+
+Log in using authorized credentials.
+
+Navigate through:
+
+- Dashboard.
+- Customer management.
+- Assessment management.
+- Module 1.
+- Module 2.
+- Module 3.
+- Module 4.
+- Reports.
+- Downloads.
+
+Check for:
+- Broken navigation.
+- Blank pages.
+- JavaScript errors.
+- Failed network requests.
+- Missing data.
+- Incorrect loading states.
+- Broken buttons.
+- UI/API inconsistencies.
+
+Capture screenshots of critical screens.
+
+Do not create or edit any real customer records.
+
+## STAGE 4 – SYNTHETIC END-TO-END ASSESSMENT
+
+Use an isolated test environment only.
+
+If production does not provide an approved isolated test-tenant mechanism, perform this stage in Cloudflare development or staging instead.
+
+Create a synthetic customer and assessment using unique TEST identifiers.
+
+Use this synthetic dataset:
+
+PO001 | Aluminium Sheet | Supplier A | 1000 | 250
+PO002 | Aluminium Sheet | Supplier B | 800 | 260
+PO003 | Corrugated Boxes | Supplier C | 5000 | 20
+PO004 | Industrial Bearings | Supplier D | 100 | 500
+PO005 | Industrial Bearings | Supplier E | 150 | 480
+
+Expected total baseline: ₹6,80,000.
+
+Test:
+
+1. Excel upload.
+2. Module 1 processing.
+3. Baseline reconciliation.
+4. Module 2 categorization.
+5. Sourcing opportunity calculation.
+6. Module 3 benchmark processing.
+7. Module 4 savings consolidation.
+8. Financial waterfall.
+9. Report generation.
+10. PDF download.
+11. PPTX download.
+
+Compare application results against independently calculated expected results.
+
+Do not invent benchmark observations or savings.
+
+If any module fails, identify the root cause and document it. Do not modify production code during this smoke test.
+
+## STAGE 5 – REPORT VALIDATION
+
+Verify that generated PDF and PPTX reports:
+
+- Contain the correct synthetic customer name.
+- Contain the correct assessment ID.
+- Display the correct baseline.
+- Display correct category totals.
+- Display consistent module-level figures.
+- Show modelled, approved and realized savings separately.
+- Do not contain Borosil information.
+- Do not contain mock or stale data.
+
+Verify that the downloaded files open correctly.
+
+## STAGE 6 – SECURITY & CLEANUP
+
+Verify:
+
+- Test tenant isolation.
+- Unauthorized assessment access is rejected.
+- Test reports cannot be accessed by unrelated users.
+- No existing customer records were modified.
+- All test artifacts are identifiable as synthetic.
+
+Delete synthetic test records only if they were created in an isolated test environment and cleanup is safe and explicitly supported.
+
+Never delete real customer records or production data.
+
+## STAGE 7 – FINAL REPORT
+
+Provide a test result table:
+
+| Test | Environment | Result | Evidence |
+|---|---|---|---|
+| Frontend | Production | PASS/FAIL | URL/status |
+| Backend | Production | PASS/FAIL | HTTP response |
+| Authentication | Production | PASS/FAIL | Login result |
+| Module 1 | Test environment | PASS/FAIL | Baseline |
+| Module 2 | Test environment | PASS/FAIL | Categorisation |
+| Module 3 | Test environment | PASS/FAIL | Benchmark status |
+| Module 4 | Test environment | PASS/FAIL | Financial reconciliation |
+| PDF | Test environment | PASS/FAIL | File validation |
+| PPTX | Test environment | PASS/FAIL | File validation |
+| Tenant isolation | Test environment | PASS/FAIL | Negative test |
+
+Final verdict:
+
+1. PRODUCTION SMOKE TEST PASSED.
+2. PASSED WITH DOCUMENTED LIMITATIONS.
+3. FAILED – CRITICAL ISSUES FOUND.
+
+Clearly distinguish production checks from staging/synthetic checks.
+
+Do not claim a successful browser test unless the actual application was opened and exercised.
+
+Do not deploy changes automatically.
+
+The objective is to confirm that the existing aiCEV software is operational and ready for the next customer onboarding.
+
+
+---
+
+## Prompt 635
+Complete the final two outstanding production release gates.
+
+1. ADMINISTRATOR SECURITY
+- Verify all production administrator accounts for default or weak seeded credentials.
+- Do not expose passwords or password hashes.
+- Confirm the authorised administrator has rotated the default password.
+- Verify old-password rejection and new-password authentication.
+- Verify production seed scripts cannot overwrite existing administrator credentials.
+- Do not modify unrelated accounts.
+
+2. ACTUAL PRODUCTION BROWSER CHECK
+- Use an actual browser session against the deployed Cloudflare production application.
+- If Chrome Remote Debugging is unavailable, use an alternative supported browser automation method.
+- Verify login, dashboard, customer management, assessment management, all four modules, reports and downloads.
+- Check browser console errors and failed network requests.
+- Do not create or modify real customer records.
+
+Do not deploy code changes.
+Do not create Viraj Profiles.
+Do not upload customer data.
+
+Produce a short final report with PASS/FAIL/BLOCKED status for both gates.
+
+Only declare the software ready for external customer onboarding when the administrator credential issue is resolved and the actual production browser workflow is verified.
+
+
+---
+
+## Prompt 636
+The aiCEV production release gates have been completed and approved.
+
+We are now moving from software validation to the actual customer onboarding of VIRAJ PROFILES.
+
+IMPORTANT SAFETY INSTRUCTIONS:
+
+1. Do not modify, delete or overwrite any existing customer records or assessments.
+2. Do not alter existing production configurations, authentication logic, database schemas or deployed worker code.
+3. Do not reuse another customer's assessment ID or data.
+4. Create Viraj Profiles as a completely separate customer with its own customer ID and assessment ID.
+5. Maintain strict tenant isolation.
+6. Do not assume any procurement data or assessment figures. Use only the actual data supplied for Viraj Profiles.
+
+STAGE 1 – CUSTOMER ONBOARDING
+
+- Inspect the existing customer creation and assessment creation workflows.
+- Create a new customer record for Viraj Profiles using the established production workflow.
+- Generate a unique customer ID and assessment ID.
+- Verify that the customer and assessment are correctly linked.
+- Confirm that the new customer is visible in the customer directory and assessment management screens.
+- Verify that existing customers and assessments remain unchanged.
+
+STAGE 2 – PRE-UPLOAD VALIDATION
+
+Before uploading any procurement file:
+- Confirm that the correct Viraj Profiles customer and assessment are selected.
+- Confirm the assessment period and relevant configuration.
+- Verify that the upload workflow is associated with the new assessment.
+- Confirm that no previous customer's data is pre-populated or carried forward.
+
+STAGE 3 – STOP AND REPORT
+
+Do not upload any procurement file yet.
+
+Provide:
+1. Viraj Profiles Customer ID.
+2. Assessment ID.
+3. Assessment status.
+4. Assessment period.
+5. Confirmation of successful customer-to-assessment linkage.
+6. Confirmation that existing customer data remains untouched.
+7. Any configuration or onboarding issues requiring attention.
+
+Stop after Stage 3 and wait for approval before proceeding with the procurement data upload.
