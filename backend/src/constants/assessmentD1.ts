@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MANDATORY_MODULE_GATES } from './assessment';
+import { ASSESSMENT_ROLES, MANDATORY_MODULE_GATES } from './assessment';
 
 export const ASSESSMENT_D1_BOOLEAN_COLUMNS: ReadonlySet<string> = new Set([
   'is_test_data', 'is_superseded', 'is_approved', 'all_gates_passed',
@@ -39,14 +39,14 @@ export const ASSESSMENT_D1_LIFECYCLE_ACTIONS: ReadonlySet<string> = new Set([
   'approve', 'delivery-package', 'deliver', 'accept', 'close'
 ]);
 
-export const ASSESSMENT_D1_DEFAULT_ACTORS = {
-  internalAdminEmail: 'admin@procucev.com',
-  analystEmail: 'analyst@procucev.com',
-  customerEmail: 'customer@procucev.com',
-  internalAdminRole: 'INTERNAL_ADMIN',
-  analystRole: 'ANALYST',
-  customerRole: 'CUSTOMER'
+export const ASSESSMENT_D1_ACTOR_ROLES = {
+  internalAdmin: ASSESSMENT_ROLES.INTERNAL_ADMIN,
+  customer: ASSESSMENT_ROLES.CUSTOMER
 } as const;
+
+export const ASSESSMENT_D1_INTERNAL_ACTOR_ROLES: readonly string[] = [
+  ASSESSMENT_ROLES.INTERNAL_ADMIN, ASSESSMENT_ROLES.ANALYST
+];
 
 export const ASSESSMENT_D1_MESSAGES = {
   tenantScopeRequired: 'An authenticated tenant assignment is required to access customer and assessment records.',
@@ -56,6 +56,7 @@ export const ASSESSMENT_D1_MESSAGES = {
   assessmentValidation: 'Assessment details are invalid. Correct the highlighted fields and retry.',
   actionValidation: 'Assessment action request is invalid. Correct the highlighted fields and retry.',
   permissionDenied: 'This assessment action requires an internal analyst or administrator role.',
+  acceptedByMismatch: (signedInEmail: string): string => `Acceptance is recorded for the signed-in account (${signedInEmail}). Remove the acceptedBy value, or sign in as the person accepting the report.`,
   missingRecord: (assessmentId: string): string => `Assessment ${assessmentId} not found`,
   missingRun: 'No analysis run specified or active on assessment',
   dataVersionMissingForAnalysis: (assessmentId: string): string =>

@@ -3,7 +3,8 @@ import {
   ASSESSMENT_STATUSES, AUDIT_ACTIONS, DELIVERY_PACKAGE_ITEMS_SPEC, SYSTEM_BUILD_IDENTITY
 } from '../constants/assessment';
 import {
-  ASSESSMENT_D1_MESSAGES as LIFECYCLE_MESSAGES, ASSESSMENT_DELIVERY_PACKAGE_SNAPSHOT_TYPE
+  ASSESSMENT_D1_INTERNAL_ACTOR_ROLES, ASSESSMENT_D1_MESSAGES as LIFECYCLE_MESSAGES,
+  ASSESSMENT_DELIVERY_PACKAGE_SNAPSHOT_TYPE
 } from '../constants/assessmentD1';
 import { AES_GCM_CONFIG } from '../constants/crypto';
 import { D1_TABLES } from '../constants/d1';
@@ -157,7 +158,7 @@ const buildDeliveryManifest = async (
 export const generateAssessmentDeliveryPackage = async (
   context: AssessmentLifecycleActionContext
 ): Promise<WorkerD1Result> => {
-  if (!['INTERNAL_ADMIN', 'ANALYST'].includes(context.actorRole)) {
+  if (!ASSESSMENT_D1_INTERNAL_ACTOR_ROLES.includes(context.actorRole)) {
     return resultError(403, LIFECYCLE_MESSAGES.permissionDenied);
   }
   const loaded = await loadDeliveryContext(context);
