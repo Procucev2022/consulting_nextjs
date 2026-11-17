@@ -1,8 +1,7 @@
 import { D1_TENANT_DATA_CACHE_MAX_ROWS } from '../constants/db';
 import type { CloudflareD1Database } from '../types/cloudflare';
 import type { D1TenantDataCacheKey } from '../types/db';
-import { bumpCacheGeneration, readCacheGeneration } from './cacheGeneration';
-import { getOrLoadD1ReferenceData } from './d1ReferenceDataCache';
+import { bumpCacheGeneration, getGenerationalReferenceData } from './cacheGeneration';
 
 // One generation per dataset of each tenant. A write advances it in D1, so the next request on any isolate reads the
 // new generation and uses a different cache key. Copies under older generations age out of the reference cache.
@@ -18,10 +17,7 @@ export const getTenantD1Data = async <T>(
   load: () => Promise<T>
 ): Promise<T> => {
   const scopeKey = scopeKeyForTenant(dataset, tenantId);
-  const generation = await readCacheGeneration(database, scopeKey);
-  const cached = await getOrLoadD1ReferenceData(
-    database, `${scopeKey}#${generation}`, load, undefined, shouldCacheTenantData
-  );
+  const cached = await getGenerationalReferenceData(database, scopeKey, scopeKey, load, shouldCacheTenantData);
   return cached.value;
 };
 

@@ -1,12 +1,12 @@
 import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES, D1_TABLES } from './constants/d1';
-import { DEFAULT_CACHE_TTL_MS, D1_REFERENCE_CACHE_KEYS } from './constants/db';
+import { DEFAULT_CACHE_TTL_MS, D1_PCBI_PUBLISHED_CACHE_SCOPE } from './constants/db';
 import { PCBI_PUBLISHED_PAYLOAD_QUERY } from './constants/pcbiHistorical';
 import { pcbiAdminImportSchema, pcbiAdminPublishSchema } from './constants/validation';
 import { queryD1Rows } from './services/workerD1Query';
-import { clearD1ReferenceDataCache } from './services/d1ReferenceDataCache';
+import { bumpCacheGeneration, readCacheGeneration } from './services/cacheGeneration';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
-import type { PCBIPublishedPayloadCacheEntry } from './types/pcbi';
+import type { PCBIPublishedPayloadCacheEntry, PCBIPublishedPayloadLoad } from './types/pcbi';
 import type { PcbiAdminStoredJsonLogContext, PcbiAdminStoredJsonResult } from './types/pcbiAdminLogging';
 import type { PcbiAdminImportInput } from './types/validation';
 import logger from './utils/logger';
@@ -24,8 +24,7 @@ type VersionRow = D1Record & {
 };
 
 let publishedPayloadCache = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadCacheEntry>();
-let publishedPayloadLoads = new WeakMap<CloudflareD1Database, Promise<PcbiAdminImportInput | null>>();
-let publishedPayloadGenerations = new WeakMap<CloudflareD1Database, number>();
+let publishedPayloadLoads = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadLoad>();
 
 const parseJsonField = (value: unknown, context: PcbiAdminStoredJsonLogContext): PcbiAdminStoredJsonResult => {
   try {
@@ -288,21 +287,41 @@ const publishVersion = async (
 
 export const clearPublishedPcbiPayloadCache = (db?: CloudflareD1Database): void => {
   if (db) {
-    publishedPayloadGenerations.set(db, (publishedPayloadGenerations.get(db) || 0) + 1);
     publishedPayloadCache.delete(db);
     publishedPayloadLoads.delete(db);
   } else {
     publishedPayloadCache = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadCacheEntry>();
-    publishedPayloadLoads = new WeakMap<CloudflareD1Database, Promise<PcbiAdminImportInput | null>>();
-    publishedPayloadGenerations = new WeakMap<CloudflareD1Database, number>();
+    publishedPayloadLoads = new WeakMap<CloudflareD1Database, PCBIPublishedPayloadLoad>();
   }
 };
-
-export const getPublishedPcbiPayload = async (
-  db: CloudflareD1Database, requestId?: string
+const loadPublishedPcbiPayload = async (
+  db: CloudflareD1Database,
+  requestId?: string
 ): Promise<PcbiAdminImportInput | null> => {
+  const [row] = await queryD1Rows<{ version: string; upload_id: string; payload_json: string }>(
+    db, PCBI_PUBLISHED_PAYLOAD_QUERY, [], requestId
+  );
+  const payloadContext: PcbiAdminStoredJsonLogContext | null = row ? {
+    requestId, version: row.version, uploadId: row.upload_id, field: 'payload_json'
+  } : null;
+  const storedPayload = row && payloadContext ? parseJsonField(row.payload_json, payloadContext) : null;
+  const parsed = storedPayload?.valid ? pcbiAdminImportSchema.safeParse(storedPayload.value) : null;
+  if (parsed && !parsed.success && payloadContext) {
+    logInvalidStoredPayloadSchema(payloadContext, parsed.error.issues);
+  }
+  return parsed?.success ? parsed.data : null;
+};
+/**
+ * Returns the published master payload. Cache entries and in-flight reads record the D1 generation they were read
+ * under, so a publish on any isolate makes the next read load again.
+ */
+export const getPublishedPcbiPayload = async (
+  db: CloudflareD1Database,
+  requestId?: string
+): Promise<PcbiAdminImportInput | null> => {
+  const generation = await readCacheGeneration(db, D1_PCBI_PUBLISHED_CACHE_SCOPE);
   const cached = publishedPayloadCache.get(db);
-  if (cached && cached.expiresAt > Date.now()) {
+  if (cached && cached.expiresAt > Date.now() && cached.generation === generation) {
     logger.debug('Used cached published PCBI payload', {
       model: D1_TABLES.pcbiMasterVersions, cacheStatus: 'hit', requestId
     });
@@ -310,34 +329,20 @@ export const getPublishedPcbiPayload = async (
   }
   if (cached) publishedPayloadCache.delete(db);
   const pending = publishedPayloadLoads.get(db);
-  if (pending) {
+  if (pending && pending.generation === generation) {
     logger.debug('Joined in-flight published PCBI payload read', {
       model: D1_TABLES.pcbiMasterVersions, cacheStatus: 'coalesced', requestId
     });
-    return pending;
+    return pending.promise;
   }
-  const generation = publishedPayloadGenerations.get(db) || 0;
-  const load = (async (): Promise<PcbiAdminImportInput | null> => {
-    const [row] = await queryD1Rows<{ version: string; upload_id: string; payload_json: string }>(
-      db, PCBI_PUBLISHED_PAYLOAD_QUERY, [], requestId
-    );
-    const payloadContext: PcbiAdminStoredJsonLogContext | null = row ? {
-      requestId, version: row.version, uploadId: row.upload_id, field: 'payload_json'
-    } : null;
-    const storedPayload = row && payloadContext ? parseJsonField(row.payload_json, payloadContext) : null;
-    const parsed = storedPayload?.valid ? pcbiAdminImportSchema.safeParse(storedPayload.value) : null;
-    if (parsed && !parsed.success && payloadContext) {
-      logInvalidStoredPayloadSchema(payloadContext, parsed.error.issues);
-    }
-    const payload = parsed?.success ? parsed.data : null;
-    if ((publishedPayloadGenerations.get(db) || 0) === generation) {
-      publishedPayloadCache.set(db, { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, payload });
-    }
-    return payload;
-  })();
+  const load: PCBIPublishedPayloadLoad = { generation, promise: loadPublishedPcbiPayload(db, requestId) };
   publishedPayloadLoads.set(db, load);
   try {
-    return await load;
+    const payload = await load.promise;
+    if (publishedPayloadLoads.get(db) === load) {
+      publishedPayloadCache.set(db, { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, generation, payload });
+    }
+    return payload;
   } finally {
     if (publishedPayloadLoads.get(db) === load) publishedPayloadLoads.delete(db);
   }
@@ -364,7 +369,7 @@ export const handlePcbiAdminRoute = async (
     const result = await publishVersion(database, request, decodeURIComponent(publishMatch[1]), requestId);
     if (result.status === undefined || result.status < 400) {
       clearPublishedPcbiPayloadCache(database);
-      clearD1ReferenceDataCache(database, D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS);
+      await bumpCacheGeneration(database, D1_PCBI_PUBLISHED_CACHE_SCOPE);
     }
     return result;
   }

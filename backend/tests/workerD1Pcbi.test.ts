@@ -111,7 +111,7 @@ describe('D1 PCBI reference data', () => {
       { id: 'cement', sector: 'Cement', applicable_sectors: undefined, active: true }
     ]);
     expect((await call(db, '/benchmarks')).data).toHaveLength(4);
-    expect(db.prepare).toHaveBeenCalledTimes(2);
+    expect(db.prepare.mock.calls.filter(([sql]) => !String(sql).includes('CacheGeneration'))).toHaveLength(2);
   });
 
   it('caches the published payload by D1 binding and avoids loading it for the dashboard', async () => {

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
 import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../src/types/cloudflare';
+import { cacheGenerationStatement, createCacheGenerationStore } from './helpers/cacheGenerationDatabase';
+import type { CacheGenerationStore } from './helpers/cacheGenerationDatabase';
+import { D1_PCBI_PUBLISHED_CACHE_SCOPE } from '../src/constants/db';
 import type { D1Record } from '../src/types/d1';
 import type { PcbiAdminImportInput } from '../src/types/validation';
 import { clearD1ReferenceDataCache } from '../src/services/d1ReferenceDataCache';
@@ -68,6 +71,7 @@ class TestStatement implements CloudflareD1PreparedStatement {
 
 class TestDatabase implements CloudflareD1Database {
   readonly versions: StoredVersion[] = [];
+  readonly generations: CacheGenerationStore = createCacheGenerationStore();
   readonly prepared: string[] = [];
   batch?: (statements: CloudflareD1PreparedStatement[]) => Promise<unknown[]>;
   constructor(withBatch = true) {
@@ -75,6 +79,8 @@ class TestDatabase implements CloudflareD1Database {
   }
   prepare(sql: string): CloudflareD1PreparedStatement {
     this.prepared.push(sql);
+    const generationStatement = cacheGenerationStatement(sql, this.generations);
+    if (generationStatement) return generationStatement as unknown as CloudflareD1PreparedStatement;
     return new TestStatement(this, sql);
   }
 }
@@ -424,6 +430,7 @@ describe('D1 PCBI master administration', () => {
     const refreshed = await handlePcbiRoute(db, '/benchmarks', new Request(url), url);
 
     expect(refreshed.data).toHaveLength(1);
+    expect(db.generations.get(D1_PCBI_PUBLISHED_CACHE_SCOPE)).toBe(1);
     expect(db.prepared.length).toBeGreaterThan(firstReadCount);
   });
 
@@ -448,6 +455,7 @@ describe('D1 PCBI master administration', () => {
     });
 
     const staleRead = getPublishedPcbiPayload(db);
+    await vi.waitFor(() => expect(publishedPayloadReads).toBe(1));
     clearPublishedPcbiPayloadCache(db);
     releaseRead();
     await staleRead;

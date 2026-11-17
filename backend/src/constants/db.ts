@@ -40,6 +40,8 @@ export const D1_TENANT_DATA_CACHE_KEYS = {
 
 // Scope prefix of the generation row that guards each tenant's assessment-scoped Module 2 analysis cache.
 export const D1_MODULE2_ANALYSIS_CACHE_SCOPE = 'module2-analysis';
+// Scope of the generation row that guards the published PCBI master version and the benchmarks derived from it.
+export const D1_PCBI_PUBLISHED_CACHE_SCOPE = 'pcbi-published';
 export const CACHE_KEYS = {
   TENANT: 'tenant:master',
   INGESTION_QUEUE: 'ingestion:queue',

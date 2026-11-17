@@ -7,10 +7,10 @@ import {
   PCBI_HISTORICAL_FREQUENCY,
   PCBI_HISTORICAL_OBSERVATION_QUERY_FIELDS
 } from './constants/pcbiHistorical';
-import { D1_REFERENCE_CACHE_KEYS } from './constants/db';
+import { D1_PCBI_PUBLISHED_CACHE_SCOPE, D1_REFERENCE_CACHE_KEYS } from './constants/db';
 import { pcbiHistoricalObservationsQuerySchema, pcbiReferenceQuerySchema } from './constants/validation';
 import { queryD1Rows, requireWorkerDb } from './services/workerD1Query';
-import { getOrLoadD1ReferenceData } from './services/d1ReferenceDataCache';
+import { getGenerationalReferenceData } from './services/cacheGeneration';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import type { PCBIHistoricalObservationRecord } from './types/pcbi';
@@ -117,8 +117,9 @@ export const handlePcbiRoute = async (
     } };
   }
   if (subPath === '/benchmarks' || subPath === '/master/benchmarks') {
-    const benchmarkResult = await getOrLoadD1ReferenceData<D1Record[]>(
+    const benchmarkResult = await getGenerationalReferenceData<D1Record[]>(
       database,
+      D1_PCBI_PUBLISHED_CACHE_SCOPE,
       D1_REFERENCE_CACHE_KEYS.PCBI_BENCHMARKS,
       async () => {
         const publishedPayload = await getPublishedPcbiPayload(database, requestId);
