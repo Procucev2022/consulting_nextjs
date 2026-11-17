@@ -36,7 +36,6 @@ export * from './pcbiControlledValidation';
 export * from './pcbiPilotExpansion';
 export * from './pcbiProductionPilot';
 export * from './pcbiProductionReady';
-export * from './pcbiPlatformIntegration';
 export * from './pcbiCommodityDataLab';
 export * from './statusDesign';
 export * from './module2StrategicSourcing';
