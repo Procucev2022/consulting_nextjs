@@ -36,6 +36,11 @@ This review covers the database, Cloudflare D1 cost, logging, intermittent failu
 | `1a2d9ec` | Sign-in, registration, and upgrade requests had no limit (item 14). | Each network address gets 10 requests per minute on these routes, through the `AUTH_RATE_LIMITER` binding. Over the limit: 429 with the retry window. A missing or failing limiter logs a warning and lets the request through. |
 | `4006aa0` | `POST /api/crypto/encrypt` encrypted any plaintext with the server key for every tenant user (item 21). | Administrator accounts only, through the same gate as the database routes. |
 | `03f1b42` | Resolver errors reached GraphQL clients as raw text, which could expose table names and SQL (item 20). | Curated messages keep their text and gain a code and category through `ClientFacingError`. Every other execution failure returns the fixed server message with the request ID. The raw text stays in the logs. |
+| `eb0763c` | Tenant dataset caches stayed in one isolate, so another isolate served rows from before a write for up to 60 seconds (item 1). | A `CacheGeneration` table holds one counter per tenant dataset. Reads include the counter in the cache key, and writes advance it after the write commits. The drift check treats the table as runtime state. |
+| `215b5a9` | Module 2 analyses had the same staleness. The e-auction assumption save also cleared every tenant's cache (item 1). | One generation per tenant. Ingestion, rollback, and mapping saves advance it. A failed import advances it once, after its batches. The e-auction save no longer clears the cache, because the assumptions are read on each request. |
+| `46320f1` | A PCBI publish reached only the isolate that handled it, so other isolates kept the previous benchmarks (item 1). | A `pcbi-published` generation guards the published payload, its in-flight reads, and the benchmark reference. The publish route advances it. Tenant datasets use the same helper. |
+| `b416acb` | Three handlers discarded errors: the taxonomy hook dropped a failed load, and the currency and administrator clients dropped error bodies that were not JSON (item 16). | Each handler logs through the frontend logger. The administrator failure message moved into `UI_STRINGS` and names the HTTP status and the next step. |
+| `0f52ec1` | An interrupted tenant-key rebuild could lose a table (item 22). | The next run renames a leftover copy into place, drops a stale copy before it rebuilds, and creates the indexes of a recovered table in the same run. The statements still run one at a time, because the seed tooling strips `BEGIN` and `COMMIT`. |
 
 ## 3. Open items, ranked by impact
 
@@ -43,7 +48,7 @@ Items marked "Partly closed" still have the remaining work listed.
 
 ### Critical and high
 
-1. **Intermittent stale data across Worker isolates.** Module 2 analyses, tenant datasets, and reference data are cached per isolate (`services/workerD1Module2Cache.ts`, `services/d1ReferenceDataCache.ts`, `services/d1TenantDataCache.ts`). Writes clear only the local copy (for example `workerD1IngestionRoutes.ts` and `services/ingestionWorkbookImporter.ts`). A request served by another isolate can show pre-upload data for up to 60 seconds. Fix: a per-tenant generation counter in D1, read on each request and included in every cache key.
+1. **Closed (`eb0763c`, `215b5a9`, `46320f1`).** Tenant datasets, Module 2 analyses, and the published PCBI payload and benchmarks carry a D1 generation in their cache keys. Writes advance it after they commit. The FX and industry catalog reference caches have no runtime writer in `backend/src`, so they change only with a seed run and expire on the 60 second TTL.
 2. Closed in `73213cf`.
 3. **Assessment switches can show the previous assessment's data.** The sync effect in `frontend/src/app/page.tsx` (about lines 947–1022) has no cancel flag, and it leaves old line items in place when the new response is empty.
 4. **Static figures presented as analysis.** `frontend/src/constants/uiStrings.ts` contains `₹732.41 Cr` in the funnel subtitle, the scorecard subtitle and the scorecard baseline value (about lines 1994, 2584 and 2586). The KPI tiles show fixed values ("3 Yrs", "Apr 2024 – Jan 2025", "15%+", "3x"). The upload analysis in `page.tsx` uses a fixed confidence of 99.4 (about line 1474), a target reduction taken from the array index (about line 1886), and a synthesized Column L code (about line 1889). Replace each with a value computed from the data, or show "not calculated".
@@ -58,7 +63,7 @@ Items marked "Partly closed" still have the remaining work listed.
 13. **Data-clearing routes need a role decision.** `POST /api/ingestion/reset` and `DELETE /api/ingestion/validation-records` clear a tenant's data for any tenant user. The validation-record clear now logs (commit `cadc095`), but it still has no role gate. Decision needed (section 5).
 14. **Partly closed (`1a2d9ec`).** Sign-in, registration, and upgrade requests are limited per network address. Still open: There is no account lockout, and registration returns 409 for an existing email (enumeration). The limiter is the `AUTH_RATE_LIMITER` binding in `wrangler.jsonc`, with namespace IDs 8110803 and 8110804 that must be unused in the Cloudflare account. Per-account lockout is a decision (decision 9), because it can lock out the account owner.
 15. **Partly closed.** The currency conversion route refuses a missing rate (`2eb752a`). Still open: `constants/d1.ts` (about lines 274–281) sets the remediation rate to 0 when no rate exists, and `workerD1.ts` (about lines 360–370) uses `|| 0`. Both should return an error and log the currency and date.
-16. **Partly closed.** Route and root error pages exist (`e7211c0`). Still open: 24 user-visible error paths do not log (listed in the logging audit: `app/admin/dashboard/page.tsx`, `components/assessment/AssessmentDetailWorkflow.tsx`, and others). Ten `.catch()` calls swallow errors silently.
+16. **Partly closed (`e7211c0`, `b416acb`).** Route and root error pages exist (`e7211c0`). `b416acb` logs three of the ten silent `.catch()` calls: the taxonomy hook, the currency client, and the administrator client. Still open: 24 user-visible error paths do not log (listed in the logging audit: `app/admin/dashboard/page.tsx`, `components/assessment/AssessmentDetailWorkflow.tsx`, and others), and seven `.catch()` calls still swallow errors.
 17. **Partly closed.** Frontend records are JSON with a top-level `requestId` (`2271bd2`). Still open: telemetry drops `warn` entries without an `Error`, and failed telemetry POSTs are not retried.
 18. **Slow first screens with no loading state.** The dashboard hydration chain in `page.tsx` (about lines 607–945) runs serially and shows empty panels until it finishes. The UNSPSC taxonomy is fetched on every home load in 1,000-row pages, one after another (`hooks/useUNSPSCTaxonomy.ts`, `data/unspscTaxonomy.ts`). The workbook is parsed on the main thread.
 19. **Partly closed.** The `/api/db/tables` client call is removed (`fbceec7`). Still open:
@@ -68,9 +73,9 @@ Items marked "Partly closed" still have the remaining work listed.
 
 ### Medium
 
-20. **Partly closed (`df06ca6`, `03f1b42`).** Introspection is off unless `GRAPHQL_INTROSPECTION_ENABLED` is `true` (`df06ca6`), and 500s return fixed text. Resolver failures now return fixed text unless the resolver threw a `ClientFacingError` (`03f1b42`). Still open: the data-query resolvers (`resolvers/d1GraphqlDataResolvers.ts`) were not audited for tenant predicates.
+20. **Closed (`df06ca6`, `03f1b42`).** Introspection is off unless `GRAPHQL_INTROSPECTION_ENABLED` is `true` (`df06ca6`). 500s and resolver failures return fixed text, and curated messages keep their text (`03f1b42`). The data-query resolvers and the mutations were audited for tenant predicates. Every query and mutation filters on the request's tenant, and no gap was found.
 21. **Partly closed (`4006aa0`).** `POST /api/crypto/encrypt` needs an administrator account. Still open: the AI endpoints are open to every tenant user, with no quota.
-22. Migration tooling (`scripts/d1-migration-tools.js`, around lines 233–239) runs CREATE, INSERT SELECT, DROP and RENAME as one command with no count check, so an interruption can leave rows in a temporary table.
+22. **Closed (`0f52ec1`).** An interrupted tenant-key rebuild resumes on the next run (section 2). The statements still run one at a time, because the seed tooling strips `BEGIN` and `COMMIT` and D1 does not accept them.
 23. The drift gate checks table counts and seed checksums only. It ignores columns and row values. Seeds use `INSERT OR IGNORE`, so a corrected reference row never updates.
 24. PCBI benchmark rows: 27 tuples across 15 statements, against 23 manifest rows. Duplicate ids are the likely cause and are not yet confirmed.
 25. Nine natural keys lack UNIQUE constraints. Nineteen tables carry `assessment_id` without a foreign key, and no trigger ties an assessment's tenant to its customer's tenant.
@@ -85,6 +90,7 @@ Items marked "Partly closed" still have the remaining work listed.
 31. 13 tables default `tenant_id` to `TNT-GLOBAL-8902`. No live insert relies on it, but any new insert that omits it would leak across tenants.
 32. Closed in `0a69ead`. Registration ignores a requested `subscription_tier` and starts on BRONZE.
 33. Token `exp` is milliseconds, not the seconds JWT convention. It is internally consistent, so it is not a fault, but external consumers would misread it. No action taken.
+34. **Timing-sensitive tests.** Under full-gate load, `frontend/tests/app/page.test.tsx` ("navigates through all module tabs" reached 10.2 s, and "handles batch file upload" took 5.6 s) and `backend/tests/services/workerD1Module2Scoped.test.ts` ("loads the complete seeded assessment") hit the 10 second timeout. Run alone, they take 1 to 2 seconds. The suites need shorter waits or lighter fixtures.
 
 ## 4. Feature reconciliation
 
@@ -139,7 +145,7 @@ Source: the prompts in `prompts.md`, checked against the code.
 
 ## 6. Recommended order for the next pass
 
-1. Per-tenant cache generation (item 1). Largest effect on the "works once, fails next time" reports.
+1. Done: item 1 (`eb0763c`, `215b5a9`, `46320f1`).
 2. Assessment-switch guard (item 3), and removal of the static figures and the upload-analysis constants (item 4).
 3. Analysis savings columns (item 6). This needs the run-table migration and evidence statuses for "not calculated", so it is a planned change, not a quick fix.
 4. Account lockout (item 14), once you decide on it (decision 9).
