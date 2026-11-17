@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
 import { AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { RequestJsonParseError } from '../src/workerHttp';
 import logger from '../src/utils/logger';
 import {
@@ -17,7 +18,7 @@ import {
 
 const AUTH_URL = 'https://edge.example.com/api/auth';
 const ADMIN_URL = 'https://edge.example.com/api/admin';
-const ENDPOINT_NOT_FOUND = 'Endpoint not found in the Cloudflare Worker.';
+const ENDPOINT_NOT_FOUND = API_ERROR_MESSAGES.routeNotFound;
 const ADMIN_USER_NOT_FOUND = 'User not found in registry';
 const REGISTRATION = {
   name: 'Asha Rao',
@@ -659,7 +660,15 @@ describe('workerAuth authenticated routes', () => {
 
     const result = await authCall('GET', '/logout', { headers: bearer(await tokenFor(id)) });
 
-    expect(result).toEqual({ status: 404, body: { success: false, message: ENDPOINT_NOT_FOUND } });
+    expect(result).toEqual({
+      status: 404,
+      body: {
+        success: false,
+        message: ENDPOINT_NOT_FOUND,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND
+      }
+    });
   });
 
   it('returns 404 when a known path is called with an unsupported method', async () => {
@@ -989,7 +998,15 @@ describe('workerAuth admin routes', () => {
       headers: bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }))
     });
 
-    expect(result).toEqual({ status: 404, body: { success: false, message: ENDPOINT_NOT_FOUND } });
+    expect(result).toEqual({
+      status: 404,
+      body: {
+        success: false,
+        message: ENDPOINT_NOT_FOUND,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND
+      }
+    });
   });
 });
 

@@ -7,6 +7,7 @@ import type {
 import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME } from '../src/constants/cloudflare';
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
 import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { R2_CLEANUP_LOG_MESSAGES } from '../src/constants';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
 import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
@@ -700,7 +701,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/health');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
       expect(execution.passThroughOnException).toHaveBeenCalledTimes(1);
     });
 
@@ -708,7 +715,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/not-a-route');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
     });
 
     it('rejects malformed correlation IDs and still returns a support correlation ID', async () => {
@@ -734,10 +747,22 @@ describe('Cloudflare worker core routes', () => {
 
       expect(unavailable.status).toBe(503);
       expect(unavailable.headers.get('x-request-id')).toBe('req-d1-failure');
-      await expect(bodyOf(unavailable)).resolves.toEqual({ success: false, message: 'Cloudflare D1 replica unavailable' });
+      await expect(bodyOf(unavailable)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.databaseUnavailable('req-d1-failure'),
+        errorCode: API_ERROR_CODE.DATABASE_UNAVAILABLE,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId: 'req-d1-failure'
+      });
       expect(exploded.status).toBe(500);
       expect(exploded.headers.get('x-request-id')).toBe('req-api-failure');
-      await expect(bodyOf(exploded)).resolves.toEqual({ success: false, message: 'evidence exploded' });
+      await expect(bodyOf(exploded)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError('req-api-failure'),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId: 'req-api-failure'
+      });
       expect(errorLog).toHaveBeenCalledWith('Worker request failed', expect.objectContaining({
         requestId: 'req-d1-failure', path: '/api/orchestration/jobs', statusCode: 503, durationMs: expect.any(Number)
       }), expect.any(Error));
@@ -752,7 +777,14 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/reports/executive-brief/anything');
 
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'brief pipeline stopped' });
+      const body = await bodyOf(response);
+      expect(body).toMatchObject({
+        success: false,
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER
+      });
+      expect(body.message).toBe(API_ERROR_MESSAGES.internalError(response.headers.get('x-request-id') || ''));
+      expect(JSON.stringify(body)).not.toContain('brief pipeline stopped');
     });
   });
 
@@ -773,7 +805,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/orchestrationarchive');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
     });
 
     it('returns the evidence module response unchanged', async () => {
@@ -1297,8 +1335,15 @@ describe('Cloudflare worker core routes', () => {
     it('fails a binary upload when the object bucket binding is absent', async () => {
       const response = await send('/api/ingestion/upload', jsonBody('POST', { tenant_id: 'TNT-1', fileName: 'book.xlsx', fileBase64: 'aGVsbG8=' }), environmentWithDb({ OBJECTS: undefined }));
 
+      const requestId = response.headers.get('x-request-id') ?? '';
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Cloudflare R2 binding OBJECTS is required for binary uploads' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId
+      });
     });
 
     it.each([
@@ -2366,9 +2411,15 @@ describe('Cloudflare worker core routes', () => {
       const invalid = await send(`/api/ingestion/canonical?assessmentId=${'x'.repeat(121)}`);
 
       expect(canonical).toMatchObject({ totalSpendCr: 100, billingMonths: 12 });
-      expect(unknownAssessment.status).toBe(500);
-      await expect(bodyOf(unknownAssessment)).resolves.toEqual({ success: false, message: D1_ROUTE_MESSAGES.missingCanonical('AIC-404') });
-      expect(headerScoped.status).toBe(500);
+      expect(unknownAssessment.status).toBe(404);
+      await expect(bodyOf(unknownAssessment)).resolves.toEqual({
+        success: false,
+        message: D1_ROUTE_MESSAGES.missingCanonical('AIC-404'),
+        errorCode: API_ERROR_CODE.DATASET_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
+      expect(headerScoped.status).toBe(404);
       expect(invalid.status).toBe(400);
       await expect(bodyOf(invalid)).resolves.toMatchObject({ success: false, message: 'Validation failed', errors: expect.any(Array) });
     });
@@ -2376,8 +2427,15 @@ describe('Cloudflare worker core routes', () => {
     it('reports an incomplete seed as a server error on the canonical dataset', async () => {
       const response = await send('/api/ingestion/canonical');
 
+      const requestId = response.headers.get('x-request-id') ?? '';
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'D1 seed is missing required dataset metric: totalSpendCr' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId
+      });
     });
 
     it('returns 503 for the canonical dataset without a D1 binding', async () => {

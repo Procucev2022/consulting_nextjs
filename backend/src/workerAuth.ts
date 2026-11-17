@@ -8,6 +8,8 @@ import {
   AUTH_TOKEN_EXPIRY_SECONDS
 } from './constants/auth';
 import type { AuthRouteResult, CloudflareD1Database, CloudflareEnvironment } from './types/cloudflare';
+import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
+import { buildApiErrorBody } from './utils/apiErrors';
 import type { WorkerAuthCheckResult } from './types/auth';
 import { handlePcbiAdminRoute } from './workerD1PcbiAdmin';
 import { handlePcbiDataLabRoute } from './workerD1PcbiDataLab';
@@ -272,7 +274,10 @@ const authenticatedRoute = async (
     ).bind(await hashPassword(parsed.data.newPassword), new Date().toISOString(), user.id).run();
     return result({ success: true, message: 'Password updated successfully' }, 200);
   }
-  return result({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404);
+  return result(
+    buildApiErrorBody(API_HTTP_STATUS.NOT_FOUND, API_ERROR_CODE.ROUTE_NOT_FOUND, API_ERROR_MESSAGES.routeNotFound),
+    API_HTTP_STATUS.NOT_FOUND
+  );
 };
 
 export const handleAuthRoute = async (
@@ -553,5 +558,8 @@ export const handleAdminRoute = async (
     }, 200);
   }
 
-  return result({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404);
+  return result(
+    buildApiErrorBody(API_HTTP_STATUS.NOT_FOUND, API_ERROR_CODE.ROUTE_NOT_FOUND, API_ERROR_MESSAGES.routeNotFound),
+    API_HTTP_STATUS.NOT_FOUND
+  );
 };

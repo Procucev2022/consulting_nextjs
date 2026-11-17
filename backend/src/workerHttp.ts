@@ -7,6 +7,9 @@ import {
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import { WORKER_JSON_BODY_MAX_BYTES } from './constants/validation';
 import type { WorkerD1Result } from './types/d1';
+import type { ApiErrorBodyOptions, ApiErrorCode } from './types/errors';
+import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
+import { buildApiErrorBody } from './utils/apiErrors';
 import logger from './utils/logger';
 
 export class RequestJsonParseError extends Error {
@@ -43,11 +46,12 @@ export const requestJsonFailureResult = (request: Request, error: unknown): Work
   }, error instanceof RequestJsonParseError ? error.underlyingError : error);
   return {
     status,
-    data: {
-      success: false,
-      message: tooLarge ? message : D1_ROUTE_MESSAGES.validationFailed,
-      errors: [{ path: 'body', message }]
-    }
+    data: buildApiErrorBody(
+      status,
+      tooLarge ? API_ERROR_CODE.REQUEST_BODY_TOO_LARGE : API_ERROR_CODE.INVALID_JSON_BODY,
+      tooLarge ? message : D1_ROUTE_MESSAGES.validationFailed,
+      { requestId: request.headers.get('x-request-id') || undefined, extra: { errors: [{ path: 'body', message }] } }
+    )
   };
 };
 
@@ -136,6 +140,21 @@ export const apiData = (data: unknown, request: Request, extra: Record<string, u
   return jsonResponse({ success: true, data, timestamp: new Date().toISOString(), ...extra }, 200, request);
 };
 
-export const notFoundResponse = (request: Request): Response => {
-  return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
-};
+export const apiErrorResponse = (
+  request: Request,
+  status: number,
+  errorCode: ApiErrorCode,
+  message: string,
+  options: ApiErrorBodyOptions = {}
+): Response => jsonResponse(
+  buildApiErrorBody(status, errorCode, message, {
+    ...options,
+    requestId: options.requestId ?? (request.headers.get('x-request-id') || undefined)
+  }),
+  status,
+  request
+);
+
+export const notFoundResponse = (request: Request): Response => apiErrorResponse(
+  request, API_HTTP_STATUS.NOT_FOUND, API_ERROR_CODE.ROUTE_NOT_FOUND, API_ERROR_MESSAGES.routeNotFound
+);

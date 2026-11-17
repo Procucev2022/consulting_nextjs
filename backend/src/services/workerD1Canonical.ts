@@ -1,5 +1,7 @@
 import { assessmentD1ObjectSchema } from '../constants/assessmentD1';
 import { D1_ROUTE_MESSAGES } from '../constants/d1';
+import { API_ERROR_CODE, API_HTTP_STATUS } from '../constants/errors';
+import { ClientFacingError } from '../utils/apiErrors';
 import { queryD1Rows } from './workerD1Query';
 import type { CloudflareD1Database } from '../types/cloudflare';
 import type { D1Record } from '../types/d1';
@@ -21,5 +23,7 @@ export const loadCanonicalAssessmentFromD1 = async (
     const parsed = assessmentD1ObjectSchema.safeParse(canonical);
     if (parsed.success) return parsed.data;
   }
-  throw new Error(D1_ROUTE_MESSAGES.missingCanonical(assessmentId));
+  throw new ClientFacingError(
+    API_HTTP_STATUS.NOT_FOUND, API_ERROR_CODE.DATASET_NOT_FOUND, D1_ROUTE_MESSAGES.missingCanonical(assessmentId)
+  );
 };

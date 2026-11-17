@@ -4,10 +4,16 @@ import type { CloudflareD1Database, CloudflareD1PreparedStatement } from '../typ
 import type { D1Record } from '../types/d1';
 import type { D1AtomicWriteContext } from '../types/d1AtomicWrite';
 import logger from '../utils/logger';
+import { ClientFacingError } from '../utils/apiErrors';
+import { API_ERROR_CODE, API_HTTP_STATUS } from '../constants/errors';
 import { isD1DatabaseInstrumented } from './d1QueryTelemetry';
 
 export const requireWorkerDb = (db?: CloudflareD1Database): CloudflareD1Database => {
-  if (!db) throw new Error(D1_ROUTE_MESSAGES.missingBinding);
+  if (!db) {
+    throw new ClientFacingError(
+      API_HTTP_STATUS.SERVICE_UNAVAILABLE, API_ERROR_CODE.DATABASE_UNAVAILABLE, D1_ROUTE_MESSAGES.missingBinding
+    );
+  }
   return db;
 };
 
@@ -21,7 +27,9 @@ export const requireD1AtomicBatch: (
   statementCount
 ) => {
   if (db.batch) return;
-  const error = new Error(D1_ROUTE_MESSAGES.atomicBatchUnavailable);
+  const error = new ClientFacingError(
+    API_HTTP_STATUS.SERVICE_UNAVAILABLE, API_ERROR_CODE.DATABASE_UNAVAILABLE, D1_ROUTE_MESSAGES.atomicBatchUnavailable
+  );
   const operation = context.operation ?? context.action ?? D1_LOG_ACTIONS.atomicBatchUnavailable;
   logger.error(D1_LOG_MESSAGES.atomicBatchUnavailable, {
     ...context,

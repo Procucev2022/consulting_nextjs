@@ -18,6 +18,8 @@ import type { CoreBucket, UNSPSCCommodityRecord } from './types/taxonomy';
 import { readJson } from './workerHttp';
 import { d1DatasetScopeSchema } from './constants/validation';
 import logger from './utils/logger';
+import { ClientFacingError } from './utils/apiErrors';
+import { API_ERROR_CODE, API_HTTP_STATUS } from './constants/errors';
 import {
   loadAssessmentSavingsFromD1, loadSavingsFromD1, updateActionPlanInD1, updateOpportunityStatusInD1
 } from './services/workerD1Savings';
@@ -25,7 +27,7 @@ import {
 export type { WorkerD1Result } from './types/d1';
 
 export const requireD1Binding = (db?: CloudflareD1Database): CloudflareD1Database => {
-  if (!db) throw new Error('Cloudflare D1 binding DB is not configured');
+  if (!db) throw new ClientFacingError(API_HTTP_STATUS.SERVICE_UNAVAILABLE, API_ERROR_CODE.DATABASE_UNAVAILABLE, D1_ROUTE_MESSAGES.missingBinding);
   return db;
 };
 

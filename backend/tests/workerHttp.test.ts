@@ -10,6 +10,7 @@ import {
   RequestBodyTooLargeError, RequestJsonParseError, withCors
 } from '../src/workerHttp';
 import { D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import logger from '../src/utils/logger';
 
 const ORIGIN = 'https://app.example.com';
@@ -193,7 +194,9 @@ describe('workerHttp notFoundResponse', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ORIGIN);
     await expect(response.json()).resolves.toEqual({
       success: false,
-      message: 'Endpoint not found in the Cloudflare Worker.'
+      message: API_ERROR_MESSAGES.routeNotFound,
+      errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+      errorCategory: API_ERROR_CATEGORY.NOT_FOUND
     });
   });
 });

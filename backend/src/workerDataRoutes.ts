@@ -13,7 +13,7 @@ import {
   requireD1Binding
 } from './workerD1';
 import {
-  apiData, jsonResponse, withCors
+  apiData, jsonResponse, notFoundResponse, withCors
 } from './workerHttp';
 import { handleIndustryProfilesRoute } from './workerD1IndustryProfiles';
 import { handleModule2LogisticsPackagingRoute } from './workerD1Module2Logistics';
@@ -94,5 +94,5 @@ export const handleDataRoute = async (
   const d1DataResponse = await handleD1DataRoute(request, environment, url);
   if (d1DataResponse) return d1DataResponse;
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/db/`)) return handleDatabaseRoute(request, environment);
-  return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
+  return notFoundResponse(request);
 };
