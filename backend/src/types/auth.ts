@@ -74,3 +74,6 @@ export interface AdminUserListResponse {
   activeCount: number;
   companiesCount: number;
 }
+
+/** Request families that the Cloudflare rate limiter counts per network address. */
+export type AuthRateLimitScope = 'login' | 'register' | 'upgradeRequest';

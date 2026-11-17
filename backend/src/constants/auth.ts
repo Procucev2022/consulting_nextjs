@@ -2,6 +2,8 @@
  * Authentication Constants (Backend)
  */
 
+import type { AuthRateLimitScope } from '../types/auth';
+
 export const AUTH_ROLES = {
   USER: 'USER',
   ADMIN: 'ADMIN'
@@ -64,3 +66,25 @@ export const AUTH_SQL = {
 
 /** Subscription tier every self-registered account starts on. Upgrades go through the commercial workflow. */
 export const AUTH_REGISTRATION_SUBSCRIPTION_TIER = 'BRONZE' as const;
+
+/** Length of the rate-limit window. The Cloudflare binding in wrangler.jsonc allows the same count per window. */
+export const AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
+
+/** Key prefix for each request family. The network address is appended to make each key unique to a client. */
+export const AUTH_RATE_LIMIT_NAMESPACE: Readonly<Record<AuthRateLimitScope, string>> = {
+  login: 'auth-login',
+  register: 'auth-register',
+  upgradeRequest: 'upgrade-request'
+};
+
+export const AUTH_RATE_LIMIT_MESSAGES: Readonly<Record<AuthRateLimitScope, string>> = {
+  login: 'Too many sign-in attempts from this network. Wait one minute, then try again. If the problem continues, contact your administrator.',
+  register: 'Too many registration requests from this network. Wait one minute, then try again.',
+  upgradeRequest: 'Too many upgrade requests from this network. Wait one minute, then try again.'
+};
+
+export const AUTH_RATE_LIMIT_LOG_MESSAGES = {
+  limited: 'Authentication request rate limit reached',
+  limiterMissing: 'Authentication rate limiter is not bound; the request was not limited',
+  limiterFailed: 'Authentication rate limiter failed; the request was not limited'
+} as const;

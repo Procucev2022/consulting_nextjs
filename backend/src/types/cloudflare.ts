@@ -50,6 +50,7 @@ export interface CloudflareRateLimiter {
 export interface CloudflareEnvironment {
   DB?: CloudflareD1Database;
   CLIENT_ERROR_RATE_LIMITER?: CloudflareRateLimiter;
+  AUTH_RATE_LIMITER?: CloudflareRateLimiter;
   REQUEST_TENANT_ID?: string;
   REQUEST_USER_ID?: string;
   REQUEST_USER_ROLE?: string;

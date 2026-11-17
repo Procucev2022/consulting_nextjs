@@ -6,6 +6,7 @@ import {
 } from '../constants/commercialValidation';
 import type { AuthRouteResult, CloudflareEnvironment } from '../types/cloudflare';
 import type { UpgradeRequestD1Row } from '../types/commercialWorkflow';
+import { enforceAuthRateLimit } from './authRateLimit';
 import logger from '../utils/logger';
 import {
   authorizeCommercialAdmin, commercialResult, createOneTimeCode, createOtp, d1ChangedRows,
@@ -194,8 +195,10 @@ export const handleUpgradeRoute = async (
   request: Request, environment: CloudflareEnvironment, url: URL
 ): Promise<AuthRouteResult | null> => {
   switch (`${request.method} ${url.pathname}`) {
-    case 'POST /api/upgrade/request':
-      return createUpgradeRequest(request, environment);
+    case 'POST /api/upgrade/request': {
+      const limited = await enforceAuthRateLimit(request, environment, 'upgradeRequest');
+      return limited ?? createUpgradeRequest(request, environment);
+    }
     case 'POST /api/upgrade/login-with-code':
       return handleUpgradeCodeLogin(request, environment);
     case 'GET /api/upgrade/requests':

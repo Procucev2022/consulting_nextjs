@@ -2,6 +2,7 @@ import {
   loginUserSchema, registerUserSchema, changePasswordSchema, adminProvisionSchema,
   adminAssignUserTenantSchema, adminUpdateUserStatusSchema, adminUpdateUserTierSchema
 } from './constants/validation';
+import { enforceAuthRateLimit } from './services/authRateLimit';
 import { D1_SINGLE_ROW_CHANGE_COUNT } from './constants/db';
 import {
   AUTH_HEX_BYTE_PATTERN, AUTH_LEGACY_PASSWORD_PATTERN, AUTH_MESSAGES, AUTH_ROLES, AUTH_SQL, AUTH_STATUS,
@@ -286,8 +287,14 @@ export const handleAuthRoute = async (
   url: URL
 ): Promise<AuthRouteResult> => {
   if (!environment.DB || !environment.AUTH_SECRET) return result({ success: false, message: 'Cloudflare D1 or AUTH_SECRET is not configured.' }, 503);
-  if (url.pathname.endsWith('/register') && request.method === 'POST') return register(request, environment.DB);
-  if (url.pathname.endsWith('/login') && request.method === 'POST') return login(request, environment);
+  if (url.pathname.endsWith('/register') && request.method === 'POST') {
+    const limited = await enforceAuthRateLimit(request, environment, 'register');
+    return limited ?? register(request, environment.DB);
+  }
+  if (url.pathname.endsWith('/login') && request.method === 'POST') {
+    const limited = await enforceAuthRateLimit(request, environment, 'login');
+    return limited ?? login(request, environment);
+  }
   return authenticatedRoute(request, environment, url);
 };
 
