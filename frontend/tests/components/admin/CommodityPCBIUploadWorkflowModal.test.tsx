@@ -1,3 +1,4 @@
+import { AUTH_ADMIN_DISPLAY_FALLBACK } from '../../../src/constants/auth';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -207,7 +208,7 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
       expect(pcbiCommodityDataLabApi.approveCommodityData).toHaveBeenCalledWith({
         commodityId: 'COM-MET-FMO',
         pcbiId: 'PCBI-FEMO-65-001',
-        approverName: 'Sriman Admin',
+        approverName: AUTH_ADMIN_DISPLAY_FALLBACK,
         comments: expect.any(String)
       });
       expect(handleComplete).toHaveBeenCalledWith({

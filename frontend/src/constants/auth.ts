@@ -70,3 +70,6 @@ export const AUTH_SESSION_EXEMPT_PATH_PREFIXES: readonly string[] = [
   '/api/telemetry/',
   '/api/admin/create-admin'
 ];
+
+/** Label recorded when no signed-in administrator identity is available. */
+export const AUTH_ADMIN_DISPLAY_FALLBACK = 'Signed-in administrator';

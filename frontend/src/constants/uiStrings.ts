@@ -3086,7 +3086,7 @@ export const UI_STRINGS = {
     companyAddressLabel: 'Company Address',
     companyAddressPlaceholder: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India',
     quickFillAdminButton: 'Quick-Fill Admin Credentials (admin@procucev.com)',
-    fillDefaultDetailsButton: 'Fill Default Admin Details (admin@procucev.com / Procucev@123)',
+    fillDefaultDetailsButton: 'Fill Default Admin Details',
     submitLoginButton: 'Enter Admin Dashboard',
     submitCreateButton: 'Create / Update Admin Details',
     submittingLogin: 'Authenticating Administrator...',
@@ -3106,7 +3106,7 @@ export const UI_STRINGS = {
     signOutButton: 'Sign Out Administrator',
     badgeAdminRole: 'ROLE: ADMIN',
     badgeGoldTier: 'TIER: GOLD',
-    loginHelperText: 'Use admin@procucev.com with password Procucev@123 to authenticate as administrator.',
+    loginHelperText: 'Sign in with the administrator email and password issued for this environment.',
     createHelperText: 'Creates or updates the admin account details in the database and active session store.'
   },
 

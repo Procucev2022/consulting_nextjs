@@ -26,6 +26,7 @@ import frontendLogger from '../../../utils/logger';
 import { UI_STRINGS } from '../../../constants/uiStrings';
 import type { CommodityPCBIUploadWorkflowModalProps } from '../../../types/pcbiDataLibraryComponents';
 import type { CommodityResearchQueueRow, CommoditySourceEvidenceObject, CommodityWorkspaceDetail } from '../../../types/pcbiCommodityDataLab';
+import { getAdministratorDisplayName } from '../../../utils/adminIdentity';
 
 export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkflowModalProps> = ({
   isOpen,
@@ -107,7 +108,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
         const res = await pcbiCommodityDataLabApi.approveCommodityData({
           commodityId: activeCommodity.commodityId,
           pcbiId: activeCommodity.pcbiId,
-          approverName: 'Sriman Admin',
+          approverName: getAdministratorDisplayName(),
           comments: comments || 'Approved after 10-step validation and methodology verification.'
         });
 
