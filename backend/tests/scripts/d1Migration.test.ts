@@ -189,6 +189,68 @@ describe('batched D1 compatibility migrations', () => {
     }
   });
 
+  it('renames the complete copy into place when a rebuild stopped after the original table was dropped', () => {
+    const database = new DatabaseSync(':memory:');
+    try {
+      createAggregateTables(database);
+      database.exec("INSERT INTO VendorPriceRank (vendor_name, master_id, category, total_spend) VALUES ('Legacy Steel', 'V-1', 'Steel', 50);");
+      const { executeSqlCommand } = createMigrationExecutor(database);
+      const stopAfter = (marker: string) => (sql: string, jsonOutput = false): unknown[] => {
+        if (jsonOutput) return executeSqlCommand(sql, true);
+        for (const statement of sql.split('\n')) {
+          database.exec(statement);
+          if (statement === marker) throw new Error('connection lost');
+        }
+        return [];
+      };
+      expect(() => applyD1CompatibilityMigrations(stopAfter('DROP TABLE VendorPriceRank;'))).toThrow('connection lost');
+      expect(database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'VendorPriceRank'").all())
+        .toEqual([]);
+
+      applyD1CompatibilityMigrations(executeSqlCommand);
+
+      expect(database.prepare('SELECT tenant_id, master_id, vendor_name FROM VendorPriceRank').all())
+        .toEqual([{ tenant_id: 'TNT-GLOBAL-8902', master_id: 'V-1', vendor_name: 'Legacy Steel' }]);
+      expect(applyD1CompatibilityMigrations(executeSqlCommand)).toEqual({
+        metadataQueries: 1,
+        writeCommands: 0,
+        statements: 0,
+        migratedTables: 0
+      });
+    } finally {
+      database.close();
+    }
+  });
+
+  it('discards the stale copy from a rebuild that stopped before the drop and rebuilds from the original', () => {
+    const database = new DatabaseSync(':memory:');
+    try {
+      createAggregateTables(database);
+      database.exec("INSERT INTO VendorPriceRank (vendor_name, master_id, category, total_spend) VALUES ('Legacy Steel', 'V-1', 'Steel', 50);");
+      const { executeSqlCommand } = createMigrationExecutor(database);
+      const stopAfterCopy = (sql: string, jsonOutput = false): unknown[] => {
+        if (jsonOutput) return executeSqlCommand(sql, true);
+        for (const statement of sql.split('\n')) {
+          database.exec(statement);
+          if (statement.startsWith('INSERT INTO __D1_MIGRATION_VendorPriceRank_TENANT_KEY')) {
+            throw new Error('connection lost');
+          }
+        }
+        return [];
+      };
+      expect(() => applyD1CompatibilityMigrations(stopAfterCopy)).toThrow('connection lost');
+
+      applyD1CompatibilityMigrations(executeSqlCommand);
+
+      expect(database.prepare('SELECT tenant_id, master_id FROM VendorPriceRank').all())
+        .toEqual([{ tenant_id: 'TNT-GLOBAL-8902', master_id: 'V-1' }]);
+      expect(database.prepare("SELECT name FROM sqlite_master WHERE name = '__D1_MIGRATION_VendorPriceRank_TENANT_KEY'").all())
+        .toEqual([]);
+    } finally {
+      database.close();
+    }
+  });
+
   it('drops a redundant email index without rescanning users when the normalized index already exists', () => {
     const database = new DatabaseSync(':memory:');
     try {
