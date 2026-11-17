@@ -177,7 +177,6 @@ export const UI_STRINGS = {
     validatedBadge: 'Validated',
     managementQuickSummaryUnavailable: 'Management Quick Summary unavailable until analysis is complete',
     moreReportsUnavailable: 'No persisted reports available for this assessment',
-    evaluatedSpendFallback: '₹732.41 Cr',
     totalSpendEvaluatedPrefix: 'Total Spend Evaluated: ',
     viewExecutiveReport: 'View Executive Report',
     themeToggleDark: 'Switch to Dark Mode',

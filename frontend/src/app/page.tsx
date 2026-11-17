@@ -202,7 +202,7 @@ export default function Home() {
 
   // The brief endpoint answers with JSON errors until it is implemented. Only a successful response is saved as a file.
   const handleBriefDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
-    const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
+    const filename = `aiCEV_Executive_Opportunity_Brief.${format}`;
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
     const formatLabel = format.toUpperCase();
     try {
@@ -2774,7 +2774,7 @@ export default function Home() {
         >
           <div className="w-full max-w-6xl my-auto">
             <ExecutiveOpportunityBriefView
-              clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
+              clientName={tenant.enterprise_name || UI_STRINGS.header.enterpriseFallback}
               onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
               onDownloadPdf={() => {
                 void handleBriefDownload('pdf');
