@@ -2,7 +2,9 @@ import { D1_TABLES } from './constants/d1';
 import { ASSESSMENT_STATUSES, DATA_STATUSES } from './constants/assessment';
 import type { CloudflareD1Database, CloudflareEnvironment } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
-import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
+import {
+  ASSESSMENT_D1_MESSAGES, ASSESSMENT_D1_UNCALCULATED_COLUMN_LIST, ASSESSMENT_D1_UNCALCULATED_NULL_LIST
+} from './constants/assessmentD1';
 import { createAssessmentSchema } from './constants/assessmentValidation';
 import { REQUEST_ID_HEADER } from './constants/validation';
 import type { AssessmentSnapshotReadContext } from './types/assessmentDataVersionD1';
@@ -89,8 +91,8 @@ export const handleAssessmentRoute = async (
         INSERT INTO ${D1_TABLES.assessments} (
           assessment_id, tenant_id, customer_id, customer_name, industry, business_unit, company_website,
           assessment_owner, currency, assessment_period_start, assessment_period_end, data_received_at,
-          nda_status, data_status, assigned_analyst, status, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          nda_status, data_status, assigned_analyst, status, notes, ${ASSESSMENT_D1_UNCALCULATED_COLUMN_LIST}
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${ASSESSMENT_D1_UNCALCULATED_NULL_LIST})
       `).bind(
         id, tenantId, customerId, body.customerName, body.industry, body.businessUnit || 'Default BU',
         body.companyWebsite || null, body.assessmentOwner || body.assignedAnalyst, body.currency,

@@ -128,3 +128,18 @@ export const ASSESSMENT_SNAPSHOT_SQL = {
   byAssessmentIds: 'SELECT assessment_id, entry_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ? ' +
     'AND assessment_id IN (SELECT value FROM json_each(?))'
 } as const;
+
+// Financial columns that the schema fills with sample figures by default (for example 556.5347 Cr). A new
+// assessment leaves them NULL until an analysis run calculates them, so a sample value never reads back as a result.
+export const ASSESSMENT_D1_UNCALCULATED_FINANCIAL_COLUMNS: readonly string[] = [
+  'total_spend_cr', 'validated_spend_cr', 'baseline_spend_cr', 'gross_spend_cr', 'fx_impact_cr',
+  'addressable_spend_cr', 'gross_opportunity_cr', 'overlap_deductions_cr', 'net_defensible_opportunity_cr',
+  'proven_opportunity_cr', 'delivery_range_min_cr', 'delivery_range_max_cr', 'pcbi_analytical_signal_cr',
+  'potential_savings_cr', 'savings_pct'
+];
+
+export const ASSESSMENT_D1_UNCALCULATED_COLUMN_LIST = ASSESSMENT_D1_UNCALCULATED_FINANCIAL_COLUMNS.join(', ');
+
+export const ASSESSMENT_D1_UNCALCULATED_NULL_LIST = ASSESSMENT_D1_UNCALCULATED_FINANCIAL_COLUMNS
+  .map(() => 'NULL')
+  .join(', ');
