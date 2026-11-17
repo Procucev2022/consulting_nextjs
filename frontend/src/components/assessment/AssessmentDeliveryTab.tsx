@@ -1,11 +1,27 @@
 import React from 'react';
 import { UI_STRINGS } from '../../constants';
+import { useEvidenceFileDownload } from '../../hooks/useEvidenceFileDownload';
 import type { AssessmentDeliveryTabProps } from '../../types';
 import { API_BASE } from '../../utils/apiBase';
 
+// Artifacts require the Bearer token, which a plain link cannot send. The download hook fetches the file first.
+const deliveryArtifactUrl = (assessmentId: string, artifactId: string): string =>
+  `${API_BASE}/api/assessment/${encodeURIComponent(assessmentId)}/delivery-package/${encodeURIComponent(artifactId)}`;
+
 export const AssessmentDeliveryTab: React.FC<AssessmentDeliveryTabProps> = ({ deliveryPackage }) => {
+  const { downloadPayload, downloadLinkRef, downloadError, pendingKey, requestDownload } = useEvidenceFileDownload();
   return (
     <div className="space-y-6">
+      {downloadPayload && (
+        <a
+          ref={downloadLinkRef}
+          href={downloadPayload.href}
+          download={downloadPayload.filename}
+          className="hidden"
+          aria-hidden="true"
+        />
+      )}
+      {downloadError && <p role="alert" className="text-xs text-rose-300">{downloadError}</p>}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3">
           <div>
@@ -112,14 +128,20 @@ export const AssessmentDeliveryTab: React.FC<AssessmentDeliveryTabProps> = ({ de
                             : UI_STRINGS.ASSESSMENT.delivery.notGenerated}
                         </span>
                         {item.artifactStatus === 'GENERATED' && (
-                          <a
-                            href={`${API_BASE}/api/assessment/${encodeURIComponent(deliveryPackage.assessmentId)}/delivery-package/${encodeURIComponent(item.id)}`}
-                            download={item.fileName}
-                            className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-700 text-white hover:bg-emerald-600"
+                          <button
+                            type="button"
+                            onClick={() => void requestDownload(
+                              item.id,
+                              deliveryArtifactUrl(deliveryPackage.assessmentId, item.id),
+                              item.fileName
+                            )}
+                            disabled={pendingKey !== null}
+                            aria-busy={pendingKey === item.id}
+                            className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-700 text-white hover:bg-emerald-600 disabled:opacity-50"
                             data-testid={`download-assessment-artifact-${item.id}`}
                           >
                             {UI_STRINGS.ASSESSMENT.delivery.btnDownload}
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>
