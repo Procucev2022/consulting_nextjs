@@ -2914,6 +2914,7 @@ export const UI_STRINGS = {
     registering: 'Creating Free Workspace...',
     registrationSuccess: 'Account created successfully! Welcome to aiCEV.',
     registrationPending: 'Your account request was received. An administrator must assign your organization before you can sign in.',
+    sessionExpired: 'Your session has ended. Sign in again to continue.',
     tenantAssignmentRequired: 'Your account is not assigned to an active organization, so this upload cannot be saved. Ask an administrator to assign your tenant, then sign in again.',
     loginSuccess: 'Login successful. Redirecting...',
     alreadyHaveAccount: 'Already have an account? Sign In',

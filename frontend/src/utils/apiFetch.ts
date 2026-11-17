@@ -1,5 +1,8 @@
 import { API_REQUEST_ID_HEADER } from '../constants/app';
-import { AUTH_STORAGE_KEYS } from '../constants/auth';
+import {
+  AUTH_HTTP_STATUS, AUTH_SESSION_EXEMPT_PATH_PREFIXES, AUTH_SESSION_EXPIRED_EVENT, AUTH_STORAGE_KEYS
+} from '../constants/auth';
+import { API_LOG_MESSAGES, HTTP_SERVER_ERROR_STATUS } from '../constants/apiLogging';
 import frontendLogger from './logger';
 import { getApiBaseUrl } from './apiBase';
 import { createClientRequestId } from './requestId';
@@ -24,14 +27,14 @@ const isRelativeApiUrl = (rawUrl: string): boolean => {
   return !/^[a-z][a-z\d+.-]*:/iu.test(rawUrl) && pathname.startsWith('/api/');
 };
 
+// Without a base URL (no browser and no configured backend) a relative URL cannot be parsed,
+// so its path without the query string is returned instead.
 const getRequestPath = (rawUrl: string): string => {
-  const backendBaseUrl = getApiBaseUrl();
-  const baseUrl = backendBaseUrl || getBrowserOrigin();
-  if (!baseUrl) return rawUrl.split(/[?#]/u, 1)[0] || '[unresolved]';
+  const pathOnly = rawUrl.replace(/[?#].*$/u, '');
   try {
-    return new URL(rawUrl, baseUrl).pathname;
+    return new URL(rawUrl, getApiBaseUrl() || getBrowserOrigin() || undefined).pathname;
   } catch {
-    return rawUrl.split(/[?#]/u, 1)[0] || '[unresolved]';
+    return pathOnly;
   }
 };
 
@@ -81,6 +84,43 @@ const readStoredAuthToken = (requestId: string, path: string): string | null => 
   }
 };
 
+const isSessionExemptPath = (path: string): boolean =>
+  AUTH_SESSION_EXEMPT_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+
+const clearStoredSessionKeys = (requestId: string, path: string): void => {
+  try {
+    window.localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
+    window.localStorage.removeItem(AUTH_STORAGE_KEYS.CURRENT_USER);
+    window.localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+  } catch (error: unknown) {
+    frontendLogger.warn(API_LOG_MESSAGES.sessionClearFailed, {
+      action: 'api.session.clear', path, statusCode: AUTH_HTTP_STATUS.UNAUTHORIZED, requestId
+    }, error);
+  }
+};
+
+// Observes every backend response. A token-bearing request rejected with 401 ends the session.
+// Other failed responses are logged with their status and request identifier.
+const observeBackendResponse = (
+  response: Response,
+  context: Record<string, unknown>,
+  attachedToken: boolean
+): void => {
+  const headerRequestId = response.headers ? response.headers.get(API_REQUEST_ID_HEADER) : null;
+  const requestId = headerRequestId || String(context.requestId);
+  const path = String(context.path);
+  const logContext = { ...context, statusCode: response.status, requestId };
+  if (response.status === AUTH_HTTP_STATUS.UNAUTHORIZED && attachedToken && !isSessionExemptPath(path)) {
+    clearStoredSessionKeys(requestId, path);
+    frontendLogger.warn(API_LOG_MESSAGES.sessionExpired, logContext);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_SESSION_EXPIRED_EVENT));
+    return;
+  }
+  if (response.ok) return;
+  if (response.status >= HTTP_SERVER_ERROR_STATUS) frontendLogger.error(API_LOG_MESSAGES.httpFailure, logContext);
+  else frontendLogger.warn(API_LOG_MESSAGES.httpFailure, logContext);
+};
+
 const fetchBackendApiRequest = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   let context = getBackendRequestContext(input, init);
   try {
@@ -94,7 +134,10 @@ const fetchBackendApiRequest = async (input: RequestInfo | URL, init?: RequestIn
       const token = readStoredAuthToken(requestId, String(context.path));
       if (token) headers.set('Authorization', `Bearer ${token}`);
     }
-    return await fetch(input, { ...init, headers });
+    const attachedToken = headers.has('Authorization');
+    const response = await fetch(input, { ...init, headers });
+    observeBackendResponse(response, context, attachedToken);
+    return response;
   } catch (error: unknown) {
     frontendLogger.error('Backend API request failed before a response was received', context, error);
     throw error;

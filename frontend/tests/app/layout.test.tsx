@@ -1,5 +1,9 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { replace: (url: string) => void } => ({ replace: () => undefined })
+}));
 import { renderToStaticMarkup } from 'react-dom/server';
 import RootLayout, { metadata } from '../../src/app/layout';
 

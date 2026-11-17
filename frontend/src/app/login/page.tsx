@@ -12,6 +12,7 @@
 import React from 'react';
 import { LoginBenefitsShowcase } from '../../components/LoginBenefitsShowcase';
 import { AuthCard } from '../../components/auth/AuthCard';
+import { SessionExpiredNotice } from '../../components/auth/SessionExpiredNotice';
 
 export default function LoginPage(): React.ReactElement {
   return (
@@ -33,6 +34,7 @@ export default function LoginPage(): React.ReactElement {
 
         {/* Right Column on Desktop (~48%) / 4th item on Mobile */}
         <div className="order-4 lg:order-none flex flex-col items-center justify-start w-full">
+          <SessionExpiredNotice />
           <AuthCard />
         </div>
       </div>

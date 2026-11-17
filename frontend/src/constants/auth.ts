@@ -41,3 +41,32 @@ export const DEFAULT_ADMIN_DETAILS = {
   subscription_tier: 'GOLD'
 } as const;
 
+
+/** HTTP status that means the stored credential is no longer accepted. */
+export const AUTH_HTTP_STATUS = {
+  UNAUTHORIZED: 401
+} as const;
+
+/** Window event fired when a token-bearing backend request is rejected with 401. */
+export const AUTH_SESSION_EXPIRED_EVENT = 'procucev:auth-session-expired';
+
+/** Query parameter that tells the login page to explain why the user was signed out. */
+export const AUTH_SESSION_EXPIRED_QUERY = {
+  PARAM: 'session',
+  VALUE: 'expired'
+} as const;
+
+export const AUTH_ROUTES = {
+  LOGIN: '/login'
+} as const;
+
+/**
+ * Requests under these prefixes answer 401 for reasons other than an expired session, such as a wrong password
+ * or a rejected one-time code. They never end the session.
+ */
+export const AUTH_SESSION_EXEMPT_PATH_PREFIXES: readonly string[] = [
+  '/api/auth/',
+  '/api/upgrade/',
+  '/api/telemetry/',
+  '/api/admin/create-admin'
+];
