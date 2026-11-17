@@ -35,6 +35,7 @@ This review covers the database, Cloudflare D1 cost, logging, intermittent failu
 | `50731cc` | New assessments read back the schema's sample financials (556.5347 Cr of spend, 42.45 Cr of savings, and others) as if an analysis had run (item 5). | The create route stores NULL for the fifteen financial columns that an analysis calculates. Assessments created before this commit still hold the sample figures (decision 10). |
 | `1a2d9ec` | Sign-in, registration, and upgrade requests had no limit (item 14). | Each network address gets 10 requests per minute on these routes, through the `AUTH_RATE_LIMITER` binding. Over the limit: 429 with the retry window. A missing or failing limiter logs a warning and lets the request through. |
 | `4006aa0` | `POST /api/crypto/encrypt` encrypted any plaintext with the server key for every tenant user (item 21). | Administrator accounts only, through the same gate as the database routes. |
+| `03f1b42` | Resolver errors reached GraphQL clients as raw text, which could expose table names and SQL (item 20). | Curated messages keep their text and gain a code and category through `ClientFacingError`. Every other execution failure returns the fixed server message with the request ID. The raw text stays in the logs. |
 
 ## 3. Open items, ranked by impact
 
@@ -67,7 +68,7 @@ Items marked "Partly closed" still have the remaining work listed.
 
 ### Medium
 
-20. **Partly closed.** Introspection is off unless `GRAPHQL_INTROSPECTION_ENABLED` is `true` (`df06ca6`), and 500s return fixed text. Still open: resolver errors that throw still send their message to the client (`workerGraphql.ts` returns `result.errors` as is). Curated messages, such as the administrator-only tenant update message that a test asserts, reach the client this way, so masking needs a `ClientFacingError` path. The data-query resolvers (`resolvers/d1GraphqlDataResolvers.ts`) were not audited for tenant predicates.
+20. **Partly closed (`df06ca6`, `03f1b42`).** Introspection is off unless `GRAPHQL_INTROSPECTION_ENABLED` is `true` (`df06ca6`), and 500s return fixed text. Resolver failures now return fixed text unless the resolver threw a `ClientFacingError` (`03f1b42`). Still open: the data-query resolvers (`resolvers/d1GraphqlDataResolvers.ts`) were not audited for tenant predicates.
 21. **Partly closed (`4006aa0`).** `POST /api/crypto/encrypt` needs an administrator account. Still open: the AI endpoints are open to every tenant user, with no quota.
 22. Migration tooling (`scripts/d1-migration-tools.js`, around lines 233–239) runs CREATE, INSERT SELECT, DROP and RENAME as one command with no count check, so an interruption can leave rows in a temporary table.
 23. The drift gate checks table counts and seed checksums only. It ignores columns and row values. Seeds use `INSERT OR IGNORE`, so a corrected reference row never updates.
@@ -142,7 +143,7 @@ Source: the prompts in `prompts.md`, checked against the code.
 2. Assessment-switch guard (item 3), and removal of the static figures and the upload-analysis constants (item 4).
 3. Analysis savings columns (item 6). This needs the run-table migration and evidence statuses for "not calculated", so it is a planned change, not a quick fix.
 4. Account lockout (item 14), once you decide on it (decision 9).
-5. Resolver error text in GraphQL (item 20), and the remaining unlogged error paths (item 16).
+5. Unlogged UI error paths (item 16), and the tenant-predicate audit of the data-query resolvers (item 20).
 6. Summary-table rebuild and upload write reduction (items 7 and 10). Module 2 persistence (item 9).
 7. Dashboard hydration parallelism with a loader, and lazy taxonomy (item 18).
 
