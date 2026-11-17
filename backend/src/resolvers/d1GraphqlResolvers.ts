@@ -12,6 +12,8 @@ import { getD1RuntimeMetrics } from '../services/d1QueryTelemetry';
 import { invalidateTenantD1Data } from '../services/d1TenantDataCache';
 import { decodeGraphQLIngestionCursor, encodeGraphQLIngestionCursor } from '../services/graphqlIngestionCursor';
 import logger from '../utils/logger';
+import { ClientFacingError } from '../utils/apiErrors';
+import { API_ERROR_CODE, API_HTTP_STATUS } from '../constants/errors';
 import {
   categoryDetailsResolver,
   categoryResolver,
@@ -65,13 +67,17 @@ const parseIngestionPageRequest = (
       resolver: resolverName,
       issues: parsed.error.issues.map(({ code, path, message }) => ({ code, path, message }))
     });
-    throw new Error(GRAPHQL_ERRORS.INVALID_INGESTION_PAGE_ARGS);
+    throw new ClientFacingError(
+      API_HTTP_STATUS.BAD_REQUEST, API_ERROR_CODE.VALIDATION_FAILED, GRAPHQL_ERRORS.INVALID_INGESTION_PAGE_ARGS
+    );
   }
   if (!parsed.data.after) return { first: parsed.data.first };
   try {
     const cursor = decodeGraphQLIngestionCursor(parsed.data.after);
     if (cursor.kind !== resolverName || cursor.tenantId !== context.tenantId) {
-      throw new Error(GRAPHQL_ERRORS.INVALID_INGESTION_CURSOR);
+      throw new ClientFacingError(
+        API_HTTP_STATUS.BAD_REQUEST, API_ERROR_CODE.INVALID_CURSOR, GRAPHQL_ERRORS.INVALID_INGESTION_CURSOR
+      );
     }
     return { first: parsed.data.first, cursor };
   } catch (error) {
@@ -90,7 +96,9 @@ const assertTenantAdministrator = (context: D1GraphQLContext): void => {
   logger.warn('Rejected GraphQL tenant update by a non-administrator', {
     requestId: context.requestId, tenantId: context.tenantId, userId: context.userId, role: context.role
   });
-  throw new Error(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
+  throw new ClientFacingError(
+    API_HTTP_STATUS.FORBIDDEN, API_ERROR_CODE.ADMIN_REQUIRED, AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY
+  );
 };
 
 const requireTenantIdentifier = (context: D1GraphQLContext): string => {
@@ -108,7 +116,9 @@ const parseTenantUpdate = (input: unknown, context: D1GraphQLContext): TenantUpd
       operation: 'graphql-tenant-update',
       errors: validation.error.issues
     });
-    throw new Error(D1_ROUTE_MESSAGES.validationFailed);
+    throw new ClientFacingError(
+      API_HTTP_STATUS.BAD_REQUEST, API_ERROR_CODE.VALIDATION_FAILED, D1_ROUTE_MESSAGES.validationFailed
+    );
   }
   return validation.data;
 };
@@ -178,7 +188,9 @@ const metricsResolver: D1Resolver = async (_args, context) => {
       userId: context.userId,
       role: context.role
     });
-    throw new Error(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
+    throw new ClientFacingError(
+    API_HTTP_STATUS.FORBIDDEN, API_ERROR_CODE.ADMIN_REQUIRED, AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY
+  );
   }
   const metrics = getD1RuntimeMetrics(context.db);
   return {
@@ -235,7 +247,9 @@ const updateTenantResolver: D1Resolver = async (args, context) => {
   ).run() as CloudflareD1MutationResult;
   const affectedRows = result.meta?.changes ?? result.changes;
   if (affectedRows !== undefined && Number(affectedRows) === 0) {
-    throw new Error(D1_ROUTE_MESSAGES.tenantUnavailable(tenantId));
+    throw new ClientFacingError(
+      API_HTTP_STATUS.NOT_FOUND, API_ERROR_CODE.TENANT_UNAVAILABLE, D1_ROUTE_MESSAGES.tenantUnavailable(tenantId)
+    );
   }
   return tenantResolver({}, context);
 };

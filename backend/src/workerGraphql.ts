@@ -10,6 +10,7 @@ import { D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { createD1GraphqlResolvers } from './resolvers/d1GraphqlResolvers';
 import logger from './utils/logger';
+import { toGraphqlClientErrors } from './utils/graphqlErrors';
 import { getTenantFromD1, requireD1Binding } from './workerD1';
 import { jsonResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
@@ -120,7 +121,9 @@ export const handleGraphQLRoute = async (
         logger.warn(GRAPHQL_LOG_MESSAGES.operationRejected, errorContext);
       }
     }
-    return jsonResponse(result as Record<string, unknown>, 200, request);
+    // Only successful results keep their original shape. Errors pass through toGraphqlClientErrors.
+    const body = result.errors ? { ...result, errors: toGraphqlClientErrors(result.errors, requestId) } : result;
+    return jsonResponse(body as Record<string, unknown>, 200, request);
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const invalidJson = err instanceof RequestJsonParseError;

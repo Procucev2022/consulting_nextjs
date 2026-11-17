@@ -95,3 +95,11 @@ export interface MergeVendorResult {
   success: boolean;
   affected: number;
 }
+
+/** One error in a GraphQL response. Only messages written for the client and fixed text reach this shape. */
+export interface GraphqlClientError {
+  message: string;
+  locations?: ReadonlyArray<{ line: number; column: number }>;
+  path?: ReadonlyArray<string | number>;
+  extensions?: Record<string, unknown>;
+}
