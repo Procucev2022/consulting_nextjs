@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
-import { AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
+import { AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
 import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { RequestJsonParseError } from '../src/workerHttp';
 import logger from '../src/utils/logger';
@@ -1031,6 +1031,35 @@ describe('administrator account provisioning', () => {
     });
     expect(updated).toMatchObject({ status: 200, body: { success: true, user: { name: 'Updated Administrator' } } });
     expect(await countUsers()).toBe(1);
+  });
+
+  it('never changes an existing account during first-administrator setup', async () => {
+    const registration = await register();
+    const id = registeredId(registration);
+    const before = await userRow(id);
+
+    const refused = await adminCall('/create-admin', { method: 'POST', body: { ...payload, email: REGISTRATION.email } });
+
+    expect(refused).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.bootstrapAccountExists } });
+    expect(await userRow(id)).toEqual(before);
+  });
+
+  it('requires the configured bootstrap token before the first administrator is created', async () => {
+    const environment = environmentWith({ AUTH_BOOTSTRAP_TOKEN: 'bootstrap-value-for-tests' });
+
+    const withoutToken = await adminCall('/create-admin', { method: 'POST', body: payload, environment });
+    const wrongToken = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment, headers: { [AUTH_BOOTSTRAP_TOKEN_HEADER]: 'wrong-value' }
+    });
+
+    expect(withoutToken).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid } });
+    expect(wrongToken).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid } });
+    expect(await countUsers()).toBe(0);
+
+    const created = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment, headers: { [AUTH_BOOTSTRAP_TOKEN_HEADER]: 'bootstrap-value-for-tests' }
+    });
+    expect(created).toMatchObject({ status: 201, body: { success: true, user: { role: 'ADMIN' } } });
   });
 
   it('rejects invalid provisioning fields and unavailable D1 bindings', async () => {

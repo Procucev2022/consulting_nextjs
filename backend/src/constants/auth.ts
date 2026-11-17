@@ -20,6 +20,7 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 export const AUTH_TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
+export const AUTH_BOOTSTRAP_TOKEN_HEADER = 'x-admin-bootstrap-token';
 export const AUTH_LEGACY_PASSWORD_PATTERN = /^[0-9a-f]{32}:[0-9a-f]{128}$/iu;
 export const AUTH_HEX_BYTE_PATTERN = /[0-9a-f]{2}/giu;
 
@@ -29,6 +30,8 @@ export const AUTH_MESSAGES = {
   TENANT_ASSIGNMENT_PENDING: 'Your account is awaiting administrator tenant assignment. Contact your administrator before signing in.',
   LOGIN_SUCCESS: 'Authentication successful',
   EMAIL_EXISTS: 'An account with this organization email already exists',
+  bootstrapAccountExists: 'An account with this email already exists, so the first-administrator setup did not change it. Sign in as an administrator to update that account.',
+  bootstrapTokenInvalid: 'The bootstrap token is missing or incorrect. Send the X-Admin-Bootstrap-Token value from this environment\'s deployment settings and retry.',
   INVALID_CREDENTIALS: 'Invalid organization email or password',
   ACCOUNT_INACTIVE: 'Account is currently suspended or inactive. Please contact support.',
   UNAUTHORIZED: 'Authentication required. Missing or invalid authorization token.',

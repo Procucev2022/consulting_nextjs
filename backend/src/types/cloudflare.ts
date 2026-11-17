@@ -56,6 +56,7 @@ export interface CloudflareEnvironment {
   OBJECTS?: CloudflareR2Bucket;
   FRONTEND_URL?: string;
   AUTH_SECRET?: string;
+  AUTH_BOOTSTRAP_TOKEN?: string;
   APP_ENCRYPTION_KEY?: string;
   NEXT_PUBLIC_APP_URL?: string;
   R2_BUCKET?: string;

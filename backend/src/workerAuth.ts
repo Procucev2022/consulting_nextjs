@@ -5,7 +5,7 @@ import {
 import { D1_SINGLE_ROW_CHANGE_COUNT } from './constants/db';
 import {
   AUTH_HEX_BYTE_PATTERN, AUTH_LEGACY_PASSWORD_PATTERN, AUTH_MESSAGES, AUTH_ROLES, AUTH_SQL, AUTH_STATUS,
-  AUTH_TOKEN_EXPIRY_SECONDS
+  AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_TOKEN_EXPIRY_SECONDS
 } from './constants/auth';
 import type { AuthRouteResult, CloudflareD1Database, CloudflareEnvironment } from './types/cloudflare';
 import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
@@ -291,6 +291,17 @@ export const handleAuthRoute = async (
   return authenticatedRoute(request, environment, url);
 };
 
+const secretsMatch = (provided: string, expected: string): boolean => {
+  const providedBytes = new TextEncoder().encode(provided);
+  const expectedBytes = new TextEncoder().encode(expected);
+  if (providedBytes.length !== expectedBytes.length) return false;
+  let difference = 0;
+  for (let index = 0; index < expectedBytes.length; index += 1) {
+    difference |= providedBytes[index] ^ expectedBytes[index];
+  }
+  return difference === 0;
+};
+
 const provisionAdministrator = async (
   request: Request, environment: CloudflareEnvironment
 ): Promise<AuthRouteResult> => {
@@ -303,6 +314,15 @@ const provisionAdministrator = async (
   if (!bootstrap) {
     const authorization = await authenticateWorkerUser(request, environment, true);
     if (!authorization.user) return result({ success: false, message: authorization.message }, authorization.status);
+  } else if (environment.AUTH_BOOTSTRAP_TOKEN) {
+    const provided = request.headers.get(AUTH_BOOTSTRAP_TOKEN_HEADER) ?? '';
+    if (!secretsMatch(provided, environment.AUTH_BOOTSTRAP_TOKEN)) {
+      logger.warn('Rejected first-administrator setup without the configured bootstrap token', {
+        requestId: request.headers.get('x-request-id') || undefined,
+        tokenProvided: provided.length > 0
+      });
+      return result({ success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid }, 403);
+    }
   }
   const parsed = adminProvisionSchema.safeParse(await readJson(request));
   if (!parsed.success) return result({ success: false, message: 'Validation failed', errors: parsed.error.issues }, 400);
@@ -310,6 +330,14 @@ const provisionAdministrator = async (
   const email = parsed.data.email.toLowerCase();
   const existing = await environment.DB.prepare('SELECT id FROM User WHERE lower(email) = lower(?)')
     .bind(email).first<{ id: string }>();
+  if (existing && bootstrap) {
+    // Without an administrator, an email match must never grant administrator rights to an existing account.
+    logger.warn('Refused first-administrator setup for an existing account', {
+      userId: existing.id,
+      requestId: request.headers.get('x-request-id') || undefined
+    });
+    return result({ success: false, message: AUTH_MESSAGES.bootstrapAccountExists }, 409);
+  }
   const userId = existing?.id || `usr-${crypto.randomUUID()}`;
   const user = {
     id: userId,
@@ -342,6 +370,13 @@ const provisionAdministrator = async (
       user.id, user.name, user.mobile_number, user.email, user.company_name, user.company_address,
       passwordHash, user.role, user.status, user.subscription_tier, now, now
     ).run();
+  }
+  if (bootstrap) {
+    logger.info('First administrator account provisioned through bootstrap', {
+      userId,
+      requestId: request.headers.get('x-request-id') || undefined,
+      tokenConfigured: Boolean(environment.AUTH_BOOTSTRAP_TOKEN)
+    });
   }
   return result({
     success: true,
