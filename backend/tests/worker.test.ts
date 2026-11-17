@@ -2088,6 +2088,20 @@ describe('Cloudflare worker core routes', () => {
   });
 
   describe('static data, currency and category routes', () => {
+    it('refuses a conversion for a currency with no stored rate instead of returning zero', async () => {
+      fixture.db.prepare(
+        "INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES ('CHF', 'Swiss Franc', 'MASTER_ONLY', 'seed', 'v1')"
+      ).run();
+
+      const response = await send('/api/currency?from=CHF&amount=10');
+
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('CHF', D1_ROUTE_MESSAGES.latestRateDateLabel)
+      });
+    });
+
     it('rejects unsupported collection methods and converts INR without an external rate', async () => {
       const categories = await send('/api/categories', { method: 'POST' });
       const vendors = await send('/api/vendors', { method: 'DELETE' });

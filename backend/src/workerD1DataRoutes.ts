@@ -162,6 +162,15 @@ const handleFinancialRoute = async (
       rate = Number(historicalRate.inr_per_unit);
       rateDate = historicalRate.rate_date;
     }
+    if (from !== 'INR' && !(rate > 0)) {
+      // A missing rate must not be reported as a converted amount of zero.
+      logger.warn('Currency conversion refused because no exchange rate is stored', {
+        currency: from, effectiveDate, requestId: request.headers.get('x-request-id') || undefined
+      });
+      return jsonResponse({
+        success: false, message: D1_ROUTE_MESSAGES.currencyRateUnavailable(from, effectiveDate || D1_ROUTE_MESSAGES.latestRateDateLabel)
+      }, 400, request);
+    }
     return apiData({ amount, fromCurrency: from, amountINR: Number((amount * rate).toFixed(2)), exchangeRate: rate, rateDate }, request);
   }
   return null;
