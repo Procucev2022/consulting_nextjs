@@ -32,6 +32,9 @@ This review covers the database, Cloudflare D1 cost, logging, intermittent failu
 | `fbceec7` | `dbApiClient.getDBTableData` called `/api/db/tables`, which has no route (item 19). Nothing called it. | Removed with its delegation and tests. |
 | `2271bd2` | Frontend logs were formatted strings with loose objects, and `requestId` was not a top-level field (item 17). | Each console call receives one JSON record. A `requestId` in the context is also written at the top level. |
 | `2ca6ef0` | `pcbiPlatformIntegration.ts` held readiness claims (Prisma and Postgres schema sync, "AEAD verified") that no component read (item 27). | Removed with its types, barrel exports, and the test that only checked those values. |
+| `50731cc` | New assessments read back the schema's sample financials (556.5347 Cr of spend, 42.45 Cr of savings, and others) as if an analysis had run (item 5). | The create route stores NULL for the fifteen financial columns that an analysis calculates. Assessments created before this commit still hold the sample figures (decision 10). |
+| `1a2d9ec` | Sign-in, registration, and upgrade requests had no limit (item 14). | Each network address gets 10 requests per minute on these routes, through the `AUTH_RATE_LIMITER` binding. Over the limit: 429 with the retry window. A missing or failing limiter logs a warning and lets the request through. |
+| `4006aa0` | `POST /api/crypto/encrypt` encrypted any plaintext with the server key for every tenant user (item 21). | Administrator accounts only, through the same gate as the database routes. |
 
 ## 3. Open items, ranked by impact
 
@@ -43,8 +46,8 @@ Items marked "Partly closed" still have the remaining work listed.
 2. Closed in `73213cf`.
 3. **Assessment switches can show the previous assessment's data.** The sync effect in `frontend/src/app/page.tsx` (about lines 947–1022) has no cancel flag, and it leaves old line items in place when the new response is empty.
 4. **Static figures presented as analysis.** `frontend/src/constants/uiStrings.ts` contains `₹732.41 Cr` in the funnel subtitle, the scorecard subtitle and the scorecard baseline value (about lines 1994, 2584 and 2586). The KPI tiles show fixed values ("3 Yrs", "Apr 2024 – Jan 2025", "15%+", "3x"). The upload analysis in `page.tsx` uses a fixed confidence of 99.4 (about line 1474), a target reduction taken from the array index (about line 1886), and a synthesized Column L code (about line 1889). Replace each with a value computed from the data, or show "not calculated".
-5. **New assessments inherit sample financials.** `backend/d1-schema.sql` defaults `total_spend_cr` to 556.5347, `gross_spend_cr` to 585.3049 and `potential_savings_cr` to 42.45. `workerD1Assessment.ts` inserts none of those columns, so new rows read back as sample figures. Fix: insert NULL explicitly and make the mapping handle NULL.
-6. **Analysis runs store zeros in typed savings columns.** `services/assessmentAnalysisD1.ts` (about lines 231–244) writes literal 0 to gross, overlap, net, proven, delivery range, PCBI signal and potential savings. The computed values go to `metrics_json`. Evidence reads the zeros.
+5. **Closed in `50731cc`: new assessments inherited sample financials.** `backend/d1-schema.sql` defaults `total_spend_cr` to 556.5347, `gross_spend_cr` to 585.3049 and `potential_savings_cr` to 42.45. `workerD1Assessment.ts` inserted none of those columns, so new rows read back as sample figures. The create route now inserts NULL for the fifteen financial columns listed in `ASSESSMENT_D1_UNCALCULATED_FINANCIAL_COLUMNS`. The mapper omits NULL fields, so the UI shows its empty value. Assessments created before this commit still hold the sample figures (decision 10).
+6. **Analysis runs store zeros in typed savings columns.** `services/assessmentAnalysisD1.ts` (about lines 231–244) writes literal 0 to gross, overlap, net, proven, delivery range, PCBI signal and potential savings. Blocked, not changed. This analysis calculates only Module 1 spend and gates, so the savings columns are not calculated by it. Writing NULL fails for two of them, because the run table declares `potential_savings_cr` and `savings_pct` NOT NULL. Writing NULL to the others also changes the evidence bridge: `withinTolerance` in `services/evidenceGovernanceSheets.ts` reports FAIL when either side is NULL, so a NULL-to-NULL check would read as a failure. Fixing this needs a table rebuild on production and evidence statuses that mean "not calculated".
 7. **Summary tables are never rebuilt from the ledger.** `SpendCategorySummary`, `CategoryYearDetail`, `ConversionFunnelPhase`, `DatasetMetricSummary`, `Module1MonthlySpend` and `Module1CurrencyBreakdown` have no writer. Dashboards still read some of them (`workerD1.ts` around line 214).
 8. **Uploads append instead of replacing.** Prompt 43 asks that a new file erase the old data. `uploadIngestion` assigns a random document id and never checks for a duplicate, and `ObjectMetadata.sha256` is written blank. Decision needed (section 5).
 9. **Module 2 reloads the full ledger on every request for large assessments.** The cache drops any analysis above 30,000 rows (`constants/db.ts`). A 95,000-row assessment reads about 95,000 rows per tab switch.
@@ -52,7 +55,7 @@ Items marked "Partly closed" still have the remaining work listed.
 11. **Repeated full-table reads.** Job detail reads the ledger twice (`workerD1OrchestrationJobs.ts` around lines 96–108). Initial ingestion sums the whole validation table on each load (`workerD1.ts` around lines 133–153). `/api/db/status` runs seven `COUNT(*)` queries.
 12. Closed in `c5dcd54`. The role gate in `services/assessmentLifecycleD1.ts` was reviewed. It covers `approve` and package generation, and now also `deliver` and `close`.
 13. **Data-clearing routes need a role decision.** `POST /api/ingestion/reset` and `DELETE /api/ingestion/validation-records` clear a tenant's data for any tenant user. The validation-record clear now logs (commit `cadc095`), but it still has no role gate. Decision needed (section 5).
-14. **Unauthenticated write and no login limits.** `POST /api/upgrade/request` accepts any email with no rate limit. Login has no rate limit or lockout, and registration returns 409 for an existing email (enumeration). The Worker already binds a Cloudflare rate limiter (`CLIENT_ERROR_RATE_LIMITER` in `wrangler.jsonc`), which the same approach could use.
+14. **Partly closed (`1a2d9ec`).** Sign-in, registration, and upgrade requests are limited per network address. Still open: There is no account lockout, and registration returns 409 for an existing email (enumeration). The limiter is the `AUTH_RATE_LIMITER` binding in `wrangler.jsonc`, with namespace IDs 8110803 and 8110804 that must be unused in the Cloudflare account. Per-account lockout is a decision (decision 9), because it can lock out the account owner.
 15. **Partly closed.** The currency conversion route refuses a missing rate (`2eb752a`). Still open: `constants/d1.ts` (about lines 274–281) sets the remediation rate to 0 when no rate exists, and `workerD1.ts` (about lines 360–370) uses `|| 0`. Both should return an error and log the currency and date.
 16. **Partly closed.** Route and root error pages exist (`e7211c0`). Still open: 24 user-visible error paths do not log (listed in the logging audit: `app/admin/dashboard/page.tsx`, `components/assessment/AssessmentDetailWorkflow.tsx`, and others). Ten `.catch()` calls swallow errors silently.
 17. **Partly closed.** Frontend records are JSON with a top-level `requestId` (`2271bd2`). Still open: telemetry drops `warn` entries without an `Error`, and failed telemetry POSTs are not retried.
@@ -65,7 +68,7 @@ Items marked "Partly closed" still have the remaining work listed.
 ### Medium
 
 20. **Partly closed.** Introspection is off unless `GRAPHQL_INTROSPECTION_ENABLED` is `true` (`df06ca6`), and 500s return fixed text. Still open: resolver errors that throw still send their message to the client (`workerGraphql.ts` returns `result.errors` as is). Curated messages, such as the administrator-only tenant update message that a test asserts, reach the client this way, so masking needs a `ClientFacingError` path. The data-query resolvers (`resolvers/d1GraphqlDataResolvers.ts`) were not audited for tenant predicates.
-21. `POST /api/crypto/encrypt` and the AI endpoints are open to every tenant user, with no quota.
+21. **Partly closed (`4006aa0`).** `POST /api/crypto/encrypt` needs an administrator account. Still open: the AI endpoints are open to every tenant user, with no quota.
 22. Migration tooling (`scripts/d1-migration-tools.js`, around lines 233–239) runs CREATE, INSERT SELECT, DROP and RENAME as one command with no count check, so an interruption can leave rows in a temporary table.
 23. The drift gate checks table counts and seed checksums only. It ignores columns and row values. Seeds use `INSERT OR IGNORE`, so a corrected reference row never updates.
 24. PCBI benchmark rows: 27 tuples across 15 statements, against 23 manifest rows. Duplicate ids are the likely cause and are not yet confirmed.
@@ -121,6 +124,9 @@ Source: the prompts in `prompts.md`, checked against the code.
 6. **Default admin credential.** `DEFAULT_ADMIN_DETAILS` in `constants/auth.ts` still prefills the admin login form with the default password. Remove the prefill, and rotate any account that still uses that password?
 7. **Logistics demo rows.** Keep them, labelled as demo (current behaviour, pinned by a test), or hide them from customer accounts?
 8. **Savings evidence workbooks.** Build them, or keep the 409 with its reason until they are built?
+9. **Account lockout.** Lock an account after repeated failed sign-ins? This can lock out the account owner, so it needs your call on the lockout length and how the owner recovers access.
+10. **Existing assessments.** Assessments created before `50731cc` hold the schema sample financials. Clear those values to NULL, or leave them, or recalculate them from the data?
+11. **Rate limiter namespaces.** Confirm that IDs 8110803 and 8110804 are unused in the Cloudflare account before the next deploy.
 
 ### Policy choices made in this pass (confirm or reverse)
 
@@ -134,8 +140,8 @@ Source: the prompts in `prompts.md`, checked against the code.
 
 1. Per-tenant cache generation (item 1). Largest effect on the "works once, fails next time" reports.
 2. Assessment-switch guard (item 3), and removal of the static figures and the upload-analysis constants (item 4).
-3. New-assessment financials and analysis savings columns (items 5 and 6). Item 4 depends on these.
-4. Rate limits for login, registration and upgrade requests (item 14). The Cloudflare rate limiter binding is already in `wrangler.jsonc`.
+3. Analysis savings columns (item 6). This needs the run-table migration and evidence statuses for "not calculated", so it is a planned change, not a quick fix.
+4. Account lockout (item 14), once you decide on it (decision 9).
 5. Resolver error text in GraphQL (item 20), and the remaining unlogged error paths (item 16).
 6. Summary-table rebuild and upload write reduction (items 7 and 10). Module 2 persistence (item 9).
 7. Dashboard hydration parallelism with a loader, and lazy taxonomy (item 18).
