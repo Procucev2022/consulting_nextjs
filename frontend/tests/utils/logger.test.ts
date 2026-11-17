@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FrontendLogger, frontendLogger } from '../../src/utils/logger';
+import { LOG_RECORD_UNSERIALIZABLE_CONTEXT } from '../../src/constants/logger';
+
+// Each console call receives one JSON record. The last call on the spy is the record under test.
+const recordOf = (spy: { mock: { calls: unknown[][] } }): Record<string, unknown> => {
+  const lastCall = spy.mock.calls[spy.mock.calls.length - 1];
+  return JSON.parse(String(lastCall[0])) as Record<string, unknown>;
+};
 
 describe('Frontend Logger Suite', () => {
   beforeEach(() => {
@@ -12,7 +19,7 @@ describe('Frontend Logger Suite', () => {
       expect(frontendLogger.getHistory()).toBeDefined();
     });
 
-    it('logs at all levels and dispatches to appropriate console methods', () => {
+    it('logs at all levels and dispatches one JSON record to the matching console method', () => {
       const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
       const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -21,30 +28,27 @@ describe('Frontend Logger Suite', () => {
       const logger = new FrontendLogger('test-app', 'debug');
 
       logger.debug('Debug test', { key: 'val' });
-      expect(debugSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[DEBUG] [test-app]: Debug test'),
-        { key: 'val' }
-      );
+      expect(debugSpy).toHaveBeenCalledTimes(1);
+      expect(recordOf(debugSpy)).toMatchObject({
+        level: 'debug', service: 'test-app', message: 'Debug test', context: { key: 'val' }
+      });
 
       logger.info('Info test');
-      expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] [test-app]: Info test'),
-        ''
-      );
+      expect(infoSpy).toHaveBeenCalledTimes(1);
+      expect(recordOf(infoSpy)).toMatchObject({ level: 'info', service: 'test-app', message: 'Info test' });
+      expect(recordOf(infoSpy)).not.toHaveProperty('context');
 
       logger.warn('Warn test', { alert: true });
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[WARN] [test-app]: Warn test'),
-        { alert: true }
-      );
+      expect(recordOf(warnSpy)).toMatchObject({ level: 'warn', message: 'Warn test', context: { alert: true } });
 
       const err = new Error('Client error');
       logger.error('Error test', { code: 500 }, err);
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] [test-app]: Error test'),
-        { code: 500 },
-        expect.objectContaining({ name: 'Error', message: 'Client error' })
-      );
+      expect(recordOf(errorSpy)).toMatchObject({
+        level: 'error',
+        message: 'Error test',
+        context: { code: 500 },
+        error: { name: 'Error', message: 'Client error', stack: expect.any(String) }
+      });
 
       debugSpy.mockRestore();
       infoSpy.mockRestore();
@@ -73,6 +77,40 @@ describe('Frontend Logger Suite', () => {
 
       infoSpy.mockRestore();
       debugSpy.mockRestore();
+    });
+
+    it('promotes a non-empty string request ID to the top level and omits it otherwise', () => {
+      const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const logger = new FrontendLogger('test-app', 'debug');
+
+      const tagged = logger.info('Request finished', { requestId: 'req-42', statusCode: 200 });
+
+      expect(tagged.requestId).toBe('req-42');
+      expect(recordOf(infoSpy)).toMatchObject({
+        requestId: 'req-42', context: { requestId: 'req-42', statusCode: 200 }
+      });
+      expect(logger.info('Empty ID', { requestId: '' }).requestId).toBeUndefined();
+      expect(logger.info('Numeric ID', { requestId: 42 }).requestId).toBeUndefined();
+      expect(logger.info('No context').requestId).toBeUndefined();
+      infoSpy.mockRestore();
+    });
+
+    it('still writes the record when the context cannot be serialized', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const logger = new FrontendLogger('test-app', 'debug');
+      const circular: Record<string, unknown> = { requestId: 'req-9' };
+      circular.self = circular;
+
+      logger.warn('Cyclic context', circular);
+
+      expect(recordOf(warnSpy)).toMatchObject({
+        level: 'warn',
+        service: 'test-app',
+        message: 'Cyclic context',
+        requestId: 'req-9',
+        context: LOG_RECORD_UNSERIALIZABLE_CONTEXT
+      });
+      warnSpy.mockRestore();
     });
   });
 
@@ -111,11 +149,12 @@ describe('Frontend Logger Suite', () => {
         context: { action: 'logger.listener.notify' },
         error: expect.objectContaining({ name: 'Error', message: 'Listener failed', stack: expect.any(String) })
       }));
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] [test-app]: Frontend logger listener failed'),
-        { action: 'logger.listener.notify' },
-        expect.objectContaining({ message: 'Listener failed' })
-      );
+      expect(recordOf(consoleErrorSpy)).toMatchObject({
+        level: 'error',
+        message: 'Frontend logger listener failed',
+        context: { action: 'logger.listener.notify' },
+        error: { message: 'Listener failed' }
+      });
       consoleErrorSpy.mockRestore();
     });
 

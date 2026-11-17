@@ -3,10 +3,27 @@ import {
   LEVEL_PRIORITY,
   DEFAULT_SERVICE_NAME,
   DEFAULT_MIN_LEVEL,
-  DEFAULT_MAX_HISTORY
+  DEFAULT_MAX_HISTORY,
+  LOG_RECORD_UNSERIALIZABLE_CONTEXT
 } from '../constants';
 
 export type { LogLevel, FrontendLogEntry, LogListener };
+
+// One JSON object per console call, so log collectors can parse each record.
+const serializeLogEntry = (entry: FrontendLogEntry): string => {
+  try {
+    return JSON.stringify(entry);
+  } catch {
+    return JSON.stringify({
+      timestamp: entry.timestamp,
+      level: entry.level,
+      service: entry.service,
+      message: entry.message,
+      requestId: entry.requestId,
+      context: LOG_RECORD_UNSERIALIZABLE_CONTEXT
+    });
+  }
+};
 
 export class FrontendLogger {
   private service: string;
@@ -58,6 +75,11 @@ export class FrontendLogger {
       entry.context = context;
     }
 
+    const requestId = context?.requestId;
+    if (typeof requestId === 'string' && requestId.length > 0) {
+      entry.requestId = requestId;
+    }
+
     if (error) {
       if (error instanceof Error) {
         entry.error = {
@@ -76,15 +98,16 @@ export class FrontendLogger {
     return entry;
   }
 
-  private dispatchConsole(level: LogLevel, formatted: string, entry: FrontendLogEntry): void {
+  private dispatchConsole(level: LogLevel, entry: FrontendLogEntry): void {
+    const record = serializeLogEntry(entry);
     if (level === 'error') {
-      console.error(formatted, entry.context || '', entry.error || '');
+      console.error(record);
     } else if (level === 'warn') {
-      console.warn(formatted, entry.context || '');
+      console.warn(record);
     } else if (level === 'info') {
-      console.info(formatted, entry.context || '');
+      console.info(record);
     } else {
-      console.debug(formatted, entry.context || '');
+      console.debug(record);
     }
   }
 
@@ -99,9 +122,8 @@ export class FrontendLogger {
         this.history.push(failure);
         if (this.history.length > this.maxHistory) this.history.shift();
         if (this.shouldLog('error')) {
-          const formatted = `[${failure.timestamp}] [ERROR] [${this.service}]: ${failure.message}`;
           try {
-            this.dispatchConsole('error', formatted, failure);
+            this.dispatchConsole('error', failure);
           } catch {
             // The diagnostic remains in memory if the browser console itself is unavailable.
           }
@@ -124,8 +146,7 @@ export class FrontendLogger {
     }
 
     if (this.shouldLog(level)) {
-      const formatted = `[${entry.timestamp}] [${level.toUpperCase()}] [${this.service}]: ${message}`;
-      this.dispatchConsole(level, formatted, entry);
+      this.dispatchConsole(level, entry);
     }
 
     this.notifyListeners(entry);
