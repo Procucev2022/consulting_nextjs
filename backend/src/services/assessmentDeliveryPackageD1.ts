@@ -1,3 +1,4 @@
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import {
   ASSESSMENT_STATUSES, AUDIT_ACTIONS, DELIVERY_PACKAGE_ITEMS_SPEC, SYSTEM_BUILD_IDENTITY
 } from '../constants/assessment';
@@ -168,11 +169,13 @@ export const generateAssessmentDeliveryPackage = async (
     `SELECT * FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ? AND data_version_id = ?`,
     [context.assessmentId, run.dataVersionId]);
   if (!version) return resultError(404, LIFECYCLE_MESSAGES.dataVersionMissing(run.dataVersionId));
+  const runKeyRange = validationRecordKeyRange(run.dataVersionId);
   const [transactions, validation, gateRows] = await Promise.all([
     context.db.prepare(`SELECT * FROM ${D1_TABLES.transactions} WHERE assessment_id = ? AND source_document_id = ? ORDER BY source_row_number ASC`)
       .bind(context.assessmentId, run.dataVersionId).all<D1Record>(),
-    context.db.prepare(`SELECT * FROM ${D1_TABLES.validation} WHERE record_id LIKE ? ORDER BY record_id`)
-      .bind(`REC-${run.dataVersionId}-ROW-%`).all<D1Record>(),
+    context.db.prepare(`SELECT * FROM ${D1_TABLES.validation} WHERE record_id >= ? AND record_id < ? ORDER BY record_id`)
+      .bind(runKeyRange.lowerBound, runKeyRange.upperBound)
+      .all<D1Record>(),
     context.db.prepare(`SELECT gate_key, status, evidence_reference, review_note, reviewed_by, reviewed_at FROM ${D1_TABLES.assessmentReviewGates} WHERE assessment_id = ? ORDER BY gate_key`)
       .bind(context.assessmentId).all<D1Record>()
   ]);

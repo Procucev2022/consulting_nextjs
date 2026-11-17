@@ -1,3 +1,4 @@
+import { validationRecordKeyRange } from './utils/validationRecordKeys';
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import {
   D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATED_RECORDS_QUERY,
@@ -247,7 +248,8 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     try {
       await runD1Statements(database, [
         database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ? AND tenant_id = ?').bind(docId, tenantId),
-        database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?').bind(`REC-${docId}-ROW-%`, tenantId),
+        database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id >= ? AND record_id < ? AND tenant_id = ?')
+          .bind(validationRecordKeyRange(docId).lowerBound, validationRecordKeyRange(docId).upperBound, tenantId),
         database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(docId, tenantId),
         database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND tenant_id = ?').bind(objectKey, tenantId)
       ], {
