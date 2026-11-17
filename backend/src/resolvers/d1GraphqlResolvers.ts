@@ -249,7 +249,7 @@ const addIngestionResolver: D1Resolver = async (args, context) => {
     'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count) ' +
     'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
-    id, tenantId, input.file_name, input.file_type, input.file_size_mb, 'Completed', 100, input.records_count || 0
+    id, tenantId, input.file_name, input.file_type, input.file_size_mb, 'Pending', 0, input.records_count || 0
   ).run();
   return queryFirst(context.db, 'SELECT * FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?', [id, tenantId]);
 };

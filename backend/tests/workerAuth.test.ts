@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
-import { AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
+import {
+  AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_MESSAGES, AUTH_REGISTRATION_SUBSCRIPTION_TIER, AUTH_ROLES
+} from '../src/constants/auth';
 import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { RequestJsonParseError } from '../src/workerHttp';
 import logger from '../src/utils/logger';
@@ -333,8 +335,9 @@ describe('workerAuth register', () => {
 
   it('honours an explicit subscription tier', async () => {
     const result = await registerPending({ subscription_tier: 'GOLD' });
+    expect(AUTH_REGISTRATION_SUBSCRIPTION_TIER).toBe('BRONZE');
 
-    expect((result.body.user as Record<string, unknown>).subscription_tier).toBe('GOLD');
+    expect((result.body.user as Record<string, unknown>).subscription_tier).toBe(AUTH_REGISTRATION_SUBSCRIPTION_TIER);
   });
 });
 

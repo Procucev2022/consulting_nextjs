@@ -61,3 +61,6 @@ export const AUTH_SQL = {
     ON CONFLICT DO NOTHING
   `
 } as const;
+
+/** Subscription tier every self-registered account starts on. Upgrades go through the commercial workflow. */
+export const AUTH_REGISTRATION_SUBSCRIPTION_TIER = 'BRONZE' as const;

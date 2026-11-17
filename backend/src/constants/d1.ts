@@ -130,6 +130,8 @@ export const D1_ROUTE_MESSAGES = {
   validationFailed: 'Validation failed',
   invalidJsonBody: 'Request body must be a JSON object. Correct its syntax and retry.',
   requestBodyTooLarge: (maxBytes: number): string => `Request body exceeds the ${maxBytes}-byte limit. Reduce the payload size and retry.`,
+  supplierMasterNotFound: (masterId: string): string =>
+    `Supplier master ${masterId} was not found for this tenant. Refresh the supplier list and choose an existing supplier.`,
   ingestionDocumentIdRequired: 'Delete one ingestion document by including its identifier in the path: DELETE /api/ingestion/document/{documentId}. To remove every document for this tenant, use POST /api/ingestion/reset.',
   ingestionUploadFileTooLarge: 'Uploaded procurement files must be no larger than 10 MiB. Choose a smaller file and retry.',
   ingestionUploadBase64Invalid: 'Uploaded file content is not valid Base64. Choose the original file and retry.',

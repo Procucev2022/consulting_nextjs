@@ -75,7 +75,7 @@ const handleStaticDataRoute = async (
         database, canonicalName, masterId, tenantId, request.headers.get('x-request-id') || undefined
       );
       if (affected === null) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable }, 503, request);
-      if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
+      if (affected === 0) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.supplierMasterNotFound(masterId) }, 404, request);
       logger.info('Supplier master name updated in D1', {
         targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined
       });

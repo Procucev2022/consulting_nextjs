@@ -1027,7 +1027,8 @@ describe('Cloudflare worker core routes', () => {
         records_count: 10,
         converted_inr_crores: 2.5,
         detected_currencies: '["INR","USD"]',
-        ocr_status: 'Completed'
+        ocr_status: 'Pending',
+        progress: 0
       });
     });
 

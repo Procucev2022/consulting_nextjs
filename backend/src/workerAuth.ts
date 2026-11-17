@@ -5,7 +5,7 @@ import {
 import { D1_SINGLE_ROW_CHANGE_COUNT } from './constants/db';
 import {
   AUTH_HEX_BYTE_PATTERN, AUTH_LEGACY_PASSWORD_PATTERN, AUTH_MESSAGES, AUTH_ROLES, AUTH_SQL, AUTH_STATUS,
-  AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_TOKEN_EXPIRY_SECONDS
+  AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_REGISTRATION_SUBSCRIPTION_TIER, AUTH_TOKEN_EXPIRY_SECONDS
 } from './constants/auth';
 import type { AuthRouteResult, CloudflareD1Database, CloudflareEnvironment } from './types/cloudflare';
 import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
@@ -161,7 +161,7 @@ const register = async (request: Request, database: CloudflareD1Database): Promi
     role: AUTH_ROLES.USER,
     status: AUTH_STATUS.PENDING,
     tenant_id: null,
-    subscription_tier: parsed.data.subscription_tier || 'BRONZE',
+    subscription_tier: AUTH_REGISTRATION_SUBSCRIPTION_TIER,
     created_at: now,
     updated_at: now
   };

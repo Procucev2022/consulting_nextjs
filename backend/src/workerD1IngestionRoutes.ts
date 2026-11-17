@@ -151,7 +151,7 @@ const addIngestion = async (request: Request, environment: CloudflareEnvironment
   const result = await database.prepare(`
     INSERT INTO RawDocumentIngestion (
       doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-    ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, 'Pending', 0, ?, ?, ?)
   `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
   void result;
   const rows = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')

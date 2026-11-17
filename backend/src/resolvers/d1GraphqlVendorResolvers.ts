@@ -10,6 +10,7 @@ export const mergeVendorResolver = async (args: unknown, context: D1GraphQLConte
     context.db, input.canonicalName, input.masterId, tenantId, context.requestId
   );
   if (affected === null) throw new Error(D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable);
+  if (affected === 0) throw new Error(D1_ROUTE_MESSAGES.supplierMasterNotFound(input.masterId));
   logger.info('Vendor master name updated through GraphQL', {
     requestId: context.requestId, tenantId, masterId: input.masterId, affected
   });
