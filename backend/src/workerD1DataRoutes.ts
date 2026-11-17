@@ -107,7 +107,7 @@ const handleStaticDataRoute = async (
         )
         RETURNING *
       `).bind(targetModule, targetModule, opportunityId, tenantId).first<Record<string, unknown>>();
-      invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
+      await invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
       if (!deployed) return jsonResponse({ success: false, message: `Savings opportunity ${opportunityId} was not found.` }, 404, request);
       logger.info('Savings opportunity deployed from D1', {
         opportunityId, targetModule, requestId: request.headers.get('x-request-id') || undefined

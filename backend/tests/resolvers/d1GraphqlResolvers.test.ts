@@ -868,7 +868,7 @@ describe('mergeVendor', () => {
 
     await expect(resolvers.mergeVendor(MERGE_ARGS, context))
       .rejects.toThrow(D1_ROUTE_MESSAGES.supplierMasterNotFound(MERGE_ARGS.input.masterId));
-    expect(stub.statements.map(({ values }) => values)).toEqual([
+    expect(stub.statements.filter(({ sql }) => !sql.includes('CacheGeneration')).map(({ values }) => values)).toEqual([
       ['Acme Steel', 'MV-1', ''],
       ['Acme Steel', 'MV-1', '']
     ]);

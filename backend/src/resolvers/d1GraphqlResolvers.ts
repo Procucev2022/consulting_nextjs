@@ -285,7 +285,7 @@ const deployOpportunityResolver: D1Resolver = async (args, context) => {
     'WHERE opp_id = ? AND EXISTS (SELECT 1 FROM SavingsOpportunityTenantScope AS scope ' +
     'WHERE scope.opp_id = SavingsOpportunity.opp_id AND scope.tenant_id = ?)')
     .bind(input.targetModule, 'DEPLOYED', input.id, context.tenantId || '').run();
-  invalidateTenantD1Data(context.db, context.tenantId || '', D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
+  await invalidateTenantD1Data(context.db, context.tenantId || '', D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
   return queryFirst(context.db,
     'SELECT opportunity.* FROM SavingsOpportunity AS opportunity ' +
     'INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id ' +

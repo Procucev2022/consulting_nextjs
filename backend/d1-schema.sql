@@ -1677,3 +1677,11 @@ BEFORE DELETE ON TenantMaster
 BEGIN
   SELECT RAISE(ABORT, 'TENANT_MASTER_SOFT_DELETE_ONLY');
 END;
+
+-- Monotonic counter per cache scope (one dataset of one tenant). A writer advances it in D1 so every isolate
+-- reads the new value on its next request, and no isolate keeps serving data from before the write.
+CREATE TABLE IF NOT EXISTS CacheGeneration (
+  scope_key TEXT PRIMARY KEY NOT NULL,
+  generation INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -30,7 +30,7 @@ export const executeVendorMergeInD1 = async (
   }
 
   const results = await database.batch(statements) as CloudflareD1MutationResult[];
-  invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
-  invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);
+  await invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_DETAILS);
+  await invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.VENDOR_RANKINGS);
   return results.reduce((total, result) => total + Number(result.meta?.changes ?? result.changes ?? 0), 0);
 };

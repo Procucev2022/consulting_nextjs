@@ -2039,7 +2039,7 @@ describe('Cloudflare worker core routes', () => {
       expect(data.tenant).toMatchObject({ tenant_id: 'TNT-1' });
       expect(data.categoryHighlights).toHaveLength(1);
       expect((data.topActionableOpportunities as Array<{ opp_id: string }>).map((row) => row.opp_id)).toEqual(['OPP-2', 'OPP-1']);
-      expect(prepareSpy.mock.calls).toHaveLength(3);
+      expect(prepareSpy.mock.calls.filter(([sql]) => !sql.includes('CacheGeneration'))).toHaveLength(3);
       expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('FROM TenantMaster AS tenant'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('SUM(converted_inr_crores'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*) AS count FROM ValidationPreCheckRecord'))).toBe(false);
@@ -2191,7 +2191,7 @@ describe('Cloudflare worker core routes', () => {
 
       expect(response.status).toBe(200);
       await expect(bodyOf(response)).resolves.toMatchObject({ success: true, data: { success: true, affected: 3 } });
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(2);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(2);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*)'))).toBe(false);
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorYearDetail ORDER BY id').all())
         .resolves.toEqual({ results: [{ vendor_name: 'Acme Steel' }, { vendor_name: 'Acme Steel' }] });
@@ -2295,7 +2295,7 @@ describe('Cloudflare worker core routes', () => {
       expect(data).toMatchObject({ totalPotentialSavingsCr: 2.5 });
       expect(data.opportunities).toHaveLength(2);
       expect(cachedData).toEqual(data);
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
     });
@@ -2319,7 +2319,7 @@ describe('Cloudflare worker core routes', () => {
       await send('/api/savings?tenantId=TNT-1');
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const deployed = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: 'OPP-DEPLOY', targetModule: 'DPS NXT' }));
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(1);
       expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       const persisted = await fixture.d1.prepare('SELECT recommended_module, push_to_module, status FROM SavingsOpportunity WHERE opp_id = ?')

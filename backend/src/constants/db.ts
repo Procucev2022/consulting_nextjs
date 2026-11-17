@@ -50,3 +50,10 @@ export const CACHE_KEYS = {
   SAVINGS_OPPORTUNITIES: 'savings:opportunities',
   CONVERSION_FUNNEL: 'conversion:funnel'
 } as const;
+
+/** SQL for the per-scope generation counter that tells every isolate when cached tenant data has changed. */
+export const CACHE_GENERATION_SQL = {
+  read: 'SELECT generation FROM CacheGeneration WHERE scope_key = ?',
+  bump: `INSERT INTO CacheGeneration (scope_key, generation, updated_at) VALUES (?, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT(scope_key) DO UPDATE SET generation = generation + 1, updated_at = CURRENT_TIMESTAMP`
+} as const;

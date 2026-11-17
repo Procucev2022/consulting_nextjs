@@ -5,6 +5,27 @@ import { clearD1ReferenceDataCache } from '../../src/services/d1ReferenceDataCac
 import { getTenantD1Data, invalidateTenantD1Data } from '../../src/services/d1TenantDataCache';
 import { getD1RuntimeMetrics } from '../../src/services/d1QueryTelemetry';
 
+// Answers the generation statements the way D1 does: a read returns the stored counter, and a bump advances it.
+const generationDatabase = (): CloudflareD1Database => {
+  const generations = new Map<string, number>();
+  const prepare = vi.fn((_sql: string) => {
+    let scopeKey = '';
+    const statement = {
+      bind: (...values: unknown[]) => {
+        scopeKey = String(values[0]);
+        return statement;
+      },
+      first: async () => ({ generation: generations.get(scopeKey) ?? 0 }),
+      run: async () => {
+        generations.set(scopeKey, (generations.get(scopeKey) ?? 0) + 1);
+        return { success: true };
+      }
+    };
+    return statement;
+  });
+  return { prepare } as unknown as CloudflareD1Database;
+};
+
 describe('tenant-scoped D1 dataset cache', () => {
   afterEach(() => {
     clearD1ReferenceDataCache();
@@ -12,7 +33,7 @@ describe('tenant-scoped D1 dataset cache', () => {
   });
 
   it('isolates tenants, serves cached data, and refreshes an invalidated dataset', async () => {
-    const database = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const database = generationDatabase();
     const load = vi.fn(async (tenantId: string) => [{ tenantId }]);
 
     const firstTenantLoad = await getTenantD1Data(
@@ -30,7 +51,7 @@ describe('tenant-scoped D1 dataset cache', () => {
     expect(secondTenantLoad).toEqual([{ tenantId: 'TNT-2' }]);
     expect(load).toHaveBeenCalledTimes(2);
 
-    invalidateTenantD1Data(database, 'TNT-1', D1_TENANT_DATA_CACHE_KEYS.CATEGORIES_SUMMARY);
+    await invalidateTenantD1Data(database, 'TNT-1', D1_TENANT_DATA_CACHE_KEYS.CATEGORIES_SUMMARY);
     await expect(getTenantD1Data(
       database, 'TNT-1', D1_TENANT_DATA_CACHE_KEYS.CATEGORIES_SUMMARY, () => load('fresh-TNT-1')
     )).resolves.toEqual([{ tenantId: 'fresh-TNT-1' }]);
@@ -39,7 +60,7 @@ describe('tenant-scoped D1 dataset cache', () => {
   });
 
   it('returns oversized tenant datasets without retaining them in the cache', async () => {
-    const database = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const database = generationDatabase();
     const largeDataset = Array.from({ length: D1_TENANT_DATA_CACHE_MAX_ROWS + 1 }, (_value, index) => ({ index }));
     const load = vi.fn(async () => largeDataset);
 
