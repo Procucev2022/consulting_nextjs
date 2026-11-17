@@ -1717,15 +1717,25 @@ describe('Cloudflare worker core routes', () => {
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 2 });
     });
 
-    it('clears the whole ingestion queue when no document identifier is given', async () => {
+    it.each([
+      ['bare ingestion route', '/api/ingestion?tenantId=TNT-1'],
+      ['document route without an identifier', '/api/ingestion/document?tenantId=TNT-1'],
+      ['document route with a malformed encoded identifier', '/api/ingestion/document/%E0%A4%A?tenantId=TNT-1']
+    ])('refuses a %s delete and keeps every document for the tenant', async (_label, path) => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
-        ['DOC-1', 'TNT-1', 'a.xlsx', '2026-01-01T00:00:00Z']
+        ['DOC-1', 'TNT-1', 'a.xlsx', '2026-01-01T00:00:00Z'],
+        ['DOC-2', 'TNT-1', 'b.xlsx', '2026-01-02T00:00:00Z']
       ]);
 
-      const response = await send('/api/ingestion?tenantId=TNT-1', { method: 'DELETE' });
+      const response = await send(path, { method: 'DELETE' });
 
-      await expect(bodyOf(response)).resolves.toMatchObject({ data: [] });
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.ingestionDocumentIdRequired
+      });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 2 });
     });
 
     it('resets tenant ingestion records after an object deletion failure', async () => {

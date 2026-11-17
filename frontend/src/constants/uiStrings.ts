@@ -1723,6 +1723,7 @@ export const UI_STRINGS = {
       opportunity: 'save the opportunity status'
     },
     apiNoDetails: 'The server returned no usable savings data or error detail',
+    ingestionDocumentIdRequired: 'The ingestion document was not deleted because no document was selected. Refresh the upload list, choose one document, and retry. Use the dataset reset action to remove all documents.',
     tenantApiNoDetails: 'The server returned no organization error detail',
     apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry after checking Worker route availability. If this continues, contact support with request ${requestId}.`,
     apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed JSON. Retry; if this continues, contact support with request ${requestId}.`,

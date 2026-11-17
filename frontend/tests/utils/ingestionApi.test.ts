@@ -338,23 +338,12 @@ describe('ingestionApiClient', () => {
       method: 'DELETE'
     }));
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: mockRes })
-    });
-    await ingestionApiClient.deleteIngestionDocument(undefined, 'TENANT-2');
-    expectApiFetchCall(global.fetch, '/api/ingestion/document?tenantId=TENANT-2', expect.objectContaining({
-      method: 'DELETE'
-    }));
-
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: mockRes })
-    });
-    await ingestionApiClient.deleteIngestionDocument();
-    expectApiFetchCall(global.fetch, '/api/ingestion/document', expect.objectContaining({
-      method: 'DELETE'
-    }));
+    const fetchCallsBeforeRefusal = (global.fetch as any).mock.calls.length;
+    await expect(ingestionApiClient.deleteIngestionDocument('   ', 'TENANT-2'))
+      .rejects.toThrow(UI_STRINGS.module4.ingestionDocumentIdRequired);
+    await expect(ingestionApiClient.deleteIngestionDocument('', undefined))
+      .rejects.toThrow(UI_STRINGS.module4.ingestionDocumentIdRequired);
+    expect((global.fetch as any).mock.calls.length).toBe(fetchCallsBeforeRefusal);
   });
 
   it('surfaces Worker errors when deleting a document record', async () => {

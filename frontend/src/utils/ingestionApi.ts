@@ -13,7 +13,8 @@ import { validateInput } from './validation';
 import { UI_STRINGS } from '../constants/uiStrings';
 import {
   apiAddIngestionFilePayloadSchema,
-  apiUpdateValidationRecordPayloadSchema
+  apiUpdateValidationRecordPayloadSchema,
+  ingestionDocumentDeleteRequestSchema
 } from '../constants/validation';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -169,13 +170,18 @@ export const ingestionApiClient = {
     return json.data;
   },
 
-  async deleteIngestionDocument(docId?: string, tenantId?: string): Promise<RawDocumentIngestion[]> {
-    frontendLogger.info('Deleting ingestion document', { docId, tenantId });
-    let endpoint = docId
-      ? `${API_BASE}/api/ingestion/document/${encodeURIComponent(docId)}`
-      : `${API_BASE}/api/ingestion/document`;
-    if (tenantId) {
-      endpoint += `?tenantId=${encodeURIComponent(tenantId)}`;
+  async deleteIngestionDocument(docId: string, tenantId?: string): Promise<RawDocumentIngestion[]> {
+    // One document per request. Omitting the identifier is refused here so no caller can request a tenant-wide delete.
+    const validation = validateInput(ingestionDocumentDeleteRequestSchema, { docId, tenantId });
+    if (!validation.success) {
+      throw new Error(UI_STRINGS.module4.ingestionDocumentIdRequired);
+    }
+    const validDocId = validation.data.docId;
+    const validTenantId = validation.data.tenantId;
+    frontendLogger.info('Deleting ingestion document', { docId: validDocId, tenantId: validTenantId });
+    let endpoint = `${API_BASE}/api/ingestion/document/${encodeURIComponent(validDocId)}`;
+    if (validTenantId) {
+      endpoint += `?tenantId=${encodeURIComponent(validTenantId)}`;
     }
     const res = await apiFetch(endpoint, {
       method: 'DELETE'

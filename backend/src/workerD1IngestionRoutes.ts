@@ -1,7 +1,8 @@
 import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import {
   D1_INGESTION_PAGE_QUERY_LIMIT, D1_INGESTION_REMEDIATED_RECORDS_QUERY,
-  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES, D1_LOG_ACTIONS, D1_LOG_MESSAGES
+  D1_INGESTION_REMEDIATION_CANDIDATES_QUERY, D1_REPORTING, D1_ROUTE_MESSAGES, D1_LOG_ACTIONS, D1_LOG_MESSAGES,
+  D1_INGESTION_DOCUMENT_PATH_MARKER
 } from './constants/d1';
 import {
   ingestionDataQuerySchema, updateValidationRecordSchema, addIngestionFileSchema,
@@ -336,6 +337,19 @@ const updateIngestion = async (request: Request, environment: CloudflareEnvironm
   return updated ? { data: { ...updated, resolved: Boolean((updated as Record<string, unknown>).resolved) } } : { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
+const readIngestionDocumentIdFromPath = (pathname: string): string | null => {
+  const markerIndex = pathname.indexOf(D1_INGESTION_DOCUMENT_PATH_MARKER);
+  if (markerIndex === -1) return null;
+  const encodedId = pathname.slice(markerIndex + D1_INGESTION_DOCUMENT_PATH_MARKER.length);
+  try {
+    const documentId = decodeURIComponent(encodedId).trim();
+    return documentId.length > 0 && !documentId.includes('/') ? documentId : null;
+  } catch {
+    // A malformed percent-encoded identifier cannot name a stored document, so it is refused like a missing one.
+    return null;
+  }
+};
+
 const deleteIngestion = async (
   url: URL,
   environment: CloudflareEnvironment,
@@ -344,28 +358,27 @@ const deleteIngestion = async (
   const database = requireD1Binding(environment.DB);
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
-  // "/document/" with an empty id must never fall through to the clear-all branch below.
-  const documentId = url.pathname.includes('/document/') ? url.pathname.split('/document/').pop() : null;
-  if (documentId === '') {
-    return { data: { success: false, message: 'A document id is required after /document/ to delete one ingestion record.' }, status: 400 };
+  // Every delete must name exactly one document. A missing identifier is refused before any query runs,
+  // so no code path can translate an accidental bare DELETE into a tenant-wide wipe.
+  const documentId = readIngestionDocumentIdFromPath(url.pathname);
+  if (!documentId) {
+    logger.warn(D1_LOG_MESSAGES.ingestionDeleteWithoutDocumentId, {
+      action: D1_LOG_ACTIONS.ingestionDelete,
+      requestId,
+      tenantId,
+      path: url.pathname
+    });
+    return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentIdRequired }, status: 400 };
   }
-  const documents = documentId
-    ? await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?').bind(documentId, tenantId).all<{ doc_id: string }>()
-    : await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE tenant_id = ?').bind(tenantId).all<{ doc_id: string }>();
-  const objects = !documents.results.length
-    ? { results: [] as Array<{ object_key: string }> }
-    : documentId
-      ? await database.prepare(`SELECT object_key FROM ObjectMetadata
+  const documents = await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?')
+    .bind(documentId, tenantId).all<{ doc_id: string }>();
+  const objects = documents.results.length
+    ? await database.prepare(`SELECT object_key FROM ObjectMetadata
         WHERE tenant_id = ? AND instr(object_key, ? || '_') = 1`)
-        .bind(tenantId, documentId).all<{ object_key: string }>()
-      : await database.prepare(`SELECT object_key FROM ObjectMetadata
-        WHERE tenant_id = ? AND EXISTS (
-          SELECT 1 FROM RawDocumentIngestion AS document
-          WHERE document.tenant_id = ?
-            AND instr(ObjectMetadata.object_key, document.doc_id || '_') = 1
-        )`).bind(tenantId, tenantId).all<{ object_key: string }>();
+      .bind(tenantId, documentId).all<{ object_key: string }>()
+    : { results: [] as Array<{ object_key: string }> };
   if (documents.results.length) {
-    const documentScope = documentId || null;
+    const documentScope = documentId;
     const enqueueStatements = objects.results.length
       ? [database.prepare(R2_CLEANUP_SQL.enqueueForIngestionDelete)
         .bind(R2_CLEANUP_REASONS.ingestionDelete, tenantId, tenantId, documentScope, documentScope)]
@@ -417,13 +430,22 @@ const deleteIngestion = async (
   return { data: queue.results || [] };
 };
 
-const resetValidationRecords = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+const resetValidationRecords = async (
+  environment: CloudflareEnvironment,
+  requestId?: string
+): Promise<{ data: unknown }> => {
   requireD1Binding(environment.DB);
   const database = environment.DB as CloudflareD1Database;
   const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
   const tenantId = String(tenant.tenant_id);
-  await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId).run();
+  const cleared = await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE tenant_id = ?').bind(tenantId).run() as CloudflareD1MutationResult;
   const records = await database.prepare('SELECT * FROM ValidationPreCheckRecord WHERE tenant_id = ? ORDER BY created_at DESC').bind(tenantId).all();
+  logger.warn('Cleared every validation record for the tenant', {
+    action: D1_LOG_ACTIONS.ingestionValidationReset,
+    requestId,
+    tenantId,
+    deletedRows: Number(cleared.meta?.changes ?? cleared.changes ?? 0)
+  });
   return { data: records.results || [] };
 };
 
@@ -493,7 +515,9 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
   }
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);
-  if (request.method === 'DELETE' && url.pathname.endsWith('/validation-records')) return resetValidationRecords(environment);
+  if (request.method === 'DELETE' && url.pathname.endsWith('/validation-records')) {
+    return resetValidationRecords(environment, request.headers.get('x-request-id') || undefined);
+  }
   if (request.method === 'DELETE') {
     return deleteIngestion(url, environment, request.headers.get('x-request-id') || undefined);
   }
