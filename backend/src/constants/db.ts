@@ -38,6 +38,8 @@ export const D1_TENANT_DATA_CACHE_KEYS = {
   SAVINGS_OPPORTUNITIES: 'tenant-data:savings-opportunities'
 } as const;
 
+// Scope prefix of the generation row that guards each tenant's assessment-scoped Module 2 analysis cache.
+export const D1_MODULE2_ANALYSIS_CACHE_SCOPE = 'module2-analysis';
 export const CACHE_KEYS = {
   TENANT: 'tenant:master',
   INGESTION_QUEUE: 'ingestion:queue',

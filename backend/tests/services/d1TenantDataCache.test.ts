@@ -4,27 +4,9 @@ import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import { clearD1ReferenceDataCache } from '../../src/services/d1ReferenceDataCache';
 import { getTenantD1Data, invalidateTenantD1Data } from '../../src/services/d1TenantDataCache';
 import { getD1RuntimeMetrics } from '../../src/services/d1QueryTelemetry';
+import { createCacheGenerationDatabase } from '../helpers/cacheGenerationDatabase';
 
-// Answers the generation statements the way D1 does: a read returns the stored counter, and a bump advances it.
-const generationDatabase = (): CloudflareD1Database => {
-  const generations = new Map<string, number>();
-  const prepare = vi.fn((_sql: string) => {
-    let scopeKey = '';
-    const statement = {
-      bind: (...values: unknown[]) => {
-        scopeKey = String(values[0]);
-        return statement;
-      },
-      first: async () => ({ generation: generations.get(scopeKey) ?? 0 }),
-      run: async () => {
-        generations.set(scopeKey, (generations.get(scopeKey) ?? 0) + 1);
-        return { success: true };
-      }
-    };
-    return statement;
-  });
-  return { prepare } as unknown as CloudflareD1Database;
-};
+const generationDatabase = (): CloudflareD1Database => createCacheGenerationDatabase();
 
 describe('tenant-scoped D1 dataset cache', () => {
   afterEach(() => {

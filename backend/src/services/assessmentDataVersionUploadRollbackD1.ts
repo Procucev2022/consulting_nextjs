@@ -57,7 +57,7 @@ export const cleanupFailedAssessmentDataVersionUpload = async (
       assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
     }, error);
   }
-  clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
+  await clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
   if (!objectStored) return;
   try {
     await environment.OBJECTS?.delete(objectKey);

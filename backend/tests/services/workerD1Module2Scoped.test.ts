@@ -17,6 +17,8 @@ import { D1_LOCAL_SQLITE_PATH_ENV } from '../../src/constants/procurementTransac
 import { Module2CategoryProfileHelper } from '../../src/services/module2CategoryProfileHelper';
 import { getD1CategoryMappingsFixture } from '../../../tests/fixtures/d1CategoryMappings';
 import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
+import { cacheGenerationStatement, createCacheGenerationDatabase, createCacheGenerationStore } from '../helpers/cacheGenerationDatabase';
+import type { CacheGenerationStore } from '../helpers/cacheGenerationDatabase';
 import { Module2CompactSourcingEngine } from '../../src/services/module2CompactSourcingEngine';
 import { buildCategorySpecialisationFromD1 } from '../../src/services/workerD1CategorySpecialisation';
 import { MODULE2_D1_CATEGORY_SPECIALISATION } from '../../src/constants/module2CategorySpecialisationD1';
@@ -42,13 +44,13 @@ const database = (datasets: Record<string, D1Record[]> = {
   A1: [transaction('T1', 100, 'Packing'), transaction('T2', 200, 'STEEL'),
     transaction('T3', 300, 'Packing', 'Supplier B')],
   A2: [transaction('T4', 900, 'Chemicals', 'Other Client Supplier')]
-}) => {
+}, generations: CacheGenerationStore = createCacheGenerationStore()) => {
   const categoryMappingRows = Object.entries(categoryMappings).map(([material_group_code, category_name]) => ({
     material_group_code, category_name
   }));
   const all = vi.fn();
   const bind = vi.fn();
-  const prepare = vi.fn((sql: string) => ({
+  const prepare = vi.fn((sql: string) => cacheGenerationStatement(sql, generations) ?? {
     bind: (...values: string[]) => {
       bind(...values);
       return {
@@ -64,7 +66,7 @@ const database = (datasets: Record<string, D1Record[]> = {
       };
     },
     all: () => Promise.resolve({ results: categoryMappingRows })
-  }));
+  });
   return { db: { prepare } as unknown as CloudflareD1Database, prepare, bind, all };
 };
 
@@ -430,7 +432,7 @@ describe('assessment-scoped D1 sourcing adapter', () => {
     expect(fixture.all).toHaveBeenCalledTimes(1);
     expect(getD1RuntimeMetrics(fixture.db)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
 
-    clearScopedModule2Cache(secondRequest, 'T1', 'A1');
+    await clearScopedModule2Cache(secondRequest, 'T1', 'A1');
     await call(secondRequest, '/dashboard');
     expect(fixture.all).toHaveBeenCalledTimes(2);
   });
@@ -481,7 +483,7 @@ describe('assessment-scoped D1 sourcing adapter', () => {
   });
 
   it('does not cache an oversized analysis when tenant scope is omitted', async () => {
-    const db = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const db = createCacheGenerationDatabase();
     const scope = { assessmentId: 'A1' } as ProcurementTransactionScope;
     const oversized: ScopedModule2Analysis = {
       transactions: new Array(D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS + 1)
@@ -497,23 +499,23 @@ describe('assessment-scoped D1 sourcing adapter', () => {
   });
 
   it('does not repopulate cache after an in-flight analysis was invalidated', async () => {
-    const db = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+    const db = createCacheGenerationDatabase();
     const scope = { tenantId: 'T1', assessmentId: 'A1' } as ProcurementTransactionScope;
     const result: ScopedModule2Analysis = { transactions: [], analysis: {} as ScopedModule2Analysis['analysis'] };
     let resolveLoad: ((value: ScopedModule2Analysis) => void) | undefined;
     const pending = getOrLoadScopedModule2Analysis(
       db, scope, false, 'invalidated-analysis', () => new Promise((resolve) => { resolveLoad = resolve; })
     );
-    await Promise.resolve();
-    clearScopedModule2Cache(db, 'T1', 'A1');
+    await vi.waitFor(() => expect(getScopedModule2Cache(db).has(JSON.stringify(['T1', 'A1']))).toBe(true));
+    await clearScopedModule2Cache(db, 'T1', 'A1');
     resolveLoad?.(result);
     await expect(pending).resolves.toBe(result);
 
     expect(getScopedModule2Cache(db).has(JSON.stringify(['T1', 'A1']))).toBe(false);
   });
 
-  it('clears the scoped cache by database, tenant, dataset, and globally', () => {
-    const database = { prepare: vi.fn() } as unknown as CloudflareD1Database;
+  it('clears the scoped cache by database, tenant, dataset, and globally', async () => {
+    const database = createCacheGenerationDatabase();
     const instrumented = instrumentD1Database(database, 'module2-cache-clear', createD1RequestMetrics());
     const cache = getScopedModule2Cache(database);
     const value = Promise.resolve({ transactions: [], analysis: {} } as unknown as ScopedModule2Analysis);
@@ -521,14 +523,14 @@ describe('assessment-scoped D1 sourcing adapter', () => {
     cache.set(JSON.stringify(['T1', 'A2']), { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 0, value });
     cache.set(JSON.stringify(['T2', 'A1']), { expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS, rowCount: 0, value });
 
-    clearScopedModule2Cache(instrumented, 'T1', 'A1');
+    await clearScopedModule2Cache(instrumented, 'T1', 'A1');
     expect(cache.has(JSON.stringify(['T1', 'A1']))).toBe(false);
-    clearScopedModule2Cache(database, 'T1');
+    await clearScopedModule2Cache(database, 'T1');
     expect([...cache.keys()]).toEqual([JSON.stringify(['T2', 'A1'])]);
-    clearScopedModule2Cache(instrumented);
+    await clearScopedModule2Cache(instrumented);
     expect(cache.size).toBe(0);
-    clearScopedModule2Cache({ prepare: vi.fn() } as unknown as CloudflareD1Database, 'missing');
-    clearScopedModule2Cache();
+    await clearScopedModule2Cache(createCacheGenerationDatabase(), 'missing');
+    await clearScopedModule2Cache();
     expect(getScopedModule2Cache(database)).not.toBe(cache);
   });
 
@@ -542,7 +544,8 @@ describe('assessment-scoped D1 sourcing adapter', () => {
   it('loads the complete seeded assessment without reading legacy or another customer transactions', async () => {
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
     const sqlite = new DatabaseSync(process.env[D1_LOCAL_SQLITE_PATH_ENV], { readOnly: true });
-    const binding = { prepare: (sql: string) => ({
+    const generations = createCacheGenerationStore();
+    const binding = { prepare: (sql: string) => cacheGenerationStatement(sql, generations) ?? ({
       bind: (...values: unknown[]) => ({ all: async () => ({ results: sqlite.prepare(sql).all(...values) }) }),
       all: async () => ({ results: sqlite.prepare(sql).all() })
     }) } as unknown as CloudflareD1Database;

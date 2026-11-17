@@ -267,7 +267,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
         docId
       }, cleanupError);
     }
-    clearScopedModule2Cache(database, tenantId);
+    await clearScopedModule2Cache(database, tenantId);
     if (objectStored) {
       await processR2ObjectCleanupOutbox(environment, { requestId, tenantId, objectKey, limit: 1 });
     }
@@ -415,7 +415,7 @@ const deleteIngestion = async (
       documentCount: documents.results.length,
       objectCount: objects.results.length
     });
-    clearScopedModule2Cache(database, tenantId);
+    await clearScopedModule2Cache(database, tenantId);
   }
   if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
     requestId, tenantId, limit: objects.results.length
@@ -482,7 +482,7 @@ const resetIngestionDataset = async (
     documentCount: documentIds.length,
     objectCount: objects.results.length
   });
-  if (documentIds.length) clearScopedModule2Cache(database, tenantId);
+  if (documentIds.length) await clearScopedModule2Cache(database, tenantId);
   if (objects.results.length) await processR2ObjectCleanupOutbox(environment, {
     requestId, tenantId, limit: objects.results.length
   });

@@ -211,7 +211,7 @@ const persistMaterialMappingUpdates = async (
     status: 503,
     data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable }
   };
-  clearScopedModule2Cache();
+  await clearScopedModule2Cache(db, request.headers.get('x-resolved-tenant-id') || undefined, assessmentId);
   logger.info('Persisted D1 assessment material classifications', {
     assessmentId, mappingCount: updatedMappings.length,
     reviewerId: reviewer.id, reviewStatus: payloads[0]?.reviewStatus

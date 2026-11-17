@@ -1,6 +1,5 @@
 import { eAuctionPlanningAssumptionSchema } from './constants/validation';
 import { MODULE2_D1_ROUTE_MESSAGES } from './constants/module2D1Scoped';
-import { clearScopedModule2Cache } from './services/workerD1Module2Scoped';
 import {
   loadEAuctionPlanningAssumptions,
   saveEAuctionPlanningAssumption
@@ -53,7 +52,6 @@ export const handleEAuctionPlanningAssumptionsRoute = async (
   const assumption = await saveEAuctionPlanningAssumption(
     db, reviewedAssumption, authentication.user.email, updatedAt
   );
-  clearScopedModule2Cache();
   logger.info('Persisted D1 e-auction planning assumption', {
     assumptionId: assumption.id,
     categoryOrMaterial: assumption.categoryOrMaterial,
