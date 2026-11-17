@@ -13,7 +13,10 @@ const responseMessage = (payload: unknown, status: number): string =>
     : UI_STRINGS.module1.fxReferenceRequestFailed(status);
 
 const readCurrencyPayload = async (response: Response): Promise<unknown> =>
-  Promise.resolve(response.json()).catch(() => null);
+  Promise.resolve(response.json()).catch((error: unknown) => {
+    frontendLogger.warn('Currency response body could not be read as JSON', { status: response.status }, error);
+    return null;
+  });
 
 const ensureOkResponse = (response: Response, payload: unknown): void => {
   if (response.ok) return;

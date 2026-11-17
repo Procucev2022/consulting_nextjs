@@ -2,6 +2,11 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaxonomyLoadState } from '../../src/types';
 import { useUNSPSCTaxonomy } from '../../src/hooks/useUNSPSCTaxonomy';
+import frontendLogger from '../../src/utils/logger';
+
+vi.mock('../../src/utils/logger', () => ({
+  default: { error: vi.fn() }
+}));
 
 const mocked = vi.hoisted(() => ({
   load: vi.fn(),
@@ -19,6 +24,15 @@ describe('useUNSPSCTaxonomy', () => {
     mocked.load.mockReset().mockResolvedValue(undefined);
     mocked.listeners.clear();
     mocked.state = { isLoading: false, error: null };
+  });
+
+  it('records a failed taxonomy load instead of dropping it', async () => {
+    const failure = new Error('taxonomy offline');
+    mocked.load.mockRejectedValueOnce(failure);
+
+    renderHook(() => useUNSPSCTaxonomy(true));
+
+    await waitFor(() => expect(frontendLogger.error).toHaveBeenCalledWith(expect.any(String), expect.any(Object), failure));
   });
 
   it('loads on demand, reflects database status changes and unsubscribes after unmount', () => {

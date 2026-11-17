@@ -2,6 +2,12 @@ import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminAuthApiClient } from '../../src/utils/adminAuthApi';
 import { authApiClient } from '../../src/utils/authApi';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import frontendLogger from '../../src/utils/logger';
+
+vi.mock('../../src/utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
 
 describe('Admin Auth API Client (Frontend)', () => {
   beforeEach(() => {
@@ -88,6 +94,24 @@ describe('Admin Auth API Client (Frontend)', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('reports a rejected provisioning request with its HTTP status when the error body is not JSON', async () => {
+    const unreadableFailure = new SyntaxError('Unexpected token <');
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: vi.fn().mockRejectedValueOnce(unreadableFailure)
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(adminAuthApiClient.createAdminUser({
+      name: 'Offline Admin',
+      email: 'admin@procucev.com',
+      password: 'Procucev@123'
+    })).rejects.toThrow(UI_STRINGS.admin.provisioningFailureWithStatus(502));
+    expect(frontendLogger.warn).toHaveBeenCalledWith(expect.any(String), { status: 502 }, unreadableFailure);
+    expect(frontendLogger.error).toHaveBeenCalledWith(expect.any(String), { status: 502 });
+  });
+
   it('should throw validation error if payload is invalid', async () => {
     await expect(
       adminAuthApiClient.createAdminUser({
@@ -134,7 +158,7 @@ describe('Admin Auth API Client (Frontend)', () => {
         email: 'prod@procucev.com',
         password: 'Procucev@123'
       })
-    ).rejects.toThrow('Failed to provision administrator (HTTP 502)');
+    ).rejects.toThrow(UI_STRINGS.admin.provisioningFailureWithStatus(502));
 
     vi.unstubAllEnvs();
   });
