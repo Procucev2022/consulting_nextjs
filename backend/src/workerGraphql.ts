@@ -1,4 +1,4 @@
-import { buildSchema, graphql, type GraphQLSchema } from 'graphql';
+import { buildSchema, graphql, Kind, OperationTypeNode, parse, type GraphQLSchema } from 'graphql';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES, GRAPHQL_SCHEMA_SDL } from './constants/graphql';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareEnvironment } from './types/cloudflare';
@@ -8,6 +8,17 @@ import { getTenantFromD1, requireD1Binding } from './workerD1';
 import { jsonResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 let cachedGraphqlSchema: GraphQLSchema | undefined;
+
+// Mutations change data, so they are accepted only from POST bodies. A GET query string can be triggered by a link or an image tag.
+const isMutationDocument = (source: string): boolean => {
+  try {
+    return parse(source).definitions.some((definition) =>
+      definition.kind === Kind.OPERATION_DEFINITION && definition.operation === OperationTypeNode.MUTATION);
+  } catch {
+    // A syntax error is reported by graphql() itself, so the mutation check does not need to reject it here.
+    return false;
+  }
+};
 
 const getGraphqlSchema = (): GraphQLSchema => {
   cachedGraphqlSchema ??= buildSchema(GRAPHQL_SCHEMA_SDL);
@@ -37,6 +48,15 @@ export const handleGraphQLRoute = async (
     }
 
     if (!source) return jsonResponse({ errors: [{ message: GRAPHQL_ERRORS.QUERY_REQUIRED }] }, 400, request);
+    if (request.method === 'GET' && isMutationDocument(source)) {
+      logger.warn(GRAPHQL_LOG_MESSAGES.mutationOverGetRejected, {
+        requestId: request.headers.get('x-request-id') || undefined,
+        method: request.method,
+        path: url.pathname,
+        operationName
+      });
+      return jsonResponse({ errors: [{ message: GRAPHQL_ERRORS.MUTATION_REQUIRES_POST }] }, 405, request);
+    }
     const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
     // The Worker entry point assigns a validated request ID before API dispatch.
     const requestId = request.headers.get('x-request-id') as string;

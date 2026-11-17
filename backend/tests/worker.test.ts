@@ -2606,6 +2606,13 @@ describe('Cloudflare worker core routes', () => {
         expect.objectContaining({ name: 'RequestBodyTooLargeError' }));
     });
 
+    it('rejects a GraphQL mutation sent as a GET query string before any resolver runs', async () => {
+      const response = await send(`/api/graphql?query=${encodeURIComponent('mutation Probe { __typename }')}`);
+
+      expect(response.status).toBe(405);
+      await expect(bodyOf(response)).resolves.toEqual({ errors: [{ message: GRAPHQL_ERRORS.MUTATION_REQUIRES_POST }] });
+    });
+
     it('maps a D1 binding failure during GraphQL tenant resolution to 503', async () => {
       vi.mocked(getTenantFromD1).mockRejectedValueOnce(new Error(D1_ROUTE_MESSAGES.missingBinding));
 
