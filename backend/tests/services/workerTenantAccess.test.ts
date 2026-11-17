@@ -156,6 +156,17 @@ describe('authorizeTenantRequest', () => {
     expect(conflict).toMatchObject({ status: 400, message: AUTH_MESSAGES.TENANT_SCOPE_INVALID });
   });
 
+  it('keeps the encryption utility behind the administrator gate', async () => {
+    await expect(authorizeTenantRequest(
+      await requestFor('/api/crypto/encrypt', 'user-a'), environment()
+    )).resolves.toMatchObject({ status: 403, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY });
+
+    const adminDecision = await authorizeTenantRequest(
+      await requestFor('/api/crypto/encrypt', 'admin-a'), environment()
+    );
+    expect(adminDecision.status).toBeUndefined();
+  });
+
   it('keeps administrators inside their assigned tenant for scoped reporting', async () => {
     const decision = await authorizeTenantRequest(
       await requestFor('/api/report?tenantId=tenant-a', 'admin-a'), environment()

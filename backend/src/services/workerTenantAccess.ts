@@ -18,7 +18,7 @@ const isPublicRoute = (path: string): boolean =>
   path === '/api/health' || path === '/api/telemetry/client-error';
 
 const isAdminOnlyRoute = (request: Request, path: string): boolean =>
-  path.startsWith('/api/db/') || (path === '/api/tenant' && request.method === 'PUT');
+  path.startsWith('/api/db/') || path.startsWith('/api/crypto/') || (path === '/api/tenant' && request.method === 'PUT');
 
 const isTenantIndependentRoute = (path: string): boolean => path.startsWith('/api/db/');
 
