@@ -2497,6 +2497,23 @@ describe('Cloudflare worker core routes', () => {
       await expect(bodyOf(fetched)).resolves.toEqual({ data: { __typename: 'Query' } });
     });
 
+    it('rejects schema introspection unless the environment enables it', async () => {
+      seedTenant();
+      const query = '{ __schema { queryType { name } } }';
+
+      const disabled = await send('/api/graphql', jsonBody('POST', { query }));
+      const enabled = await send('/api/graphql', jsonBody('POST', { query }),
+        environmentWithDb({ GRAPHQL_INTROSPECTION_ENABLED: 'true' }));
+
+      expect(disabled.status).toBe(200);
+      const disabledBody = await bodyOf(disabled) as { errors: Array<{ message: string }> };
+      expect(disabledBody.errors).toEqual(expect.arrayContaining([expect.objectContaining({
+        message: expect.stringMatching(/introspection/iu)
+      })]));
+      expect(enabled.status).toBe(200);
+      await expect(bodyOf(enabled)).resolves.toEqual({ data: { __schema: { queryType: { name: 'Query' } } } });
+    });
+
     it('serves bounded GraphQL ingestion pages with opaque cursors and dashboard page metadata', async () => {
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
         ['DOC-A', 'TNT-GLOBAL-8902', 'a.xlsx', '2026-02-01T00:00:00Z'],
@@ -2668,7 +2685,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/graphql', jsonBody('POST', { query: '{ __typename }' }));
 
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ errors: [{ message: 'tenant service down' }] });
+      const body = await bodyOf(response);
+      const requestId = response.headers.get('x-request-id') || '';
+      expect(body).toEqual({ errors: [{
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        extensions: { code: API_ERROR_CODE.INTERNAL_ERROR, errorCategory: API_ERROR_CATEGORY.SERVER, requestId }
+      }] });
+      expect(JSON.stringify(body)).not.toContain('tenant service down');
     });
 
     it('answers 503 for taxonomy and GraphQL when the binding is absent', async () => {

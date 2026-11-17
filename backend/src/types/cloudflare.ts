@@ -67,6 +67,7 @@ export interface CloudflareEnvironment {
   RESEND_FROM?: string;
   ENVIRONMENT?: string;
   APP_OPERATING_MODE?: string;
+  GRAPHQL_INTROSPECTION_ENABLED?: string;
   GEMINI_API_KEY?: string;
   GEMINI_BACKUP_KEYS?: string;
   GEMINI_BASE_URL?: string;

@@ -315,7 +315,11 @@ export const GRAPHQL_ERRORS = {
   MISSING_BINDING: 'Cloudflare D1 binding DB is not configured.'
 } as const;
 
+// Introspection lists every type and field. It stays off unless GRAPHQL_INTROSPECTION_ENABLED is exactly this value.
+export const GRAPHQL_INTROSPECTION_ENABLED_VALUE = 'true' as const;
+
 export const GRAPHQL_LOG_MESSAGES = {
+  introspectionRejected: 'Rejected a GraphQL introspection query because introspection is disabled for this environment',
   mutationOverGetRejected: 'Rejected a GraphQL mutation sent over GET. Mutations are accepted only as POST requests.',
   invalidPagination: 'GraphQL ingestion pagination input was rejected',
   operationRejected: 'GraphQL operation was rejected',
