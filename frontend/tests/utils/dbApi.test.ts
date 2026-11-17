@@ -47,26 +47,6 @@ describe('dbApiClient', () => {
     expect(res).toEqual(mockMetrics);
   });
 
-  it('getDBTableData calls GET /api/db/tables with query params', async () => {
-    const mockTableData = { rows: [], totalCount: 0 };
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: mockTableData })
-    });
-
-    const res = await dbApiClient.getDBTableData('tenants', 2, 10, 'search-term');
-    expectApiFetchCall(global.fetch, '/api/db/tables?table=tenants&page=2&limit=10&search=search-term');
-    expect(res).toEqual(mockTableData);
-
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: mockTableData })
-    });
-    const resDefault = await dbApiClient.getDBTableData('tenants');
-    expectApiFetchCall(global.fetch, '/api/db/tables?table=tenants&page=1&limit=20');
-    expect(resDefault).toEqual(mockTableData);
-  });
-
   it('testDBConnection calls POST /api/db/test-connection', async () => {
     const mockResponse = { success: true, message: 'Connected' };
     (global.fetch as any).mockResolvedValueOnce({

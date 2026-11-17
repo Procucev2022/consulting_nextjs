@@ -310,7 +310,6 @@ export const apiClient = {
   // Database View & Telemetry Delegations
   getDBStatus: dbApiClient.getDBStatus.bind(dbApiClient),
   getDBMetrics: dbApiClient.getDBMetrics.bind(dbApiClient),
-  getDBTableData: dbApiClient.getDBTableData.bind(dbApiClient),
   testDBConnection: dbApiClient.testDBConnection.bind(dbApiClient),
 
   // Google Gemini AI Services

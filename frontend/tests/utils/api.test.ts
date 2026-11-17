@@ -335,17 +335,6 @@ describe('apiClient', () => {
     expect(res).toEqual(mockMetrics);
   });
 
-  it('getDBTableData should perform GET /api/db/tables with query params', async () => {
-    const mockData = { rows: [], total: 0 };
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockData })
-    });
-
-    const res = await apiClient.getDBTableData('tenants', 1, 20, 'Acme');
-    expectApiFetchCall(global.fetch, expect.stringContaining('/api/db/tables?table=tenants&page=1&limit=20&search=Acme'));
-    expect(res).toEqual(mockData);
-  });
-
   it('testDBConnection should perform POST /api/db/test-connection', async () => {
     const mockData = { success: true, latencyMs: 2.5 };
     (global.fetch as any).mockResolvedValueOnce({
