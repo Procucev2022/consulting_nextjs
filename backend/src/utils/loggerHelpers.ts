@@ -6,6 +6,7 @@ import {
   DEFAULT_RETENTION_DAYS,
   DEFAULT_MIN_LEVEL
 } from '../constants/logger';
+import { serializeLogEntry, serializeLogValue } from './logSerialization';
 
 export interface ResolvedLoggerConfig {
   serviceName: string;
@@ -39,7 +40,7 @@ const reportHelperFailure: LoggerDiagnosticReporter = (action, error, context = 
   const serializedError = error instanceof Error
     ? { name: error.name, message: error.message, stack: error.stack }
     : { name: 'UnknownError', message: String(error) };
-  const entry = {
+  const entry: Partial<LogEntry> = {
     timestamp: new Date().toISOString(),
     level: 'error',
     service: DEFAULT_SERVICE_NAME,
@@ -48,7 +49,7 @@ const reportHelperFailure: LoggerDiagnosticReporter = (action, error, context = 
     error: serializedError
   };
   try {
-    console.error(JSON.stringify(entry));
+    console.error(serializeLogEntry(entry));
   } catch {
     // Keep log inspection and cleanup fallbacks from interrupting application work.
   }
@@ -162,8 +163,8 @@ function matchesKeyword(entry: LogEntry, keyword?: string): boolean {
   if (!keyword) return true;
   const kw = keyword.toLowerCase();
   const msgMatch = entry.message.toLowerCase().includes(kw);
-  const ctxMatch = entry.context ? JSON.stringify(entry.context).toLowerCase().includes(kw) : false;
-  const errMatch = entry.error ? JSON.stringify(entry.error).toLowerCase().includes(kw) : false;
+  const ctxMatch = entry.context ? serializeLogValue(entry.context).toLowerCase().includes(kw) : false;
+  const errMatch = entry.error ? serializeLogValue(entry.error).toLowerCase().includes(kw) : false;
   return msgMatch || ctxMatch || errMatch;
 }
 

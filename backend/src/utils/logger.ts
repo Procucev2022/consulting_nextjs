@@ -15,6 +15,7 @@ import {
   DEFAULT_MIN_LEVEL,
   DEFAULT_MAX_MEMORY_LOGS
 } from '../constants/logger';
+import { serializeLogEntry } from './logSerialization';
 import {
   resolveLoggerConfig,
   purgeOldLogFiles,
@@ -65,7 +66,7 @@ export class Logger {
     }, error);
     this.addRecentLog(entry);
     try {
-      console.error(JSON.stringify(entry));
+      console.error(serializeLogEntry(entry));
     } catch {
       // The original application operation must continue if even the logging fallback is unavailable.
     }
@@ -134,7 +135,7 @@ export class Logger {
 
     try {
       if (!this.ensureLogDir(entry.context)) return;
-      const line = JSON.stringify(entry) + '\n';
+      const line = serializeLogEntry(entry) + '\n';
       const dateStr = entry.timestamp.split('T')[0];
 
       fs.appendFileSync(path.join(this.logDir, 'app.log'), line);
@@ -161,7 +162,7 @@ export class Logger {
 
     if (this.shouldLog(level)) {
       if (this.enableConsole) {
-        const output = JSON.stringify(entry);
+        const output = serializeLogEntry(entry);
         if (level === 'error') {
           console.error(output);
         } else if (level === 'warn') {

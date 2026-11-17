@@ -17,3 +17,8 @@ export const DEFAULT_MIN_LEVEL: LogLevel = 'debug';
 export const DEFAULT_RETENTION_DAYS = 14;
 export const DEFAULT_MAX_MEMORY_LOGS = 200;
 export const DEFAULT_PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export const LOG_SERIALIZATION = {
+  circularMarker: '[Circular]',
+  partialRecordMessage: 'Log record was partially serialized because one of its fields could not be encoded as JSON.'
+} as const;
