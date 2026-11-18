@@ -13,6 +13,7 @@ import {
 } from '@/constants/taxonomy';
 import { mockTenant, conversionFunnelStages } from '../fixtures/mockData';
 import { EMPTY_TENANT } from '@/constants/app';
+import { AUTH_ROUTES } from '@/constants/auth';
 import {
   DEFAULT_UNREADABLE_TEXT_FILE_RECORD_COUNT,
   INGESTION_RECORD_COUNT_FALLBACK_ACTION,
@@ -51,6 +52,7 @@ const mocks = vi.hoisted(() => {
     harness,
     saveModule2MaterialMappings: vi.fn(),
     routerPush: vi.fn(),
+    routerReplace: vi.fn(),
     useRouter: vi.fn(),
     logger: {
       debug: vi.fn(),
@@ -845,7 +847,7 @@ beforeEach(() => {
   for (const key of Object.keys(mocks.props)) {
     delete mocks.props[key];
   }
-  mocks.useRouter.mockReturnValue({ push: mocks.routerPush, replace: vi.fn(), prefetch: vi.fn() });
+  mocks.useRouter.mockReturnValue({ push: mocks.routerPush, replace: mocks.routerReplace, prefetch: vi.fn() });
   // jsdom does not implement scrollIntoView, which the refresh handler calls on the summary anchor.
   Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, writable: true, value: vi.fn() });
   window.history.replaceState(null, '', '/');
@@ -2104,14 +2106,30 @@ describe('Home page: Modules 4 and 5, pipeline navigation', () => {
 });
 
 describe('Home page: header and shell actions', () => {
-  it('logs out, clears the stored session, and confirms with the logout message', async () => {
+  it('signs out, clears the stored session, and replaces the workspace with the sign-in route', async () => {
     await renderPage();
 
     await runProp('header', 'onLogout');
 
-    expect(authApiClient.clearStoredSession).toHaveBeenCalled();
+    expect(authApiClient.clearStoredSession).toHaveBeenCalledTimes(1);
     expect(readProp<UserProfile | null>('header', 'currentUser')).toBeNull();
-    expect(screen.getByText(UI_STRINGS.auth.logout)).toBeInTheDocument();
+    expect(mocks.routerReplace).toHaveBeenCalledWith(AUTH_ROUTES.LOGIN);
+    expect(mocks.routerPush).not.toHaveBeenCalled();
+    expect(mocks.logger.info).toHaveBeenCalledWith(expect.any(String), { action: 'auth.logout' });
+  });
+
+  it('signs out through the location fallback when the router hook throws', async () => {
+    mocks.useRouter.mockImplementation(() => {
+      throw new Error('App Router context is not mounted');
+    });
+    const fakeLocation = stubLocation();
+    await renderPage();
+
+    await runProp('header', 'onLogout');
+
+    expect(authApiClient.clearStoredSession).toHaveBeenCalledTimes(1);
+    expect(fakeLocation.replace).toHaveBeenCalledWith(AUTH_ROUTES.LOGIN);
+    expect(mocks.routerReplace).not.toHaveBeenCalled();
   });
 
   it('saves client setup values, using existing values for blank fields and computing spend', async () => {

@@ -67,6 +67,7 @@ import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancia
 import { DEFAULT_PIPELINE_TAB, UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
 import { EMPTY_TENANT } from '@/constants/app';
+import { AUTH_ROUTES } from '@/constants/auth';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '@/constants/validation';
@@ -147,14 +148,15 @@ import type {
   ConversionFunnelPhase,
   ReportVersion,
   DashboardRequestResult,
-  RejectedDashboardRequest
+  RejectedDashboardRequest,
+  AppRouterLike
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 import { selectActiveReport } from '@/utils/reportSelection';
 
 export default function Home() {
   useUNSPSCTaxonomy();
-  let router: { push: (url: string) => void } | null = null;
+  let router: AppRouterLike | null = null;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     router = useRouter();
@@ -164,6 +166,9 @@ export default function Home() {
         if (typeof window !== 'undefined') {
           window.location.href = url;
         }
+      },
+      replace: (url: string) => {
+        window.location.replace(url);
       }
     };
   }
@@ -1101,9 +1106,12 @@ export default function Home() {
   };
 
   const handleLogout = () => {
+    frontendLogger.info('Signed out of the procurement workspace', { action: 'auth.logout' });
     authApiClient.clearStoredSession();
     setCurrentUser(null);
-    showToast(UI_STRINGS.auth.logout);
+    // Leaving the dashboard unmounts it, which drops the loaded procurement data from memory. replace() also
+    // swaps this history entry, so the Back button cannot return to the signed-out workspace.
+    router.replace(AUTH_ROUTES.LOGIN);
   };
 
   // Subscription Tier Resolution & Simulation Handlers

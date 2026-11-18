@@ -114374,3 +114374,10 @@ Currently for any small change in antigravity, it is taking too much time in qua
 
 A lot of mock data in the codebase, remove any mock data in the codebase, make sure all data is fetched from the database only. Seed the mock data in current local database only if required but all data should be fetched from database,
 ---
+## Prompt 638
+Keep commiting changes & pushing changes directly to current branch
+
+ 
+
+After logout still on that page it not directly move to sign which is not happening for that we need to click on sign in button and website data is visible ( simple word : Logout is not design correctly)
+---
