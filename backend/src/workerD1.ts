@@ -358,19 +358,31 @@ export const getCurrencyRatesFromD1 = async (
       const currencies = await queryAll<D1FxCurrencyRow>(db, `SELECT * FROM ${D1_TABLES.fxCurrencies} ORDER BY currency`, [], requestId);
       const rates = await queryAll<D1FxRateRow>(db, `SELECT r.* FROM ${D1_TABLES.fxRates} r INNER JOIN (SELECT currency, MAX(rate_date) AS rate_date FROM ${D1_TABLES.fxRates} GROUP BY currency) latest ON latest.currency = r.currency AND latest.rate_date = r.rate_date`, [], requestId);
       const rateMap = new Map(rates.map((rate) => [rate.currency, rate]));
-      return Object.fromEntries(currencies.map((currency) => {
+      // A currency without a stored positive rate is left out, so no zero rate is shown as a real price.
+      const uncoveredCurrencies: string[] = [];
+      const catalog = currencies.flatMap((currency) => {
         const rate = rateMap.get(currency.currency);
-        return [currency.currency, {
+        if (!rate || !(Number(rate.inr_per_unit) > 0)) {
+          uncoveredCurrencies.push(currency.currency);
+          return [];
+        }
+        return [[currency.currency, {
           ticker: `${currency.currency}INR=X`,
           currencyPair: `${currency.currency} / INR`,
           currencyCode: currency.currency,
           name: currency.currency_name,
-          currentRate: rate?.inr_per_unit || 0,
-          lastUpdated: rate?.rate_date || null,
+          currentRate: Number(rate.inr_per_unit),
+          lastUpdated: rate.rate_date || null,
           coverageStatus: currency.coverage_status,
-          source: rate?.source_name || currency.approved_source || null
-        }];
-      }));
+          source: rate.source_name || currency.approved_source || null
+        }] as const];
+      });
+      if (uncoveredCurrencies.length > 0) {
+        logger.warn('Currencies without a stored FX rate were left out of the currency catalog', {
+          currencies: uncoveredCurrencies, requestId
+        });
+      }
+      return Object.fromEntries(catalog);
     }
   );
   logger.debug('Resolved D1 currency reference cache', {

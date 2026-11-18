@@ -280,12 +280,12 @@ export const D1_INGESTION_REMEDIATION_CANDIDATES_QUERY = `
   SELECT candidate_records.*,
     CASE
       WHEN UPPER(TRIM(COALESCE(candidate_records.raw_currency, ''))) = 'INR' THEN 1
-      ELSE COALESCE((
+      ELSE (
         SELECT rate.inr_per_unit FROM FxReferenceRate AS rate
         WHERE rate.currency = UPPER(TRIM(COALESCE(candidate_records.raw_currency, '')))
           AND rate.rate_date <= candidate_records.remediation_effective_date
         ORDER BY rate.rate_date DESC LIMIT 1
-      ), 0)
+      )
     END AS remediation_fx_rate
   FROM candidate_records
 `;

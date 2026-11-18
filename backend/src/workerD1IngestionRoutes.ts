@@ -10,6 +10,7 @@ import {
   uploadIngestionFileSchema, INGESTION_UPLOAD_JSON_MAX_BYTES
 } from './constants/validation';
 import type { IngestionDataQueryInput } from './types/validation';
+import type { MissingFxRateEntry } from './types/currency';
 import type { CloudflareD1Database, CloudflareD1MutationResult, CloudflareD1PreparedStatement, CloudflareEnvironment } from './types/cloudflare';
 import logger from './utils/logger';
 import {
@@ -44,6 +45,18 @@ const getIngestionData = async (
   }) };
 };
 
+// A record that no stored rate can convert is reported with its currency and effective date. It is never converted at 0.
+const recordMissingFxRate = (
+  missingRates: Map<string, MissingFxRateEntry>,
+  record: Record<string, unknown>
+): void => {
+  const currency = String(record.raw_currency).trim().toUpperCase();
+  const effectiveDate = typeof record.remediation_effective_date === 'string'
+    ? record.remediation_effective_date
+    : null;
+  const key = `${currency}|${effectiveDate ?? ''}`;
+  missingRates.set(key, { currency, effectiveDate, recordCount: (missingRates.get(key)?.recordCount ?? 0) + 1 });
+};
 const remediateIngestion = async (environment: CloudflareEnvironment, requestId?: string): Promise<{ data: unknown }> => {
   requireD1Binding(environment.DB);
   const database = environment.DB as CloudflareD1Database;
@@ -53,11 +66,15 @@ const remediateIngestion = async (environment: CloudflareEnvironment, requestId?
     .bind(tenantId, D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
   const updateStatements: CloudflareD1PreparedStatement[] = [];
   const candidateRecordIds: string[] = [];
+  const missingRates = new Map<string, MissingFxRateEntry>();
 
   for (const record of candidates.results || []) {
     const amount = Number(record.amount);
-    const rate = Number(record.remediation_fx_rate || 0);
-    if (!Number.isFinite(rate) || rate <= 0) continue;
+    const rate = Number(record.remediation_fx_rate ?? Number.NaN);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      recordMissingFxRate(missingRates, record);
+      continue;
+    }
 
     const amountInr = amount * rate;
     const inrCrores = amountInr / D1_REPORTING.inrPerCrore;
@@ -109,6 +126,12 @@ const remediateIngestion = async (environment: CloudflareEnvironment, requestId?
       if (affected > 0) updatedRecordIds.push(recordId);
     });
   }
+  const missingRateEntries = [...missingRates.values()];
+  for (const entry of missingRateEntries) {
+    logger.warn('Currency remediation skipped records without a stored FX rate', {
+      ...entry, tenantId, requestId
+    });
+  }
   const updatedRecords = updatedRecordIds.length
     ? (await database.prepare(D1_INGESTION_REMEDIATED_RECORDS_QUERY)
       .bind(JSON.stringify(updatedRecordIds), tenantId).all<Record<string, unknown>>()).results
@@ -124,6 +147,8 @@ const remediateIngestion = async (environment: CloudflareEnvironment, requestId?
     data: {
       updatedCount: updatedRecords.length,
       skippedCount: Math.max(0, (candidates.results?.length || 0) - updatedRecords.length),
+      missingRateCount: missingRateEntries.reduce((total, entry) => total + entry.recordCount, 0),
+      missingRates: missingRateEntries,
       records: updatedRecords.map((record) => ({
         ...record,
         resolved: Boolean(record.resolved)

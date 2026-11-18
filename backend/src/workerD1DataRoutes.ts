@@ -143,13 +143,23 @@ const handleFinancialRoute = async (
     const rates = await getCurrencyRatesFromD1(database, request.headers.get('x-request-id') || undefined);
     if (!from) return apiData(rates, request);
     const selected = rates[from] as { currentRate?: number; lastUpdated?: string | null } | undefined;
-    if (!selected && from !== 'INR') return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.currencyNotFound(from) }, 400, request);
     const requestedDate = parsed.data.date || parsed.data.year;
     const effectiveDate = requestedDate == null ? null : /^\d{4}$/u.test(String(requestedDate))
       ? `${requestedDate}-12-31`
       : String(requestedDate).slice(0, 10).replaceAll('/', '-');
-    let rate = from === 'INR' ? 1 : Number(selected?.currentRate || 0);
-    let rateDate = from === 'INR' ? effectiveDate : selected?.lastUpdated || null;
+    if (!selected && from !== 'INR') {
+      // The catalog leaves out currencies with no stored rate. A known currency with no rate is reported as such.
+      const knownCurrency = await database.prepare('SELECT currency FROM FxCurrencyMaster WHERE currency = ?')
+        .bind(from).first();
+      return jsonResponse({
+        success: false,
+        message: knownCurrency
+          ? D1_ROUTE_MESSAGES.currencyRateUnavailable(from, effectiveDate || D1_ROUTE_MESSAGES.latestRateDateLabel)
+          : D1_ROUTE_MESSAGES.currencyNotFound(from)
+      }, 400, request);
+    }
+    let rate = from === 'INR' ? 1 : Number(selected?.currentRate);
+    let rateDate = from === 'INR' ? effectiveDate : selected?.lastUpdated;
     if (from !== 'INR' && effectiveDate) {
       const historicalRate = await database.prepare(`
         SELECT inr_per_unit, rate_date FROM FxReferenceRate

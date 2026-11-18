@@ -1386,6 +1386,7 @@ describe('Cloudflare worker core routes', () => {
         await Promise.all(statements.map((statement) => statement.run()));
         return statements.map(() => ({ meta: { changes: 1 } }));
       });
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
       const records = data.records as Array<Record<string, unknown>>;
@@ -1402,13 +1403,42 @@ describe('Cloudflare worker core routes', () => {
       const persistedSecond = await fixture.d1.prepare('SELECT amount_inr, inr_crores, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX-2').first();
       const untouched = await fixture.d1.prepare('SELECT amount_inr, issue_flag, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-NO-DATE').first();
 
-      expect(data).toMatchObject({ updatedCount: 2, skippedCount: 2 });
+      expect(data).toMatchObject({
+        updatedCount: 2,
+        skippedCount: 2,
+        missingRateCount: 2,
+        missingRates: expect.arrayContaining([
+          { currency: 'USD', effectiveDate: null, recordCount: 1 },
+          { currency: 'USD', effectiveDate: '2024-06-30', recordCount: 1 }
+        ])
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        currency: 'USD', effectiveDate: '2024-06-30', recordCount: 1
+      }));
       expect(records).toHaveLength(2);
       expect(persisted).toEqual({ amount_inr: 8500, inr_crores: 0.00085, fx_rate_applied: 85, issue_flag: 'Passed Clean', action_status: 'Ready', resolved: 1 });
       expect(persistedSecond).toEqual({ amount_inr: 17000, inr_crores: 0.0017, fx_rate_applied: 85 });
       expect(untouched).toEqual({ amount_inr: null, issue_flag: 'Currency Review', resolved: 0 });
     });
 
+    it('groups records that share a missing currency and effective date into one report entry', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-GROUP-1', 'TNT-1', 'PO-GROUP-1', 'Acme', 'Group item one', 40, 'EUR', '2025-02-01', 'Currency Review', 'Review', 0],
+        ['REC-GROUP-2', 'TNT-1', 'PO-GROUP-2', 'Acme', 'Group item two', 60, 'EUR', '2025-02-01', 'Currency Review', 'Review', 0]
+      ]);
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+      const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
+      expect(data).toMatchObject({
+        updatedCount: 0,
+        skippedCount: 2,
+        missingRateCount: 2,
+        missingRates: [{ currency: 'EUR', effectiveDate: '2025-02-01', recordCount: 2 }]
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        currency: 'EUR', effectiveDate: '2025-02-01', recordCount: 2
+      }));
+    });
     it('keeps a single-record remediation working when the D1 adapter does not expose batch', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
@@ -1507,7 +1537,7 @@ describe('Cloudflare worker core routes', () => {
       seedTenant('TNT-1');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
 
-      expect(data).toEqual({ updatedCount: 0, skippedCount: 0, records: [] });
+      expect(data).toEqual({ updatedCount: 0, skippedCount: 0, missingRateCount: 0, missingRates: [], records: [] });
     });
 
     it('keeps an already-normalized INR record unchanged during remediation', async () => {
@@ -2102,6 +2132,40 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
+    it('reports an unknown currency as not found and a known currency with no rate for the requested date', async () => {
+      const unknown = await send('/api/currency?from=XYZ&amount=10');
+      expect(unknown.status).toBe(400);
+      await expect(bodyOf(unknown)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyNotFound('XYZ')
+      });
+      fixture.db.prepare(
+        "INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES ('CHF', 'Swiss Franc', 'MASTER_ONLY', 'seed', 'v1')"
+      ).run();
+      const dated = await send('/api/currency?from=CHF&amount=10&date=2026-01-01');
+      expect(dated.status).toBe(400);
+      await expect(bodyOf(dated)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('CHF', '2026-01-01')
+      });
+    });
+    it('refuses a conversion when the stored rate on the requested date is zero', async () => {
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['EUR', 'Euro', 'FULL', 'ECB', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['EUR', '2025-01-01', 0, 'FX-2026'],
+        ['EUR', '2026-01-15', 92, 'FX-2026']
+      ]);
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+      const response = await send('/api/currency?from=EUR&amount=10&date=2025-06-01');
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('EUR', '2025-06-01')
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ currency: 'EUR', effectiveDate: '2025-06-01' }));
+    });
     it('rejects unsupported collection methods and converts INR without an external rate', async () => {
       const categories = await send('/api/categories', { method: 'POST' });
       const vendors = await send('/api/vendors', { method: 'DELETE' });

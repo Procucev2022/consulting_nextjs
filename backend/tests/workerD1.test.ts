@@ -787,6 +787,7 @@ describe('workerD1 currency and category reference data', () => {
       ['EUR', '2026-01-15', 92, null, 'FX-2026']
     ]);
 
+    const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
     const rates = await getCurrencyRatesFromD1(fixture.d1);
 
     expect(rates.USD).toEqual({
@@ -800,7 +801,8 @@ describe('workerD1 currency and category reference data', () => {
       source: 'Yahoo'
     });
     expect(rates.EUR).toMatchObject({ currentRate: 92, lastUpdated: '2026-01-15', source: 'ECB' });
-    expect(rates.GBP).toMatchObject({ currentRate: 0, lastUpdated: null, source: null });
+    expect(rates).not.toHaveProperty('GBP');
+    expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ currencies: ['GBP'] }));
     expect(await getCurrencyRatesFromD1(fixture.d1)).toEqual(rates);
   });
 
