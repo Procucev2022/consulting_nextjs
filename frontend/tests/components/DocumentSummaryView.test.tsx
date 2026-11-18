@@ -565,5 +565,23 @@ describe('DocumentSummaryView Component', () => {
     expect(screen.getByText(UI_STRINGS.documentSummary.fxHistoricalNormalizationNote)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.documentSummary.fxMethodologyImpactLabel)).toBeInTheDocument();
   });
+
+  it('triggers report download callbacks from the document summary header when supplied', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    render(
+      <DocumentSummaryView
+        tenant={mockTenant}
+        ingestionQueue={[mockIngestionItem]}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('document-summary-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('document-summary-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+  });
 });
 

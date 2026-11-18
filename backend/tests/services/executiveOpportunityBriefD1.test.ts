@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_SQL } from '../../src/constants/executiveOpportunityBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../../src/constants/executiveOpportunityBriefConstants';
 import { loadExecutiveOpportunityBriefFromD1 } from '../../src/services/executiveOpportunityBriefD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
 
 interface TestDbOptions {
   tenants?: Array<Record<string, unknown>>;
   transaction?: Record<string, unknown> | null;
+  latestAssessment?: Record<string, unknown> | null;
+  assessmentTransaction?: Record<string, unknown> | null;
   opportunityMetrics?: Record<string, unknown> | null;
   opportunities?: Array<Record<string, unknown>>;
   groups?: Array<Record<string, unknown>>;
@@ -24,6 +30,12 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
         }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return (options.transaction ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestAssessmentWithTransactions) {
+          return (options.latestAssessment ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.assessmentTransactionMetrics) {
+          return (options.assessmentTransaction ?? null) as T | null;
         }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenantProvenance) {
           return (options.provenance ?? null) as T | null;
@@ -121,5 +133,25 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
     }), 'T1');
     expect(mixed.ok && mixed.report.scopeDescription).toContain('both demo seed data');
     expect(unknown.ok && unknown.report).toMatchObject({ dataClassification: 'CUSTOMER_DATA' });
+  });
+
+  it('loads explicit assessment transactions and falls back to the latest assessment dataset when baseline rows are absent', async () => {
+    const explicit = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
+      assessmentTransaction: defaultTransaction(),
+      provenance: { classification: 'CUSTOMER_DATA' }
+    }), 'T1', new Date('2026-10-30T00:00:00.000Z'), 'AIC-101');
+    expect(explicit.ok && explicit.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.assessmentScope);
+    expect(explicit.ok && explicit.report.metrics.transactionCount).toBe(3);
+
+    const fallback = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
+      transaction: { ...defaultTransaction(), transaction_count: '0' },
+      latestAssessment: { assessment_id: 'AIC-202' },
+      assessmentTransaction: defaultTransaction(),
+      provenance: { classification: 'CUSTOMER_DATA' }
+    }), 'T1');
+    expect(fallback.ok && fallback.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.assessmentScope);
+    expect(fallback.ok && fallback.report.metrics.totalSpendCr).toBe(12.5);
   });
 });

@@ -27,8 +27,10 @@ import type { CoreBucket, UNSPSCCommodityRecord } from './taxonomy';
 import type { ParetoSpendData } from './pareto';
 import type { SubscriptionTier, UserProfile } from './auth';
 import type { Module1CanonicalViewModel, VgtPeriodMetadata } from './module1Canonical';
-import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from './assessment';
-import type { ExecutiveOpportunityBriefReportData } from './validation';
+import type { OperatingModeConfig, AssessmentRecord, CustomerRecord, AssessmentDataVersion } from './assessment';
+import type { CustomerReportAcknowledgement } from './analysisOrchestration';
+import type { ExecutiveOpportunityBriefDownloadState } from './executiveOpportunityBrief';
+import type { ExecutiveBriefDownloadFormat, ExecutiveOpportunityBriefReportData } from './validation';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -38,6 +40,9 @@ export interface HeaderProps {
   onSelectCurrency: (currency: HeaderCurrency) => void;
   onOpenReport: () => void;
   onOpenManagementBrief?: () => void;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
   theme: 'light' | 'dark';
   onSelectTheme: (theme: 'light' | 'dark') => void;
   onStartAnalysis?: () => void;
@@ -47,6 +52,7 @@ export interface HeaderProps {
   onSelectSimulatedTier?: (tier: SubscriptionTier | null) => void;
   user?: UserProfile | null;
   onLogout?: () => void;
+  isAdminSession?: boolean;
   onOpenClientSetup?: () => void;
   onContactSupport?: () => void;
   isExecutiveBriefReady?: boolean;
@@ -73,6 +79,9 @@ export interface PipelineBarProps {
   onLockedTabClick?: (tab: PipelineActiveTab) => void;
   canonicalViewModel?: Module1CanonicalViewModel | null;
   activeAssessment?: AssessmentRecord | null;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
 }
 
 export type DatabaseSchemaViewProps = Record<string, never>;
@@ -109,6 +118,22 @@ export interface Module1IngestionProps {
   canonicalViewModel?: Module1CanonicalViewModel | null;
   onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
   summarySectionRef?: Ref<HTMLDivElement>;
+  savedDocuments?: RawDocumentIngestion[];
+  savedDataVersions?: AssessmentDataVersion[];
+  onSelectSavedDocument?: (doc: RawDocumentIngestion) => void;
+  isLoadingSavedDocument?: boolean;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
+}
+
+export interface SavedIngestionDatasetsPanelProps {
+  savedDocuments: RawDocumentIngestion[];
+  activeDocumentId?: string | null;
+  savedDataVersions?: AssessmentDataVersion[];
+  onSelectSavedDocument?: (doc: RawDocumentIngestion) => void;
+  onDeleteDocument?: (docId?: string) => void;
+  isLoadingSavedDocument?: boolean;
 }
 
 export interface ValidationPreCheckSectionProps {
@@ -163,12 +188,18 @@ export interface Module4SavingsEngineProps {
   onUpgrade?: (tier: SubscriptionTier) => void;
   onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
   assessmentId?: string;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
 }
 
 export interface Module5ConversionMatrixProps {
   tenant: TenantMaster;
   funnelStages: ConversionFunnelPhase[];
   onOpenReport: () => void;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   categories?: SpendCategorySummary[];
@@ -194,6 +225,9 @@ export interface DocumentSummaryViewProps {
   periodMetadata?: VgtPeriodMetadata;
   canonicalViewModel?: Module1CanonicalViewModel | null;
   summarySectionRef?: Ref<HTMLDivElement>;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
 }
 
 export interface MonthWiseTrendChartProps {
@@ -372,6 +406,13 @@ export interface IngestionUploadSectionProps {
   totalEvaluatedSpendInrCr: number;
   onOpenSetupModal?: () => void;
   onDeleteDocument?: (docId?: string) => void;
+  savedDocuments?: RawDocumentIngestion[];
+  savedDataVersions?: AssessmentDataVersion[];
+  onSelectSavedDocument?: (doc: RawDocumentIngestion) => void;
+  isLoadingSavedDocument?: boolean;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
 }
 
 export interface LoginBenefitsShowcaseProps {
@@ -578,10 +619,21 @@ export interface AdminDataLifecyclePanelProps {
   className?: string;
 }
 
-export interface ExecutiveOpportunityBriefViewProps {
-  readonly clientName?: string;
+export interface ReportDownloadActionsProps {
+  readonly testIdPrefix: string;
   readonly onDownloadPdf?: () => void;
   readonly onDownloadPptx?: () => void;
+  readonly downloadingFormat?: ExecutiveOpportunityBriefDownloadState;
+  readonly compact?: boolean;
+  readonly className?: string;
+}
+
+export interface ExecutiveOpportunityBriefViewProps {
+  readonly clientName?: string;
+  readonly assessmentId?: string;
+  readonly onDownloadPdf?: () => void;
+  readonly onDownloadPptx?: () => void;
+  readonly downloadingFormat?: ExecutiveBriefDownloadFormat | null;
   readonly onBackToWorkspace?: () => void;
   readonly isFullScreen?: boolean;
   readonly onToggleFullScreen?: () => void;
@@ -606,6 +658,19 @@ export interface CustomerAnalysisStatusCardProps {
   compact?: boolean;
   onViewSpendSummary?: () => void;
   onViewReport?: () => void;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
+}
+
+export interface ReportAcknowledgementSectionProps {
+  jobId: string;
+  reportVersionId: string;
+  initialAcknowledgement?: CustomerReportAcknowledgement;
+  onAcknowledgementSuccess?: (ack: CustomerReportAcknowledgement) => void;
+  onDownloadReportPdf?: () => void;
+  onDownloadReportPptx?: () => void;
+  downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
 }
 
 export interface DetailedAnalysisModalProps {

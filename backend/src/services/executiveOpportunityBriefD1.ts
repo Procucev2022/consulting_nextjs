@@ -1,9 +1,11 @@
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
 } from '../constants/executiveOpportunityBriefConstants';
 import type {
   CloudflareD1Database,
+  ExecutiveOpportunityBriefAssessmentRow,
   ExecutiveOpportunityBriefGroupRow,
   ExecutiveOpportunityBriefLoadResult,
   ExecutiveOpportunityBriefOpportunityMetricsRow,
@@ -29,6 +31,17 @@ const toDataClassification = (value: string | null | undefined): ExecutiveOpport
   return 'CUSTOMER_DATA';
 };
 
+const resolveScopeDescription = (
+  classification: ExecutiveOpportunityBriefDataClassification,
+  isAssessmentScoped: boolean
+): string => {
+  if (classification === 'DEMO_ONLY') return EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.demoScope;
+  if (classification === 'MIXED') return EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.mixedScope;
+  return isAssessmentScoped
+    ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.assessmentScope
+    : EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope;
+};
+
 const toGroup = (row: ExecutiveOpportunityBriefGroupRow): ExecutiveOpportunityBriefMetricGroup => ({
   label: toLabel(row.label, 'Unspecified'),
   count: toNumber(row.record_count),
@@ -38,7 +51,7 @@ const toGroup = (row: ExecutiveOpportunityBriefGroupRow): ExecutiveOpportunityBr
 const toOpportunity = (row: ExecutiveOpportunityBriefOpportunityRow): ExecutiveOpportunityBriefOpportunity => ({
   id: row.opp_id,
   category: toLabel(row.category, 'Uncategorized'),
-  title: toLabel(row.title, toLabel(row.recommended_action, row.category)),
+  title: toLabel(row.title, toLabel(row.recommended_action, toLabel(row.category, 'Uncategorized'))),
   currentSpendCr: toNumber(row.current_spend_cr),
   estimatedSavingsCr: toNumber(row.estimated_savings_cr),
   lever: toLabel(row.lever, 'Unspecified'),
@@ -64,6 +77,40 @@ const transactionMetrics = async (
   db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics).bind(tenantId)
     .first<ExecutiveOpportunityBriefTransactionMetricsRow>();
 
+const assessmentTransactionMetrics = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  assessmentId: string
+): Promise<ExecutiveOpportunityBriefTransactionMetricsRow | null> =>
+  db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.assessmentTransactionMetrics)
+    .bind(tenantId, assessmentId)
+    .first<ExecutiveOpportunityBriefTransactionMetricsRow>();
+
+const resolveScopedTransactionMetrics = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  assessmentId?: string
+): Promise<{ row: ExecutiveOpportunityBriefTransactionMetricsRow | null; isAssessmentScoped: boolean }> => {
+  if (assessmentId) {
+    return { row: await assessmentTransactionMetrics(db, tenantId, assessmentId), isAssessmentScoped: true };
+  }
+  const baseline = await transactionMetrics(db, tenantId);
+  if (toNumber(baseline?.transaction_count) > 0) {
+    return { row: baseline, isAssessmentScoped: false };
+  }
+  const latestAssessment = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestAssessmentWithTransactions)
+    .bind(tenantId)
+    .first<ExecutiveOpportunityBriefAssessmentRow>();
+  const fallbackAssessmentId = latestAssessment?.assessment_id?.trim();
+  if (!fallbackAssessmentId) {
+    return { row: baseline, isAssessmentScoped: false };
+  }
+  return {
+    row: await assessmentTransactionMetrics(db, tenantId, fallbackAssessmentId),
+    isAssessmentScoped: true
+  };
+};
+
 const opportunityMetrics = async (
   db: CloudflareD1Database,
   tenantId: string
@@ -74,7 +121,8 @@ const opportunityMetrics = async (
 export const loadExecutiveOpportunityBriefFromD1 = async (
   db: CloudflareD1Database,
   tenantId: string,
-  generatedAt: Date = new Date()
+  generatedAt: Date = new Date(),
+  assessmentId?: string
 ): Promise<ExecutiveOpportunityBriefLoadResult> => {
   if (!tenantId) return { ok: false, reason: 'tenant-scope-required' };
   const tenant = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant)
@@ -84,7 +132,7 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
     return { ok: false, reason: 'no-tenant' };
   }
   const [
-    transactionRow,
+    scopedTransactions,
     opportunityRow,
     opportunityResult,
     levers,
@@ -92,7 +140,7 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
     risks,
     provenanceRow
   ] = await Promise.all([
-    transactionMetrics(db, tenant.tenant_id),
+    resolveScopedTransactionMetrics(db, tenant.tenant_id, assessmentId),
     opportunityMetrics(db, tenant.tenant_id),
     db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities)
       .bind(tenant.tenant_id)
@@ -103,6 +151,7 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
     db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenantProvenance).bind(tenant.tenant_id)
       .first<ExecutiveOpportunityBriefTenantProvenanceRow>()
   ]);
+  const transactionRow = scopedTransactions.row;
   if (toNumber(transactionRow?.transaction_count) === 0) {
     return { ok: false, reason: 'no-transactions' };
   }
@@ -126,11 +175,7 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
     averageConfidence: toNumber(summary.average_confidence)
   };
   const dataClassification = toDataClassification(provenanceRow?.classification);
-  const scopeDescription = dataClassification === 'DEMO_ONLY'
-    ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.demoScope
-    : dataClassification === 'MIXED'
-      ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.mixedScope
-      : EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope;
+  const scopeDescription = resolveScopeDescription(dataClassification, scopedTransactions.isAssessmentScoped);
   const report: ExecutiveOpportunityBriefReport = {
     tenant: { tenantId: tenant.tenant_id, enterpriseName: tenant.enterprise_name },
     dataClassification,

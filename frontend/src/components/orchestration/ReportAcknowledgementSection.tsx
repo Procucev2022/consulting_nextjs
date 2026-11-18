@@ -8,20 +8,18 @@ import React, { useState } from 'react';
 import { CheckCircle2, MessageSquarePlus, ShieldCheck, X, FileText, Send } from 'lucide-react';
 import { UI_STRINGS } from '../../constants';
 import { orchestrationApi } from '../../utils/orchestrationApi';
+import type { ReportAcknowledgementSectionProps } from '../../types';
 import type { CustomerReportAcknowledgement } from '../../types/analysisOrchestration';
-
-export interface ReportAcknowledgementSectionProps {
-  jobId: string;
-  reportVersionId: string;
-  initialAcknowledgement?: CustomerReportAcknowledgement;
-  onAcknowledgementSuccess?: (ack: CustomerReportAcknowledgement) => void;
-}
+import { ReportDownloadActions } from '../presentation/ReportDownloadActions';
 
 export function ReportAcknowledgementSection({
   jobId,
   reportVersionId,
   initialAcknowledgement,
-  onAcknowledgementSuccess
+  onAcknowledgementSuccess,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null
 }: ReportAcknowledgementSectionProps): React.ReactElement {
   const [acknowledgement, setAcknowledgement] = useState<CustomerReportAcknowledgement | undefined>(
     initialAcknowledgement
@@ -109,7 +107,14 @@ export function ReportAcknowledgementSection({
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="flex flex-wrap items-center gap-2">
+          <ReportDownloadActions
+            testIdPrefix="acknowledgement-download-report"
+            onDownloadPdf={onDownloadReportPdf}
+            onDownloadPptx={onDownloadReportPptx}
+            downloadingFormat={downloadingReportFormat}
+            compact
+          />
           <span className="text-xs font-mono font-bold text-[#64748B] bg-[#F1F5F9] px-2.5 py-1 rounded-md">
             {reportVersionId}
           </span>

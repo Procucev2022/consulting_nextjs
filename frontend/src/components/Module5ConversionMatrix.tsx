@@ -22,12 +22,16 @@ import { validateInput } from '../utils/validation';
 import { authApiClient } from '../utils/authApi';
 import { getApiBaseUrl } from '../utils/apiBase';
 import frontendLogger from '../utils/logger';
+import { ReportDownloadActions } from './presentation/ReportDownloadActions';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
   tenant,
   funnelStages,
   onOpenReport,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null,
   currentTier = 'GOLD',
   onUpgrade,
   categories = [],
@@ -166,7 +170,13 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <ReportDownloadActions
+            testIdPrefix="module5-download-report"
+            onDownloadPdf={onDownloadReportPdf}
+            onDownloadPptx={onDownloadReportPptx}
+            downloadingFormat={downloadingReportFormat}
+          />
           <button
             onClick={onOpenReport}
             className="flex items-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-md shadow-purple-600/20 border border-purple-400/40 transition-all active:scale-95 cursor-pointer"

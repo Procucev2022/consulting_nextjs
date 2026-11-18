@@ -3,7 +3,7 @@ import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { EXECUTIVE_BRIEF_HTTP_STATUS } from '../src/constants/executiveBriefRouteConstants';
 import { EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from '../src/constants/executiveOpportunityBriefConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
-import { adminToken, briefRequest, briefUrl, testEnvironment } from './executiveBriefTestHelpers';
+import { adminToken, briefRequest, briefUrl, testEnvironment, userToken } from './executiveBriefTestHelpers';
 import * as workerAuth from '../src/workerAuth';
 
 const mocked = vi.hoisted(() => ({ failAudit: false, failPdf: false }));
@@ -118,6 +118,17 @@ describe('D1 executive brief error handling', () => {
     expect(emailText).toContain('D1 Enterprise');
     expect(emailText).toContain('DEMO_ONLY');
     expect(emailText).not.toContain('commercialMetrics');
+
+    const standardToken = await userToken();
+    const userEmailResponse = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${standardToken}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
+      }),
+      testEnvironment({ RESEND_API_KEY: 'test-key', RESEND_FROM: 'reports@example.test' }),
+      briefUrl('/email')
+    );
+    expect(userEmailResponse?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
   });
 
   it('validates recipients and rejects unauthenticated email requests', async () => {

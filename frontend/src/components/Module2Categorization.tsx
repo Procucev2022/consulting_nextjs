@@ -33,6 +33,7 @@ import {
   UI_STRINGS,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
+  UNCLASSIFIED_COMMODITY_CODE,
   categorizeMaterialWithIndustryContext
 } from '../constants';
 import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
@@ -161,9 +162,15 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     return fields.some((f) => f?.toLowerCase().includes(query));
   };
 
+  const hasAssignedUnspscCode = (unspscCode?: string): boolean =>
+    Boolean(unspscCode?.trim() && unspscCode.trim() !== UNCLASSIFIED_COMMODITY_CODE);
+
   const getDerivedStatus = (item: LineItemMapping): string => {
     if (item.status === 'Confirmed' || item.status === 'CLIENT_APPROVED' || item.status === 'APPROVED') {
       return 'CLIENT_APPROVED';
+    }
+    if (!hasAssignedUnspscCode(item.unspsc_code)) {
+      return 'AWAITING_REVIEW';
     }
     if (item.status === 'TAXONOMY_VERIFIED' || item.ai_confidence >= 90) {
       return 'TAXONOMY_VERIFIED';
@@ -1244,12 +1251,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                             >
                               <span>{derivedStatus}</span>
                             </span>
-                            <button
-                              onClick={() => onConfirmMapping(item.mapping_id)}
-                              className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
-                            >
-                              {UI_STRINGS.module2.btnConfirm}
-                            </button>
+                            {hasAssignedUnspscCode(item.unspsc_code) && (
+                              <button
+                                onClick={() => onConfirmMapping(item.mapping_id)}
+                                className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
+                              >
+                                {UI_STRINGS.module2.btnConfirm}
+                              </button>
+                            )}
                           </>
                         )}
                         <button

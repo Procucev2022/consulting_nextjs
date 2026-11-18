@@ -3,7 +3,10 @@ import logger from './utils/logger';
 import { EXECUTIVE_BRIEF_ARTIFACT_FILENAMES, EXECUTIVE_BRIEF_CONTENT_TYPES } from './constants/executiveBriefExportConstants';
 import { EXECUTIVE_BRIEF_HTTP_STATUS } from './constants/executiveBriefRouteConstants';
 import { EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT, EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from './constants/executiveOpportunityBriefConstants';
-import { executiveBriefEmailBodySchema } from './constants/executiveBriefValidation';
+import {
+  executiveBriefEmailBodySchema,
+  executiveBriefScopeQuerySchema
+} from './constants/executiveBriefValidation';
 import {
   executiveOpportunityBriefContentType,
   executiveOpportunityBriefFilename,
@@ -25,7 +28,7 @@ import type { ExecutiveOpportunityBriefRequestLoad } from './types/executiveOppo
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { authenticateWorkerUser } from './workerAuth';
 import { sendCommercialEmail } from './services/workerCommercialShared';
-import { authorizeExecutiveBriefAdmin } from './workerD1ExecutiveBriefAuth';
+import { authorizeExecutiveBriefAccess } from './workerD1ExecutiveBriefAuth';
 import { readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 const encoder = new TextEncoder();
@@ -46,6 +49,29 @@ const failureForMissingData = (
   return executiveBriefErrorResponse(request, requestId, status, messages[reason], { reason });
 };
 
+const resolveScopeAssessmentId = (
+  request: Request,
+  requestId: string
+): { ok: true; assessmentId?: string } | { ok: false; response: Response } => {
+  const rawAssessmentId = new URL(request.url).searchParams.get('assessmentId')
+    ?? request.headers.get('x-assessment-id')
+    ?? undefined;
+  const parsed = executiveBriefScopeQuerySchema.safeParse({ assessmentId: rawAssessmentId });
+  if (!parsed.success) {
+    logger.warn('Rejected executive brief request with invalid assessment scope parameter', {
+      requestId,
+      action: 'executiveBrief.scope.validate',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST,
+      issueCount: parsed.error.issues.length
+    });
+    return {
+      ok: false,
+      response: executiveBriefValidationResponse(request, requestId, toValidationIssues(parsed.error.issues))
+    };
+  }
+  return { ok: true, assessmentId: parsed.data.assessmentId };
+};
+
 const loadReport = async (
   request: Request,
   environment: CloudflareEnvironment,
@@ -53,9 +79,9 @@ const loadReport = async (
 ): Promise<ExecutiveOpportunityBriefRequestLoad> => {
   const requestId = resolveExecutiveBriefRequestId(request);
   const startedAt = Date.now();
-  const authorization = await authorizeExecutiveBriefAdmin(request, environment);
+  const authorization = await authorizeExecutiveBriefAccess(request, environment);
   if (!authorization.ok) {
-    logger.warn('Rejected executive brief report request without administrator access', {
+    logger.warn('Rejected executive brief report request without active user authorization', {
       requestId,
       action,
       statusCode: authorization.status
@@ -69,6 +95,10 @@ const loadReport = async (
         authorization.message
       )
     };
+  }
+  const scope = resolveScopeAssessmentId(request, requestId);
+  if (!scope.ok) {
+    return { ok: false, response: scope.response };
   }
   if (environment.DB === undefined) {
     logger.warn(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable, {
@@ -87,7 +117,12 @@ const loadReport = async (
     };
   }
   try {
-    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB, environment.REQUEST_TENANT_ID ?? '');
+    const loaded = await loadExecutiveOpportunityBriefFromD1(
+      environment.DB,
+      environment.REQUEST_TENANT_ID ?? '',
+      new Date(),
+      scope.assessmentId
+    );
     if (!loaded.ok) {
       return { ok: false, response: failureForMissingData(request, requestId, loaded.reason) };
     }

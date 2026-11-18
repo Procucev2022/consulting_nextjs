@@ -7,6 +7,7 @@ import { apiFetch } from '../../../utils/apiFetch';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   Search,
@@ -22,8 +23,10 @@ import {
 import type { SubscriptionRecord, SubscriptionAuditEvent } from '../../../types';
 import { ProvisionSubscriptionModal } from '../../../components/admin/ProvisionSubscriptionModal';
 import { getApiBaseUrl } from '../../../utils/apiBase';
+import { apiClient } from '../../../utils/api';
 import { authApiClient } from '../../../utils/authApi';
 import frontendLogger from '../../../utils/logger';
+import { UI_STRINGS } from '../../../constants';
 import { API_REQUEST_ID_HEADER } from '../../../constants/app';
 
 const adminApiFetch = (path: string, init: RequestInit = {}): Promise<Response> => {
@@ -77,6 +80,8 @@ function getStatusBadgeClass(status: string): string {
 }
 
 export default function AdminSubscriptionsPage() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([]);
   const [auditEvents, setAuditEvents] = useState<SubscriptionAuditEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +90,43 @@ export default function AdminSubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isProvisionOpen, setIsProvisionOpen] = useState(false);
   const [selectedAuditSubId, setSelectedAuditSubId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const session = apiClient.getStoredUser();
+    const token = apiClient.getStoredToken();
+    if (!token || session?.role !== 'ADMIN') {
+      apiClient.clearStoredSession();
+      router.push('/admin/login');
+      return;
+    }
+
+    let cancelled = false;
+    const authenticate = async (): Promise<void> => {
+      try {
+        const profile = await apiClient.getMe(token);
+        if (cancelled) return;
+        if (!profile.success || profile.user.role !== 'ADMIN' || profile.user.status !== 'ACTIVE') {
+          apiClient.clearStoredSession();
+          router.push('/admin/login');
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (error: unknown) {
+        if (cancelled) return;
+        frontendLogger.warn(UI_STRINGS.admin.subscriptionsRoute.sessionVerificationFailedLog, {
+          action: 'adminSubscriptionsAuthentication',
+          userId: session?.id
+        }, error);
+        apiClient.clearStoredSession();
+        router.push('/admin/login');
+      }
+    };
+
+    void authenticate();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const fetchSubscriptions = useCallback(async () => {
     setIsLoading(true);
@@ -138,9 +180,10 @@ export default function AdminSubscriptionsPage() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthorized) return;
     fetchSubscriptions();
     fetchAuditEvents();
-  }, [fetchSubscriptions, fetchAuditEvents]);
+  }, [isAuthorized, fetchSubscriptions, fetchAuditEvents]);
 
   const handleStatusChange = async (id: string, newStatus: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED') => {
     const path = `/api/subscription/admin/${encodeURIComponent(id)}/status`;
@@ -182,6 +225,14 @@ export default function AdminSubscriptionsPage() {
       return matchesSearch && matchesTier && matchesStatus;
     });
   }, [subscriptions, searchQuery, tierFilter, statusFilter]);
+
+  if (!isAuthorized) {
+    return (
+      <div role="status" className="min-h-screen bg-[#EEF7FF] flex items-center justify-center text-[#0284C7] text-xs font-mono">
+        {UI_STRINGS.admin.subscriptionsRoute.loading}
+      </div>
+    );
+  }
 
   return (
     <div data-testid="admin-subscriptions-page" className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] p-6 md:p-10 font-sans">

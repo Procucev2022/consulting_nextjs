@@ -16,6 +16,7 @@ import { DocumentSummaryView } from './DocumentSummaryView';
 import { ParetoSpendHierarchySection } from './ParetoSpendHierarchySection';
 import { ValidationPreCheckSection } from './ValidationPreCheckSection';
 import { IngestionUploadSection } from './IngestionUploadSection';
+import { SavedIngestionDatasetsPanel } from './SavedIngestionDatasetsPanel';
 import { PCBIModuleWarningBanner } from './admin/pcbi/PCBIModuleWarningBanner';
 import { UI_STRINGS } from '../constants';
 import frontendLogger from '../utils/logger';
@@ -51,10 +52,18 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   canonicalViewModel,
   onConfirmDatasetBaseCurrency,
   summarySectionRef,
+  savedDocuments = [],
+  savedDataVersions = [],
+  onSelectSavedDocument,
+  isLoadingSavedDocument = false,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null,
   ...restProps
 }: Module1IngestionProps & { rawUploadRecords?: any[] }) => {
   const rawUploadRecords = (restProps as any).rawUploadRecords;
   const hasActiveData = Boolean(canonicalViewModel) || (ingestionQueue && ingestionQueue.length > 0) || (validationRecords && validationRecords.length > 0) || Boolean(rawUploadRecords && rawUploadRecords.length > 0) || Boolean(isDataRefreshed);
+  const activeSavedDocumentId = ingestionQueue?.[0]?.doc_id ?? canonicalViewModel?.dataVersionId ?? null;
   const [dragActive, setDragActive] = useState(false);
 
   // Client & File Details Pop-up State
@@ -308,6 +317,15 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         onDeleteDocument={onDeleteDocument}
       />
 
+      <SavedIngestionDatasetsPanel
+        savedDocuments={savedDocuments}
+        activeDocumentId={activeSavedDocumentId}
+        savedDataVersions={savedDataVersions}
+        onSelectSavedDocument={onSelectSavedDocument}
+        onDeleteDocument={onDeleteDocument}
+        isLoadingSavedDocument={isLoadingSavedDocument}
+      />
+
       {hasActiveData ? (
         <>
           {/* Bronze Tier Savings Availability Summary Card */}
@@ -359,6 +377,9 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             periodMetadata={canonicalViewModel?.periodMetadata}
             canonicalViewModel={canonicalViewModel}
             summarySectionRef={summarySectionRef}
+            onDownloadReportPdf={onDownloadReportPdf}
+            onDownloadReportPptx={onDownloadReportPptx}
+            downloadingReportFormat={downloadingReportFormat}
           />
 
           {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}

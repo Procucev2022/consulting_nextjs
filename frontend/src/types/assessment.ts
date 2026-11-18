@@ -425,6 +425,7 @@ export interface SystemInfoModalProps {
 
 export interface AssessmentUploadTabProps {
   assessment: AssessmentRecord;
+  dataVersions?: AssessmentDataVersion[];
   onUploadSuccess: (updatedAssessment: AssessmentRecord) => void;
   onCancel?: () => void;
 }

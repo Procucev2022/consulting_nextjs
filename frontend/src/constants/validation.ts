@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from './module2VendorConsolidation';
-import { TAXONOMY_PAGE_SIZE } from './taxonomy';
+import { TAXONOMY_PAGE_SIZE, UNCLASSIFIED_COMMODITY_CODE } from './taxonomy';
 import {
   CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH,
   CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
@@ -263,6 +263,12 @@ export const executiveBriefEmailRequestSchema = z.object({
   buyerEmail: z.string().trim().email().max(254)
 }).strict();
 
+export const executiveBriefDownloadFormatSchema = z.enum(['pdf', 'pptx']);
+
+export const executiveBriefScopeQuerySchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120).optional()
+}).strict();
+
 // Outgoing API Request Validation Schemas (Frontend API Boundary)
 export const apiUpdateTenantPayloadSchema = z.object({
   enterprise_name: z.string().trim().min(1).optional(),
@@ -320,7 +326,10 @@ export const apiDeployOpportunityPayloadSchema = z.object({
 export const apiUpdateModule2MaterialMappingPayloadSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
   sourceMaterialId: z.string().trim().min(1).max(120),
-  unspscCode: z.string().trim().regex(/^\d{8}$/),
+  unspscCode: z.string().trim().regex(/^\d{8}$/).refine(
+    (code) => code !== UNCLASSIFIED_COMMODITY_CODE,
+    'Select a classified 8-digit UNSPSC commodity code instead of 00000000'
+  ),
   reviewStatus: z.enum(['PROVISIONAL', 'CLIENT_APPROVED', 'TAXONOMY_VERIFIED']),
   confidenceScore: z.number().finite().min(0).max(1).optional(),
   mappingMethod: z.enum([

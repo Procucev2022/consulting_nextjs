@@ -4,13 +4,28 @@ import { apiFetch } from '../../utils/apiFetch';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExecutiveOpportunityBriefView } from '@/components/presentation/ExecutiveOpportunityBriefView';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT
+} from '@/constants/app';
 import { UI_STRINGS } from '@/constants/uiStrings';
-import type { ExecutiveOpportunityBriefDownloadPayload } from '@/types';
+import type { ExecutiveBriefDownloadFormat, ExecutiveOpportunityBriefDownloadPayload } from '@/types';
+import { getApiBaseUrl } from '@/utils/apiBase';
+import {
+  formatExecutiveOpportunityBriefError,
+  readExecutiveOpportunityBriefErrorDetails,
+  resolveExecutiveBriefAssessmentIdFromSearch,
+  resolveExecutiveBriefDownloadFilename
+} from '@/utils/executiveOpportunityBriefApi';
 import { logger as frontendLogger } from '@/utils/logger';
 import { authApiClient } from '@/utils/authApi';
 
 export default function ExecutiveBriefPage(): React.ReactElement {
   const router = useRouter();
+  const [assessmentId] = useState<string | undefined>(() =>
+    typeof window === 'undefined' ? undefined : resolveExecutiveBriefAssessmentIdFromSearch(window.location.search)
+  );
+  const [downloadingFormat, setDownloadingFormat] = useState<ExecutiveBriefDownloadFormat | null>(null);
   const [downloadPayload, setDownloadPayload] = useState<ExecutiveOpportunityBriefDownloadPayload | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
@@ -22,33 +37,46 @@ export default function ExecutiveBriefPage(): React.ReactElement {
     return () => URL.revokeObjectURL(downloadPayload.url);
   }, [downloadPayload]);
 
-  const handleDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
-    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
+  const handleDownload = async (format: ExecutiveBriefDownloadFormat): Promise<void> => {
+    const endpoint = EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT(format);
+    const url = `${getApiBaseUrl()}${endpoint}`;
     const formatLabel = format.toUpperCase();
     setDownloadError(null);
+    setDownloadingFormat(format);
     try {
       const token = authApiClient.getStoredToken();
-      const response = await apiFetch(url, {
-        headers: token ? { Authorization: 'Bearer ' + token } : {}
-      });
+      const headers: Record<string, string> = {
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(assessmentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: assessmentId } : {})
+      };
+      const response = await apiFetch(url, { headers });
       if (!response.ok) {
-        const requestId = response.headers.get('x-request-id') ?? strings.requestIdNotReturned;
-        setDownloadError(strings.downloadFailed(formatLabel, response.status, requestId));
+        const requestId = response.headers.get('x-request-id');
+        const details = await readExecutiveOpportunityBriefErrorDetails(response);
+        setDownloadError(formatExecutiveOpportunityBriefError({
+          statusCode: response.status,
+          requestId,
+          serverMessage: details.serverMessage,
+          formatLabel
+        }));
         frontendLogger.error('Opportunity brief download was rejected by the server', {
           format,
-          url,
+          url: endpoint,
           statusCode: response.status,
-          requestId
+          requestId: requestId ?? strings.requestIdNotReturned,
+          serverMessage: details.serverMessage,
+          reason: details.reason
         });
         return;
       }
       const blob = await response.blob();
-      const disposition = response.headers.get('content-disposition') ?? '';
-      const filename = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? strings.downloadFilename(format);
+      const filename = resolveExecutiveBriefDownloadFilename(response.headers.get('content-disposition'), format);
       setDownloadPayload({ url: URL.createObjectURL(blob), filename });
     } catch (error: unknown) {
       setDownloadError(strings.downloadNetworkFailed(formatLabel));
       frontendLogger.error('Opportunity brief download request failed', { format, url }, error);
+    } finally {
+      setDownloadingFormat(null);
     }
   };
 
@@ -70,6 +98,8 @@ export default function ExecutiveBriefPage(): React.ReactElement {
           </p>
         )}
         <ExecutiveOpportunityBriefView
+          assessmentId={assessmentId}
+          downloadingFormat={downloadingFormat}
           onDownloadPdf={() => { void handleDownload('pdf'); }}
           onDownloadPptx={() => { void handleDownload('pptx'); }}
           onBackToWorkspace={() => router.push('/')}

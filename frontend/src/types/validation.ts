@@ -17,6 +17,8 @@ import type {
   apiDataEnvelopeResponseSchema,
   executiveOpportunityBriefResponseSchema,
   executiveBriefEmailRequestSchema,
+  executiveBriefDownloadFormatSchema,
+  executiveBriefScopeQuerySchema,
   provisionSubscriptionDetailsSchema,
   provisionSubscriptionOtpSchema,
   provisionSubscriptionOtpRequestSchema,
@@ -64,6 +66,8 @@ export type ApiDataEnvelopeResponse = z.infer<typeof apiDataEnvelopeResponseSche
 export type ExecutiveOpportunityBriefResponse = z.infer<typeof executiveOpportunityBriefResponseSchema>;
 export type ExecutiveOpportunityBriefReportData = ExecutiveOpportunityBriefResponse['data'];
 export type ExecutiveBriefEmailRequest = z.infer<typeof executiveBriefEmailRequestSchema>;
+export type ExecutiveBriefDownloadFormat = z.infer<typeof executiveBriefDownloadFormatSchema>;
+export type ExecutiveBriefScopeQuery = z.infer<typeof executiveBriefScopeQuerySchema>;
 export type ProvisionSubscriptionDetails = z.infer<typeof provisionSubscriptionDetailsSchema>;
 export type ProvisionSubscriptionOtp = z.infer<typeof provisionSubscriptionOtpSchema>;
 export type ProvisionSubscriptionOtpRequest = z.infer<typeof provisionSubscriptionOtpRequestSchema>;

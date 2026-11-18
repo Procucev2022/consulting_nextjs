@@ -13,6 +13,14 @@ describe('Frontend Constants Modules', () => {
     it('should define correct default application metrics and tenant name', () => {
       expect(AppConstants.DEFAULT_TENANT_ENTERPRISE_NAME).toBe('Enterprise Client');
       expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT).toBe('/api/reports/executive-brief/opportunity-brief/report');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT('pdf')).toBe('/api/reports/executive-brief/download/opportunity-brief/pdf');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT('pptx')).toBe('/api/reports/executive-brief/download/opportunity-brief/pptx');
+      expect(AppConstants.EXECUTIVE_BRIEF_HTTP_STATUS).toEqual({
+        UNAUTHORIZED: 401,
+        FORBIDDEN: 403,
+        NOT_FOUND: 404,
+        SERVER_ERROR_MIN: 500
+      });
       expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REQUEST_ID_HEADER).toBe('x-request-id');
       expect(AppConstants.EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN.exec('attachment; filename="brief.pdf"')?.[1]).toBe('brief.pdf');
       expect(AppConstants.AICEV_LOGO_SRC).toBe('/images/aicev-logo.png');

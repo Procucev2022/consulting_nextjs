@@ -100,3 +100,4 @@ export * from './module2D1Scoped';
 export * from './module2D1AuditDossier';
 export * from './module2AlternateSourcingD1';
 export * from './executiveOpportunityBrief';
+export * from './d1IngestionAnalytics';

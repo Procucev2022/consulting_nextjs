@@ -1019,11 +1019,18 @@ describe('administrator account provisioning', () => {
     company_name: 'Acme Holdings', company_address: 'Bengaluru, India', password: 'SecureAdmin123',
     role: 'ADMIN', subscription_tier: 'GOLD'
   };
+  const bootstrapSecret = 'bootstrap-value-for-tests';
+  const bootstrapEnv = (): CloudflareEnvironment => environmentWith({ AUTH_BOOTSTRAP_TOKEN: bootstrapSecret });
+  const bootstrapHeaders = (): Record<string, string> => ({ [AUTH_BOOTSTRAP_TOKEN_HEADER]: bootstrapSecret });
 
-  it('allows first-admin bootstrap once, then requires the provisioned admin token', async () => {
-    const created = await adminCall('/create-admin', { method: 'POST', body: payload });
+  it('allows first-admin bootstrap once with configured token, then requires the provisioned admin token', async () => {
+    const created = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment: bootstrapEnv(), headers: bootstrapHeaders()
+    });
     expect(created).toMatchObject({ status: 201, body: { success: true, user: { role: 'ADMIN' } } });
-    const blocked = await adminCall('/create-admin', { method: 'POST', body: { ...payload, email: 'second@example.com' } });
+    const blocked = await adminCall('/create-admin', {
+      method: 'POST', body: { ...payload, email: 'second@example.com' }, environment: bootstrapEnv()
+    });
     expect(blocked.status).toBe(401);
     const createdUser = created.body.user as Record<string, unknown>;
     const token = await createWorkerAuthToken(
@@ -1036,19 +1043,55 @@ describe('administrator account provisioning', () => {
     expect(await countUsers()).toBe(1);
   });
 
+  it('rejects unauthenticated bootstrap when AUTH_BOOTSTRAP_TOKEN is unset and blocks USER tokens in all states', async () => {
+    const registration = await register();
+    const id = registeredId(registration);
+    const buyerToken = await createWorkerAuthToken(
+      { id, email: NORMALIZED_EMAIL, role: 'USER', subscription_tier: 'BRONZE' }, WORKER_CORE_SECRET
+    );
+
+    const unconfigured = await adminCall('/create-admin', { method: 'POST', body: payload });
+    const buyerBootstrap = await adminCall('/create-admin', {
+      method: 'POST',
+      body: payload,
+      environment: bootstrapEnv(),
+      headers: { ...bootstrapHeaders(), ...bearer(buyerToken) }
+    });
+
+    expect(unconfigured).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.bootstrapDisabled } });
+    expect(buyerBootstrap).toEqual({
+      status: 403, body: { success: false, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY }
+    });
+
+    const firstAdmin = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment: bootstrapEnv(), headers: bootstrapHeaders()
+    });
+    expect(firstAdmin.status).toBe(201);
+
+    const buyerAfterAdmin = await adminCall('/create-admin', {
+      method: 'POST', body: { ...payload, email: 'rogue@example.com' }, headers: bearer(buyerToken)
+    });
+    expect(buyerAfterAdmin).toEqual({
+      status: 403, body: { success: false, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY }
+    });
+    expect(await countUsers()).toBe(2);
+  });
+
   it('never changes an existing account during first-administrator setup', async () => {
     const registration = await register();
     const id = registeredId(registration);
     const before = await userRow(id);
 
-    const refused = await adminCall('/create-admin', { method: 'POST', body: { ...payload, email: REGISTRATION.email } });
+    const refused = await adminCall('/create-admin', {
+      method: 'POST', body: { ...payload, email: REGISTRATION.email }, environment: bootstrapEnv(), headers: bootstrapHeaders()
+    });
 
     expect(refused).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.bootstrapAccountExists } });
     expect(await userRow(id)).toEqual(before);
   });
 
   it('requires the configured bootstrap token before the first administrator is created', async () => {
-    const environment = environmentWith({ AUTH_BOOTSTRAP_TOKEN: 'bootstrap-value-for-tests' });
+    const environment = bootstrapEnv();
 
     const withoutToken = await adminCall('/create-admin', { method: 'POST', body: payload, environment });
     const wrongToken = await adminCall('/create-admin', {
@@ -1060,13 +1103,15 @@ describe('administrator account provisioning', () => {
     expect(await countUsers()).toBe(0);
 
     const created = await adminCall('/create-admin', {
-      method: 'POST', body: payload, environment, headers: { [AUTH_BOOTSTRAP_TOKEN_HEADER]: 'bootstrap-value-for-tests' }
+      method: 'POST', body: payload, environment, headers: bootstrapHeaders()
     });
     expect(created).toMatchObject({ status: 201, body: { success: true, user: { role: 'ADMIN' } } });
   });
 
   it('rejects invalid provisioning fields and unavailable D1 bindings', async () => {
-    const invalid = await adminCall('/create-admin', { method: 'POST', body: { ...payload, password: 'short' } });
+    const invalid = await adminCall('/create-admin', {
+      method: 'POST', body: { ...payload, password: 'short' }, environment: bootstrapEnv(), headers: bootstrapHeaders()
+    });
     const unavailable = await adminCall('/create-admin', {
       method: 'POST', body: payload, environment: environmentWith({ DB: undefined })
     });

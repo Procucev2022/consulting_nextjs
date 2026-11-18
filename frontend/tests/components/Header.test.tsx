@@ -194,6 +194,26 @@ describe('Header Component', () => {
     const signInLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.auth.signInTab, 'i') });
     expect(signInLink).toBeInTheDocument();
     expect(signInLink).toHaveAttribute('href', '/login');
+    expect(screen.getByTitle(UI_STRINGS.header.adminPortal)).toBeInTheDocument();
+  });
+
+  it('hides the Admin Portal link for unauthenticated visitors and buyer (USER) accounts, showing it only for admins', () => {
+    const { rerender } = render(<Header {...defaultProps} currentUser={null} />);
+    expect(screen.queryByTitle(UI_STRINGS.header.adminPortal)).not.toBeInTheDocument();
+
+    const buyerUser = {
+      id: 'usr-anurag-1',
+      name: 'Anurag Shaw',
+      email: 'anurag@company.com',
+      role: 'USER' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'BRONZE' as const
+    };
+    rerender(<Header {...defaultProps} currentUser={buyerUser} />);
+    expect(screen.queryByTitle(UI_STRINGS.header.adminPortal)).not.toBeInTheDocument();
+
+    rerender(<Header {...defaultProps} currentUser={null} isAdminSession />);
+    expect(screen.getByTitle(UI_STRINGS.header.adminPortal)).toBeInTheDocument();
   });
 
   it('renders subscription tier badge and interactive demo switcher for ADMIN users only', () => {

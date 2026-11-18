@@ -124,6 +124,19 @@ describe('ExecutiveBriefPage', () => {
     );
   });
 
+  it('shows server permission details when the download endpoint returns HTTP 403', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ message: 'Account awaiting tenant assignment.' }),
+      { status: 403, headers: { 'x-request-id': 'req-brief-403' } }
+    )));
+    render(<ExecutiveBriefPage />);
+    fireEvent.click(screen.getByTestId('download-pdf'));
+
+    expect(await screen.findByTestId('brief-download-error')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.downloadForbidden('PDF', 'req-brief-403', 'Account awaiting tenant assignment.')
+    );
+  });
+
   it('shows an actionable network error and logs the failure context', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     render(<ExecutiveBriefPage />);
@@ -143,5 +156,21 @@ describe('ExecutiveBriefPage', () => {
     render(<ExecutiveBriefPage />);
     fireEvent.click(screen.getByTestId('back-to-workspace'));
     expect(mockPush).toHaveBeenCalledWith('/');
+  });
+
+  it('forwards validated assessmentId query parameters on brief downloads', async () => {
+    const originalSearch = window.location.search;
+    window.history.replaceState({}, '', '/executive-brief?assessmentId=AIC-PAGE-1');
+    try {
+      render(<ExecutiveBriefPage />);
+      fireEvent.click(screen.getByTestId('download-pdf'));
+      await waitFor(() => {
+        expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pdf', {
+          headers: { 'x-assessment-id': 'AIC-PAGE-1' }
+        });
+      });
+    } finally {
+      window.history.replaceState({}, '', originalSearch || '/executive-brief');
+    }
   });
 });

@@ -1,4 +1,18 @@
-import type { RawDocumentIngestion, ValidationPreCheckRecord } from './models';
+import type {
+  MaterialGroupSummary,
+  MonthWiseSummary,
+  PlantSummary,
+  RawDocumentIngestion,
+  ValidationPreCheckRecord
+} from './models';
+
+export interface DocumentIngestionAnalytics {
+  materialGroupSummaries: MaterialGroupSummary[];
+  plantSummaries: PlantSummary[];
+  monthWiseSummaries: MonthWiseSummary[];
+  uniqueItemsCount: number;
+  uniqueVendorsCount: number;
+}
 
 export interface IngestionUploadPayload {
   fileName: string;
@@ -56,7 +70,9 @@ export interface IngestionPageMetadata<TCursor> {
 export interface IngestionDataResponse {
   queue: RawDocumentIngestion[];
   validationRecords: ValidationPreCheckRecord[];
-  pagination: {
+  availableDocuments?: RawDocumentIngestion[];
+  documentAnalytics?: DocumentIngestionAnalytics;
+  pagination?: {
     queue: IngestionPageMetadata<IngestionQueuePageCursor>;
     validationRecords: IngestionPageMetadata<ValidationRecordPageCursor>;
   };

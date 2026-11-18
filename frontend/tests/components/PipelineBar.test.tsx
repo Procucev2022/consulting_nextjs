@@ -179,4 +179,39 @@ describe('PipelineBar Component', () => {
     );
     expect(matrixLink).toHaveClass('bg-purple-600');
   });
+
+  it('renders PDF and PPTX report download actions and scopes the Executive Brief link to the active assessment', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    render(
+      <PipelineBar
+        activeTab="module1"
+        onSelectTab={vi.fn()}
+        activeAssessment={{
+          assessmentId: 'AIC-REP-1',
+          customerName: 'Acme Corp',
+          industry: 'Cement',
+          assessmentPeriodStart: '2025-01-01',
+          assessmentPeriodEnd: '2025-12-31',
+          ndaStatus: 'SIGNED',
+          dataStatus: 'VALIDATED',
+          assignedAnalyst: 'analyst@procucev.com',
+          status: 'IN_PROGRESS',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z'
+        }}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    expect(screen.getByTestId('pipeline-executive-brief-btn')).toHaveAttribute(
+      'href',
+      '/executive-brief?assessmentId=AIC-REP-1'
+    );
+    fireEvent.click(screen.getByTestId('pipeline-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('pipeline-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+  });
 });

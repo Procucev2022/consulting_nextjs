@@ -55,7 +55,17 @@ const postMappingBatch = async (
       body: JSON.stringify(payload)
     });
     requestId = response.headers.get('x-request-id');
-    if (!response.ok) throw new Error(UI_STRINGS.toasts.mappingServerRejected(response.status));
+    if (!response.ok) {
+      const errorBody = asRecord(await response.json().catch(() => null));
+      const serverMessage = typeof errorBody?.message === 'string' && errorBody.message.trim()
+        ? errorBody.message.trim()
+        : null;
+      throw new Error(
+        serverMessage
+          ? UI_STRINGS.toasts.mappingServerRejectedWithDetails(response.status, serverMessage)
+          : UI_STRINGS.toasts.mappingServerRejected(response.status)
+      );
+    }
 
     const mappings = savedMappings(await response.json());
     if (mappings?.length !== payload.mappings.length) {

@@ -157,7 +157,12 @@ const persistMaterialMappingUpdates = async (
   const current = await handleScopedModule2Route(db, '/vendor-consolidation', request, scopedUrl);
   const report = current?.data as VendorConsolidationResult | undefined;
   const mappingById = new Map((report?.mappingRegister || []).map((item) => [item.sourceMaterialId, item]));
-  if (payloads.some((payload) => !mappingById.has(payload.sourceMaterialId))) return { status: 404, data: {
+  const normalizedMappingById = new Map(
+    (report?.mappingRegister || []).map((item) => [item.sourceMaterialId.trim().toLocaleUpperCase('en-US'), item])
+  );
+  const resolveMappingTarget = (sourceMaterialId: string): MaterialMappingEntry | undefined =>
+    mappingById.get(sourceMaterialId) ?? normalizedMappingById.get(sourceMaterialId.trim().toLocaleUpperCase('en-US'));
+  if (payloads.some((payload) => !resolveMappingTarget(payload.sourceMaterialId))) return { status: 404, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingTargetNotFound
   } };
   const taxonomyCodes = [...new Set(payloads.map((payload) => payload.unspscCode))];
@@ -171,7 +176,7 @@ const persistMaterialMappingUpdates = async (
   } };
   const now = new Date().toISOString();
   const updatedMappings = payloads.map((payload) => {
-    const currentMapping = mappingById.get(payload.sourceMaterialId) as MaterialMappingEntry;
+    const currentMapping = resolveMappingTarget(payload.sourceMaterialId) as MaterialMappingEntry;
     const taxonomy = taxonomyByCode.get(payload.unspscCode) as Record<string, unknown>;
     return {
       ...currentMapping,

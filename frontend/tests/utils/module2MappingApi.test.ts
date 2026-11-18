@@ -45,10 +45,12 @@ describe('Module 2 D1 mapping API', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid mapping payloads before sending a request', async () => {
+  it('rejects invalid or unclassified (00000000) mapping payloads before sending a request', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     await expect(saveModule2MaterialMappings('ASM-1', [{ ...validMapping, unspscCode: 'bad' }]))
+      .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
+    await expect(saveModule2MaterialMappings('ASM-1', [{ ...validMapping, unspscCode: '00000000' }]))
       .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -91,14 +93,25 @@ describe('Module 2 D1 mapping API', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('reports D1 HTTP failures and rejects malformed success envelopes', async () => {
+  it('reports D1 HTTP error details, empty error envelopes, and malformed success envelopes', async () => {
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('session-token');
     const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        success: false,
+        message: 'That UNSPSC commodity code is not in the D1 taxonomy.'
+      }), { status: 400 }))
       .mockResolvedValueOnce(new Response('{}', { status: 403 }))
+      .mockResolvedValueOnce(new Response('not-json', { status: 502 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: { success: true, mappings: [] } }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     await expect(saveModule2MaterialMappings('ASM-1', [validMapping]))
+      .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(
+        UI_STRINGS.toasts.mappingServerRejectedWithDetails(400, 'That UNSPSC commodity code is not in the D1 taxonomy.')
+      ));
+    await expect(saveModule2MaterialMappings('ASM-1', [validMapping]))
       .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(403)));
+    await expect(saveModule2MaterialMappings('ASM-1', [validMapping]))
+      .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(502)));
     await expect(saveModule2MaterialMappings('ASM-1', [validMapping]))
       .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.databaseData.invalidData));
   });

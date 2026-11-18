@@ -88,4 +88,22 @@ describe('ReportAcknowledgementSection Component Tests', () => {
       expect(screen.getByText('Your correction request has been transmitted to Procucev Operations.')).toBeInTheDocument();
     });
   });
+
+  it('triggers PDF and PPTX report download actions when callbacks are supplied', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    render(
+      <ReportAcknowledgementSection
+        jobId={jobId}
+        reportVersionId={reportVersionId}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('acknowledgement-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('acknowledgement-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+  });
 });

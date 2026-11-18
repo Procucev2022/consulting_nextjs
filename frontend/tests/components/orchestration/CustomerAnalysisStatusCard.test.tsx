@@ -310,6 +310,55 @@ describe('CustomerAnalysisStatusCard Component Tests', () => {
 
     expect(screen.getByTestId('customer-analysis-status-card')).toBeInTheDocument();
   });
+
+  it('triggers PDF and PPTX report download actions in compact and expanded cards when a report is ready', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    const submittedJob = {
+      analysisJobId: 'job-ready-dl',
+      tenantId: 'TNT-1',
+      customerName: 'Acme Corp',
+      uploadedBy: 'user@acme.com',
+      originalUploadId: 'upl-dl',
+      currentDataVersionId: 'v1',
+      module1VersionId: 'm1-v1',
+      status: 'SUBMITTED_TO_CUSTOMER' as const,
+      createdAt: '2026-10-04T10:00:00.000Z',
+      lastUpdatedAt: '2026-10-04T10:00:00.000Z',
+      totalSpendCr: 450.0,
+      totalTransactions: 1200,
+      analysisPeriod: 'FY 2024-25',
+      slaHoursTarget: 48
+    };
+
+    const { rerender } = render(
+      <CustomerAnalysisStatusCard
+        activeJob={submittedJob}
+        compact
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('status-card-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('status-card-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <CustomerAnalysisStatusCard
+        activeJob={submittedJob}
+        compact={false}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('status-card-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('status-card-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(2);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(2);
+  });
 });
 
 

@@ -8,14 +8,14 @@ import { UI_STRINGS } from '../constants/uiStrings';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import { createAdminDetailsSchema } from '../constants/adminValidation';
-import { AUTH_API_ENDPOINTS, DEFAULT_ADMIN_DETAILS } from '../constants/auth';
+import { AUTH_API_ENDPOINTS, AUTH_ROLES } from '../constants/auth';
 import { getApiBaseUrl } from './apiBase';
 import { authApiClient } from './authApi';
 
-function buildFullAdminPayload(payload?: Partial<CreateAdminDetailsPayload>): CreateAdminDetailsPayload {
-  return Object.assign({}, DEFAULT_ADMIN_DETAILS, payload, {
-    role: 'ADMIN' as const,
-    subscription_tier: 'GOLD' as const
+function buildFullAdminPayload(payload: Partial<CreateAdminDetailsPayload>): Partial<CreateAdminDetailsPayload> {
+  return Object.assign({}, payload, {
+    role: AUTH_ROLES.ADMIN,
+    subscription_tier: payload.subscription_tier ?? ('GOLD' as const)
   });
 }
 
@@ -24,9 +24,18 @@ export const adminAuthApiClient = {
    * Provision or update enterprise administrator credentials and details
    */
   async createAdminUser(
-    payload?: Partial<CreateAdminDetailsPayload>,
+    payload: Partial<CreateAdminDetailsPayload>,
     token?: string
   ): Promise<CreateAdminResponse> {
+    const storedUser = authApiClient.getStoredUser();
+    if (storedUser && storedUser.role !== AUTH_ROLES.ADMIN) {
+      frontendLogger.warn('Rejected non-administrator admin creation request', {
+        userId: storedUser.id,
+        role: storedUser.role
+      });
+      throw new Error(UI_STRINGS.admin.accessDeniedMessage);
+    }
+
     const fullPayload = buildFullAdminPayload(payload);
 
     frontendLogger.info('Provisioning administrator details via admin API', { email: fullPayload.email });

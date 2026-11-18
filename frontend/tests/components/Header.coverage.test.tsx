@@ -374,4 +374,50 @@ describe('Header coverage', () => {
 
     expect(screen.getByText(header.awaitingValidationBadge)).toBeInTheDocument();
   });
+
+  it('triggers PDF and PPTX report downloads from the eligible More Reports dropdown and displays downloading labels', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    const { rerender } = render(
+      <Header
+        {...baseProps}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('header-more-reports-btn'));
+    fireEvent.click(screen.getByTestId('header-download-report-pdf-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('header-more-reports-dropdown')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('header-more-reports-btn'));
+    fireEvent.click(screen.getByTestId('header-download-report-pptx-btn'));
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <Header
+        {...baseProps}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+        downloadingReportFormat="pdf"
+      />
+    );
+    fireEvent.click(screen.getByTestId('header-more-reports-btn'));
+    expect(screen.getByTestId('header-download-report-pdf-btn')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.downloadingReport('PDF')
+    );
+
+    rerender(
+      <Header
+        {...baseProps}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+        downloadingReportFormat="pptx"
+      />
+    );
+    expect(screen.getByTestId('header-download-report-pptx-btn')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.downloadingReport('PPTX')
+    );
+  });
 });

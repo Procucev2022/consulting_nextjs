@@ -1,7 +1,9 @@
-﻿/**
- * Administrator check for Executive Brief regeneration. It reuses verifyToken from workerAuth and accepts only
- * ADMIN tokens. When AUTH_SECRET is missing, every request fails with 503, because an empty HMAC key would accept
- * tokens that anyone can forge.
+/**
+ * Authorization checks for Executive Brief routes.
+ * - `authorizeExecutiveBriefAccess` verifies any active signed-in account (`USER` or `ADMIN`) for tenant-scoped reads,
+ *   audits, exports, and emails. Tenant ownership is enforced by `authorizeTenantRequest` and `REQUEST_TENANT_ID`.
+ * - `authorizeExecutiveBriefAdmin` restricts R2 artifact regeneration to active `ADMIN` accounts.
+ * When AUTH_SECRET is missing, every request fails with 503 because an empty HMAC key would accept forged tokens.
  */
 import { authenticateWorkerUser, verifyToken } from './workerAuth';
 import { AUTH_ROLES } from './constants/auth';
@@ -44,9 +46,10 @@ const verifySafely = async (
   }
 };
 
-export const authorizeExecutiveBriefAdmin = async (
+const authorizeExecutiveBriefSession = async (
   request: Request,
-  environment: CloudflareEnvironment
+  environment: CloudflareEnvironment,
+  requireAdmin: boolean
 ): Promise<ExecutiveBriefAuthOutcome> => {
   const secret = environment.AUTH_SECRET;
   if (secret === undefined || secret.length === 0) {
@@ -65,13 +68,17 @@ export const authorizeExecutiveBriefAdmin = async (
   }
   const token = extractBearerToken(request);
   if (token === null) {
-    return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED, message: EXECUTIVE_BRIEF_MESSAGES.authRequired };
+    return {
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED,
+      message: requireAdmin ? EXECUTIVE_BRIEF_MESSAGES.authRequired : EXECUTIVE_BRIEF_MESSAGES.userAuthRequired
+    };
   }
   const payload = await verifySafely(token, secret, request);
   if (payload === null || typeof payload.userId !== 'string') {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED, message: EXECUTIVE_BRIEF_MESSAGES.tokenInvalid };
   }
-  if (payload.role !== AUTH_ROLES.ADMIN) {
+  if (requireAdmin && payload.role !== AUTH_ROLES.ADMIN) {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN, message: EXECUTIVE_BRIEF_MESSAGES.adminRequired };
   }
   try {
@@ -81,19 +88,22 @@ export const authorizeExecutiveBriefAdmin = async (
       method: request.method,
       headers: normalizedHeaders
     });
-    const authentication = await authenticateWorkerUser(normalizedRequest, environment, true);
+    const authentication = await authenticateWorkerUser(normalizedRequest, environment, requireAdmin);
     if (!authentication.user) {
+      const forbiddenFallback = requireAdmin
+        ? EXECUTIVE_BRIEF_MESSAGES.adminRequired
+        : EXECUTIVE_BRIEF_MESSAGES.accessDenied;
       return {
         ok: false,
         status: authentication.status,
         message: authentication.status === EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED
           ? EXECUTIVE_BRIEF_MESSAGES.tokenInvalid
-          : authentication.message ?? EXECUTIVE_BRIEF_MESSAGES.adminRequired
+          : authentication.message ?? forbiddenFallback
       };
     }
     return { ok: true, userId: authentication.user.id };
   } catch (error: unknown) {
-    logger.error('Executive brief administrator account lookup failed', {
+    logger.error('Executive brief account lookup failed', {
       action: 'executive-brief.auth.account-lookup',
       method: request.method,
       path: new URL(request.url).pathname,
@@ -108,3 +118,13 @@ export const authorizeExecutiveBriefAdmin = async (
     };
   }
 };
+
+export const authorizeExecutiveBriefAccess = (
+  request: Request,
+  environment: CloudflareEnvironment
+): Promise<ExecutiveBriefAuthOutcome> => authorizeExecutiveBriefSession(request, environment, false);
+
+export const authorizeExecutiveBriefAdmin = (
+  request: Request,
+  environment: CloudflareEnvironment
+): Promise<ExecutiveBriefAuthOutcome> => authorizeExecutiveBriefSession(request, environment, true);

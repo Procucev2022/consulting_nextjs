@@ -48,6 +48,25 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_SQL = {
     ORDER BY record_count DESC LIMIT 8`
 } as const;
 
+export const EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL = {
+  latestAssessmentWithTransactions: `SELECT assessment_id
+    FROM ProcurementTransaction
+    WHERE tenant_id = ? AND assessment_id IS NOT NULL
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')
+    ORDER BY rowid DESC LIMIT 1`,
+  assessmentTransactionMetrics: `SELECT COUNT(*) AS transaction_count,
+    COALESCE(SUM(total_in_cr_raw), 0) AS total_spend_cr,
+    COUNT(DISTINCT supplier_name) AS supplier_count,
+    COUNT(DISTINCT material_code) AS material_count,
+    COUNT(DISTINCT plant) AS plant_count,
+    COUNT(DISTINCT po_number) AS purchase_order_count,
+    MIN(document_date_raw) AS first_transaction_date,
+    MAX(document_date_raw) AS last_transaction_date
+    FROM ProcurementTransaction
+    WHERE tenant_id = ? AND assessment_id = ?
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')`
+} as const;
+
 export const EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT = {
   PDF_NAME_PREFIX: 'Executive_Opportunity_Brief_',
   DATE_PATTERN: /^\d{4}-\d{2}-\d{2}$/u,
@@ -131,6 +150,7 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES = {
   demoScope: 'This report uses D1 demo seed data for illustration. The figures are not validated customer results or realized savings.',
   mixedScope: 'This report contains both demo seed data and customer records. Separate the demo rows before using the figures for decisions.',
   customerScope: 'Baseline transaction rows exclude assessment-specific copies. Opportunities are included only when explicitly linked to this tenant in D1.',
+  assessmentScope: 'Assessment-scoped transaction rows from the selected or most recently uploaded procurement dataset in D1.',
   reportFailed: (requestId: string): string =>
     `The Opportunity Brief could not be loaded from D1. Retry after checking the database connection; quote request ID ${requestId} if the problem continues.`,
   exportFailed: (format: string, requestId: string): string =>

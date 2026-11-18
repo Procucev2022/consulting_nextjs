@@ -124,4 +124,33 @@ describe('AssessmentDetailWorkflow', () => {
       expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadPipeline.title)).toBeInTheDocument();
     });
   });
+
+  it('passes persisted data versions to AssessmentUploadTab', async () => {
+    (assessmentApiClient.getAssessmentById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      assessment: { ...mockAssessment, activeDataVersionId: undefined, dataStatus: 'AWAITING_DATA' },
+      versions: [
+        {
+          dataVersionId: 'DV-101',
+          assessmentId: 'AIC-2026-0001',
+          versionNumber: 1,
+          fileName: 'Saved_Upload.xlsx',
+          fileSize: 2048,
+          checksum: 'sum-101',
+          filePath: '/assessments/AIC-2026-0001/DV-101/Saved_Upload.xlsx',
+          uploadedBy: 'analyst@procucev.com',
+          uploadedAt: '2026-11-18',
+          recordCount: 1500,
+          isSuperseded: false
+        }
+      ],
+      runs: []
+    });
+
+    render(<AssessmentDetailWorkflow assessmentId="AIC-2026-0001" onBack={vi.fn()} onUpdate={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.savedVersionsHeading)).toBeInTheDocument();
+    });
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.activeVersionTag)).toBeInTheDocument();
+  });
 });

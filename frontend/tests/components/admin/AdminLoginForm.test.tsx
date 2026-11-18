@@ -11,27 +11,22 @@ describe('AdminLoginForm Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders login form elements and quick-fill button', () => {
+  const fillCredentials = (email = 'admin@company.test', password = 'TestAdminPassword123'): void => {
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.emailLabel), { target: { value: email } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.passwordLabel), { target: { value: password } });
+  };
+
+  it('renders an empty login form without embedded credentials or quick-fill button', () => {
     const onSuccess = vi.fn();
     render(<AdminLoginForm onSuccess={onSuccess} />);
 
     expect(screen.getByRole('heading', { name: UI_STRINGS.admin.loginHeading })).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.emailLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.passwordLabel)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: UI_STRINGS.admin.quickFillAdminButton })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton })).toBeInTheDocument();
-  });
-
-  it('populates default admin credentials when quick fill is clicked', () => {
-    render(<AdminLoginForm onSuccess={vi.fn()} />);
-    const quickFillBtn = screen.getByRole('button', { name: UI_STRINGS.admin.quickFillAdminButton });
-    fireEvent.click(quickFillBtn);
-
     const emailInput = screen.getByLabelText(UI_STRINGS.admin.emailLabel) as HTMLInputElement;
     const passwordInput = screen.getByLabelText(UI_STRINGS.admin.passwordLabel) as HTMLInputElement;
-
-    expect(emailInput.value).toBe('admin@procucev.com');
-    expect(passwordInput.value).toBe('Procucev@123');
+    expect(emailInput.value).toBe('');
+    expect(passwordInput.value).toBe('');
+    expect(screen.queryByRole('button', { name: UI_STRINGS.admin.quickFillAdminButton })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton })).toBeInTheDocument();
   });
 
   it('toggles password visibility when eye button is clicked', () => {
@@ -53,7 +48,7 @@ describe('AdminLoginForm Component', () => {
     const mockUser = {
       id: 'usr-admin-001',
       name: 'System Administrator',
-      email: 'admin@procucev.com',
+      email: 'admin@company.test',
       role: 'ADMIN',
       status: 'ACTIVE',
       subscription_tier: 'GOLD'
@@ -67,6 +62,7 @@ describe('AdminLoginForm Component', () => {
     });
 
     render(<AdminLoginForm onSuccess={onSuccess} />);
+    fillCredentials();
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
 
     await waitFor(() => {
@@ -93,6 +89,7 @@ describe('AdminLoginForm Component', () => {
     });
 
     render(<AdminLoginForm onSuccess={onSuccess} />);
+    fillCredentials('buyer@procucev.com', 'BuyerPass123');
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
 
     await waitFor(() => {
@@ -107,6 +104,7 @@ describe('AdminLoginForm Component', () => {
     const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'login').mockRejectedValueOnce(loginError);
     render(<AdminLoginForm onSuccess={vi.fn()} />);
+    fillCredentials();
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
 
@@ -142,6 +140,7 @@ describe('AdminLoginForm Component', () => {
     const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'login').mockRejectedValueOnce('A raw string error');
     render(<AdminLoginForm onSuccess={vi.fn()} />);
+    fillCredentials();
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitLoginButton }));
 

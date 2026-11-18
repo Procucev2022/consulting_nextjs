@@ -1966,6 +1966,28 @@ describe('Home page: Module 2 categorization', () => {
     expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
   });
 
+  it('opens Re-Assign and skips D1 confirm when an item is still Unclassified (00000000)', async () => {
+    await seedModule2([buildLineItem('MAP-UNCLASSIFIED', 'Custom Paperboard', { unspsc_code: UNCLASSIFIED_COMMODITY_CODE })]);
+    const [item] = readProp<LineItemMapping[]>('module2', 'lineItems');
+
+    await runProp('module2', 'onConfirmMapping', item.mapping_id);
+
+    expect(screen.getByText(UI_STRINGS.toasts.module2UnspscSelectionRequired)).toBeInTheDocument();
+    expect(readProp<boolean>('reassign', 'isOpen')).toBe(true);
+    expect(readProp<LineItemMapping | null>('reassign', 'item')?.mapping_id).toBe('MAP-UNCLASSIFIED');
+    expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
+  });
+
+  it('skips D1 bulk persistence when all AI suggestions remain Unclassified (00000000)', async () => {
+    await seedModule2([buildLineItem('MAP-ONLY-UNCLASSIFIED', 'Zebra saddle', { unspsc_code: UNCLASSIFIED_COMMODITY_CODE })]);
+    vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));
+
+    await runProp('module2', 'onStartAICategorization');
+
+    expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.noTaxonomySuggestionsSaved)).toBeInTheDocument();
+  });
+
   it('keeps the previous D1 mapping visible when saving a decision fails', async () => {
     await seedModule2();
     const [item] = readProp<LineItemMapping[]>('module2', 'lineItems');
@@ -2356,6 +2378,60 @@ describe('Home page: executive brief downloads', () => {
     expect(pptxUrl).toBe('/api/reports/executive-brief/download/opportunity-brief/pptx');
     expect(new Headers(pptxInit?.headers).get('Authorization')).toBe('Bearer token-123');
     // Unmount while the URL stubs still exist, so the payload cleanup can revoke the object URL.
+    cleanup();
+  });
+
+  it('wires PDF and PPTX downloads across header, pipeline, modules, status card, and acknowledgement surfaces with active assessment scope', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response('pdf-bytes', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const createObjectUrl = vi.fn(() => 'blob:brief-scoped');
+    const revokeObjectUrl = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: createObjectUrl });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: revokeObjectUrl });
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    vi.mocked(orchestrationApi.getJobs).mockResolvedValue([buildJob({ analysisJobId: 'JOB-DL-1' })]);
+    vi.mocked(orchestrationApi.getJobDetails).mockResolvedValue(
+      asJobDetails({
+        reports: [buildReport({ reportVersionId: 'RPT-DL-1', status: 'SUBMITTED' })]
+      })
+    );
+
+    await renderPage();
+    await waitFor(() => {
+      expect(orchestrationApi.getJobDetails).toHaveBeenCalledWith('JOB-DL-1');
+    });
+
+    await runProp('customerAnalysis', 'onDownloadReportPdf');
+    await runProp('customerAnalysis', 'onDownloadReportPptx');
+
+    await runProp('header', 'onOpenManagementBrief');
+    await waitFor(() => expect(mocks.props.reportAcknowledgement).toBeDefined());
+    await runProp('reportAcknowledgement', 'onDownloadReportPdf');
+    await runProp('reportAcknowledgement', 'onDownloadReportPptx');
+
+    await runProp('pipeline', 'onSelectTab', 'assessment');
+    await runProp('assessmentWorkspace', 'onActiveAssessmentChange', buildAssessment({ assessmentId: 'AIC-DL-42' }));
+    await runProp('pipeline', 'onSelectTab', 'module1');
+
+    await runProp('header', 'onDownloadReportPdf');
+    await runProp('header', 'onDownloadReportPptx');
+    await runProp('pipeline', 'onDownloadReportPdf');
+    await runProp('pipeline', 'onDownloadReportPptx');
+    await runProp('module1', 'onDownloadReportPdf');
+    await runProp('module1', 'onDownloadReportPptx');
+
+    await runProp('pipeline', 'onSelectTab', 'module4');
+    await runProp('module4', 'onDownloadReportPdf');
+    await runProp('module4', 'onDownloadReportPptx');
+
+    await runProp('pipeline', 'onSelectTab', 'module5');
+    await runProp('module5', 'onDownloadReportPdf');
+    await runProp('module5', 'onDownloadReportPptx');
+
+    expect(fetchMock).toHaveBeenCalledTimes(14);
+    const scopedHeaders = new Headers(fetchMock.mock.calls[13]?.[1]?.headers);
+    expect(scopedHeaders.get('x-assessment-id')).toBe('AIC-DL-42');
+    expect(anchorClick).toHaveBeenCalled();
     cleanup();
   });
 });
@@ -3264,5 +3340,193 @@ describe('Home page: FX and tenant mapping edge cases', () => {
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module1.loadMoreValidationRecordsFailed)).toBeInTheDocument();
     });
+  });
+
+  it('opens module1 with the requested D1 saved document in internal assessment mode', async () => {
+    const savedDoc = buildDocument({
+      doc_id: 'DOC-SAVED-1',
+      file_name: 'Enterprise_Procurement_Dataset_3Year.xlsx',
+      records_count: 450,
+      converted_inr_crores: 3485.87
+    });
+    const otherDoc = buildDocument({
+      doc_id: 'DOC-SAVED-2',
+      file_name: 'Previous_Dataset.xlsx'
+    });
+    window.localStorage.setItem('aicev_selected_assessment_id', 'ASM-7');
+    window.history.replaceState(null, '', '/?documentId=DOC-SAVED-1');
+    vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [savedDoc],
+      availableDocuments: [savedDoc, otherDoc],
+      validationRecords: [buildRecord('REC-DOC-SAVED-1-ROW-2')],
+      summary: {
+        totalFiles: 2, totalRecords: 1, cleanCount: 1, anomaliesCount: 0, allResolvedCount: 1,
+        pendingActionsCount: 0, conversionCount: 0, vendorDuplicationCount: 0, itemDuplicationCount: 0,
+        totalSpendCr: 3485.87, pendingSpendCr: 0
+      },
+      documentAnalytics: {
+        materialGroupSummaries: [{ group_code: 'CHEM', group_name: 'Chemicals', primary_segment: 'Direct Materials' }],
+        plantSummaries: [{
+          plant_code: 'PLT-1', plant_name: 'PLT-1', region: 'India', location: 'Plant',
+          spend_inr_cr: 3485.87, share_pct: 100
+        }],
+        monthWiseSummaries: [{
+          month_key: '2026-04', month_label: 'Apr 2026', fiscal_year: 'FY27',
+          spend_inr_cr: 3485.87, po_count: 10, top_material_group: 'CHEM', top_plant: 'PLT-1'
+        }],
+        uniqueItemsCount: 120,
+        uniqueVendorsCount: 15
+      }
+    }));
+
+    await renderPage({ expectOrchestration: false });
+
+    await waitFor(() => {
+      expect(mocks.props.module1).toBeDefined();
+    });
+    expect(apiClient.getIngestionData).toHaveBeenCalledWith(BUYER_USER.tenant_id, { queueDocumentId: 'DOC-SAVED-1' });
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([savedDoc]);
+    expect(readProp<RawDocumentIngestion[]>('module1', 'savedDocuments')).toEqual([savedDoc, otherDoc]);
+    expect(readProp<number>('module1', 'uniqueItemsCount')).toBe(120);
+    expect(readProp<number>('module1', 'uniqueVendorsCount')).toBe(15);
+    expect(readProp<AssessmentRecord | null>('header', 'activeAssessment')).toBeNull();
+  });
+
+  it('keeps saved D1 documents and assessment versions visible alongside an active assessment in internal mode', async () => {
+    const canonical = buildCanonical();
+    const assessment = buildAssessment({
+      assessmentId: 'ASM-PQR',
+      activeDataVersionId: 'DV-001',
+      canonicalModule1: canonical
+    });
+    const savedDoc = buildDocument({ doc_id: 'DOC-INGEST-SAVED', file_name: 'Saved_History.xlsx' });
+    const savedVersion = {
+      dataVersionId: 'DV-001',
+      assessmentId: 'ASM-PQR',
+      versionNumber: 1,
+      fileName: 'Cement2.xlsx',
+      fileSize: 2140000,
+      checksum: 'sum-1',
+      filePath: '/assessments/ASM-PQR/DV-001/Cement2.xlsx',
+      uploadedBy: 'analyst@procucev.com',
+      uploadedAt: '2026-11-18 06:49:30',
+      recordCount: 19670,
+      isSuperseded: false
+    };
+    window.localStorage.setItem('aicev_selected_assessment_id', 'ASM-PQR');
+    vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
+    vi.mocked(assessmentApiClient.getAssessmentById).mockResolvedValue(
+      asAssessmentResponse({ assessment, versions: [savedVersion] })
+    );
+    vi.mocked(apiClient.getCanonicalModule1).mockResolvedValue(canonical);
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [savedDoc],
+      validationRecords: []
+    }));
+
+    await renderPage();
+    await switchTab('module1', 'module1');
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'savedDocuments')).toEqual([savedDoc]);
+    expect(readProp<unknown[]>('module1', 'savedDataVersions')).toEqual([savedVersion]);
+  });
+
+  it('auto-hydrates previously uploaded saved data in internal mode when no active assessment dataset exists', async () => {
+    const savedDoc = buildDocument({ doc_id: 'DOC-INGEST-AUTO', file_name: 'Auto_Saved.xlsx', converted_inr_crores: 44.5 });
+    vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
+    vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([]);
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({
+      queue: [savedDoc],
+      validationRecords: [buildRecord('REC-AUTO-1')]
+    }));
+
+    await renderPage();
+    await switchTab('module1', 'module1');
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([savedDoc]);
+    expect(readProp<RawDocumentIngestion[]>('module1', 'savedDocuments')).toEqual([savedDoc]);
+  });
+
+  it('switches to a selected saved dataset, handles load errors, and deletes non-active saved datasets cleanly', async () => {
+    const doc1 = buildDocument({ doc_id: 'DOC-1', file_name: 'First.xlsx', converted_inr_crores: 10 });
+    const doc2 = buildDocument({ doc_id: 'DOC-2', file_name: 'Second.xlsx', converted_inr_crores: 20 });
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce(asIngestion({ queue: [doc1, doc2], validationRecords: [] }))
+      .mockResolvedValueOnce(asIngestion({
+        queue: [doc2],
+        availableDocuments: [doc1, doc2],
+        validationRecords: [buildRecord('REC-DOC-2')]
+      }))
+      .mockRejectedValueOnce(new Error('D1 temporarily unavailable'));
+    vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([doc2]);
+
+    await renderPage();
+
+    await runProp('module1', 'onSelectSavedDocument', doc2);
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(BUYER_USER.tenant_id, { queueDocumentId: 'DOC-2' });
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([doc2]);
+    expect(window.location.search).toContain('documentId=DOC-2');
+    expect(screen.getByText(UI_STRINGS.module1.savedDatasetLoaded('Second.xlsx'))).toBeInTheDocument();
+
+    // Delete non-active DOC-1 without clearing active DOC-2
+    await runProp('module1', 'onDeleteDocument', 'DOC-1');
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([doc2]);
+    expect(readProp<RawDocumentIngestion[]>('module1', 'savedDocuments')).toEqual([doc2]);
+
+    // Handle selection error cleanly
+    await runProp('module1', 'onSelectSavedDocument', doc1);
+    expect(screen.getByText(UI_STRINGS.module1.savedDatasetLoadFailed('D1 temporarily unavailable'))).toBeInTheDocument();
+  });
+
+  it('reports missing document or unassigned tenant when restoring a documentId in internal mode', async () => {
+    window.history.replaceState(null, '', '/?documentId=DOC-MISSING');
+    vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(asIngestion({ queue: [], validationRecords: [] }));
+
+    await renderPage({ expectOrchestration: false });
+    expect(screen.getByText(UI_STRINGS.module1.savedDatasetNotFound('DOC-MISSING'))).toBeInTheDocument();
+
+    vi.mocked(apiClient.getIngestionData).mockRejectedValueOnce(new Error('D1 read error'));
+    window.history.replaceState(null, '', '/?documentId=DOC-ERR');
+    await renderPage({ expectOrchestration: false });
+    expect(screen.getByText(UI_STRINGS.module1.savedDatasetLoadFailed('D1 read error'))).toBeInTheDocument();
+
+    const unassignedUser = { ...BUYER_USER, tenant_id: null };
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(unassignedUser);
+    vi.mocked(apiClient.getStoredUser).mockReturnValue(unassignedUser);
+    window.history.replaceState(null, '', '/?documentId=DOC-NO-TENANT');
+    await renderPage({ expectOrchestration: false });
+    expect(screen.getByText(UI_STRINGS.auth.tenantAssignmentRequired)).toBeInTheDocument();
+
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(BUYER_USER);
+    vi.mocked(apiClient.getStoredUser).mockReturnValue(BUYER_USER);
+    window.history.replaceState(null, '', '/');
+    vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([]);
+    vi.mocked(apiClient.getIngestionData).mockRejectedValueOnce(new Error('saved list offline'));
+    await renderPage();
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      'Could not load saved ingestion documents in internal mode',
+      expect.objectContaining({ action: 'dashboard.saved_documents.load', tenantId: BUYER_USER.tenant_id }),
+      expect.any(Error)
+    );
+  });
+
+  it('requires an assigned tenant when switching saved documents from Module 1', async () => {
+    const doc = buildDocument({ doc_id: 'DOC-SWITCH' });
+    const unassignedUser = { ...BUYER_USER, tenant_id: null };
+    await renderPage();
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(unassignedUser);
+    vi.mocked(apiClient.getStoredUser).mockReturnValue(unassignedUser);
+    await runProp('header', 'onSelectTenant', { ...mockTenant, tenant_id: '' });
+
+    // Switch with missing doc_id is a no-op
+    await runProp('module1', 'onSelectSavedDocument', { ...doc, doc_id: '' });
+    expect(apiClient.getIngestionData).toHaveBeenCalledTimes(1);
+
+    // Switch after clearing user's stored tenant requires tenant assignment
+    await renderPage({ expectOrchestration: false });
+    await runProp('module1', 'onSelectSavedDocument', doc);
+    expect(screen.getByText(UI_STRINGS.auth.tenantAssignmentRequired)).toBeInTheDocument();
   });
 });

@@ -100,3 +100,7 @@ export interface ExecutiveOpportunityBriefGroupRow {
   record_count: number | string;
   estimated_savings_cr: number | string;
 }
+
+export interface ExecutiveOpportunityBriefAssessmentRow {
+  assessment_id: string | null;
+}

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { handleExecutiveBriefRegenerate } from '../src/workerD1ExecutiveBriefRegenerate';
-import { extractBearerToken, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
+import { extractBearerToken, authorizeExecutiveBriefAccess, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
 import { AUTH_MESSAGES } from '../src/constants/auth';
 import {
   EXECUTIVE_BRIEF_HTTP_STATUS,
@@ -253,7 +253,7 @@ describe('executive brief regeneration authorization', () => {
       message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
     });
     expect(logger.error).toHaveBeenCalledWith(
-      'Executive brief administrator account lookup failed',
+      'Executive brief account lookup failed',
       expect.objectContaining({
         action: 'executive-brief.auth.account-lookup',
         method: 'POST',
@@ -264,6 +264,27 @@ describe('executive brief regeneration authorization', () => {
       }),
       failure
     );
+  });
+
+  it('allows active standard users for brief access and uses the role fallback message when authentication omits it', async () => {
+    const userOutcome = await authorizeExecutiveBriefAccess(
+      briefRequest('GET', '/opportunity-brief/report', { headers: { Authorization: `Bearer ${await userToken()}` } }),
+      testEnvironment()
+    );
+    expect(userOutcome).toEqual({ ok: true, userId: 'usr-standard-test' });
+
+    vi.spyOn(workerAuth, 'authenticateWorkerUser').mockResolvedValueOnce({
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN
+    });
+    const fallbackOutcome = await authorizeExecutiveBriefAccess(
+      briefRequest('GET', '/opportunity-brief/report', { headers: { Authorization: `Bearer ${await userToken()}` } }),
+      testEnvironment()
+    );
+    expect(fallbackOutcome).toEqual({
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN,
+      message: EXECUTIVE_BRIEF_MESSAGES.accessDenied
+    });
   });
 
   it('uses the active account lookup result to enforce current admin access', async () => {

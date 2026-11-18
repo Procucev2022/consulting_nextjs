@@ -1,6 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT } from '../../src/constants/app';
-import { fetchExecutiveOpportunityBriefReport } from '../../src/utils/executiveOpportunityBriefApi';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH,
+  EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT
+} from '../../src/constants/app';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import {
+  fetchExecutiveOpportunityBriefReport,
+  formatExecutiveOpportunityBriefError,
+  readExecutiveOpportunityBriefErrorDetails,
+  resolveExecutiveBriefAssessmentIdFromSearch,
+  resolveExecutiveBriefDownloadFilename,
+  resolveExecutiveBriefHref
+} from '../../src/utils/executiveOpportunityBriefApi';
 import { authApiClient } from '../../src/utils/authApi';
 import { frontendLogger } from '../../src/utils/logger';
 
@@ -21,7 +33,62 @@ const validPayload = {
 };
 
 describe('fetchExecutiveOpportunityBriefReport', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses apiFetch by default when no custom fetcher is supplied', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await fetchExecutiveOpportunityBriefReport();
+    expect(result).toMatchObject({ ok: true, data: { tenant: { enterpriseName: 'D1 Enterprise' } } });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('extracts server error message and reason from failed responses and handles non-JSON bodies', async () => {
+    const jsonErr = new Response(
+      JSON.stringify({ success: false, message: '  Tenant assignment pending.  ', reason: 'tenant-scope-required' }),
+      { status: 403, headers: { 'x-request-id': 'req-403' } }
+    );
+    const result = await fetchExecutiveOpportunityBriefReport(async () => jsonErr);
+    expect(result).toEqual({
+      ok: false,
+      statusCode: 403,
+      requestId: 'req-403',
+      serverMessage: 'Tenant assignment pending.',
+      reason: 'tenant-scope-required'
+    });
+
+    await expect(readExecutiveOpportunityBriefErrorDetails({} as Response)).resolves.toEqual({});
+    await expect(readExecutiveOpportunityBriefErrorDetails(new Response('not-json', { status: 500 }))).resolves.toEqual({});
+    await expect(readExecutiveOpportunityBriefErrorDetails(new Response('[]', { status: 500 }))).resolves.toEqual({});
+    await expect(readExecutiveOpportunityBriefErrorDetails(new Response(JSON.stringify({ message: '   ', reason: 123 }), { status: 403 }))).resolves.toEqual({});
+  });
+
+  it('formats status-specific actionable messages for report loading and downloads', () => {
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 0, requestId: null })).toBe(
+      UI_STRINGS.opportunityBrief.reportUnavailableNetwork
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 401, requestId: 'r-1', serverMessage: 'Expired.' })).toBe(
+      UI_STRINGS.opportunityBrief.reportUnauthorized('r-1', 'Expired.')
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 403, requestId: 'r-2', serverMessage: 'No tenant.' })).toBe(
+      UI_STRINGS.opportunityBrief.reportForbidden('r-2', 'No tenant.')
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 404, requestId: null })).toBe(
+      UI_STRINGS.opportunityBrief.reportNotFound(UI_STRINGS.opportunityBrief.requestIdNotReturned)
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 401, requestId: 'd-1', formatLabel: 'PDF' })).toBe(
+      UI_STRINGS.opportunityBrief.downloadUnauthorized('PDF', 'd-1')
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 403, requestId: 'd-2', serverMessage: 'Blocked.', formatLabel: 'PPTX' })).toBe(
+      UI_STRINGS.opportunityBrief.downloadForbidden('PPTX', 'd-2', 'Blocked.')
+    );
+    expect(formatExecutiveOpportunityBriefError({ statusCode: 404, requestId: 'd-3', formatLabel: 'PDF' })).toBe(
+      UI_STRINGS.opportunityBrief.downloadNotFound('PDF', 'd-3')
+    );
+  });
 
   it('fetches and validates the D1 report response', async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
@@ -98,5 +165,25 @@ describe('fetchExecutiveOpportunityBriefReport', () => {
     expect(errorLog).toHaveBeenCalledWith('Executive opportunity brief request failed before a response was received', expect.objectContaining({
       action: 'executive-brief.report.fetch', statusCode: 0
     }), networkError);
+  });
+
+  it('forwards valid assessment scope headers and resolves brief links and filenames safely', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
+    await fetchExecutiveOpportunityBriefReport(fetcher, { assessmentId: 'AIC-101' });
+    expect(fetcher).toHaveBeenCalledWith(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT, {
+      headers: { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: 'AIC-101' }
+    });
+
+    expect(resolveExecutiveBriefAssessmentIdFromSearch('?assessmentId=AIC-202')).toBe('AIC-202');
+    expect(resolveExecutiveBriefAssessmentIdFromSearch('?assessmentId=%20%20')).toBeUndefined();
+    expect(resolveExecutiveBriefHref(undefined)).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH);
+    expect(resolveExecutiveBriefHref('AIC 1', 'https://app.test')).toBe(
+      `https://app.test${EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH}?assessmentId=AIC%201`
+    );
+    expect(resolveExecutiveBriefDownloadFilename('attachment; filename="Custom.pdf"', 'pdf')).toBe('Custom.pdf');
+    expect(resolveExecutiveBriefDownloadFilename('attachment; filename=PlainName.pptx', 'pptx')).toBe('PlainName.pptx');
+    expect(resolveExecutiveBriefDownloadFilename(null, 'pdf')).toBe(
+      UI_STRINGS.opportunityBrief.downloadFilename('pdf')
+    );
   });
 });

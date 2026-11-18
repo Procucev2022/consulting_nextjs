@@ -31,6 +31,11 @@ export const resolvePipelineTabForOperatingMode = (
   return workspaceTab;
 };
 
+export const hasDocumentQuerySelection = (search: string): boolean => {
+  const value = new URLSearchParams(search).get('documentId');
+  return Boolean(value && value.trim().length > 0);
+};
+
 export const getLockedPipelineTabMessage = (tab: PipelineActiveTab): string => {
   if (tab === 'module2') return UI_STRINGS.pipeline.lockedStep1Required;
   if (tab === 'module3') return UI_STRINGS.pipeline.lockedStep2Required;

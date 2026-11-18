@@ -5,7 +5,7 @@
  * Dedicated administrative access gateway with RBAC security enforcement.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,7 +13,8 @@ import { Eye, EyeOff, ShieldAlert, Lock, ArrowRight, CheckCircle2 } from 'lucide
 import { UI_STRINGS, AICEV_LOGO_SRC } from '../../../constants';
 import { apiClient } from '../../../utils/api';
 import frontendLogger from '../../../utils/logger';
-import type { LoginFormData } from '../../../types';
+import AdminBuyerBlockedCard from '../../../components/admin/AdminBuyerBlockedCard';
+import type { LoginFormData, UserProfile } from '../../../types';
 
 export default function AdminLoginPage(): React.ReactElement {
   const router = useRouter();
@@ -21,11 +22,23 @@ export default function AdminLoginPage(): React.ReactElement {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [blockedBuyer, setBlockedBuyer] = useState<UserProfile | null>(null);
 
   const [form, setForm] = useState<LoginFormData>({
     email: '',
     password: ''
   });
+
+  useEffect(() => {
+    const storedUser = apiClient.getStoredUser();
+    if (storedUser && storedUser.role !== 'ADMIN') {
+      frontendLogger.warn('Blocked buyer session from /admin/login page', {
+        userId: storedUser.id,
+        role: storedUser.role
+      });
+      setBlockedBuyer(storedUser);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -165,6 +178,9 @@ export default function AdminLoginPage(): React.ReactElement {
         justifyContent: 'center',
         padding: '40px 20px'
       }}>
+        {blockedBuyer ? (
+          <AdminBuyerBlockedCard blockedUser={blockedBuyer} />
+        ) : (
         <div style={{
           width: '100%',
           maxWidth: '460px',
@@ -267,7 +283,7 @@ export default function AdminLoginPage(): React.ReactElement {
                 id="admin-email"
                 type="email"
                 required
-                placeholder="admin@procucev.com"
+                placeholder={UI_STRINGS.admin.emailPlaceholder}
                 value={form.email}
                 onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                 style={{
@@ -386,6 +402,7 @@ export default function AdminLoginPage(): React.ReactElement {
             </div>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

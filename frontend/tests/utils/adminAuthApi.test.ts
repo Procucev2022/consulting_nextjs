@@ -18,16 +18,51 @@ describe('Admin Auth API Client (Frontend)', () => {
     vi.restoreAllMocks();
   });
 
-  it('should provision admin user with default credentials when no payload provided', async () => {
+  it('should reject non-administrator stored user before calling provisioning API', async () => {
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
+      id: 'usr-buyer-001',
+      name: 'Buyer User',
+      email: 'buyer@company.com',
+      role: 'USER',
+      status: 'ACTIVE',
+      subscription_tier: 'BRONZE'
+    });
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(
+      adminAuthApiClient.createAdminUser({
+        name: 'Rogue Admin',
+        email: 'rogue@company.com',
+        mobile_number: '+91 99999 11111',
+        company_name: 'Buyer Co',
+        company_address: 'Bangalore, India',
+        password: 'TestPassword@123'
+      })
+    ).rejects.toThrow(UI_STRINGS.admin.accessDeniedMessage);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should provision admin user using stored admin session token when no explicit token is passed', async () => {
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
+      id: 'usr-admin-001',
+      name: 'Existing Admin',
+      email: 'ops@company.com',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      subscription_tier: 'GOLD'
+    });
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('stored-admin-token');
+
     const mockFetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         success: true,
         message: 'Admin details created and verified successfully',
         user: {
-          id: 'usr-admin-001',
-          name: 'System Administrator',
-          email: 'admin@procucev.com',
+          id: 'usr-admin-002',
+          name: 'Second Admin',
+          email: 'second@company.com',
           role: 'ADMIN',
           status: 'ACTIVE',
           subscription_tier: 'GOLD'
@@ -36,11 +71,22 @@ describe('Admin Auth API Client (Frontend)', () => {
     });
     vi.stubGlobal('fetch', mockFetch);
 
-    const res = await adminAuthApiClient.createAdminUser();
+    const res = await adminAuthApiClient.createAdminUser({
+      name: 'Second Admin',
+      email: 'second@company.com',
+      mobile_number: '+91 99999 11111',
+      company_name: 'aiCEV Corp',
+      company_address: 'Bangalore, India',
+      password: 'TestPassword@123'
+    });
     expect(res.success).toBe(true);
-    expect(res.user.email).toBe('admin@procucev.com');
-    expect(res.user.role).toBe('ADMIN');
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(res.user.email).toBe('second@company.com');
+    expectApiFetchCall(mockFetch, expect.stringContaining('/api/admin/create-admin'), expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        Authorization: 'Bearer stored-admin-token'
+      })
+    }));
   });
 
   it('should provision admin user with explicit payload and token', async () => {
@@ -88,8 +134,11 @@ describe('Admin Auth API Client (Frontend)', () => {
 
     await expect(adminAuthApiClient.createAdminUser({
       name: 'Offline Admin',
-      email: 'admin@procucev.com',
-      password: 'Procucev@123'
+      email: 'offline@company.com',
+      mobile_number: '+91 99999 11111',
+      company_name: 'aiCEV Custom',
+      company_address: 'Bangalore',
+      password: 'TestPassword@123'
     })).rejects.toThrow('Network error');
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
@@ -105,8 +154,11 @@ describe('Admin Auth API Client (Frontend)', () => {
 
     await expect(adminAuthApiClient.createAdminUser({
       name: 'Offline Admin',
-      email: 'admin@procucev.com',
-      password: 'Procucev@123'
+      email: 'offline@company.com',
+      mobile_number: '+91 99999 11111',
+      company_name: 'aiCEV Custom',
+      company_address: 'Bangalore',
+      password: 'TestPassword@123'
     })).rejects.toThrow(UI_STRINGS.admin.provisioningFailureWithStatus(502));
     expect(frontendLogger.warn).toHaveBeenCalledWith(expect.any(String), { status: 502 }, unreadableFailure);
     expect(frontendLogger.error).toHaveBeenCalledWith(expect.any(String), { status: 502 });
@@ -135,7 +187,10 @@ describe('Admin Auth API Client (Frontend)', () => {
       adminAuthApiClient.createAdminUser({
         name: 'Prod Admin',
         email: 'prod@procucev.com',
-        password: 'Procucev@123'
+        mobile_number: '+91 99999 11111',
+        company_name: 'aiCEV Prod',
+        company_address: 'Bangalore',
+        password: 'TestPassword@123'
       })
     ).rejects.toThrow('Administrator with this email already exists');
 
@@ -156,7 +211,10 @@ describe('Admin Auth API Client (Frontend)', () => {
       adminAuthApiClient.createAdminUser({
         name: 'Prod Admin',
         email: 'prod@procucev.com',
-        password: 'Procucev@123'
+        mobile_number: '+91 99999 11111',
+        company_name: 'aiCEV Prod',
+        company_address: 'Bangalore',
+        password: 'TestPassword@123'
       })
     ).rejects.toThrow(UI_STRINGS.admin.provisioningFailureWithStatus(502));
 

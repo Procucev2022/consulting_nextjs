@@ -5,6 +5,7 @@ import {
   getLockedPipelineTabMessage,
   getInitialPipelineTab,
   getPipelineTabFromHash,
+  hasDocumentQuerySelection,
   resolvePipelineTabForOperatingMode
 } from '../../src/utils/pipelineNavigation';
 
@@ -52,5 +53,11 @@ describe('pipeline URL navigation', () => {
     ['assessment', UI_STRINGS.pipeline.lockedStep1Required]
   ] as const)('provides the centralized lock guidance for %s', (tab, message) => {
     expect(getLockedPipelineTabMessage(tab)).toBe(message);
+  });
+
+  it('detects whether the URL search parameters select a saved document', () => {
+    expect(hasDocumentQuerySelection('?documentId=DOC-1001')).toBe(true);
+    expect(hasDocumentQuerySelection('?documentId=%20%20')).toBe(false);
+    expect(hasDocumentQuerySelection('')).toBe(false);
   });
 });

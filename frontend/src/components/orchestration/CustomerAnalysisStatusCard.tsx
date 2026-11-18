@@ -20,6 +20,7 @@ import { UI_STRINGS } from '../../constants';
 import { orchestrationApi } from '../../utils/orchestrationApi';
 import type { CustomerAnalysisStatusCardProps } from '../../types';
 import type { AnalysisJob, AnalysisJobStatus } from '../../types/analysisOrchestration';
+import { ReportDownloadActions } from '../presentation/ReportDownloadActions';
 
 export function CustomerAnalysisStatusCard({
   tenantId,
@@ -27,7 +28,10 @@ export function CustomerAnalysisStatusCard({
   activeJob,
   compact = false,
   onViewSpendSummary,
-  onViewReport
+  onViewReport,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null
 }: CustomerAnalysisStatusCardProps): React.ReactElement | null {
   const [job, setJob] = useState<AnalysisJob | null>(activeJob || null);
   const [loading, setLoading] = useState<boolean>(!activeJob);
@@ -184,6 +188,16 @@ export function CustomerAnalysisStatusCard({
             </button>
           )}
 
+          {isReportAvailable && (
+            <ReportDownloadActions
+              testIdPrefix="status-card-download-report"
+              onDownloadPdf={onDownloadReportPdf}
+              onDownloadPptx={onDownloadReportPptx}
+              downloadingFormat={downloadingReportFormat}
+              compact
+            />
+          )}
+
           <button
             type="button"
             onClick={loadJob}
@@ -310,6 +324,16 @@ export function CustomerAnalysisStatusCard({
               <Eye size={14} />
               <span>{UI_STRINGS.orchestration.btnViewApprovedReport}</span>
             </button>
+          )}
+
+          {isReportAvailable && (
+            <ReportDownloadActions
+              testIdPrefix="status-card-download-report"
+              onDownloadPdf={onDownloadReportPdf}
+              onDownloadPptx={onDownloadReportPptx}
+              downloadingFormat={downloadingReportFormat}
+              compact
+            />
           )}
         </div>
       </div>

@@ -281,4 +281,45 @@ describe('AssessmentUploadTab', () => {
       expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.module1Failed('Engine calculation timeout'))).toBeInTheDocument();
     });
   });
+
+  it('renders previously uploaded assessment data versions when provided', () => {
+    render(
+      <AssessmentUploadTab
+        assessment={{ ...mockAssessmentSigned, currentDataVersionId: 'DV-002' }}
+        dataVersions={[
+          {
+            dataVersionId: 'DV-001',
+            assessmentId: mockAssessmentSigned.assessmentId,
+            versionNumber: 1,
+            fileName: 'Cement_v1.xlsx',
+            fileSize: 1024,
+            checksum: 'sum1',
+            filePath: '/assessments/AIC-2026-0003/DV-001/Cement_v1.xlsx',
+            uploadedBy: 'analyst@procucev.com',
+            uploadedAt: '2026-10-01',
+            recordCount: 500,
+            isSuperseded: true
+          },
+          {
+            dataVersionId: 'DV-002',
+            assessmentId: mockAssessmentSigned.assessmentId,
+            versionNumber: 2,
+            fileName: 'Cement2.xlsx',
+            fileSize: 2048,
+            checksum: 'sum2',
+            filePath: '/assessments/AIC-2026-0003/DV-002/Cement2.xlsx',
+            uploadedBy: 'analyst@procucev.com',
+            uploadedAt: '2026-11-18',
+            recordCount: 19670,
+            isSuperseded: false
+          }
+        ]}
+        onUploadSuccess={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.savedVersionsHeading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.activeVersionTag)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.supersededVersionTag)).toBeInTheDocument();
+  });
 });

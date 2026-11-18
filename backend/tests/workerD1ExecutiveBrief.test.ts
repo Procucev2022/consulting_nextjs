@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
-import { EXECUTIVE_BRIEF_HTTP_STATUS } from '../src/constants/executiveBriefRouteConstants';
+import {
+  EXECUTIVE_BRIEF_HTTP_STATUS,
+  EXECUTIVE_BRIEF_MESSAGES
+} from '../src/constants/executiveBriefRouteConstants';
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
@@ -9,7 +12,10 @@ import {
   EXECUTIVE_BRIEF_ARTIFACT_FILENAMES,
   EXECUTIVE_BRIEF_CONTENT_TYPES
 } from '../src/constants/executiveBriefExportConstants';
-import type { CloudflareEnvironment } from '../src/types/cloudflare';
+import type { CloudflareEnvironment, CloudflareExecutionContext } from '../src/types/cloudflare';
+import { fetch as workerFetch } from '../src/worker';
+import { createWorkerAuthToken } from '../src/workerAuth';
+import { createWorkerDatabase, insertRows, runtimeEnvironment, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
 import { adminToken, briefRequest, briefUrl, testEnvironment, TEST_REPORT_DATE, userToken } from './executiveBriefTestHelpers';
 
 vi.mock('../src/utils/logger', () => ({
@@ -48,11 +54,12 @@ const d1OpportunityDb = (options: {
       bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
       first: async <T>() => {
         if (query.includes('FROM User')) {
+          const userId = String(values[0]);
           return {
-            id: values[0],
-            name: 'D1 Test Admin',
-            email: 'admin@example.test',
-            role: 'ADMIN',
+            id: userId,
+            name: userId === 'usr-standard-test' ? 'D1 Standard User' : 'D1 Test Admin',
+            email: userId === 'usr-standard-test' ? 'user@example.test' : 'admin@example.test',
+            role: userId === 'usr-standard-test' ? 'USER' : 'ADMIN',
             status: 'ACTIVE',
             tenant_id: 'TEN-1'
           } as T;
@@ -86,15 +93,17 @@ const d1OpportunityDb = (options: {
       all: async <T>() => {
         if (options.fail) throw new Error('D1 query failed');
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) {
-          return { results: [{
-            opp_id: 'OPP-1', category: 'Packaging', title: 'Packaging sourcing', current_spend_cr: 50,
-            estimated_savings_cr: 8, lever: 'Strategic sourcing', recommended_action: 'Launch a tender',
-            status: 'Identified', risk_level: 'Medium', confidence_score: 0.9
-          }, {
-            opp_id: 'OPP-2', category: 'Logistics', title: null, current_spend_cr: null,
-            estimated_savings_cr: 2.25, lever: null, recommended_action: null,
-            status: null, risk_level: null, confidence_score: null
-          }] as T[] };
+          return {
+            results: [{
+              opp_id: 'OPP-1', category: 'Packaging', title: 'Packaging sourcing', current_spend_cr: 50,
+              estimated_savings_cr: 8, lever: 'Strategic sourcing', recommended_action: 'Launch a tender',
+              status: 'Identified', risk_level: 'Medium', confidence_score: 0.9
+            }, {
+              opp_id: 'OPP-2', category: 'Logistics', title: null, current_spend_cr: null,
+              estimated_savings_cr: 2.25, lever: null, recommended_action: null,
+              status: null, risk_level: null, confidence_score: null
+            }] as T[]
+          };
         }
         const label = query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.leverBreakdown
           ? 'Strategic sourcing'
@@ -147,7 +156,7 @@ describe('executive brief routing', () => {
     expect(body.data.dataClassification).toBe('DEMO_ONLY');
   });
 
-  it('requires an authenticated administrator before serving report, audit, or download data', async () => {
+  it('requires active authentication while allowing standard tenant users and administrators to read or download briefs', async () => {
     const paths = [
       '/report',
       '/audit',
@@ -161,10 +170,11 @@ describe('executive brief routing', () => {
     for (const path of paths) {
       const anonymous = expectResponse(await callRoute('GET', path, { headers: { Authorization: '' } }));
       expect(anonymous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
+      expect(((await anonymous.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.userAuthRequired);
       const standardUser = expectResponse(await callRoute('GET', path, {
         headers: { Authorization: 'Bearer ' + standardUserToken }
       }));
-      expect(standardUser.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+      expect(standardUser.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
     }
   });
 
@@ -265,9 +275,13 @@ describe('executive brief routing', () => {
     expect(noBindingDownload.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
 
     const selectedTenantReport = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
-      env: testEnvironment({ DB: d1OpportunityDb({ tenants: [
-        { tenant_id: 'A', enterprise_name: 'A' }, { tenant_id: 'B', enterprise_name: 'B' }
-      ] }), REQUEST_TENANT_ID: 'B' })
+      env: testEnvironment({
+        DB: d1OpportunityDb({
+          tenants: [
+            { tenant_id: 'A', enterprise_name: 'A' }, { tenant_id: 'B', enterprise_name: 'B' }
+          ]
+        }), REQUEST_TENANT_ID: 'B'
+      })
     }));
     expect(selectedTenantReport.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
     expect(((await selectedTenantReport.json()) as { data: { tenant: { tenantId: string } } }).data.tenant.tenantId).toBe('B');
@@ -311,5 +325,145 @@ describe('executive brief routing', () => {
     expect(echoed.headers.get('X-Request-Id')).toBe('req-2026.10.24_01');
     const replaced = expectResponse(await callRoute('GET', '/report', { headers: { 'x-request-id': 'bad id!' } }));
     expect(UUID_PATTERN.test(replaced.headers.get('X-Request-Id') ?? '')).toBe(true);
+  });
+
+  it('serves the Opportunity Brief through workerFetch for active USER accounts within their tenant while keeping regenerate admin-only', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)', [
+        ['TEN-ALPHA', 'Alpha Procurement Ltd', 'ACTIVE'],
+        ['TEN-BETA', 'Beta Procurement Ltd', 'ACTIVE']
+      ]);
+      insertRows(fixture.db, `INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ['usr-alpha', 'Alpha Buyer', '+919000000001', 'alpha@alpha.test', 'Alpha Procurement Ltd', 'Pune', 'unused', 'USER', 'ACTIVE', 'SILVER', 'TEN-ALPHA']
+      ]);
+      insertRows(fixture.db, `INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, supplier_name, material_code, plant, po_number, currency, total_in_cr_raw, document_date_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ['TX-ALPHA-1', 'TEN-ALPHA', null, 'Vendor A', 'MAT-1', 'P1', 'PO-1', 'INR', 42.5, '2026-01-15', '{}']
+      ]);
+      insertRows(fixture.db, `INSERT INTO SavingsOpportunity (
+        opp_id, category, title, current_spend, current_spend_inr_cr, est_savings, est_savings_inr_cr, lever, recommended_action, status, risk_level, confidence_score
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ['OPP-ALPHA-1', 'Packaging', 'Carton consolidation', 200000000, 20, 20000000, 2, 'Supplier Consolidation', 'Consolidate carton suppliers', 'Identified', 'Low', 0.9]
+      ]);
+      insertRows(fixture.db, 'INSERT INTO SavingsOpportunityTenantScope (opp_id, tenant_id) VALUES (?, ?)', [
+        ['OPP-ALPHA-1', 'TEN-ALPHA']
+      ]);
+
+      const token = await createWorkerAuthToken(
+        { id: 'usr-alpha', email: 'alpha@alpha.test', role: 'USER', subscription_tier: 'SILVER', tenant_id: 'TEN-ALPHA' },
+        WORKER_CORE_SECRET
+      );
+      const env = runtimeEnvironment({ DB: fixture.d1 });
+      const ctx: CloudflareExecutionContext = { waitUntil: vi.fn(), passThroughOnException: vi.fn() };
+
+      const reportResponse = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/opportunity-brief/report', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        env,
+        ctx
+      );
+      expect(reportResponse.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+      const reportJson = (await reportResponse.json()) as {
+        success: boolean;
+        data: { tenant: { tenantId: string; enterpriseName: string }; metrics: { totalSpendCr: number; estimatedSavingsCr: number } };
+      };
+      expect(reportJson.success).toBe(true);
+      expect(reportJson.data.tenant).toEqual({ tenantId: 'TEN-ALPHA', enterpriseName: 'Alpha Procurement Ltd' });
+      expect(reportJson.data.metrics.totalSpendCr).toBe(42.5);
+      expect(reportJson.data.metrics.estimatedSavingsCr).toBe(2);
+
+      const pdfResponse = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/download/opportunity-brief/pdf', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        env,
+        ctx
+      );
+      expect(pdfResponse.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+
+      const crossTenantResponse = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/opportunity-brief/report?tenantId=TEN-BETA', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        env,
+        ctx
+      );
+      expect(crossTenantResponse.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+
+      const regenerateResponse = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/regenerate', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: '{}'
+        }),
+        env,
+        ctx
+      );
+      expect(regenerateResponse.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('serves assessment-scoped Opportunity Brief PDF and PPTX downloads and validates invalid assessmentId parameters', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      insertRows(fixture.db, 'INSERT INTO TenantMaster (tenant_id, enterprise_name, status) VALUES (?, ?, ?)', [
+        ['TEN-CEMENT', 'PQR Cement Ltd', 'ACTIVE']
+      ]);
+      insertRows(fixture.db, `INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ['usr-cement', 'Anurag Shaw', '+919000000002', 'anurag@cement.test', 'PQR Cement Ltd', 'Mumbai', 'unused', 'USER', 'ACTIVE', 'BRONZE', 'TEN-CEMENT']
+      ]);
+      insertRows(fixture.db, `INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, supplier_name, material_code, plant, po_number, currency, total_in_cr_raw, document_date_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ['TX-CEMENT-1', 'TEN-CEMENT', 'AIC-CEMENT-1', 'Vendor C1', 'MAT-C1', 'PL-1', 'PO-C1', 'INR', 262.64, '2022-08-01', '{}']
+      ]);
+
+      const token = await createWorkerAuthToken(
+        { id: 'usr-cement', email: 'anurag@cement.test', role: 'USER', subscription_tier: 'BRONZE', tenant_id: 'TEN-CEMENT' },
+        WORKER_CORE_SECRET
+      );
+      const env = runtimeEnvironment({ DB: fixture.d1 });
+      const ctx: CloudflareExecutionContext = { waitUntil: vi.fn(), passThroughOnException: vi.fn() };
+
+      const scopedPdf = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/download/opportunity-brief/pdf', {
+          headers: { Authorization: `Bearer ${token}`, 'x-assessment-id': 'AIC-CEMENT-1' }
+        }),
+        env,
+        ctx
+      );
+      expect(scopedPdf.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+      expect(scopedPdf.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PDF);
+
+      const fallbackPptx = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/download/opportunity-brief/pptx', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        env,
+        ctx
+      );
+      expect(fallbackPptx.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+      expect(fallbackPptx.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PPTX);
+
+      const invalidScope = await workerFetch(
+        new Request('https://worker.example.test/api/reports/executive-brief/download/opportunity-brief/pdf?assessmentId=%20%20', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        env,
+        ctx
+      );
+      expect(invalidScope.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST);
+    } finally {
+      fixture.close();
+    }
   });
 });

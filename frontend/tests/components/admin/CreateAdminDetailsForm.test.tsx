@@ -11,41 +11,40 @@ describe('CreateAdminDetailsForm Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders creation form with all inputs and prefill button', () => {
+  const fillCreateForm = (email = 'jane@procucev.com', password = 'NewPass@123', confirm = 'NewPass@123'): void => {
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.fullNameLabel), { target: { value: 'Jane Admin' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.emailLabel), { target: { value: email } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.mobileLabel), { target: { value: '+91 99999 88888' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.companyNameLabel), { target: { value: 'Global Corp' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.companyAddressLabel), { target: { value: 'Tech Park Bengaluru' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.passwordLabel), { target: { value: password } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.admin.confirmPasswordLabel), { target: { value: confirm } });
+  };
+
+  it('renders an empty creation form without prefilled credentials or default-fill button', () => {
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
 
     expect(screen.getByRole('heading', { name: UI_STRINGS.admin.createHeading })).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.fullNameLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.emailLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.mobileLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.companyNameLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.companyAddressLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.passwordLabel)).toBeInTheDocument();
-    expect(screen.getByLabelText(UI_STRINGS.admin.confirmPasswordLabel)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: UI_STRINGS.admin.fillDefaultDetailsButton })).toBeInTheDocument();
+    expect((screen.getByLabelText(UI_STRINGS.admin.fullNameLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.emailLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.mobileLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.companyNameLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.companyAddressLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.passwordLabel) as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText(UI_STRINGS.admin.confirmPasswordLabel) as HTMLInputElement).value).toBe('');
+    expect(screen.queryByRole('button', { name: UI_STRINGS.admin.fillDefaultDetailsButton })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton })).toBeInTheDocument();
-  });
-
-  it('populates default admin details when prefill button is clicked', () => {
-    render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.fillDefaultDetailsButton }));
-
-    const emailInput = screen.getByLabelText(UI_STRINGS.admin.emailLabel) as HTMLInputElement;
-    const passwordInput = screen.getByLabelText(UI_STRINGS.admin.passwordLabel) as HTMLInputElement;
-
-    expect(emailInput.value).toBe('admin@procucev.com');
-    expect(passwordInput.value).toBe('Procucev@123');
   });
 
   it('provisions admin details successfully and calls onSuccess', async () => {
     const onSuccess = vi.fn();
     const mockUser = {
       id: 'usr-admin-001',
-      name: 'System Administrator',
-      email: 'admin@procucev.com',
-      mobile_number: '+91 98765 43210',
-      company_name: 'aiCEV Procucev Enterprise Inc.',
-      company_address: 'Bangalore',
+      name: 'Jane Admin',
+      email: 'jane@procucev.com',
+      mobile_number: '+91 99999 88888',
+      company_name: 'Global Corp',
+      company_address: 'Tech Park Bengaluru',
       role: 'ADMIN',
       status: 'ACTIVE',
       subscription_tier: 'GOLD'
@@ -58,19 +57,18 @@ describe('CreateAdminDetailsForm Component', () => {
     });
 
     render(<CreateAdminDetailsForm onSuccess={onSuccess} />);
+    fillCreateForm();
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.admin.createSuccessMessage)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.admin.createSuccessMessage('jane@procucev.com'))).toBeInTheDocument();
       expect(onSuccess).toHaveBeenCalledWith(mockUser);
     });
   });
 
   it('shows error when passwords do not match', async () => {
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
-
-    const confirmPasswordInput = screen.getByLabelText(UI_STRINGS.admin.confirmPasswordLabel);
-    fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPassword@123' } });
+    fillCreateForm('jane@procucev.com', 'NewPass@123', 'DifferentPassword@123');
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 
@@ -84,6 +82,7 @@ describe('CreateAdminDetailsForm Component', () => {
     const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'createAdminUser').mockRejectedValueOnce(provisioningError);
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
+    fillCreateForm();
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 
@@ -120,6 +119,7 @@ describe('CreateAdminDetailsForm Component', () => {
     const warningSpy = vi.spyOn(frontendLogger, 'warn');
     vi.spyOn(apiClient, 'createAdminUser').mockRejectedValueOnce('Network failure raw string');
     render(<CreateAdminDetailsForm onSuccess={vi.fn()} />);
+    fillCreateForm();
 
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.admin.submitCreateButton }));
 

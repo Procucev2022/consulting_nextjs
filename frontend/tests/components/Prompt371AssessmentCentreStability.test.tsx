@@ -286,11 +286,12 @@ describe('Prompt 371: Assessment Centre Stability & Top Ribbon Alignment (Requir
     expect(navBar?.className).toContain('px-3');
   });
 
-  // L. The full ribbon controls remain accessible without clipping
+  // L. The full ribbon controls remain accessible without clipping (and Admin Portal is restricted to admins)
   it('L. Full ribbon controls remain accessible and unclipped', () => {
-    render(
+    const { rerender } = render(
       <Header
         {...defaultHeaderProps}
+        isAdminSession
         activeCustomer={null}
         activeAssessment={null}
       />
@@ -309,10 +310,21 @@ describe('Prompt 371: Assessment Centre Stability & Top Ribbon Alignment (Requir
     expect(screen.getByTestId('header-management-summary-btn')).toBeInTheDocument();
     // 6. More Reports
     expect(screen.getByTestId('header-more-reports-btn')).toBeInTheDocument();
-    // 7. Admin Portal
+    // 7. Admin Portal (visible to admin session)
     expect(screen.getByText(UI_STRINGS.header.adminPortal)).toBeInTheDocument();
     // 8. User profile
     expect(screen.getByTestId('user-profile-menu-button')).toBeInTheDocument();
+
+    // Buyer (USER) must never see the Admin Portal link
+    rerender(
+      <Header
+        {...defaultHeaderProps}
+        currentUser={{ id: 'usr-buyer', name: 'Anurag Shaw', email: 'anurag@company.com', role: 'USER', status: 'ACTIVE', subscription_tier: 'BRONZE' }}
+        activeCustomer={null}
+        activeAssessment={null}
+      />
+    );
+    expect(screen.queryByText(UI_STRINGS.header.adminPortal)).not.toBeInTheDocument();
   });
 
   // M. Existing INTERNAL_ASSESSMENT and PUBLIC_SAAS restrictions remain unchanged

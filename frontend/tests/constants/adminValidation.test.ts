@@ -36,16 +36,9 @@ describe('Admin Validation Schemas (Frontend)', () => {
   });
 
   describe('createAdminDetailsSchema', () => {
-    it('should populate default values when empty object is provided', () => {
+    it('should require explicit administrator details rather than defaulting credentials', () => {
       const res = createAdminDetailsSchema.safeParse({});
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.data.email).toBe('admin@procucev.com');
-        expect(res.data.password).toBe('Procucev@123');
-        expect(res.data.name).toBe('System Administrator');
-        expect(res.data.role).toBe('ADMIN');
-        expect(res.data.subscription_tier).toBe('GOLD');
-      }
+      expect(res.success).toBe(false);
     });
 
     it('should accept valid customized admin details', () => {

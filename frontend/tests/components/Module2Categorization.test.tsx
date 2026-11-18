@@ -860,6 +860,39 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText('LINE-1')).toBeInTheDocument();
     expect(screen.getByText('LINE-2')).toBeInTheDocument();
   });
+
+  it('marks unclassified (00000000) items as AWAITING_REVIEW and omits the Confirm button', async () => {
+    await renderAndSettleIndustryCatalog(
+      <Module2Categorization
+        categories={sampleSpendCategories}
+        lineItems={[
+          {
+            mapping_id: 'MAP-UNCLASSIFIED',
+            line_item_id: 'LI-9095',
+            material_code: 'PKG-20103',
+            raw_desc: 'Mono Carton Packaging Printed Paperboard',
+            vendor_identified: 'Essel Propack',
+            unspsc_code: '00000000',
+            unspsc_category_name: 'Unclassified Commodity',
+            core_bucket: 'Packaging Materials' as const,
+            ai_confidence: 98.8,
+            total_spend: 70000,
+            inr_crores: 0.01,
+            amount_inr: 70000,
+            spend_year: 2024,
+            status: 'Pending Review'
+          } as any
+        ]}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByText(UI_STRINGS.module2.areaTabs.statusAwaitingReview).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole('button', { name: new RegExp(`^${UI_STRINGS.module2.btnConfirm}$`, 'i') })).toBeNull();
+    expect(screen.getByRole('button', { name: UI_STRINGS.module2.btnReassign })).toBeInTheDocument();
+  });
 });
 
 

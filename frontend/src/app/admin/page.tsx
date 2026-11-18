@@ -2,8 +2,8 @@
 
 /**
  * Enterprise Admin Portal Gateway (/admin)
- * Dedicated entry point where administrators can sign in or create/provision admin details
- * for admin@procucev.com with password Procucev@123.
+ * Dedicated entry point for administrators; blocks signed-in buyer/standard accounts
+ * and restricts admin creation strictly to verified Administrator sessions.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,22 +17,75 @@ import frontendLogger from '../../utils/logger';
 import AdminLoginForm from '../../components/admin/AdminLoginForm';
 import CreateAdminDetailsForm from '../../components/admin/CreateAdminDetailsForm';
 import AdminActiveSessionCard from '../../components/admin/AdminActiveSessionCard';
+import AdminBuyerBlockedCard from '../../components/admin/AdminBuyerBlockedCard';
 import type { AdminGatewayTab, UserProfile } from '../../types';
 
 export default function AdminPage(): React.ReactElement {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminGatewayTab>('LOGIN');
   const [activeAdmin, setActiveAdmin] = useState<UserProfile | null>(null);
+  const [blockedBuyer, setBlockedBuyer] = useState<UserProfile | null>(null);
+  const [loginRedirectNotice, setLoginRedirectNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const user = apiClient.getStoredUser();
-    if (user?.role === 'ADMIN') {
-      setActiveAdmin(user);
+    if (user && user.role !== 'ADMIN') {
+      frontendLogger.warn('Blocked non-admin session from /admin gateway', {
+        userId: user.id,
+        role: user.role
+      });
+      setBlockedBuyer(user);
+      setActiveAdmin(null);
+      setActiveTab('LOGIN');
+      return;
     }
+
+    if (user?.role !== 'ADMIN') {
+      return;
+    }
+
+    const token = apiClient.getStoredToken();
+    setActiveAdmin(user);
+    if (!token) {
+      return;
+    }
+
+    let cancelled = false;
+    const verifySession = async (): Promise<void> => {
+      try {
+        const profile = await apiClient.getMe(token);
+        if (cancelled) return;
+        if (!profile.success || profile.user.role !== 'ADMIN' || profile.user.status !== 'ACTIVE') {
+          apiClient.clearStoredSession();
+          setActiveAdmin(null);
+          setActiveTab('LOGIN');
+          if (profile.success && profile.user.role !== 'ADMIN') {
+            setBlockedBuyer(profile.user);
+          }
+          return;
+        }
+        setActiveAdmin(profile.user);
+      } catch (error: unknown) {
+        if (cancelled) return;
+        frontendLogger.warn('Administrator session verification failed at /admin gateway', {
+          userId: user.id
+        }, error);
+        apiClient.clearStoredSession();
+        setActiveAdmin(null);
+        setActiveTab('LOGIN');
+      }
+    };
+
+    void verifySession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleLoginSuccess = (user: UserProfile): void => {
+    setBlockedBuyer(null);
     setActiveAdmin(user);
+    setLoginRedirectNotice(UI_STRINGS.admin.loginSuccessMessage);
     frontendLogger.info('Admin logged in at /admin page', { email: user.email });
     setTimeout(() => {
       router.push('/admin/dashboard');
@@ -47,6 +100,8 @@ export default function AdminPage(): React.ReactElement {
   const handleSignOut = (): void => {
     apiClient.clearStoredSession();
     setActiveAdmin(null);
+    setLoginRedirectNotice(null);
+    setActiveTab('LOGIN');
     frontendLogger.info('Admin signed out from /admin page');
   };
 
@@ -93,65 +148,77 @@ export default function AdminPage(): React.ReactElement {
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 z-10 max-w-2xl w-full mx-auto my-auto">
-        {/* Active Session Notification if logged in */}
-        {activeAdmin && (
-          <AdminActiveSessionCard
-            user={activeAdmin}
-            onSignOut={handleSignOut}
-            onOpenDashboard={handleOpenDashboard}
-            onOpenCreateAdmin={() => setActiveTab('CREATE_ADMIN')}
-          />
+        {loginRedirectNotice && (
+          <div
+            role="status"
+            className="w-full mb-4 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-sm font-medium"
+          >
+            {loginRedirectNotice}
+          </div>
         )}
+        {blockedBuyer ? (
+          <AdminBuyerBlockedCard blockedUser={blockedBuyer} />
+        ) : activeAdmin ? (
+          <>
+            <AdminActiveSessionCard
+              user={activeAdmin}
+              onSignOut={handleSignOut}
+              onOpenDashboard={handleOpenDashboard}
+              onOpenCreateAdmin={() => setActiveTab('CREATE_ADMIN')}
+            />
 
-        {/* Tab Switcher */}
-        <div
-          role="tablist"
-          aria-label="Admin Navigation Tabs"
-          className="w-full flex p-1.5 bg-slate-950/80 border border-slate-800 rounded-2xl mb-6 shadow-inner"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'LOGIN'}
-            data-testid="admin-login-tab"
-            onClick={() => setActiveTab('LOGIN')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'LOGIN'
-                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Lock className="w-4 h-4" />
-            <span>{UI_STRINGS.admin.loginTab}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'CREATE_ADMIN'}
-            data-testid="admin-create-tab"
-            onClick={() => setActiveTab('CREATE_ADMIN')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'CREATE_ADMIN'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>{UI_STRINGS.admin.createTab}</span>
-          </button>
-        </div>
+            {/* Tab Switcher (only authenticated Administrators may provision additional Admins) */}
+            <div
+              role="tablist"
+              aria-label="Admin Navigation Tabs"
+              className="w-full flex p-1.5 bg-slate-950/80 border border-slate-800 rounded-2xl mb-6 shadow-inner"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'LOGIN'}
+                data-testid="admin-login-tab"
+                onClick={() => setActiveTab('LOGIN')}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'LOGIN'
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                <span>{UI_STRINGS.admin.loginTab}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'CREATE_ADMIN'}
+                data-testid="admin-create-tab"
+                onClick={() => setActiveTab('CREATE_ADMIN')}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'CREATE_ADMIN'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>{UI_STRINGS.admin.createTab}</span>
+              </button>
+            </div>
 
-        {/* Tab Content */}
-        {activeTab === 'LOGIN' ? (
-          <AdminLoginForm
-            onSuccess={handleLoginSuccess}
-            onSwitchToCreate={() => setActiveTab('CREATE_ADMIN')}
-          />
+            {activeTab === 'LOGIN' ? (
+              <AdminLoginForm
+                onSuccess={handleLoginSuccess}
+                onSwitchToCreate={() => setActiveTab('CREATE_ADMIN')}
+              />
+            ) : (
+              <CreateAdminDetailsForm
+                onSuccess={handleCreateSuccess}
+                onSwitchToLogin={() => setActiveTab('LOGIN')}
+              />
+            )}
+          </>
         ) : (
-          <CreateAdminDetailsForm
-            onSuccess={handleCreateSuccess}
-            onSwitchToLogin={() => setActiveTab('LOGIN')}
-          />
+          <AdminLoginForm onSuccess={handleLoginSuccess} />
         )}
       </main>
 

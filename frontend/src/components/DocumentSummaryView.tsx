@@ -23,6 +23,7 @@ import type {
 } from '../types';
 import { INR_CRORES_DIVISOR, UI_STRINGS } from '../constants';
 import { MonthWiseTrendChart } from './MonthWiseTrendChart';
+import { ReportDownloadActions } from './presentation/ReportDownloadActions';
 
 export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   tenant: _tenant,
@@ -36,7 +37,10 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   onNavigateToCategorization,
   periodMetadata,
   canonicalViewModel,
-  summarySectionRef
+  summarySectionRef,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null
 }) => {
   const [activeDimension, setActiveDimension] = useState<DocumentSummaryDimension>('MATERIAL_GROUP');
   const [spendCurrency, setSpendCurrency] = useState<DocumentSpendCurrency>('INR');
@@ -235,8 +239,16 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
           </p>
         </div>
 
-        {/* Currency Switcher Toggle: INR vs USD */}
-        <div className="flex items-center space-x-2 shrink-0">
+        {/* Report Download & Currency Switcher: INR vs USD */}
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <ReportDownloadActions
+            testIdPrefix="document-summary-download-report"
+            onDownloadPdf={onDownloadReportPdf}
+            onDownloadPptx={onDownloadReportPptx}
+            downloadingFormat={downloadingReportFormat}
+            compact
+          />
+          <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold text-slate-600">
             {UI_STRINGS.documentSummary.currencyToggleLabel}
           </span>
@@ -261,6 +273,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             >
               {UI_STRINGS.documentSummary.currencies.usd}
             </button>
+          </div>
           </div>
         </div>
       </div>

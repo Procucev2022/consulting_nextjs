@@ -8,7 +8,10 @@ import type {
   ExecutiveOpportunityBriefReportData
 } from '../../types';
 import { UI_STRINGS } from '../../constants/uiStrings';
-import { fetchExecutiveOpportunityBriefReport } from '../../utils/executiveOpportunityBriefApi';
+import {
+  fetchExecutiveOpportunityBriefReport,
+  formatExecutiveOpportunityBriefError
+} from '../../utils/executiveOpportunityBriefApi';
 import { logger as frontendLogger } from '../../utils/logger';
 
 const renderGroupSection = (
@@ -66,9 +69,17 @@ export const ExecutiveBriefOpportunityTable: React.FC<ExecutiveBriefOpportunityT
       frontendLogger.error('Executive brief opportunity panel could not load D1 data', {
         action: 'executiveBrief.opportunityPanel',
         statusCode: result.statusCode,
-        requestId: result.requestId
+        requestId: result.requestId,
+        serverMessage: result.serverMessage,
+        reason: result.reason
       });
-      setLoadState({ status: 'failed', statusCode: result.statusCode, requestId: result.requestId });
+      setLoadState({
+        status: 'failed',
+        statusCode: result.statusCode,
+        requestId: result.requestId,
+        serverMessage: result.serverMessage,
+        reason: result.reason
+      });
     });
     return () => {
       isCurrent = false;
@@ -84,9 +95,11 @@ export const ExecutiveBriefOpportunityTable: React.FC<ExecutiveBriefOpportunityT
   }
 
   if (loadState.status === 'failed') {
-    const message = loadState.statusCode === 0
-      ? strings.reportUnavailableNetwork
-      : strings.reportUnavailable(loadState.statusCode, loadState.requestId ?? strings.requestIdNotReturned);
+    const message = formatExecutiveOpportunityBriefError({
+      statusCode: loadState.statusCode,
+      requestId: loadState.requestId,
+      serverMessage: loadState.serverMessage
+    });
     return (
       <section className="rounded-2xl border border-rose-200 bg-white p-6" data-testid="executive-brief-opportunities-error">
         <p className="text-sm text-rose-800" role="alert">{message}</p>

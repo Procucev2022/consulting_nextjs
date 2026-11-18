@@ -14,3 +14,7 @@ export const executiveBriefRegenerateBodySchema = z.object({
 export const executiveBriefEmailBodySchema = z.object({
   buyerEmail: z.string().trim().email().max(254)
 }).strict();
+
+export const executiveBriefScopeQuerySchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120).optional()
+}).strict();

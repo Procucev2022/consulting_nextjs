@@ -34,6 +34,7 @@ export const AUTH_MESSAGES = {
   EMAIL_EXISTS: 'An account with this organization email already exists',
   bootstrapAccountExists: 'An account with this email already exists, so the first-administrator setup did not change it. Sign in as an administrator to update that account.',
   bootstrapTokenInvalid: 'The bootstrap token is missing or incorrect. Send the X-Admin-Bootstrap-Token value from this environment\'s deployment settings and retry.',
+  bootstrapDisabled: 'Unauthenticated administrator provisioning is disabled because AUTH_BOOTSTRAP_TOKEN is not configured for this environment. Sign in with an existing administrator account or configure the bootstrap token.',
   INVALID_CREDENTIALS: 'Invalid organization email or password',
   ACCOUNT_INACTIVE: 'Account is currently suspended or inactive. Please contact support.',
   UNAUTHORIZED: 'Authentication required. Missing or invalid authorization token.',

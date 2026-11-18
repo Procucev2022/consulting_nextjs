@@ -1310,6 +1310,24 @@ describe('Home Page Component', () => {
       expect(mockPush).toHaveBeenCalledWith('/admin/dashboard');
     });
   });
+
+  it('does not render the Admin Portal link for signed-in buyer (USER) accounts', async () => {
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
+      id: 'USR-BUYER-1',
+      name: 'Anurag Shaw',
+      email: 'anurag@example.com',
+      role: 'USER',
+      status: 'ACTIVE',
+      subscription_tier: 'BRONZE',
+      company_name: 'Buyer Corp',
+      tenant_id: 'TNT-GLOBAL-8902',
+      created_at: '2026-01-01T00:00:00.000Z'
+    });
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('buyer-token-123');
+    await renderHome();
+
+    expect(screen.queryByTitle(UI_STRINGS.header.adminPortal)).not.toBeInTheDocument();
+  });
 });
 
 

@@ -176,6 +176,8 @@ describe('Module 2 material mapping routes', () => {
     const db = makeDb();
     const url = new URL('https://unit.test/mappings');
     expect(await handleMaterialMappingUpdate(db, requestFor('/mappings', {}), url)).toMatchObject({ status: 400 });
+    expect(await handleMaterialMappingUpdate(db, requestFor('/mappings', validMapping({ unspscCode: '00000000' })), url))
+      .toMatchObject({ status: 400 });
     routeMocks.authenticate.mockResolvedValueOnce({ status: 401, message: 'Sign in again.' });
     expect(await handleMaterialMappingUpdate(db, requestFor('/mappings', validMapping()), url))
       .toMatchObject({ status: 401, data: { message: 'Sign in again.' } });
@@ -207,6 +209,7 @@ describe('Module 2 material mapping routes', () => {
     const url = new URL('https://unit.test/mappings');
     const batchedDb = makeDb({ batch: true });
     const approved = await handleMaterialMappingUpdate(batchedDb, requestFor('/mappings', validMapping({
+      sourceMaterialId: 'mat-1',
       mappingMethod: 'CONTEXTUAL_HEURISTIC', confidenceScore: 0.7
     })), url);
     expect(approved.data).toMatchObject({ success: true, mapping: {

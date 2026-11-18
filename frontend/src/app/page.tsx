@@ -50,7 +50,7 @@ const AssessmentWorkspace = dynamic(
 import { parseDateOrYear } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { assessmentApiClient } from '@/utils/assessmentApi';
-import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
+import type { OperatingModeConfig, AssessmentRecord, CustomerRecord, AssessmentDataVersion } from '@/types/assessment';
 import { frontendLogger } from '@/utils/logger';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription, loadUNSPSCTaxonomy, getTaxonomyLoadState } from '@/data/unspscTaxonomy';
@@ -66,8 +66,22 @@ import {
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { DEFAULT_PIPELINE_TAB, UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
-import { EMPTY_TENANT } from '@/constants/app';
+import {
+  EMPTY_TENANT,
+  EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT
+} from '@/constants/app';
+import {
+  executiveBriefDownloadFormatSchema
+} from '@/constants/validation';
 import { AUTH_ROUTES } from '@/constants/auth';
+import { getApiBaseUrl } from '@/utils/apiBase';
+import {
+  formatExecutiveOpportunityBriefError,
+  readExecutiveOpportunityBriefErrorDetails,
+  resolveExecutiveBriefDownloadFilename,
+  resolveExecutiveBriefHref
+} from '@/utils/executiveOpportunityBriefApi';
 import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
 import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 import { INGESTION_UPLOAD_MAX_FILE_BYTES } from '@/constants/validation';
@@ -83,6 +97,15 @@ import {
   getPipelineTabFromHash,
   resolvePipelineTabForOperatingMode
 } from '@/utils/pipelineNavigation';
+import {
+  extractRequestedDocumentId,
+  hasDocumentAnalytics,
+  orderIngestionDocumentsForSelection,
+  readSavedDocumentErrorReason,
+  replaceDocumentQueryInHistory,
+  resolveSavedDocumentsList,
+  sanitizeSavedDocumentsForTenant
+} from '@/utils/ingestionSavedDocuments';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -149,7 +172,8 @@ import type {
   ReportVersion,
   DashboardRequestResult,
   RejectedDashboardRequest,
-  AppRouterLike
+  AppRouterLike,
+  ExecutiveBriefDownloadFormat
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 import { selectActiveReport } from '@/utils/reportSelection';
@@ -191,11 +215,13 @@ export default function Home() {
   const activeAssessmentIdRef = useRef<string | null>(null);
   const [targetSection, setTargetSection] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isAdminSession, setIsAdminSession] = useState(false);
   const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
   const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
   const [tenant, setTenant] = useState<TenantMaster>(EMPTY_TENANT);
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
   const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
+  const [downloadingBriefFormat, setDownloadingBriefFormat] = useState<ExecutiveBriefDownloadFormat | null>(null);
   const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
   const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
   const summarySectionRef = useRef<HTMLDivElement>(null);
@@ -211,36 +237,59 @@ export default function Home() {
   }, [briefDownloadPayload]);
 
   // The brief endpoint answers with JSON errors until it is implemented. Only a successful response is saved as a file.
-  const handleBriefDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
-    const filename = `aiCEV_Executive_Opportunity_Brief.${format}`;
-    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
-    const formatLabel = format.toUpperCase();
+  const handleBriefDownload = async (format: ExecutiveBriefDownloadFormat): Promise<void> => {
+    const formatValidation = executiveBriefDownloadFormatSchema.safeParse(format);
+    if (!formatValidation.success) {
+      return;
+    }
+    const validatedFormat = formatValidation.data;
+    const endpoint = EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT(validatedFormat);
+    const url = `${getApiBaseUrl()}${endpoint}`;
+    const formatLabel = validatedFormat.toUpperCase();
+    const assessmentScope = activeAssessment?.assessmentId?.trim();
+    setDownloadingBriefFormat(validatedFormat);
     try {
       const token = authApiClient.getStoredToken();
-      const response = await apiFetch(url, {
-        headers: token ? { Authorization: 'Bearer ' + token } : {}
-      });
+      const headers: Record<string, string> = {
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(assessmentScope ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: assessmentScope } : {})
+      };
+      const response = await apiFetch(url, { headers });
       if (!response.ok) {
-        const requestId = response.headers.get('x-request-id') ?? UI_STRINGS.opportunityBrief.requestIdNotReturned;
+        const requestId = response.headers.get('x-request-id');
+        const details = await readExecutiveOpportunityBriefErrorDetails(response);
         frontendLogger.error('Opportunity brief download was rejected by the server', {
-          format,
-          url,
+          format: validatedFormat,
+          url: endpoint,
           statusCode: response.status,
-          requestId
+          requestId: requestId ?? UI_STRINGS.opportunityBrief.requestIdNotReturned,
+          serverMessage: details.serverMessage,
+          reason: details.reason
         });
-        showToast(UI_STRINGS.opportunityBrief.downloadFailed(formatLabel, response.status, requestId));
+        showToast(formatExecutiveOpportunityBriefError({
+          statusCode: response.status,
+          requestId,
+          serverMessage: details.serverMessage,
+          formatLabel
+        }));
         return;
       }
       const blob = await response.blob();
+      const filename = resolveExecutiveBriefDownloadFilename(response.headers.get('content-disposition'), validatedFormat);
       setBriefDownloadPayload({ url: URL.createObjectURL(blob), filename });
     } catch (error: unknown) {
-      frontendLogger.error('Opportunity brief download request failed', { format, url }, error);
+      frontendLogger.error('Opportunity brief download request failed', { format: validatedFormat, url: endpoint }, error);
       showToast(UI_STRINGS.opportunityBrief.downloadNetworkFailed(formatLabel));
+    } finally {
+      setDownloadingBriefFormat(null);
     }
   };
 
   // Application Data States
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
+  const [savedIngestionDocuments, setSavedIngestionDocuments] = useState<RawDocumentIngestion[]>([]);
+  const [savedAssessmentVersions, setSavedAssessmentVersions] = useState<AssessmentDataVersion[]>([]);
+  const [isLoadingSavedDocument, setIsLoadingSavedDocument] = useState<boolean>(false);
   const [uploadedMaterialGroups, setUploadedMaterialGroups] = useState<MaterialGroupSummary[] | undefined>(undefined);
   const [uploadedPlants, setUploadedPlants] = useState<PlantSummary[] | undefined>(undefined);
   const [uploadedMonths, setUploadedMonths] = useState<MonthWiseSummary[] | undefined>(undefined);
@@ -610,6 +659,53 @@ export default function Home() {
     onComplete?: () => void;
   } | null>(null);
 
+  const applyD1SavedDocumentSelection = (
+    ingestionResponse: IngestionDataResponse,
+    assignedTenantId?: string,
+    targetDocumentId?: string,
+    enterpriseNameFallback?: string,
+    warnOnMissingDocument = false
+  ): RawDocumentIngestion | undefined => {
+    const selection = orderIngestionDocumentsForSelection(ingestionResponse, assignedTenantId, targetDocumentId);
+    if (targetDocumentId && !selection.requestedDocument && warnOnMissingDocument) {
+      setToastMessage(UI_STRINGS.module1.savedDatasetNotFound(targetDocumentId));
+    }
+    setSavedIngestionDocuments(selection.savedDocuments);
+    setIngestionQueue(selection.activeDocuments);
+
+    if (ingestionResponse.validationRecords) {
+      setValidationRecords(ingestionResponse.validationRecords);
+      setValidationDataSummary(ingestionResponse.summary);
+      setValidationCursor(ingestionResponse.pagination?.validationRecords?.nextCursor ?? null);
+      setHasMoreValidationRecords(Boolean(ingestionResponse.pagination?.validationRecords?.hasMore));
+    }
+
+    if (hasDocumentAnalytics(ingestionResponse.documentAnalytics)) {
+      const analytics = ingestionResponse.documentAnalytics;
+      setUploadedMaterialGroups(analytics.materialGroupSummaries);
+      setUploadedPlants(analytics.plantSummaries);
+      setUploadedMonths(analytics.monthWiseSummaries);
+      setUploadedUniqueItems(analytics.uniqueItemsCount);
+      setUploadedUniqueVendors(analytics.uniqueVendorsCount);
+    }
+
+    const [primaryDocument] = selection.activeDocuments;
+    if (primaryDocument) {
+      const spendCr = selection.resolvedSpendCr ?? 0;
+      setTenant((prev) => ({
+        ...prev,
+        enterprise_name: enterpriseNameFallback && prev.enterprise_name === UI_STRINGS.header.noActiveCustomer
+          ? enterpriseNameFallback
+          : prev.enterprise_name,
+        total_spend_evaluated_inr: spendCr,
+        total_spend_evaluated: Math.round(spendCr * 10000000)
+      }));
+      setCompletedSteps((prev) => ({ ...prev, step1: true }));
+    }
+
+    return selection.requestedDocument ?? primaryDocument;
+  };
+
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -654,6 +750,7 @@ export default function Home() {
     try {
       const user = authApiClient.getStoredUser();
       hydratedUser = user;
+      setIsAdminSession(user?.role === 'ADMIN');
       if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
         if (user.company_name) {
@@ -691,11 +788,12 @@ export default function Home() {
           const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
           const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
           const currentTabParam = currentParams?.get('tab') || '';
+          const requestedDocParam = currentParams?.get('documentId')?.trim() || '';
           const effectiveNav = currentHash || currentTabParam;
           const modeTab = resolvePipelineTabForOperatingMode(effectiveNav, modeRes.isInternalAssessment);
           if (modeTab) setActiveTab(modeTab);
           if (!userNavigatedRef.current && modeRes.isInternalAssessment && !effectiveNav) {
-            setActiveTab('assessment');
+            setActiveTab(requestedDocParam ? 'module1' : 'assessment');
           }
         } catch {
           modeRes = {
@@ -730,6 +828,8 @@ export default function Home() {
             total_spend_evaluated: 0
           }));
           setIngestionQueue([]);
+          setSavedIngestionDocuments([]);
+          setSavedAssessmentVersions([]);
           setValidationRecords([]);
           setValidationDataSummary(undefined);
           setValidationCursor(null);
@@ -745,36 +845,107 @@ export default function Home() {
           setVendorRankings([]);
           setOpportunities([]);
 
-          try {
-            const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-            let storedAssessmentId = typeof window !== 'undefined'
-              ? localStorage.getItem('aicev_selected_assessment_id')
-              : null;
-            if (!storedAssessmentId) {
-              const assessmentParam = currentParams?.get('assessmentId');
-              if (assessmentParam) {
-                storedAssessmentId = assessmentParam;
-              } else {
-                try {
-                  const list = await assessmentApiClient.getAssessments();
-                  if (list && list.length > 0) {
-                    const validated = list.find((a: any) => a.validatedSpendCr && a.validatedSpendCr > 0);
-                    storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
+          const internalTenantId = hydratedUser?.tenant_id || undefined;
+          const requestedDocumentId = typeof window !== 'undefined'
+            ? extractRequestedDocumentId(window.location.search)
+            : undefined;
+
+          if (requestedDocumentId) {
+            setActiveTab('module1');
+            if (internalTenantId) {
+              try {
+                const selectedIngestion = await apiClient.getIngestionData(internalTenantId, {
+                  queueDocumentId: requestedDocumentId
+                });
+                const resolvedDoc = applyD1SavedDocumentSelection(
+                  selectedIngestion,
+                  internalTenantId,
+                  requestedDocumentId,
+                  hydratedUser?.company_name,
+                  true
+                );
+                if (resolvedDoc?.doc_id === requestedDocumentId) {
+                  setCanonicalModule1(null);
+                  setActiveAssessment(null);
+                  activeAssessmentIdRef.current = null;
+                }
+              } catch (ingestionErr: unknown) {
+                const reason = readSavedDocumentErrorReason(ingestionErr);
+                frontendLogger.warn('Could not load requested saved document from D1', {
+                  action: 'dashboard.saved_document.restore',
+                  documentId: requestedDocumentId,
+                  tenantId: internalTenantId
+                }, ingestionErr);
+                setToastMessage(UI_STRINGS.module1.savedDatasetLoadFailed(reason));
+              }
+            } else {
+              frontendLogger.warn('Saved document selection skipped because the signed-in user has no assigned tenant', {
+                action: 'dashboard.saved_document.restore',
+                documentId: requestedDocumentId,
+                userId: hydratedUser?.id
+              });
+              setToastMessage(UI_STRINGS.auth.tenantAssignmentRequired);
+            }
+          } else {
+            let restoredAssessment: AssessmentRecord | null = null;
+            let explicitAssessmentMismatch = false;
+            let storedAssessmentId: string | undefined;
+
+            try {
+              const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+              storedAssessmentId = (typeof window !== 'undefined'
+                ? localStorage.getItem('aicev_selected_assessment_id')
+                : null) || undefined;
+              if (!storedAssessmentId) {
+                const assessmentParam = currentParams?.get('assessmentId');
+                if (assessmentParam) {
+                  storedAssessmentId = assessmentParam;
+                } else {
+                  try {
+                    const list = await assessmentApiClient.getAssessments();
+                    if (list && list.length > 0) {
+                      const validated = list.find((a: any) => a.validatedSpendCr && a.validatedSpendCr > 0);
+                      storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
+                    }
+                  } catch {
+                    storedAssessmentId = undefined;
                   }
-                } catch {
-                  storedAssessmentId = undefined;
                 }
               }
+              if (storedAssessmentId) {
+                const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
+                const record = res?.assessment || res;
+                if (record?.assessmentId === storedAssessmentId) {
+                  restoredAssessment = record;
+                  setSavedAssessmentVersions(Array.isArray(res?.versions) ? res.versions : []);
+                  handleActiveAssessmentChange(record);
+                } else {
+                  explicitAssessmentMismatch = true;
+                }
+              }
+            } catch (storageErr) {
+              explicitAssessmentMismatch = Boolean(storedAssessmentId);
+              frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
             }
-            if (storedAssessmentId) {
-              const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
-              const record = res?.assessment || res;
-              if (record?.assessmentId === storedAssessmentId) {
-                handleActiveAssessmentChange(record);
+
+            if (internalTenantId) {
+              try {
+                const savedIngestion = await apiClient.getIngestionData(internalTenantId);
+                const savedDocs = resolveSavedDocumentsList(savedIngestion, internalTenantId);
+                setSavedIngestionDocuments(savedDocs);
+                const hasAssessmentCanonicalData = Boolean(
+                  restoredAssessment && (restoredAssessment.activeDataVersionId || restoredAssessment.canonicalModule1)
+                );
+                if (!hasAssessmentCanonicalData && !explicitAssessmentMismatch && savedDocs.length > 0) {
+                  applyD1SavedDocumentSelection(savedIngestion, internalTenantId, savedDocs[0].doc_id ?? undefined);
+                }
+              } catch (savedDocsErr: unknown) {
+                frontendLogger.warn('Could not load saved ingestion documents in internal mode', {
+                  action: 'dashboard.saved_documents.load',
+                  tenantId: internalTenantId
+                }, savedDocsErr);
               }
             }
-          } catch (storageErr) {
-            frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
           }
         } else {
           const storedUser = hydratedUser;
@@ -897,6 +1068,17 @@ export default function Home() {
                 ? [requestedDocument, ...sanitizedQueue.filter((document) => document.doc_id !== requestedDocumentId)]
                 : sanitizedQueue;
               setIngestionQueue(documentsInRequestedOrder.slice(0, 1));
+              setSavedIngestionDocuments(
+                resolveSavedDocumentsList(ingestionData.value, buyerUser?.tenant_id || undefined, documentsInRequestedOrder)
+              );
+              if (hasDocumentAnalytics(ingestionData.value.documentAnalytics)) {
+                const analytics = ingestionData.value.documentAnalytics;
+                setUploadedMaterialGroups(analytics.materialGroupSummaries);
+                setUploadedPlants(analytics.plantSummaries);
+                setUploadedMonths(analytics.monthWiseSummaries);
+                setUploadedUniqueItems(analytics.uniqueItemsCount);
+                setUploadedUniqueVendors(analytics.uniqueVendorsCount);
+              }
               if (ingestionData.value.validationRecords) {
                 setValidationRecords(ingestionData.value.validationRecords);
                 setValidationDataSummary(ingestionData.value.summary);
@@ -1109,6 +1291,7 @@ export default function Home() {
     frontendLogger.info('Signed out of the procurement workspace', { action: 'auth.logout' });
     authApiClient.clearStoredSession();
     setCurrentUser(null);
+    setIsAdminSession(false);
     // Leaving the dashboard unmounts it, which drops the loaded procurement data from memory. replace() also
     // swaps this history entry, so the Back button cannot return to the signed-out workspace.
     router.replace(AUTH_ROUTES.LOGIN);
@@ -1432,7 +1615,14 @@ export default function Home() {
       showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
       return;
     }
-    setIngestionQueue(remainingDocuments.filter((document) => document.tenant_id === assignedTenantId));
+    const remainingScoped = sanitizeSavedDocumentsForTenant(remainingDocuments, assignedTenantId);
+    setSavedIngestionDocuments(remainingScoped);
+    const deletedActiveDoc = ingestionQueue.some((doc) => doc.doc_id === docId) || ingestionQueue.length === 0;
+    if (!deletedActiveDoc) {
+      showToast(UI_STRINGS.toasts.datasetRemoved);
+      return;
+    }
+    setIngestionQueue(remainingScoped.slice(0, 1));
     setValidationRecords([]);
     setValidationDataSummary(undefined);
     setValidationCursor(null);
@@ -1458,6 +1648,50 @@ export default function Home() {
     setActiveTab('module1');
 
     showToast(UI_STRINGS.toasts.datasetRemoved);
+  };
+
+  const handleSelectSavedDocument = async (doc: RawDocumentIngestion): Promise<void> => {
+    const docId = doc.doc_id ? String(doc.doc_id).trim() : '';
+    const loggedUser = currentUser || authApiClient.getStoredUser();
+    const assignedTenantId = loggedUser?.tenant_id || undefined;
+    if (!docId || !assignedTenantId) {
+      if (!assignedTenantId) showToast(UI_STRINGS.auth.tenantAssignmentRequired);
+      return;
+    }
+    setIsLoadingSavedDocument(true);
+    try {
+      const ingestionRes = await apiClient.getIngestionData(assignedTenantId, { queueDocumentId: docId });
+      setCanonicalModule1(null);
+      setActiveAssessment(null);
+      activeAssessmentIdRef.current = null;
+      setUploadedMaterialGroups(undefined);
+      setUploadedPlants(undefined);
+      setUploadedMonths(undefined);
+      setUploadedUniqueItems(undefined);
+      setUploadedUniqueVendors(undefined);
+      setUploadedParetoData(undefined);
+      const selected = applyD1SavedDocumentSelection(
+        ingestionRes,
+        assignedTenantId,
+        docId,
+        loggedUser?.company_name,
+        true
+      );
+      if (selected?.doc_id === docId) {
+        replaceDocumentQueryInHistory(docId);
+        showToast(UI_STRINGS.module1.savedDatasetLoaded(selected.file_name || docId));
+      }
+    } catch (error: unknown) {
+      const reason = readSavedDocumentErrorReason(error);
+      frontendLogger.warn('Could not switch to saved D1 dataset', {
+        action: 'ingestion.saved_document.select',
+        documentId: docId,
+        tenantId: assignedTenantId
+      }, error);
+      showToast(UI_STRINGS.module1.savedDatasetLoadFailed(reason));
+    } finally {
+      setIsLoadingSavedDocument(false);
+    }
   };
 
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
@@ -2155,6 +2389,7 @@ export default function Home() {
       if (typeof uploadRes?.data?.docId === 'string') {
         const persistedIngestion = await apiClient.getIngestionData(assignedTenantId);
         setIngestionQueue(persistedIngestion.queue);
+        setSavedIngestionDocuments(resolveSavedDocumentsList(persistedIngestion, assignedTenantId));
         setValidationRecords(persistedIngestion.validationRecords);
         setValidationDataSummary(persistedIngestion.summary);
         setValidationCursor(persistedIngestion.pagination?.validationRecords?.nextCursor ?? null);
@@ -2211,11 +2446,19 @@ export default function Home() {
     const seenMaterialIds = new Set<string>();
     const payloads = items.flatMap((item) => {
       const sourceMaterialId = item.material_code?.trim();
-      if (!sourceMaterialId || seenMaterialIds.has(sourceMaterialId)) return [];
+      const unspscCode = item.unspsc_code?.trim();
+      if (
+        !sourceMaterialId ||
+        !unspscCode ||
+        unspscCode === UNCLASSIFIED_COMMODITY_CODE ||
+        seenMaterialIds.has(sourceMaterialId)
+      ) {
+        return [];
+      }
       seenMaterialIds.add(sourceMaterialId);
       return [{
         sourceMaterialId,
-        unspscCode: item.unspsc_code,
+        unspscCode,
         reviewStatus,
         confidenceScore: reviewStatus === 'PROVISIONAL' ? Math.max(0, Math.min(1, item.ai_confidence / 100)) : 1,
         mappingMethod: reviewStatus === 'PROVISIONAL' ? 'CONTEXTUAL_HEURISTIC' as const : 'MANUAL_REVIEW_REQUIRED' as const,
@@ -2230,9 +2473,12 @@ export default function Home() {
 
     try {
       const savedMappings = await saveModule2MaterialMappings(assessmentId, payloads);
-      const savedByMaterialId = new Map(savedMappings.map((mapping) => [mapping.sourceMaterialId, mapping]));
+      const savedByMaterialId = new Map(
+        savedMappings.map((mapping) => [mapping.sourceMaterialId.trim().toLocaleUpperCase('en-US'), mapping])
+      );
       setLineItems((previous) => previous.map((item) => {
-        const saved = item.material_code ? savedByMaterialId.get(item.material_code) : undefined;
+        const normalizedMaterialId = item.material_code?.trim().toLocaleUpperCase('en-US');
+        const saved = normalizedMaterialId ? savedByMaterialId.get(normalizedMaterialId) : undefined;
         if (!saved) return item;
         return {
           ...item,
@@ -2257,6 +2503,16 @@ export default function Home() {
     const item = lineItems.find((lineItem) => lineItem.mapping_id === mappingId);
     if (!item?.material_code?.trim()) {
       showToast(UI_STRINGS.toasts.module2MaterialCodeRequired);
+      return;
+    }
+    if (!activeAssessment?.assessmentId) {
+      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      return;
+    }
+    const unspscCode = item.unspsc_code?.trim() || '';
+    if (!unspscCode || unspscCode === UNCLASSIFIED_COMMODITY_CODE) {
+      showToast(UI_STRINGS.toasts.module2UnspscSelectionRequired);
+      setSelectedItemForReassign(item);
       return;
     }
     const saved = await persistD1MappingDecisions(
@@ -2378,6 +2634,24 @@ export default function Home() {
         VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_SUGGESTION_AUDIT_NOTE
       );
       if (!saved?.length) return;
+      const unclassifiedByMappingId = new Map(
+        suggestedItems
+          .filter((item) => !item.unspsc_code?.trim() || item.unspsc_code.trim() === UNCLASSIFIED_COMMODITY_CODE)
+          .map((item) => [item.mapping_id, item])
+      );
+      if (unclassifiedByMappingId.size > 0) {
+        setLineItems((previous) => previous.map((item) => {
+          const fallbackItem = unclassifiedByMappingId.get(item.mapping_id);
+          return fallbackItem
+            ? {
+                ...fallbackItem,
+                unspsc_code: UNCLASSIFIED_COMMODITY_CODE,
+                ai_confidence: UNCLASSIFIED_CONFIDENCE_PCT,
+                status: 'Pending Review'
+              }
+            : item;
+        }));
+      }
       setCompletedSteps((previous) => ({ ...previous, step1: true, step2: true }));
       showToast(UI_STRINGS.toasts.taxonomySuggestionsSaved(saved.length));
     } finally {
@@ -2415,6 +2689,7 @@ export default function Home() {
       <Header
         tenant={tenant}
         currentUser={currentUser}
+        isAdminSession={isAdminSession}
         onLogout={handleLogout}
         onOpenClientSetup={() => setIsClientSetupModalOpen(true)}
         onSelectTenant={(t) => {
@@ -2432,11 +2707,21 @@ export default function Home() {
         }}
         onOpenReport={() => {
           if (typeof window !== 'undefined') {
-            const target = window.location.origin ? `${window.location.origin}/executive-brief` : '/executive-brief';
+            const target = resolveExecutiveBriefHref(
+              activeAssessment?.assessmentId,
+              window.location.origin || undefined
+            );
             window.location.href = target;
           }
         }}
         onOpenManagementBrief={() => setIsManagementSummaryOpen(true)}
+        onDownloadReportPdf={() => {
+          void handleBriefDownload('pdf');
+        }}
+        onDownloadReportPptx={() => {
+          void handleBriefDownload('pptx');
+        }}
+        downloadingReportFormat={downloadingBriefFormat}
         isExecutiveBriefReady={Boolean(opportunities && opportunities.length > 0) || (tenant.total_spend_evaluated_inr ?? 0) > 0}
         theme={theme}
         onSelectTheme={setTheme}
@@ -2490,6 +2775,13 @@ export default function Home() {
           totalSpendCr={tenant.total_spend_evaluated_inr}
           canonicalViewModel={canonicalModule1}
           activeAssessment={activeAssessment}
+          onDownloadReportPdf={() => {
+            void handleBriefDownload('pdf');
+          }}
+          onDownloadReportPptx={() => {
+            void handleBriefDownload('pptx');
+          }}
+          downloadingReportFormat={downloadingBriefFormat}
         />
 
         {activeTab === 'assessment' && (
@@ -2525,6 +2817,13 @@ export default function Home() {
                 compact
                 onViewSpendSummary={() => setActiveTab('module1')}
                 onViewReport={() => setIsManagementSummaryOpen(true)}
+                onDownloadReportPdf={() => {
+                  void handleBriefDownload('pdf');
+                }}
+                onDownloadReportPptx={() => {
+                  void handleBriefDownload('pptx');
+                }}
+                downloadingReportFormat={downloadingBriefFormat}
               />
             )}
             <Module1Ingestion
@@ -2566,6 +2865,17 @@ export default function Home() {
               canonicalViewModel={canonicalModule1}
               onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
               summarySectionRef={summarySectionRef}
+              savedDocuments={savedIngestionDocuments}
+              savedDataVersions={savedAssessmentVersions}
+              onSelectSavedDocument={handleSelectSavedDocument}
+              isLoadingSavedDocument={isLoadingSavedDocument}
+              onDownloadReportPdf={() => {
+                void handleBriefDownload('pdf');
+              }}
+              onDownloadReportPptx={() => {
+                void handleBriefDownload('pptx');
+              }}
+              downloadingReportFormat={downloadingBriefFormat}
             />
           </>
         )}
@@ -2624,6 +2934,13 @@ export default function Home() {
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
             onNavigateToSection={handleNavigateToSection}
+            onDownloadReportPdf={() => {
+              void handleBriefDownload('pdf');
+            }}
+            onDownloadReportPptx={() => {
+              void handleBriefDownload('pptx');
+            }}
+            downloadingReportFormat={downloadingBriefFormat}
           />
         )}
 
@@ -2636,9 +2953,16 @@ export default function Home() {
             cleanRecordsCount={uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || validationRecords.filter((v) => v.issue_flag === 'Passed Clean').length || 0)}
             onOpenReport={() => {
               if (typeof window !== 'undefined') {
-                window.location.href = '/executive-brief';
+                window.location.href = resolveExecutiveBriefHref(activeAssessment?.assessmentId);
               }
             }}
+            onDownloadReportPdf={() => {
+              void handleBriefDownload('pdf');
+            }}
+            onDownloadReportPptx={() => {
+              void handleBriefDownload('pptx');
+            }}
+            downloadingReportFormat={downloadingBriefFormat}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
           />
@@ -2810,6 +3134,8 @@ export default function Home() {
           <div className="w-full max-w-6xl my-auto">
             <ExecutiveOpportunityBriefView
               clientName={tenant.enterprise_name || UI_STRINGS.header.enterpriseFallback}
+              assessmentId={activeAssessment?.assessmentId}
+              downloadingFormat={downloadingBriefFormat}
               onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
               onDownloadPdf={() => {
                 void handleBriefDownload('pdf');
@@ -2824,6 +3150,13 @@ export default function Home() {
                 key={activeReport.reportVersionId}
                 jobId={activeAnalysisJob.analysisJobId}
                 reportVersionId={activeReport.reportVersionId}
+                onDownloadReportPdf={() => {
+                  void handleBriefDownload('pdf');
+                }}
+                onDownloadReportPptx={() => {
+                  void handleBriefDownload('pptx');
+                }}
+                downloadingReportFormat={downloadingBriefFormat}
               />
             ) : (
               <div className="flex justify-center my-8" data-testid="management-report-empty-state">

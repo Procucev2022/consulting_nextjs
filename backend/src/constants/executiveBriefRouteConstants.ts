@@ -55,8 +55,10 @@ export const EXECUTIVE_BRIEF_MESSAGES = {
   invalidJsonBody: 'Request body must be valid JSON or empty.',
   methodNotAllowed: 'This HTTP method is not supported for the executive brief endpoint. Use the method listed in the Allow header.',
   authRequired: 'Administrator sign-in required. Send Authorization: Bearer <admin token> from an ADMIN account, then retry.',
+  userAuthRequired: 'Sign in required. Send Authorization: Bearer <session token> from an active account, then retry.',
   tokenInvalid: 'The bearer token is invalid or has expired. Sign in again to get a new administrator token, then retry.',
   adminRequired: 'This account does not have the ADMIN role. Ask an administrator to regenerate the executive brief.',
+  accessDenied: 'This account does not have permission to access the executive brief. Contact your administrator if access is unexpected.',
   authSecretMissing: 'AUTH_SECRET is not set on the Worker, so administrator tokens cannot be verified. Set it with wrangler secret put AUTH_SECRET and redeploy.',
   r2Missing: 'The R2 binding OBJECTS is not configured on the Worker. Add the bucket binding in wrangler.jsonc and redeploy before regenerating.',
   regenerated: 'Executive Brief regenerated successfully from the latest D1 tenant, transaction, and opportunity records.'

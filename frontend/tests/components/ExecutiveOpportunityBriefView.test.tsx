@@ -138,6 +138,30 @@ describe('ExecutiveOpportunityBriefView', () => {
     ));
   });
 
+  it('shows actionable sign-in, forbidden, and missing-data errors for 401, 403, and 404 responses', async () => {
+    installFetch(
+      new Response(JSON.stringify({ message: 'Token expired.' }), { status: 401, headers: { 'x-request-id': 'req-401' } }),
+      new Response(JSON.stringify({ message: 'Tenant pending.' }), { status: 403, headers: { 'x-request-id': 'req-403' } }),
+      new Response(JSON.stringify({ message: 'No transactions.' }), { status: 404, headers: { 'x-request-id': 'req-404' } })
+    );
+    render(<ExecutiveOpportunityBriefView />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportUnauthorized('req-401', 'Token expired.')
+    );
+    expect(screen.getByTestId('opportunity-brief-signin-link')).toHaveAttribute('href', '/login');
+
+    fireEvent.click(screen.getByTestId('retry-opportunity-brief-btn'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportForbidden('req-403', 'Tenant pending.')
+    );
+    expect(screen.queryByTestId('opportunity-brief-signin-link')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('retry-opportunity-brief-btn'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportNotFound('req-404', 'No transactions.')
+    );
+  });
+
   it('falls back to the supplied client name when D1 has no enterprise name', async () => {
     const blankTenantReport = { ...report, tenant: { ...report.tenant, enterpriseName: '' } };
     installFetch(new Response(JSON.stringify({ success: true, data: blankTenantReport }), { status: 200 }));
@@ -181,22 +205,62 @@ describe('ExecutiveOpportunityBriefView', () => {
     }
   });
 
-  it('renders the Bronze teaser with D1 figures and fires the tier and back callbacks', async () => {
+  it('renders the Bronze teaser with D1 figures and fires the tier, download, and back callbacks', async () => {
     const handleExploreSilver = vi.fn();
     const handleBack = vi.fn();
+    const handlePdf = vi.fn();
+    const handlePptx = vi.fn();
     render(<ExecutiveOpportunityBriefView
       currentTier="BRONZE"
+      assessmentId="AIC-BRONZE-1"
       onExploreSilver={handleExploreSilver}
       onBackToWorkspace={handleBack}
+      onDownloadPdf={handlePdf}
+      onDownloadPptx={handlePptx}
     />);
     expect(await screen.findByTestId('executive-opportunity-brief-bronze-teaser')).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.opportunityBrief.currencyCr(125.5))).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.opportunityBrief.countValue(4))).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.opportunityBrief.countValue(6))).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('download-brief-pdf-btn'));
+    fireEvent.click(screen.getByTestId('download-brief-pptx-btn'));
     fireEvent.click(screen.getByTestId('bronze-explore-silver-btn'));
     fireEvent.click(screen.getByText(UI_STRINGS.opportunityBrief.backToWorkspace));
+    expect(handlePdf).toHaveBeenCalledOnce();
+    expect(handlePptx).toHaveBeenCalledOnce();
     expect(handleExploreSilver).toHaveBeenCalledOnce();
     expect(handleBack).toHaveBeenCalledOnce();
+  });
+
+  it('shows active downloading labels in both Bronze and full brief views', async () => {
+    installFetch(successResponse(), successResponse());
+    const { rerender } = render(
+      <ExecutiveOpportunityBriefView
+        currentTier="BRONZE"
+        downloadingFormat="pdf"
+        onDownloadPdf={vi.fn()}
+        onDownloadPptx={vi.fn()}
+      />
+    );
+    await screen.findByTestId('executive-opportunity-brief-bronze-teaser');
+    expect(screen.getByTestId('download-brief-pdf-btn')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.downloadingReport('PDF')
+    );
+    expect(screen.getByTestId('download-brief-pptx-btn')).toBeDisabled();
+
+    rerender(
+      <ExecutiveOpportunityBriefView
+        currentTier="GOLD"
+        downloadingFormat="pptx"
+        onDownloadPdf={vi.fn()}
+        onDownloadPptx={vi.fn()}
+      />
+    );
+    await screen.findByTestId('executive-opportunity-brief-view');
+    expect(screen.getByTestId('download-brief-pptx-btn')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.downloadingReport('PPTX')
+    );
+    expect(screen.getByTestId('download-brief-pdf-btn')).toBeDisabled();
   });
 
   it('renders an empty-state section and unknown slide fallback', async () => {

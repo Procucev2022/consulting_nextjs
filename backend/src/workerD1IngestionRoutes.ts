@@ -18,6 +18,10 @@ import {
 } from './workerD1';
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
+import {
+  enrichSelectedDocumentIngestionResponse,
+  loadDocumentTransactionAnalytics
+} from './services/workerD1IngestionDocumentAnalytics';
 import { clearScopedModule2Cache } from './services/workerD1Module2Cache';
 import { enqueueR2ObjectCleanup, processR2ObjectCleanupOutbox } from './services/r2ObjectCleanupOutbox';
 import { R2_CLEANUP_REASONS, R2_CLEANUP_SQL } from './constants';
@@ -31,18 +35,38 @@ const getIngestionData = async (
   requireD1Binding(environment.DB);
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
-  return { data: await getIngestionDataFromD1(environment.DB as CloudflareD1Database, tenantId, {
+  const database = environment.DB as CloudflareD1Database;
+  const includeSummary = !page?.queueAfterUploadedAt && !page?.validationAfterCreatedAt;
+  const validationCursor = page?.validationAfterCreatedAt && page.validationAfterRecordId
+    ? { createdAt: page.validationAfterCreatedAt, recordId: page.validationAfterRecordId }
+    : undefined;
+  const data = await getIngestionDataFromD1(database, tenantId, {
+    queueDocumentId: page?.queueDocumentId,
     queueCursor: page?.queueAfterUploadedAt && page.queueAfterDocId
       ? { uploadedAt: page.queueAfterUploadedAt, docId: page.queueAfterDocId }
       : undefined,
-    validationCursor: page?.validationAfterCreatedAt && page.validationAfterRecordId
-      ? { createdAt: page.validationAfterCreatedAt, recordId: page.validationAfterRecordId }
-      : undefined,
+    validationCursor,
     includeQueue: Boolean(page?.queueDocumentId || page?.queueAfterUploadedAt || (!page?.validationAfterCreatedAt && !page?.validationAfterRecordId)),
     includeValidationRecords: Boolean(page?.validationAfterCreatedAt || page?.validationAfterRecordId || page?.queueDocumentId || !page?.queueAfterUploadedAt),
-    includeSummary: !page?.queueAfterUploadedAt && !page?.validationAfterCreatedAt,
+    includeSummary,
     requestId
-  }) };
+  });
+  if (page?.queueDocumentId) {
+    return {
+      data: await enrichSelectedDocumentIngestionResponse(database, tenantId, page.queueDocumentId, data, {
+        validationCursor,
+        includeSummary,
+        requestId
+      })
+    };
+  }
+  const activeQueue = Array.isArray(data.queue) ? (data.queue as Array<Record<string, unknown>>) : [];
+  const activeDocId = includeSummary && typeof activeQueue[0]?.doc_id === 'string'
+    ? activeQueue[0].doc_id
+    : undefined;
+  if (!activeDocId) return { data };
+  const documentAnalytics = await loadDocumentTransactionAnalytics(database, tenantId, activeDocId, requestId);
+  return { data: documentAnalytics ? { ...data, documentAnalytics } : data };
 };
 
 // A record that no stored rate can convert is reported with its currency and effective date. It is never converted at 0.

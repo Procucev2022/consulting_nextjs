@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import type {
   AssessmentRecord,
   AssessmentAnalysisRun,
+  AssessmentDataVersion,
   AssessmentDetailWorkflowProps,
   DeliveryPackageResult,
   AssessmentAuditLog,
@@ -29,6 +30,7 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
   onUpdate
 }) => {
   const [assessment, setAssessment] = useState<AssessmentRecord | null>(null);
+  const [dataVersions, setDataVersions] = useState<AssessmentDataVersion[]>([]);
   const [runs, setRuns] = useState<AssessmentAnalysisRun[]>([]);
   const [activeTab, setActiveTab] = useState<'upload' | 'pipeline' | 'checklist' | 'delivery' | 'audit'>('pipeline');
   const [deliveryPackage, setDeliveryPackage] = useState<DeliveryPackageResult | null>(null);
@@ -49,6 +51,7 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
         const record = rawData?.assessment || rawData;
         if (isMounted) {
           setAssessment(record);
+          setDataVersions(Array.isArray(rawData?.versions) ? rawData.versions : []);
           setRuns(rawData?.runs || []);
           if (record && (!record.activeDataVersionId || record.dataStatus === 'AWAITING_DATA')) {
             setActiveTab('upload');
@@ -297,11 +300,13 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
       {activeTab === 'upload' && (
         <AssessmentUploadTab
           assessment={assessment}
+          dataVersions={dataVersions}
           onUploadSuccess={async (updated) => {
             setAssessment(updated);
             onUpdate(updated);
             try {
               const rawRefreshed: any = await assessmentApiClient.getAssessmentById(assessmentId);
+              setDataVersions(Array.isArray(rawRefreshed?.versions) ? rawRefreshed.versions : []);
               setRuns(rawRefreshed?.runs || []);
               const logs = await assessmentApiClient.getAuditLogs(assessmentId);
               setAuditLogs(logs);

@@ -611,5 +611,24 @@ describe('Module4SavingsEngine Component', () => {
       expect(within(pipeline).getByText('OPP-001')).toBeInTheDocument();
       expect(within(pipeline).getByText('OPP-002')).toBeInTheDocument();
     });
+
+    it('renders PDF and PPTX download buttons alongside the assessment-scoped executive brief CTA', () => {
+      const onDownloadReportPdf = vi.fn();
+      const onDownloadReportPptx = vi.fn();
+      renderEngine({
+        assessmentId: 'AIC-M4-9',
+        onDownloadReportPdf,
+        onDownloadReportPptx
+      });
+
+      expect(screen.getByTestId('module4-open-brief-btn')).toHaveAttribute(
+        'href',
+        '/executive-brief?assessmentId=AIC-M4-9'
+      );
+      fireEvent.click(screen.getByTestId('module4-download-report-pdf-btn'));
+      fireEvent.click(screen.getByTestId('module4-download-report-pptx-btn'));
+      expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+      expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+    });
   });
 });

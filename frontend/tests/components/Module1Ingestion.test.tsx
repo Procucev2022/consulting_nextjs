@@ -670,6 +670,30 @@ describe('Module1Ingestion Component', () => {
     );
     expect(screen.getByText(/1 Billing Months \(Apr 2024 – Apr 2024\)/i)).toBeInTheDocument();
   });
+
+  it('renders previously uploaded saved documents and triggers onSelectSavedDocument', () => {
+    const onSelectSavedDocument = vi.fn();
+    const olderDoc = {
+      ...sampleIngestionQueue[0],
+      doc_id: 'DOC-OLD-99',
+      file_name: 'Historical_Upload_2025.xlsx',
+      records_count: 30740,
+      converted_inr_crores: 556.53
+    };
+    render(
+      <Module1Ingestion
+        {...defaultProps}
+        ingestionQueue={sampleIngestionQueue}
+        savedDocuments={[...sampleIngestionQueue, olderDoc]}
+        onSelectSavedDocument={onSelectSavedDocument}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module1.savedDatasetsHeading)).toBeInTheDocument();
+    expect(screen.getByText('Historical_Upload_2025.xlsx')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module1.loadSavedDataset }));
+    expect(onSelectSavedDocument).toHaveBeenCalledWith(olderDoc);
+  });
 });
 
 

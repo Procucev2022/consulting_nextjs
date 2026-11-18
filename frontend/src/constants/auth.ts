@@ -30,17 +30,6 @@ export const AUTH_API_ENDPOINTS = {
   ADMIN_USER_TENANT: (id: string) => `/api/admin/users/${id}/tenant`
 } as const;
 
-export const DEFAULT_ADMIN_DETAILS = {
-  name: 'System Administrator',
-  email: 'admin@procucev.com',
-  password: 'Procucev@123',
-  mobile_number: '+91 98765 43210',
-  company_name: 'aiCEV Procucev Enterprise Inc.',
-  company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
-  role: 'ADMIN',
-  subscription_tier: 'GOLD'
-} as const;
-
 
 /** HTTP status that means the stored credential is no longer accepted. */
 export const AUTH_HTTP_STATUS = {

@@ -507,6 +507,24 @@ describe('UI_STRINGS branch-specific helpers', () => {
       .toContain('Payment Terms Not Found in Source Data');
   });
 
+  it('formats actionable opportunity brief errors with optional server details', () => {
+    const ob = UI_STRINGS.opportunityBrief;
+    expect(ob.reportUnauthorized('req-1')).toContain('HTTP 401');
+    expect(ob.reportUnauthorized('req-1', 'Session expired.')).toContain('Session expired.');
+    expect(ob.reportForbidden('req-2')).toContain('HTTP 403');
+    expect(ob.reportForbidden('req-2', 'Tenant pending.')).toContain('Tenant pending.');
+    expect(ob.reportNotFound('req-3')).toContain('HTTP 404');
+    expect(ob.reportNotFound('req-3', 'No baseline rows.')).toContain('No baseline rows.');
+    expect(ob.reportUnavailable(503, 'req-4', 'DB offline.')).toContain('DB offline.');
+    expect(ob.downloadUnauthorized('PDF', 'req-5')).toContain('HTTP 401');
+    expect(ob.downloadUnauthorized('PDF', 'req-5', 'Missing token.')).toContain('Missing token.');
+    expect(ob.downloadForbidden('PPTX', 'req-6')).toContain('HTTP 403');
+    expect(ob.downloadForbidden('PPTX', 'req-6', 'Access denied.')).toContain('Access denied.');
+    expect(ob.downloadNotFound('PDF', 'req-7')).toContain('HTTP 404');
+    expect(ob.downloadNotFound('PDF', 'req-7', 'Upload required.')).toContain('Upload required.');
+    expect(ob.downloadFailed('PDF', 502, 'req-8', 'Gateway timeout.')).toContain('Gateway timeout.');
+  });
+
   it('does not publish predefined-account or administrator-bypass labels in production builds', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.resetModules();

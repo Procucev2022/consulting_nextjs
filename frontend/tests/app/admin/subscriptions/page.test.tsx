@@ -3,9 +3,25 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AdminSubscriptionsPage from '@/app/admin/subscriptions/page';
+import { apiClient } from '@/utils/api';
 import frontendLogger from '@/utils/logger';
+import { UI_STRINGS } from '@/constants';
 import { API_REQUEST_ID_HEADER } from '@/constants/app';
-import type { SubscriptionRecord, SubscriptionAuditEvent } from '@/types';
+import type { SubscriptionRecord, SubscriptionAuditEvent, UserProfile } from '@/types';
+
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush })
+}));
+
+const MOCK_ADMIN_PROFILE: UserProfile = {
+  id: 'usr-admin-1',
+  name: 'System Administrator',
+  email: 'ops.admin@company.test',
+  role: 'ADMIN',
+  status: 'ACTIVE',
+  subscription_tier: 'GOLD'
+};
 
 describe('AdminSubscriptionsPage Dashboard', () => {
   const mockSubscriptions: SubscriptionRecord[] = [
@@ -94,6 +110,10 @@ describe('AdminSubscriptionsPage Dashboard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue(MOCK_ADMIN_PROFILE);
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('mock-admin-token');
+    vi.spyOn(apiClient, 'getMe').mockResolvedValue({ success: true, user: MOCK_ADMIN_PROFILE });
+    vi.spyOn(apiClient, 'clearStoredSession').mockImplementation(() => undefined);
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/api/subscription/admin/list')) {
         return Promise.resolve({
@@ -123,7 +143,9 @@ describe('AdminSubscriptionsPage Dashboard', () => {
   it('renders dashboard with title, filters, and subscription records', async () => {
     render(<AdminSubscriptionsPage />);
 
-    expect(screen.getByTestId('admin-subscriptions-page')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-subscriptions-page')).toBeInTheDocument();
+    });
     expect(screen.getByText('Subscription & Entitlement Administration')).toBeInTheDocument();
 
     await waitFor(() => {
@@ -349,5 +371,27 @@ describe('AdminSubscriptionsPage Dashboard', () => {
       expect.objectContaining({ message: expect.stringContaining('HTTP 200') })
     );
     expect(screen.getByText('Corp One')).toBeInTheDocument();
+  });
+
+  it('redirects unauthenticated users, buyers, and rejected admin tokens to /admin/login without loading subscriptions', async () => {
+    vi.mocked(apiClient.getStoredUser).mockReturnValue({ ...MOCK_ADMIN_PROFILE, role: 'USER' });
+    const firstRender = render(<AdminSubscriptionsPage />);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin/login'));
+    expect(apiClient.clearStoredSession).toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
+    firstRender.unmount();
+
+    mockPush.mockClear();
+    vi.mocked(apiClient.getStoredUser).mockReturnValue(MOCK_ADMIN_PROFILE);
+    vi.mocked(apiClient.getMe).mockResolvedValueOnce({ success: true, user: { ...MOCK_ADMIN_PROFILE, role: 'USER' } });
+    const secondRender = render(<AdminSubscriptionsPage />);
+    expect(screen.getByText(UI_STRINGS.admin.subscriptionsRoute.loading)).toBeInTheDocument();
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin/login'));
+    secondRender.unmount();
+
+    mockPush.mockClear();
+    vi.mocked(apiClient.getMe).mockRejectedValueOnce(new Error('Token rejected'));
+    render(<AdminSubscriptionsPage />);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin/login'));
   });
 });

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import type { PipelineBarProps, PipelineActiveTab } from '../types';
 import { UI_STRINGS } from '../constants';
+import { resolveExecutiveBriefHref } from '../utils/executiveOpportunityBriefApi';
+import { ReportDownloadActions } from './presentation/ReportDownloadActions';
 
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,
@@ -26,7 +28,10 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   unlockedTabs,
   onLockedTabClick,
   canonicalViewModel,
-  activeAssessment
+  activeAssessment,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null
 }) => {
   // Assessment & Module 1 Status Resolution (Prompt 370 Phase 5 & Prompt 374 Isolation)
   const hasUploadedDataset = Boolean(
@@ -244,19 +249,28 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               {UI_STRINGS.pipeline.endToEndArchitecture}
             </h3>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <a
-              href="/executive-brief"
+              href={resolveExecutiveBriefHref(activeAssessment?.assessmentId)}
               data-testid="pipeline-executive-brief-btn"
               onClick={(e) => {
                 e.preventDefault();
-                if (typeof window !== 'undefined') window.location.href = '/executive-brief';
+                if (typeof window !== 'undefined') {
+                  window.location.href = resolveExecutiveBriefHref(activeAssessment?.assessmentId);
+                }
               }}
               className="ent-btn-primary text-[11px] px-3 py-1.5"
             >
               <span>{UI_STRINGS.header.executiveBrief}</span>
               <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded">CEO/CFO</span>
             </a>
+            <ReportDownloadActions
+              testIdPrefix="pipeline-download-report"
+              onDownloadPdf={onDownloadReportPdf}
+              onDownloadPptx={onDownloadReportPptx}
+              downloadingFormat={downloadingReportFormat}
+              compact
+            />
             <a
               href="#module5"
               onClick={(e) => {

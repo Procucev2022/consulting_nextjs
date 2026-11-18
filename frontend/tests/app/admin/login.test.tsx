@@ -132,4 +132,21 @@ describe('Admin Login Page (/admin/login)', () => {
       expect(screen.getByText('Invalid credentials provided')).toBeInTheDocument();
     });
   });
+
+  it('blocks signed-in buyer (USER) accounts from accessing the admin login form', () => {
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      id: 'usr-buyer-001',
+      name: 'Anurag Shaw',
+      email: 'anurag@company.com',
+      role: 'USER',
+      status: 'ACTIVE',
+      subscription_tier: 'BRONZE'
+    });
+
+    render(<AdminLoginPage />);
+
+    expect(screen.getByTestId('admin-buyer-blocked-panel')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.admin.buyerAccessBlockedTitle)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /administrator sign in/i })).not.toBeInTheDocument();
+  });
 });

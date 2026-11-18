@@ -74,6 +74,7 @@ const fileToBase64 = async (file: File): Promise<string> => {
 
 export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
   assessment,
+  dataVersions = [],
   onUploadSuccess,
   onCancel: _onCancel
 }) => {
@@ -485,6 +486,44 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
         </div>
 
         {/* Selected File Details */}
+        {dataVersions.length > 0 && (
+          <div
+            data-testid="assessment-saved-versions-list"
+            className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2.5 text-xs"
+          >
+            <div>
+              <h4 className="font-bold text-slate-200">{screenStrings.savedVersionsHeading}</h4>
+              <p className="text-[11px] text-slate-400">{screenStrings.savedVersionsSubtitle}</p>
+            </div>
+            <div className="space-y-1.5">
+              {dataVersions.map((version) => {
+                const isActive = version.dataVersionId === targetDvId || !version.isSuperseded;
+                return (
+                  <div
+                    key={version.dataVersionId}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800"
+                  >
+                    <span className="font-mono text-[11px] text-slate-200 truncate">
+                      {screenStrings.savedVersionRow(
+                        version.versionNumber,
+                        version.fileName,
+                        version.recordCount ?? 0,
+                        version.uploadedAt || screenStrings.emptyValue
+                      )}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        isActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {isActive ? screenStrings.activeVersionTag : screenStrings.supersededVersionTag}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {selectedFile && (
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">

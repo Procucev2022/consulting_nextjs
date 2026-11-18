@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, ArrowRight, ShieldAlert, CheckCircle2, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { UI_STRINGS } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
@@ -22,17 +22,9 @@ export default function AdminLoginForm({
   const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
-    email: 'admin@procucev.com',
-    password: 'Procucev@123'
+    email: '',
+    password: ''
   });
-
-  const handleQuickFillAdmin = (): void => {
-    setForm({
-      email: 'admin@procucev.com',
-      password: 'Procucev@123'
-    });
-    setErrorMessage(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -80,17 +72,6 @@ export default function AdminLoginForm({
         <p className="text-sm text-slate-400 mt-1">
           {UI_STRINGS.admin.loginSubheading}
         </p>
-      </div>
-
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={handleQuickFillAdmin}
-          className="w-full py-2.5 px-4 rounded-xl border border-sky-500/30 bg-sky-950/40 hover:bg-sky-900/50 text-sky-300 hover:text-sky-200 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-        >
-          <UserCheck className="w-4 h-4 text-sky-400" />
-          <span>{UI_STRINGS.admin.quickFillAdminButton}</span>
-        </button>
       </div>
 
       {errorMessage && (

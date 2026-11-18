@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { MODULE2_D1_ROUTE_MESSAGES } from './module2D1Scoped';
 import { MODULE2_D1_COMPLIANCE_REVIEW_STATUSES } from './module2ProcurementComplianceD1';
+import { MODULE2_D1_VENDOR_CONSOLIDATION } from './module2VendorConsolidationD1';
 
 export const specificationReviewSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
@@ -19,7 +21,10 @@ export const specificationReviewSchema = z.object({
 export const materialMappingUpdateSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
   sourceMaterialId: z.string().trim().min(1).max(120),
-  unspscCode: z.string().trim().regex(/^\d{8}$/),
+  unspscCode: z.string().trim().regex(/^\d{8}$/).refine(
+    (code) => code !== MODULE2_D1_VENDOR_CONSOLIDATION.UNMAPPED_UNSPSC_CODE,
+    MODULE2_D1_ROUTE_MESSAGES.materialMappingTaxonomyNotFound
+  ),
   reviewStatus: z.enum(['PROVISIONAL', 'CLIENT_APPROVED', 'TAXONOMY_VERIFIED']),
   confidenceScore: z.number().finite().min(0).max(1).optional(),
   mappingMethod: z.enum([

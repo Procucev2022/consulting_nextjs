@@ -4,6 +4,7 @@ import * as authConstants from '../../src/constants/auth';
 describe('Database-only authentication constants', () => {
   it('does not export predefined development account passwords', () => {
     expect('DEV_TEMP_CREDENTIALS' in authConstants).toBe(false);
+    expect('DEFAULT_ADMIN_DETAILS' in authConstants).toBe(false);
   });
 
   it('builds protected user-management endpoints using the requested database user id', () => {

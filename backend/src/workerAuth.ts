@@ -309,6 +309,33 @@ const secretsMatch = (provided: string, expected: string): boolean => {
   return difference === 0;
 };
 
+const authorizeAdminProvisioning = async (
+  request: Request, environment: CloudflareEnvironment, bootstrap: boolean
+): Promise<AuthRouteResult | null> => {
+  const hasAuthHeader = Boolean(request.headers.get('Authorization') || request.headers.get('x-auth-token'));
+  if (hasAuthHeader || !bootstrap) {
+    const authorization = await authenticateWorkerUser(request, environment, true);
+    if (!authorization.user) return result({ success: false, message: authorization.message }, authorization.status);
+    return null;
+  }
+  const requestId = request.headers.get('x-request-id') || undefined;
+  if (!environment.AUTH_BOOTSTRAP_TOKEN) {
+    logger.warn('Rejected unauthenticated first-administrator setup because bootstrap token is not configured', {
+      requestId
+    });
+    return result({ success: false, message: AUTH_MESSAGES.bootstrapDisabled }, 403);
+  }
+  const provided = request.headers.get(AUTH_BOOTSTRAP_TOKEN_HEADER) ?? '';
+  if (!secretsMatch(provided, environment.AUTH_BOOTSTRAP_TOKEN)) {
+    logger.warn('Rejected first-administrator setup without the configured bootstrap token', {
+      requestId,
+      tokenProvided: provided.length > 0
+    });
+    return result({ success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid }, 403);
+  }
+  return null;
+};
+
 const provisionAdministrator = async (
   request: Request, environment: CloudflareEnvironment
 ): Promise<AuthRouteResult> => {
@@ -318,19 +345,8 @@ const provisionAdministrator = async (
   const adminCount = await environment.DB.prepare('SELECT COUNT(*) AS count FROM User WHERE role = ?')
     .bind(AUTH_ROLES.ADMIN).first<{ count: number }>();
   const bootstrap = Number(adminCount?.count || 0) === 0;
-  if (!bootstrap) {
-    const authorization = await authenticateWorkerUser(request, environment, true);
-    if (!authorization.user) return result({ success: false, message: authorization.message }, authorization.status);
-  } else if (environment.AUTH_BOOTSTRAP_TOKEN) {
-    const provided = request.headers.get(AUTH_BOOTSTRAP_TOKEN_HEADER) ?? '';
-    if (!secretsMatch(provided, environment.AUTH_BOOTSTRAP_TOKEN)) {
-      logger.warn('Rejected first-administrator setup without the configured bootstrap token', {
-        requestId: request.headers.get('x-request-id') || undefined,
-        tokenProvided: provided.length > 0
-      });
-      return result({ success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid }, 403);
-    }
-  }
+  const authError = await authorizeAdminProvisioning(request, environment, bootstrap);
+  if (authError) return authError;
   const parsed = adminProvisionSchema.safeParse(await readJson(request));
   if (!parsed.success) return result({ success: false, message: 'Validation failed', errors: parsed.error.issues }, 400);
   const now = new Date().toISOString();

@@ -114394,3 +114394,21 @@ Bug : Auto refresh should be there.
 
 Issue: After adding up customer we manually need to refresh the page.
 ---
+## Prompt 642
+Getting Error in exclusive brief for CEO CFO
+---
+## Prompt 643
+showing admin portal to the buyer login or normal user able to creates it own admin and access as further
+---
+## Prompt 644
+The Module 2 taxonomy decision was not saved to D1: the D1 mapping service returned HTTP 400.
+---
+## Prompt 645
+we don't see previously upload saved data
+---
+## Prompt 646
+ there is no report download button
+---
+## Prompt 647
+keep commiting & pushing the changes to current branch 
+---

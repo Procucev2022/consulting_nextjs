@@ -191,6 +191,10 @@ export const UI_STRINGS = {
     managementQuickSummarySubtitle: '10-Slide Executive Opportunity Brief',
     cfoDiscussionEdition: 'CFO / CEO Discussion Edition',
     moreReports: 'More Reports',
+    downloadReportPdf: 'Download Report (PDF)',
+    downloadReportPptx: 'Download Report (PPTX)',
+    downloadReportPdfSubtitle: '10-Slide Executive Opportunity Brief PDF',
+    downloadReportPptxSubtitle: 'Editable Executive Presentation Deck',
     boardroomEvidence: 'Boardroom & Evidence',
     boardroomEvidenceSubtitle: '30-Slide Procurement Value Assessment',
     adminPortal: 'Admin Portal',
@@ -450,6 +454,23 @@ export const UI_STRINGS = {
     assessmentDatasetDeleteUnavailable: 'This dataset is the active data version of the selected assessment, and this card can only remove uploaded documents. Contact the platform administrator to request its removal.',
     documentIdLabel: 'ID:',
     documentIdUnavailable: 'Unavailable',
+    savedDatasetsHeading: 'Previously Uploaded Saved Datasets',
+    savedDatasetsSubtitle: 'Saved purchase history and ERP datasets stored in D1. Load any saved dataset into Module 1 or remove outdated uploads.',
+    savedDatasetsCount: (count: number): string => `${count} Saved ${count === 1 ? 'Dataset' : 'Datasets'}`,
+    activeDatasetBadge: 'Active in Workspace',
+    loadSavedDataset: 'Load Dataset',
+    loadingSavedDataset: 'Loading Dataset...',
+    savedDatasetLoaded: (fileName: string): string => `Loaded saved dataset "${fileName}" from D1.`,
+    savedDatasetNotFound: (docId: string): string =>
+      `Saved dataset ${docId} was not found in D1. Open your Profile repository to verify uploaded files and retry.`,
+    savedDatasetLoadFailed: (reason: string): string =>
+      `Could not load the saved dataset from D1: ${reason}. Check your network connection and retry.`,
+    savedDataVersionsHeading: 'Saved Assessment Data Versions',
+    assessmentVersionBadge: (versionNumber: number): string => `v${versionNumber}`,
+    assessmentVersionActiveBadge: 'Active Version',
+    assessmentVersionSupersededBadge: 'Previous Version',
+    assessmentVersionMeta: (versionId: string, uploadedAt: string, recordsCount: number): string =>
+      `ID: ${versionId} • Uploaded: ${uploadedAt} • ${recordsCount.toLocaleString()} Records`,
     evaluatedSpend: (amountCr?: number): string => amountCr === undefined
       ? EVALUATED_SPEND_UNAVAILABLE
       : `₹${amountCr.toFixed(2)} Cr Evaluated`,
@@ -2442,10 +2463,14 @@ export const UI_STRINGS = {
       module2MappingFailed: (reason: string) => `The Module 2 taxonomy decision was not saved to D1: ${reason}. Check the assessment, sign-in, and network connection, then retry.`,
       invalidMappingPayload: 'the assessment, material, or 8-digit UNSPSC code is missing or invalid',
       mappingServerRejected: (status: number) => `the D1 mapping service returned HTTP ${status}`,
+      mappingServerRejectedWithDetails: (status: number, details: string) =>
+        `the D1 mapping service returned HTTP ${status}: ${details}`,
       taxonomySuggestionsSaved: (count: number) => `${count} taxonomy suggestions were saved to D1 as provisional. Review and confirm each mapping before using it in reports.`,
       noTaxonomySuggestionsSaved: 'No suggestions matched a D1 taxonomy code and stable material identifier. Check the uploaded material codes and D1 taxonomy catalog, then retry.',
       module2AssessmentRequired: 'Select an active assessment before saving a material classification.',
       module2MaterialCodeRequired: 'This transaction has no stable material code, so its classification cannot be safely saved. Add a material code in the source data and retry.',
+      module2UnspscSelectionRequired:
+        'This line item is currently Unclassified (00000000). Use Re-Assign to select a valid 8-digit UNSPSC commodity code before confirming to D1.',
       d1TaxonomyModel: 'D1 taxonomy search',
       externalAiModel: 'connected AI classifier',
     issueIgnored: (recordId: string) => `Validation anomaly for Record ${recordId} ignored and retained as reviewed.`,
@@ -3047,7 +3072,7 @@ export const UI_STRINGS = {
     createHeading: 'Create / Provision Administrator Details',
     createSubheading: 'Configure administrative credentials and enterprise details for executive access.',
     emailLabel: 'Administrator Email',
-    emailPlaceholder: 'admin@procucev.com',
+    emailPlaceholder: 'administrator@company.com',
     passwordLabel: 'Password',
     passwordPlaceholder: '••••••••••••',
     confirmPasswordLabel: 'Confirm Password',
@@ -3059,14 +3084,14 @@ export const UI_STRINGS = {
     companyNamePlaceholder: 'aiCEV Procucev Enterprise Inc.',
     companyAddressLabel: 'Company Address',
     companyAddressPlaceholder: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India',
-    quickFillAdminButton: 'Quick-Fill Admin Credentials (admin@procucev.com)',
+    quickFillAdminButton: 'Quick-Fill Admin Credentials',
     fillDefaultDetailsButton: 'Fill Default Admin Details',
     submitLoginButton: 'Enter Admin Dashboard',
     submitCreateButton: 'Create / Update Admin Details',
     submittingLogin: 'Authenticating Administrator...',
     submittingCreate: 'Provisioning Administrator...',
     loginSuccessMessage: 'Administrator authenticated successfully. Redirecting to Admin Dashboard...',
-    createSuccessMessage: 'Admin details created and verified successfully for admin@procucev.com.',
+    createSuccessMessage: (email: string) => `Admin details created and verified successfully for ${email}.`,
     loginFailureFallback: 'Administrator sign-in failed because the login service returned an unreadable error. Verify the email and password, then retry; contact support if it continues.',
     provisioningFailureFallback: 'Administrator setup failed because the service returned an unreadable error. Verify the required details and connection, then retry; contact support if it continues.',
     provisioningFailureWithStatus: (status: number) =>
@@ -3074,6 +3099,18 @@ export const UI_STRINGS = {
     passwordMismatchMessage: 'Password confirmation failed because the two password values differ. Enter the same password in both fields and retry.',
     accessDeniedMessage:
       'Access Denied: Administrative privileges required. Only system administrators can access this console.',
+    buyerAccessBlockedTitle: 'Admin Portal Access Restricted',
+    buyerAccessBlockedDescription: (email: string, role: string) =>
+      `Signed-in account "${email}" holds the ${role} role. Buyer and standard accounts cannot open the Admin Portal or create administrator accounts.`,
+    buyerAccessBlockedActionGuidance:
+      'Return to the Procurement Workspace to continue your work, or sign out from your buyer account before authenticating with issued administrator credentials.',
+    returnToWorkspaceButton: 'Back to Procurement Workspace',
+    adminCreationRequiresSessionNotice:
+      'Only an authenticated Administrator can create or update administrator accounts.',
+    subscriptionsRoute: {
+      loading: 'Verifying Administrator Access...',
+      sessionVerificationFailedLog: 'Administrator session verification failed on subscription management route'
+    },
     activeSessionTitle: 'Active Administrator Session',
     activeSessionSubtitle: 'You are currently authenticated with administrative role permissions.',
     openDashboardButton: 'Open Admin Dashboard',
@@ -4395,6 +4432,9 @@ export const UI_STRINGS = {
     exitFullScreen: 'Exit Full Screen',
     downloadPdf: 'Download PDF (10 Slides)',
     downloadPptx: 'Download PPTX (Editable)',
+    downloadReportPdf: 'Download Report (PDF)',
+    downloadReportPptx: 'Download PPTX',
+    downloadingReport: (formatLabel: string): string => `Downloading ${formatLabel}...`,
     backToWorkspace: 'Back to Procurement Workspace',
     primaryValueThesis: 'Primary Value Thesis',
     directSavingsOpportunity: 'Direct Savings Opportunity',
@@ -4421,16 +4461,29 @@ export const UI_STRINGS = {
     contactEmail: 'Contact: leadership@procucev.com',
     confidentialFooter: 'Management Confidential | CFO / CEO Discussion Edition',
     downloadLinkLabel: 'Download',
-    downloadFailed: (formatLabel: string, status: number, requestId: string) =>
-      `The Opportunity Brief ${formatLabel} could not be downloaded, so no file was saved. The server responded with HTTP ${status}. Try again later. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    downloadFailed: (formatLabel: string, status: number, requestId: string, detail?: string) =>
+      `The Opportunity Brief ${formatLabel} could not be downloaded, so no file was saved. The server responded with HTTP ${status}.${detail ? ` ${detail}` : ''} Try again later. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    downloadUnauthorized: (formatLabel: string, requestId: string, detail?: string): string =>
+      `The Opportunity Brief ${formatLabel} could not be downloaded because your session is not signed in or has expired (HTTP 401).${detail ? ` ${detail}` : ''} Sign in again and retry the download. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    downloadForbidden: (formatLabel: string, requestId: string, detail?: string): string =>
+      `The Opportunity Brief ${formatLabel} download was denied (HTTP 403).${detail ? ` ${detail}` : ''} Confirm with your administrator that your account is active and assigned to an active organization, then retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    downloadNotFound: (formatLabel: string, requestId: string, detail?: string): string =>
+      `The Opportunity Brief ${formatLabel} could not be downloaded because no baseline data was found for this organization (HTTP 404).${detail ? ` ${detail}` : ''} Upload and validate procurement data in Data Ingestion, then retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
     downloadNetworkFailed: (formatLabel: string) =>
       `The Opportunity Brief ${formatLabel} could not be downloaded because the request did not reach the server. Check your network connection and try the download again.`,
     downloadFilename: (format: string): string => `Executive_Opportunity_Brief.${format}`,
     requestIdNotReturned: 'unavailable',
+    signInAction: 'Sign In',
     reportLoading: 'Loading the D1-backed procurement opportunity brief…',
     reportRetry: 'Retry loading the Opportunity Brief',
-    reportUnavailable: (status: number, requestId: string): string =>
-      `The Opportunity Brief could not be loaded from the D1 database (HTTP ${status}). Check your connection and retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    reportUnavailable: (status: number, requestId: string, detail?: string): string =>
+      `The Opportunity Brief could not be loaded from the D1 database (HTTP ${status}).${detail ? ` ${detail}` : ''} Check your connection and retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    reportUnauthorized: (requestId: string, detail?: string): string =>
+      `The Opportunity Brief could not be loaded because your session is not signed in or has expired (HTTP 401).${detail ? ` ${detail}` : ''} Sign in to an active account and retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    reportForbidden: (requestId: string, detail?: string): string =>
+      `Access to the Opportunity Brief was denied (HTTP 403).${detail ? ` ${detail}` : ''} Verify with your administrator that your account is active and assigned to an active organization, then retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    reportNotFound: (requestId: string, detail?: string): string =>
+      `No Opportunity Brief data is available yet in the D1 database for this organization (HTTP 404).${detail ? ` ${detail}` : ''} Upload and validate procurement data in Module 1 (Data Ingestion), then retry. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
     reportUnavailableNetwork: 'The Opportunity Brief could not reach the D1-backed service. Check your network connection and retry.',
     reportPanelTitle: 'Tenant opportunity register',
     reportPanelDescription: 'Current spend, estimated opportunities, and operational status loaded from D1.',
@@ -5104,7 +5157,13 @@ export const UI_STRINGS = {
       uploadFailed: (reason: string) => `Dataset upload failed: ${reason}. Check the file and your network connection, then retry the upload.`,
       validationFailed: (reason: string) => `Dataset validation failed: ${reason}. Check the required columns and formats, correct the file, and upload it again.`,
       noValidatedDataVersion: 'No validated data version was found for this assessment. Validate the dataset before starting Module 1 analysis.',
-      module1Failed: (reason: string) => `Module 1 analysis failed: ${reason}. Confirm the dataset passed validation, then retry Start Module 1 Analysis.`
+      module1Failed: (reason: string) => `Module 1 analysis failed: ${reason}. Confirm the dataset passed validation, then retry Start Module 1 Analysis.`,
+      savedVersionsHeading: 'Previously Uploaded Assessment Data Versions',
+      savedVersionsSubtitle: 'Historical dataset uploads preserved in D1 for this assessment dossier.',
+      savedVersionRow: (versionNumber: number, fileName: string, recordsCount: number, uploadedAt: string): string =>
+        `v${versionNumber} • ${fileName} • ${recordsCount.toLocaleString()} rows • Uploaded ${uploadedAt}`,
+      activeVersionTag: 'Active',
+      supersededVersionTag: 'Superseded'
     },
     modalNew: {
       title: 'Initialize New Customer Assessment',

@@ -6,9 +6,13 @@ import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { fetchExecutiveOpportunityBriefReport } from '../../src/utils/executiveOpportunityBriefApi';
 import type { ExecutiveOpportunityBriefReportData } from '../../src/types';
 
-vi.mock('../../src/utils/executiveOpportunityBriefApi', () => ({
-  fetchExecutiveOpportunityBriefReport: vi.fn()
-}));
+vi.mock('../../src/utils/executiveOpportunityBriefApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/utils/executiveOpportunityBriefApi')>();
+  return {
+    ...actual,
+    fetchExecutiveOpportunityBriefReport: vi.fn()
+  };
+});
 
 const report: ExecutiveOpportunityBriefReportData = {
   tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
@@ -96,6 +100,20 @@ describe('ExecutiveBriefOpportunityTable', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       UI_STRINGS.opportunityBrief.reportUnavailable(502, UI_STRINGS.opportunityBrief.requestIdNotReturned)
+    );
+  });
+
+  it('displays server permission context when loading the opportunity panel returns HTTP 403', async () => {
+    vi.mocked(fetchExecutiveOpportunityBriefReport).mockResolvedValueOnce({
+      ok: false,
+      statusCode: 403,
+      requestId: 'req-403',
+      serverMessage: 'Tenant assignment pending.'
+    });
+    render(<ExecutiveBriefOpportunityTable />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportForbidden('req-403', 'Tenant assignment pending.')
     );
   });
 

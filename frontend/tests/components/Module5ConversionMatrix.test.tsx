@@ -101,5 +101,24 @@ describe('Module5ConversionMatrix Component', () => {
     fireEvent.click(upgradeBtn);
     expect(onUpgrade).toHaveBeenCalledWith('SILVER');
   });
+
+  it('triggers PDF and PPTX report downloads from the Module 5 banner when handlers are supplied', () => {
+    const onDownloadReportPdf = vi.fn();
+    const onDownloadReportPptx = vi.fn();
+    render(
+      <Module5ConversionMatrix
+        tenant={mockTenant}
+        funnelStages={mockConversionFunnel}
+        onOpenReport={vi.fn()}
+        onDownloadReportPdf={onDownloadReportPdf}
+        onDownloadReportPptx={onDownloadReportPptx}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('module5-download-report-pdf-btn'));
+    fireEvent.click(screen.getByTestId('module5-download-report-pptx-btn'));
+    expect(onDownloadReportPdf).toHaveBeenCalledTimes(1);
+    expect(onDownloadReportPptx).toHaveBeenCalledTimes(1);
+  });
 });
 

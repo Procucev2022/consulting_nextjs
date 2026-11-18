@@ -28,3 +28,7 @@ export interface AdminGatewayHeaderProps {
   readonly onTabChange: (tab: AdminGatewayTab) => void;
   readonly hasActiveSession: boolean;
 }
+
+export interface AdminBuyerBlockedCardProps {
+  readonly blockedUser: UserProfile;
+}

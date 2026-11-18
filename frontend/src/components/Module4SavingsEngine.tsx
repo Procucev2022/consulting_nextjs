@@ -21,7 +21,9 @@ import { SavingsTypeEvidenceSection } from './savings/SavingsTypeEvidenceSection
 import { buildStrategicSavingsSummary } from '../utils/strategicSavingsCalculator';
 import { apiClient } from '../utils/api';
 import { orchestrationApi } from '../utils/orchestrationApi';
+import { resolveExecutiveBriefHref } from '../utils/executiveOpportunityBriefApi';
 import { frontendLogger } from '../utils/logger';
+import { ReportDownloadActions } from './presentation/ReportDownloadActions';
 import type {
   ConsolidatedSavingsData,
   ActionPlanItem,
@@ -40,7 +42,10 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   currentTier = 'GOLD',
   onUpgrade,
   onNavigateToSection,
-  assessmentId
+  assessmentId,
+  onDownloadReportPdf,
+  onDownloadReportPptx,
+  downloadingReportFormat = null
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
@@ -553,7 +558,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <Sparkles className="w-4 h-4 text-emerald-600" />
           <span>{UI_STRINGS.module4.ctaSubtitle}</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={onProceedToConversion}
@@ -561,8 +566,14 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           >
             <span>{UI_STRINGS.module4.ctaProceedButton}</span>
           </button>
+          <ReportDownloadActions
+            testIdPrefix="module4-download-report"
+            onDownloadPdf={onDownloadReportPdf}
+            onDownloadPptx={onDownloadReportPptx}
+            downloadingFormat={downloadingReportFormat}
+          />
           <a
-            href="/executive-brief"
+            href={resolveExecutiveBriefHref(assessmentId)}
             data-testid="module4-open-brief-btn"
             className="flex items-center justify-center space-x-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >

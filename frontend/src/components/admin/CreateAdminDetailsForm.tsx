@@ -2,13 +2,12 @@
 
 /**
  * Enterprise Admin Details Creation / Provisioning Form Component
- * Enables creation and configuration of administrative account details:
- * admin@procucev.com with password Procucev@123.
+ * Enables authenticated administrators to configure administrative account details.
  */
 
 import React, { useState } from 'react';
-import { ShieldCheck, ArrowRight, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
-import { UI_STRINGS, DEFAULT_ADMIN_DETAILS } from '../../constants';
+import { ShieldCheck, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { UI_STRINGS } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
 import type { CreateAdminDetailsFormProps, CreateAdminDetailsPayload, UserProfile } from '../../types';
@@ -23,31 +22,16 @@ export default function CreateAdminDetailsForm({
   const [createdUser, setCreatedUser] = useState<UserProfile | null>(null);
 
   const [form, setForm] = useState<CreateAdminDetailsPayload>({
-    name: DEFAULT_ADMIN_DETAILS.name,
-    email: DEFAULT_ADMIN_DETAILS.email,
-    mobile_number: DEFAULT_ADMIN_DETAILS.mobile_number,
-    company_name: DEFAULT_ADMIN_DETAILS.company_name,
-    company_address: DEFAULT_ADMIN_DETAILS.company_address,
-    password: DEFAULT_ADMIN_DETAILS.password,
-    confirm_password: DEFAULT_ADMIN_DETAILS.password,
-    role: DEFAULT_ADMIN_DETAILS.role,
-    subscription_tier: DEFAULT_ADMIN_DETAILS.subscription_tier
+    name: '',
+    email: '',
+    mobile_number: '',
+    company_name: '',
+    company_address: '',
+    password: '',
+    confirm_password: '',
+    role: 'ADMIN',
+    subscription_tier: 'GOLD'
   });
-
-  const handleFillDefaultDetails = (): void => {
-    setForm({
-      name: DEFAULT_ADMIN_DETAILS.name,
-      email: DEFAULT_ADMIN_DETAILS.email,
-      mobile_number: DEFAULT_ADMIN_DETAILS.mobile_number,
-      company_name: DEFAULT_ADMIN_DETAILS.company_name,
-      company_address: DEFAULT_ADMIN_DETAILS.company_address,
-      password: DEFAULT_ADMIN_DETAILS.password,
-      confirm_password: DEFAULT_ADMIN_DETAILS.password,
-      role: DEFAULT_ADMIN_DETAILS.role,
-      subscription_tier: DEFAULT_ADMIN_DETAILS.subscription_tier
-    });
-    setErrorMessage(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -66,7 +50,7 @@ export default function CreateAdminDetailsForm({
       const res = await apiClient.createAdminUser(form);
 
       setCreatedUser(res.user);
-      setSuccessMessage(UI_STRINGS.admin.createSuccessMessage);
+      setSuccessMessage(UI_STRINGS.admin.createSuccessMessage(res.user.email));
       frontendLogger.info('Administrator details provisioned', { userId: res.user.id });
       onSuccess(res.user);
     } catch (err: unknown) {
@@ -91,17 +75,6 @@ export default function CreateAdminDetailsForm({
         <p className="text-sm text-slate-400 mt-1">
           {UI_STRINGS.admin.createSubheading}
         </p>
-      </div>
-
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={handleFillDefaultDetails}
-          className="w-full py-2.5 px-4 rounded-xl border border-emerald-500/30 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 hover:text-emerald-200 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-        >
-          <RefreshCw className="w-4 h-4 text-emerald-400" />
-          <span>{UI_STRINGS.admin.fillDefaultDetailsButton}</span>
-        </button>
       </div>
 
       {errorMessage && (
