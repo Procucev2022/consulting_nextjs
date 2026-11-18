@@ -18,7 +18,7 @@ describe('assessment D1 API serialization', () => {
       created_at: '2026-10-26', status: 'ACTIVE'
     });
     expect(customer).toEqual({
-      customerId: 'C1', customerName: 'Acme', companyWebsite: 'https://acme.test',
+      id: 'C1', customerId: 'C1', customerName: 'Acme', companyWebsite: 'https://acme.test',
       websiteProfile: { sector: 'Textile' }, createdAt: '2026-10-26', status: 'ACTIVE'
     });
     expect(() => mapD1Customer({ website_profile_json: 'invalid' })).toThrow();
@@ -61,6 +61,7 @@ describe('assessment D1 API serialization', () => {
       assessmentId: 'A1', status: 'CREATED', activeAnalysisRunId: 'RUN-1'
     })).toEqual({ assessmentId: 'A1', status: 'APPROVED', activeAnalysisRunId: 'RUN-1' });
     expect(mapD1Customer({ customer_id: 'C1' }, { customMetadata: true })).toHaveProperty('customMetadata', true);
+    expect(mapD1Customer({ customer_id: 'C2' }, { id: 'SNAPSHOT-ID' }).id).toBe('C2');
     expect(mapD1DataVersion({ data_version_id: 'V1' }, { original: true })).toHaveProperty('original', true);
     expect(mapD1AuditLog({ id: 'L1' }, { original: true })).toHaveProperty('original', true);
     expect(mapD1AnalysisRun({ analysis_run_id: 'R1' }, { canonicalModule1: { total: 1 } }))

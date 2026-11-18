@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { CustomerManagementViewProps, CustomerRecord, AssessmentRecord } from '../../types';
+import type {
+  CustomerDirectoryLoadOptions, CustomerManagementViewProps, CustomerRecord, AssessmentRecord
+} from '../../types';
 import { UI_STRINGS } from '../../constants';
 import { assessmentApiClient } from '../../utils/assessmentApi';
 import frontendLogger from '../../utils/logger';
@@ -27,10 +29,13 @@ export const CustomerManagementView: React.FC<CustomerManagementViewProps> = ({
   const selectedCustomerIdRef = useRef<string | undefined>(selectedCustomerId);
   selectedCustomerIdRef.current = selectedCustomerId;
 
-  const loadData = useCallback(async (): Promise<void> => {
+  const loadData = useCallback(async (options: CustomerDirectoryLoadOptions = {}): Promise<void> => {
+    const showLoading = options.showLoading !== false;
     const requestId = ++fetchRequestIdRef.current;
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       const [custList, assessList] = await Promise.all([
         assessmentApiClient.getCustomers(),
         assessmentApiClient.getAssessments()
@@ -89,6 +94,8 @@ export const CustomerManagementView: React.FC<CustomerManagementViewProps> = ({
     setCustomers((prev) => [newCust, ...prev]);
     setSelectedCustomer(newCust);
     onSelectCustomer(newCust);
+    // Re-read the directory from the server in the background so the table matches stored records.
+    void loadData({ showLoading: false });
   };
 
   const handleCustomerUpdated = (updatedCust: CustomerRecord): void => {

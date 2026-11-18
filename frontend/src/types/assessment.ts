@@ -357,6 +357,11 @@ export interface AssessmentWorkspaceProps {
   initialActiveTab?: 'customers' | 'assessments';
 }
 
+export interface CustomerDirectoryLoadOptions {
+  /** Shows the loading placeholder while the directory fetches. Background reloads keep the table visible. */
+  showLoading?: boolean;
+}
+
 export interface CustomerManagementViewProps {
   onSelectCustomer: (customer: CustomerRecord) => void;
   onCreateAssessmentForCustomer: (customer: CustomerRecord) => void;

@@ -1032,6 +1032,38 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
+    it('creates a customer through the Worker with the success envelope and an id the directory keys on', async () => {
+      seedTenant('TNT-GLOBAL-8902');
+      const response = await send('/api/assessment/customers', jsonBody('POST', { customerName: 'Envelope Corp', industry: 'Textile' }));
+      const created = await bodyOf(response) as { success?: boolean; data?: Record<string, unknown> };
+
+      expect(response.status).toBe(201);
+      expect(created.success).toBe(true);
+      expect(created.data).toMatchObject({ customerName: 'Envelope Corp', industry: 'Textile' });
+      expect(created.data?.id).toEqual(expect.any(String));
+      expect(created.data?.id).toEqual(created.data?.customerId);
+
+      const listed = await bodyOf(await send('/api/assessment/customers'));
+      const row = (listed.data as Array<Record<string, unknown>>).find((customer) => customer.customerName === 'Envelope Corp');
+      expect(row?.id).toBe(created.data?.id);
+    });
+
+    it('creates an assessment through the Worker with the success envelope the client expects', async () => {
+      seedTenant('TNT-GLOBAL-8902');
+      const response = await send('/api/assessment', jsonBody('POST', {
+        customerName: 'Envelope Motors',
+        industry: 'Automotive',
+        assessmentPeriodStart: 'April 2024',
+        assessmentPeriodEnd: 'March 2025'
+      }));
+      const created = await bodyOf(response) as { success?: boolean; data?: Record<string, unknown> };
+
+      expect(response.status).toBe(201);
+      expect(created.success).toBe(true);
+      expect(created.data).toMatchObject({ customerName: 'Envelope Motors', industry: 'Automotive' });
+      expect(created.data?.assessmentId).toEqual(expect.any(String));
+    });
+
     it('keeps ingestion reads within the authorized tenant scope', async () => {
       seedTenant('TNT-1', '2026-01-01T00:00:00Z');
       seedTenant('TNT-2', '2026-02-01T00:00:00Z');

@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { CustomerManagementView } from '../../../src/components/assessment/CustomerManagementView';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import { assessmentApiClient } from '../../../src/utils/assessmentApi';
@@ -403,6 +403,35 @@ describe('CustomerManagementView', () => {
 
     expect(onSelectCustomer).toHaveBeenCalledWith(fixtures.newCustomer);
     expect(await screen.findAllByText(fixtures.newCustomer.customerName)).not.toHaveLength(0);
+  });
+
+  it('reloads the directory after a customer is created so the saved record and its ID show', async () => {
+    renderView();
+    await rowFor(fixtures.acme.customerName);
+    vi.mocked(assessmentApiClient.getCustomers).mockResolvedValue([fixtures.acme, fixtures.globex, fixtures.newCustomer]);
+
+    fireEvent.click(screen.getAllByRole('button', { name: strings.btnCreateCustomer })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'stub create' }));
+
+    await waitFor(() => expect(assessmentApiClient.getCustomers).toHaveBeenCalledTimes(2));
+    const createdRow = await rowFor(fixtures.newCustomer.customerName);
+    expect(within(createdRow).getByText(fixtures.newCustomer.id)).toBeInTheDocument();
+  });
+
+  it('keeps the new customer and the table on screen while the directory reloads in the background', async () => {
+    renderView();
+    await rowFor(fixtures.acme.customerName);
+    const pending = createDeferred<CustomerRecord[]>();
+    vi.mocked(assessmentApiClient.getCustomers).mockReturnValueOnce(pending.promise);
+
+    fireEvent.click(screen.getAllByRole('button', { name: strings.btnCreateCustomer })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'stub create' }));
+
+    expect(await rowFor(fixtures.newCustomer.customerName)).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    await act(async () => {
+      pending.resolve([fixtures.acme, fixtures.globex, fixtures.newCustomer]);
+    });
   });
 
   it('closes the create and edit dialogs through their close callbacks', async () => {

@@ -124,7 +124,7 @@ export const handleAssessmentRoute = async (
       logger.info('Tenant-scoped assessment created', {
         requestId: request.headers.get(REQUEST_ID_HEADER) || undefined, assessmentId: id, customerId, tenantId
       });
-      return { data: created ? mapD1Assessment(created) : null, status: 201 };
+      return { data: { success: true, data: created ? mapD1Assessment(created) : null }, status: 201 };
     }
     const assessments = await queryAll(db,
       `SELECT * FROM ${D1_TABLES.assessments} WHERE tenant_id = ? ORDER BY created_at DESC`, [tenantId]);

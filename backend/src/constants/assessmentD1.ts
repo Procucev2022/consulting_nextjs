@@ -110,11 +110,13 @@ export const ASSESSMENT_DATA_VERSION_ROLLBACK_SQL = {
 
 export const ASSESSMENT_D1_LOG_MESSAGES = {
   invalidSnapshotFallback: 'Invalid assessment snapshot in D1 fell back to an empty object',
-  invalidSnapshotCollection: 'Assessment snapshot collection row could not be parsed from D1'
+  invalidSnapshotCollection: 'Assessment snapshot collection row could not be parsed from D1',
+  tenantCustomerCreated: 'Tenant-scoped customer created'
 } as const;
 
 export const ASSESSMENT_D1_LOG_ACTIONS = {
-  snapshotCollectionRead: 'assessment.snapshot-collection.read'
+  snapshotCollectionRead: 'assessment.snapshot-collection.read',
+  customerCreate: 'assessment.customer.create'
 } as const;
 
 export const ASSESSMENT_D1_FALLBACKS = {

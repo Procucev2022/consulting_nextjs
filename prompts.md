@@ -114387,3 +114387,10 @@ By default this record is visble to every user, Can you remove if this mock data
 ## Prompt 640
 Not able to delete the existing file redirect to this page have to reload to move to old page (Problem in deleting uploaded files)
 ---
+## Prompt 641
+Bug : Auto refresh should be there.
+
+ 
+
+Issue: After adding up customer we manually need to refresh the page.
+---

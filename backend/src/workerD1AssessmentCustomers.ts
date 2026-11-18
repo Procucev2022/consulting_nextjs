@@ -1,11 +1,12 @@
 import { D1_TABLES } from './constants/d1';
-import { ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
+import { ASSESSMENT_D1_LOG_ACTIONS, ASSESSMENT_D1_LOG_MESSAGES, ASSESSMENT_D1_MESSAGES } from './constants/assessmentD1';
 import { createCustomerSchema, updateCustomerSchema } from './constants/assessmentValidation';
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { WorkerD1Result } from './types/d1';
 import { mapD1Assessment, mapD1Customer, loadAssessmentSnapshots, loadAssessmentSnapshotsForIds } from './services/assessmentD1Mappers';
 import { queryAll, queryFirst } from './services/assessmentD1Queries';
 import { readJson } from './workerHttp';
+import logger from './utils/logger';
 
 export const handleCustomerRoute = async (
   db: CloudflareD1Database,
@@ -33,7 +34,13 @@ export const handleCustomerRoute = async (
         'ACTIVE', body.notes ?? null
       ).run();
       const created = await queryFirst(db, `SELECT * FROM ${D1_TABLES.customers} WHERE customer_id = ? AND tenant_id = ?`, [customerId, tenantId]);
-      return { data: created ? mapD1Customer(created) : null, status: 201 };
+      logger.info(ASSESSMENT_D1_LOG_MESSAGES.tenantCustomerCreated, {
+        requestId: request.headers.get('x-request-id') || undefined,
+        action: ASSESSMENT_D1_LOG_ACTIONS.customerCreate,
+        customerId,
+        tenantId
+      });
+      return { data: { success: true, data: created ? mapD1Customer(created) : null }, status: 201 };
     }
     const customers = await queryAll(db,
       `SELECT * FROM ${D1_TABLES.customers} WHERE tenant_id = ? ORDER BY customer_name ASC`, [tenantId]);

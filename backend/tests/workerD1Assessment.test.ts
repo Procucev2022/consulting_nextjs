@@ -315,7 +315,9 @@ describe('workerD1Assessment handler', () => {
     try {
       const response = await handleAssessmentRoute(fixture.d1, '/', create,
         new URL('https://consulting.edge/api/assessment'), { REQUEST_TENANT_ID: 'TENANT-A' });
-      const data = response.data as { assessmentId: string; customerId: string; status: string; dataStatus: string };
+      const envelope = response.data as { success: boolean; data: Record<string, unknown> };
+      expect(envelope).toMatchObject({ success: true });
+      const data = envelope.data as { assessmentId: string; customerId: string; status: string; dataStatus: string };
       expect(response.status).toBe(201);
       expect(data).toMatchObject({ status: 'CREATED', dataStatus: 'NOT_RECEIVED' });
       expect(await fixture.d1.prepare('SELECT tenant_id FROM CustomerRecord WHERE customer_id = ?').bind(data.customerId).first())
@@ -446,7 +448,7 @@ describe('workerD1Assessment handler', () => {
     const db = mockDb({ customers: [sampleCustomer] });
 
     const listRes = await handleAssessmentRoute(db, '/customers', req('/customers'), new URL('https://consulting.edge/api/assessment/customers'));
-    expect(listRes.data).toEqual([{ customerId: 'CUST-001', customerName: 'Acme Corp', status: 'ACTIVE' }]);
+    expect(listRes.data).toEqual([{ id: 'CUST-001', customerId: 'CUST-001', customerName: 'Acme Corp', status: 'ACTIVE' }]);
 
     // POST without customerId
     const postReq = req('/customers', {
@@ -484,7 +486,9 @@ describe('workerD1Assessment handler', () => {
     const db = mockDb({ customers: [sampleCustomer] });
 
     const getRes = await handleAssessmentRoute(db, '/customers/CUST-001', req('/customers/CUST-001'), new URL('https://consulting.edge/api/assessment/customers/CUST-001'));
-    expect(getRes.data).toEqual({ customer: { customerId: 'CUST-001', customerName: 'Acme Corp' }, assessments: [] });
+    expect(getRes.data).toEqual({
+      customer: { id: 'CUST-001', customerId: 'CUST-001', customerName: 'Acme Corp' }, assessments: []
+    });
 
     const patchReq = req('/customers/CUST-001', {
       method: 'PATCH',
@@ -568,8 +572,9 @@ describe('workerD1Assessment handler', () => {
       }), new URL('https://consulting.edge/api/assessment'));
 
       expect(created.status).toBe(201);
-      expect(created.data).not.toHaveProperty('totalSpendCr');
-      expect(created.data).not.toHaveProperty('potentialSavingsCr');
+      const record = (created.data as { data: Record<string, unknown> }).data;
+      expect(record).not.toHaveProperty('totalSpendCr');
+      expect(record).not.toHaveProperty('potentialSavingsCr');
       expect(fixture.db.prepare(`SELECT total_spend_cr, validated_spend_cr, gross_spend_cr, fx_impact_cr,
         potential_savings_cr, savings_pct FROM AssessmentRecord WHERE assessment_id = ?`).get('AIC-NULL-FINANCIALS'))
         .toEqual({

@@ -85,7 +85,8 @@ function mapRecord(row: D1Record): D1Record {
 }
 
 export function mapD1Customer(row: D1Record, snapshot?: D1Record): CustomerRecord {
-  return { ...snapshot, ...mapRecord(row) } as unknown as CustomerRecord;
+  // `id` mirrors the customer key so new customers, which have no snapshot, still carry it.
+  return { ...snapshot, ...mapRecord(row), id: String(row.customer_id) } as unknown as CustomerRecord;
 }
 
 export function mapD1Assessment(row: D1Record, snapshot?: D1Record): AssessmentRecord {
