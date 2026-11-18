@@ -7,7 +7,9 @@ import {
   CLIENT_ERROR_REPORT_MAX_ERROR_NAME_LENGTH,
   CLIENT_ERROR_REPORT_MAX_MESSAGE_LENGTH,
   CLIENT_ERROR_REPORT_MAX_STACK_LENGTH,
+  CLIENT_ERROR_REPORT_MAX_ATTEMPTS,
   CLIENT_ERROR_REPORT_MAX_TRACKED_KEYS,
+  CLIENT_ERROR_REPORT_RETRY_BASE_MS,
   CLIENT_ERROR_REPORT_MAX_ROUTE_LENGTH,
   CLIENT_ERROR_REPORT_PATH_PATTERNS,
   CLIENT_ERROR_REPORT_SENSITIVE_TEXT_PATTERNS,
@@ -113,19 +115,37 @@ const shouldReport = (report: ClientErrorReport): boolean => {
   return true;
 };
 
-export const sendClientErrorReport = async (entry: FrontendLogEntry, source?: string): Promise<void> => {
-  const report = buildClientErrorReport(entry, source);
-  if (!report || !shouldReport(report)) return;
+const isRetryableReportStatus = (status: number): boolean => status === 429 || status >= 500;
+
+// Resolves true when the report should be sent again: a network failure, a rate limit, or a server error.
+const postClientErrorReport = async (body: string): Promise<boolean> => {
   try {
-    await apiFetch(`${BACKEND_API_BASE_URL}${CLIENT_ERROR_REPORT_ENDPOINT}`, {
+    const response = await apiFetch(`${BACKEND_API_BASE_URL}${CLIENT_ERROR_REPORT_ENDPOINT}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(report),
+      body,
       credentials: 'omit',
       keepalive: true
     });
+    return isRetryableReportStatus(response.status);
   } catch {
     // Reporting must never create another application error or interrupt the user's action.
+    return true;
+  }
+};
+
+const waitBeforeRetry = (attempt: number): Promise<void> => new Promise((resolve) => {
+  setTimeout(() => resolve(), CLIENT_ERROR_REPORT_RETRY_BASE_MS * 2 ** (attempt - 1));
+});
+
+export const sendClientErrorReport = async (entry: FrontendLogEntry, source?: string): Promise<void> => {
+  const report = buildClientErrorReport(entry, source);
+  if (!report || !shouldReport(report)) return;
+  const body = JSON.stringify(report);
+  for (let attempt = 1; attempt <= CLIENT_ERROR_REPORT_MAX_ATTEMPTS; attempt += 1) {
+    const shouldRetry = await postClientErrorReport(body);
+    if (!shouldRetry) return;
+    if (attempt < CLIENT_ERROR_REPORT_MAX_ATTEMPTS) await waitBeforeRetry(attempt);
   }
 };
 

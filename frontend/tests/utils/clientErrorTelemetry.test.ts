@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CLIENT_ERROR_REPORT_DEDUPE_MS,
   CLIENT_ERROR_REPORT_ENDPOINT,
+  CLIENT_ERROR_REPORT_MAX_ATTEMPTS,
   CLIENT_ERROR_REPORT_MAX_TRACKED_KEYS
 } from '../../src/constants/errors';
 import type { FrontendLogEntry } from '../../src/types/logger';
@@ -73,12 +74,44 @@ describe('client error telemetry', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(CLIENT_ERROR_REPORT_ENDPOINT);
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST', credentials: 'omit', keepalive: true });
 
-    fetchMock.mockRejectedValueOnce(new Error('telemetry endpoint unavailable'));
-    await expect(sendClientErrorReport(entry({
-      message: 'Distinct telemetry failure', error: { name: 'Error', message: 'Distinct telemetry failure' }
-    }))).resolves.toBeUndefined();
+    vi.useFakeTimers();
+    try {
+      fetchMock.mockRejectedValueOnce(new Error('telemetry endpoint unavailable'));
+      const pending = sendClientErrorReport(entry({
+        message: 'Distinct telemetry failure', error: { name: 'Error', message: 'Distinct telemetry failure' }
+      }));
+      await vi.runAllTimersAsync();
+      await expect(pending).resolves.toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
+  it('retries network failures and server errors with backoff, and does not retry client errors', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi.mocked(fetch);
+      fetchMock
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce(new Response(null, { status: 202 }));
+      const recovered = sendClientErrorReport(entry({ message: 'Recovered report', error: { name: 'Error', message: 'Recovered report' } }));
+      await vi.runAllTimersAsync();
+      await recovered;
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
+      const exhausted = sendClientErrorReport(entry({ message: 'Exhausted report', error: { name: 'Error', message: 'Exhausted report' } }));
+      await vi.runAllTimersAsync();
+      await expect(exhausted).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledTimes(2 + CLIENT_ERROR_REPORT_MAX_ATTEMPTS);
+
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 400 }));
+      await sendClientErrorReport(entry({ message: 'Rejected report', error: { name: 'Error', message: 'Rejected report' } }));
+      expect(fetchMock).toHaveBeenCalledTimes(3 + CLIENT_ERROR_REPORT_MAX_ATTEMPTS);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('captures window errors and unhandled promise rejections and removes all listeners on cleanup', () => {
     const fetchMock = vi.mocked(fetch);
     const cleanup = installClientErrorMonitoring();
