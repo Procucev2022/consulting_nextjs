@@ -1990,7 +1990,6 @@ export const UI_STRINGS = {
     description: 'Bridging high-impact diagnostic consulting engagements into sticky, multi-year recurring enterprise SaaS contracts in INR Crores (₹ Cr).',
     generateBrief: 'Generate Executive Brief',
     funnelTitle: 'Client Conversion Funnel & SaaS Value Lifecycle',
-    funnelSubtitle: 'The 3-phase strategic roadmap driving 3x faster conversion from diagnostic advisory to long-term SaaS ARR across ₹732.41 Cr evaluated spend.',
     conversionViewBadge: 'Conversion View',
     funnelHeaders: {
       funnelPhase: 'Funnel Phase',
@@ -2387,15 +2386,6 @@ export const UI_STRINGS = {
       kpiTotalSavings: 'Total Savings',
       totalSavingsVal: (savings: number) => `₹${savings.toFixed(2)} Cr`,
       totalSavingsSub: 'Share of Total Spend',
-      kpiPriceCreep: 'Price Creep Leak',
-      priceCreepVal: '₹20.53 Cr',
-      priceCreepSub: 'Unjustified vs Market Index',
-      kpiConversionVelocity: 'Conversion Velocity',
-      conversionVelocityVal: '3x',
-      conversionVelocitySub: 'Advisory to SaaS Lock-in',
-      kpiAiConfidence: 'AI Confidence',
-      aiConfidenceVal: '98.4%',
-      aiConfidenceSub: 'Enterprise QUA Model',
       section1Title: '1. Category Spend & Target Savings Distribution (INR in Crores)',
       tableHeaders: {
         category: 'Core Spend Category',
@@ -2576,23 +2566,6 @@ export const UI_STRINGS = {
       networkCount: '50,000+',
       networkLabel: 'Verified Network',
       networkDesc: 'Pre-screened, category-indexed enterprise supplier ecosystem delivering immediate competitive tension and dual-sourcing resilience.'
-    },
-    scorecard: {
-      badge: 'EXECUTIVE SUMMARY & PERFORMANCE SCORECARD',
-      title: 'Enterprise Spend Diagnosis & Value Realization Scorecard',
-      subtitle: 'High-impact findings across ₹732.41 Cr baseline spend and multi-currency transaction logs',
-      kpiBaselineSpend: 'Analyzed Spend Baseline',
-      kpiBaselineSpendVal: '₹732.41 Cr',
-      kpiBaselineSpendSub: 'Multi-Currency Ingestion Baseline',
-      kpiIdentifiedSavings: 'Quantified Savings Target',
-      kpiIdentifiedSavingsVal: '₹119.67 Cr',
-      kpiIdentifiedSavingsSub: 'Net Spend Reduction',
-      kpiPriceCreep: 'Price Creep Leakage',
-      kpiPriceCreepVal: '₹20.53 Cr',
-      kpiPriceCreepSub: '8.4% Unbudgeted Inflation Drift',
-      kpiVelocity: 'Conversion Velocity',
-      kpiVelocityVal: '3x Faster',
-      kpiVelocitySub: 'Advisory to SaaS Lock-in'
     },
     ingestion: {
       badge: 'STAGE 1: INGESTION & DATA RECONCILIATION',

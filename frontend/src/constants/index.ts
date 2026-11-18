@@ -42,7 +42,6 @@ export * from './module2StrategicSourcing';
 export * from './module2OpportunityIntelligence';
 export * from './module2EvidenceChain';
 export * from './executiveBriefExportStrings';
-export * from './executiveBriefPresentationConstants';
 export * from './subscription';
 export * from './theme';
 export * from './analysisOrchestration';

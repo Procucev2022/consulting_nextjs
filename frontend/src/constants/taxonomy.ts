@@ -12,6 +12,10 @@ export const TAXONOMY_PAGE_SIZE = 1000;
 export const TAXONOMY_PREVIEW_LIMIT = 50;
 
 export const UNCLASSIFIED_COMMODITY_CODE = '00000000';
+// Confidence reported for a line item classified by an exact UNSPSC taxonomy match. Matches the backend score for
+// deterministic matches. A line with no taxonomy match reports no confidence.
+export const TAXONOMY_MATCH_CONFIDENCE_PCT = 95;
+export const UNCLASSIFIED_CONFIDENCE_PCT = 0;
 export const UNCLASSIFIED_COMMODITY_TITLE = 'Unclassified Commodity';
 export const UNCLASSIFIED_CLASS_CODE = '00000000';
 export const UNCLASSIFIED_CLASS_TITLE = 'Unclassified Class';

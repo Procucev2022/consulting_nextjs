@@ -45,7 +45,6 @@ export * from './module2StrategicSourcing';
 export * from './module2Components';
 export * from './module2AuditDossier';
 export * from './executiveBriefExportTypes';
-export * from './executiveBriefPresentation';
 export * from './executiveOpportunityBrief';
 export * from './subscription';
 export * from './theme';

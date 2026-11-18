@@ -8,6 +8,9 @@ import { orchestrationApi } from '@/utils/orchestrationApi';
 import { getTaxonomyLoadState, loadUNSPSCTaxonomy } from '@/data/unspscTaxonomy';
 import { frontendLogger } from '@/utils/logger';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import {
+  TAXONOMY_MATCH_CONFIDENCE_PCT, UNCLASSIFIED_COMMODITY_CODE, UNCLASSIFIED_CONFIDENCE_PCT
+} from '@/constants/taxonomy';
 import { mockTenant, conversionFunnelStages } from '../fixtures/mockData';
 import { EMPTY_TENANT } from '@/constants/app';
 import {
@@ -1708,6 +1711,23 @@ describe('Home page: batch upload pipeline', () => {
     expect(readProp<LineItemMapping[]>('module2', 'lineItems').map((item) => item.raw_desc)).toEqual(['Item-1', 'Item-2']);
   });
 
+  it('does not invent quantities, prices, statuses or classification codes for rows that omit them', async () => {
+    await renderPage();
+
+    await uploadFile(makeBinaryFile('description_only.xlsx', buildWorkbookBytes([{ 'Short Text': 'Gasket' }]), XLSX_MIME));
+
+    await switchTab('module2', 'module2');
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0]).toMatchObject({
+      raw_desc: 'Gasket',
+      qty: 0,
+      unit_price: 0,
+      total_spend: 0,
+      status: 'Pending Review',
+      unspsc_code: UNCLASSIFIED_COMMODITY_CODE,
+      ai_confidence: UNCLASSIFIED_CONFIDENCE_PCT
+    });
+  });
+
   it('records zero rows for a workbook that has a header but no data rows', async () => {
     await renderPage();
 
@@ -1910,7 +1930,8 @@ describe('Home page: Module 2 categorization', () => {
       expect.objectContaining({ sourceMaterialId: 'MAT-MAP-1', reviewStatus: 'PROVISIONAL' })
     ]));
     expect(items[0]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 97, status: 'Pending Review', core_bucket: 'Direct Materials' });
-    expect(items[1]).toMatchObject({ ai_confidence: 99.4, status: 'Pending Review' });
+    // The seeded taxonomy fixture classifies "Cardboard", so the fallback reports the taxonomy-match confidence.
+    expect(items[1]).toMatchObject({ ai_confidence: TAXONOMY_MATCH_CONFIDENCE_PCT, status: 'Pending Review' });
     expect(items[2].status).toBe('Pending Review');
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(
@@ -2859,7 +2880,11 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
     );
     await runProp('module2', 'onStartAICategorization');
     const afterSuccess = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(afterSuccess[1]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 99.4, status: 'Pending Review' });
+    expect(afterSuccess[1]).toMatchObject({
+      unspsc_code: '31161500',
+      ai_confidence: UNCLASSIFIED_CONFIDENCE_PCT,
+      status: 'Pending Review'
+    });
     expect(afterSuccess[0].status).toBe('Pending Review');
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));

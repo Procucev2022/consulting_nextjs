@@ -58,6 +58,11 @@ import { useUNSPSCTaxonomy } from '@/hooks/useUNSPSCTaxonomy';
 import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { INR_CRORES_DIVISOR } from '@/constants/currency';
+import {
+  TAXONOMY_MATCH_CONFIDENCE_PCT,
+  UNCLASSIFIED_COMMODITY_CODE,
+  UNCLASSIFIED_CONFIDENCE_PCT
+} from '@/constants/taxonomy';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { DEFAULT_PIPELINE_TAB, UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
@@ -1469,8 +1474,7 @@ export default function Home() {
         totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
         uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0)
       },
       onComplete: () => {
         setAnalyzingLoaderState(null);
@@ -1910,8 +1914,8 @@ export default function Home() {
             }
 
             const rowVendor = (vendorKey ? String(r[vendorKey] ?? '') : '').trim() || `Vendor-${idx + 1}`;
-            const rawQty = qtyKey && !isNaN(Number(r[qtyKey])) ? Number(r[qtyKey]) : 100;
-            const rawPrice = priceKey && !isNaN(Number(r[priceKey])) ? Number(r[priceKey]) : 50;
+            const rawQty = qtyKey && !isNaN(Number(r[qtyKey])) ? Number(r[qtyKey]) : 0;
+            const rawPrice = priceKey && !isNaN(Number(r[priceKey])) ? Number(r[priceKey]) : 0;
             const rawCurr = currKey ? String(r[currKey] ?? 'INR').trim().toUpperCase() : 'INR';
             const rawDateVal = dateKey ? r[dateKey] : null;
             const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || 2024);
@@ -1939,16 +1943,18 @@ export default function Home() {
               material_desc: rowItem,
               raw_desc: rowItem,
               vendor_identified: rowVendor,
-              unspsc_code: unspscMatch?.commodityCode || `${11100000 + (idx + 1) * 1234}`,
+              unspsc_code: unspscMatch?.commodityCode || UNCLASSIFIED_COMMODITY_CODE,
               unspsc_category_name: unspscDetails.commodityTitle || `${rawMg} - ${rowItem.slice(0, 24)}`,
               unspsc_commodity_title: unspscDetails.commodityTitle,
               unspsc_class_title: unspscDetails.classTitle,
               core_bucket: assignedBucket,
-              ai_confidence: Number((95.5 + (idx % 4) * 1.1).toFixed(1)),
-              status: idx % 3 === 0 ? 'Confirmed' : 'Pending Review',
+              ai_confidence: unspscMatch?.classificationStatus === 'CLASSIFIED'
+                ? TAXONOMY_MATCH_CONFIDENCE_PCT
+                : UNCLASSIFIED_CONFIDENCE_PCT,
+              status: 'Pending Review',
               unit_price: rawPrice,
               qty: rawQty,
-              total_spend: Math.round((lineCr * 10000000) / 83.8),
+              total_spend: Math.round(lineCr * 10000000),
               raw_currency: rawCurr,
               amount_inr: lineCr * 10000000,
               inr_crores: Number(lineCr.toFixed(2)),
@@ -2292,8 +2298,7 @@ export default function Home() {
         totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
         uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0)
       },
       onComplete: () => {
         setAnalyzingLoaderState(null);
@@ -2324,6 +2329,9 @@ export default function Home() {
       const suggestedItems = lineItems.map((item) => {
         const aiMapping = mappingMap.get(item.raw_desc.toLowerCase().trim());
         const taxonomyMatch = lookupUNSPSCByDescription(item.raw_desc);
+        const fallbackConfidence = taxonomyMatch?.classificationStatus === 'CLASSIFIED'
+          ? TAXONOMY_MATCH_CONFIDENCE_PCT
+          : UNCLASSIFIED_CONFIDENCE_PCT;
         const details = aiMapping
           ? lookupUNSPSCDetails(aiMapping.unspscTitle || item.raw_desc, aiMapping.suggestedBucket || item.core_bucket)
           : taxonomyMatch || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
@@ -2334,7 +2342,7 @@ export default function Home() {
           unspsc_class_title: details.classTitle || item.unspsc_class_title,
           unspsc_category_name: aiMapping?.unspscTitle || details.commodityTitle || item.unspsc_category_name,
           core_bucket: (aiMapping?.suggestedBucket || details.coreBucket || item.core_bucket) as LineItemMapping['core_bucket'],
-          ai_confidence: typeof aiMapping?.confidenceScore === 'number' ? aiMapping.confidenceScore : 99.4
+          ai_confidence: typeof aiMapping?.confidenceScore === 'number' ? aiMapping.confidenceScore : fallbackConfidence
         };
       });
       const saved = await persistD1MappingDecisions(

@@ -10,6 +10,7 @@ import type {
   VendorConsolidationSummary
 } from '../types';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+import { UNCLASSIFIED_COMMODITY_CODE } from '../constants/taxonomy';
 
 interface SupplierAggregateData {
   spend: number;
@@ -56,12 +57,12 @@ function resolveConsolidationTaxonomy(desc: string, bucket: string): { code: str
   const fallback = lookupUNSPSCDetails(desc, bucket);
   if (descMatch?.classificationStatus === 'UNCLASSIFIED') {
     return {
-      code: '00000000',
+      code: UNCLASSIFIED_COMMODITY_CODE,
       family: 'Unclassified (Review Required)'
     };
   }
   return {
-    code: descMatch?.commodityCode || '10000000',
+    code: descMatch?.commodityCode || UNCLASSIFIED_COMMODITY_CODE,
     family: descMatch?.classTitle || fallback.classTitle || 'Industrial Supplies'
   };
 }

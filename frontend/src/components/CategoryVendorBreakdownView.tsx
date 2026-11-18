@@ -16,7 +16,7 @@ import type {
 import { calculateCategoryYearDetails, calculateVendorYearDetails } from '../utils/step2Calculators';
 import { CategoryTopItemsModal } from './modals/CategoryTopItemsModal';
 import { VendorTopItemsModal } from './modals/VendorTopItemsModal';
-import { UI_STRINGS, resolveUNSPSCCategoryDisplay } from '../constants';
+import { UI_STRINGS, UNCLASSIFIED_COMMODITY_CODE, resolveUNSPSCCategoryDisplay } from '../constants';
 import type { UNSPSCFilterMode } from '../constants';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
@@ -53,7 +53,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           id: c.id || `CAT-${idx + 1}`,
           category: humanCat,
           core_bucket: c.core_bucket || 'Direct Materials',
-          sample_column_l_code: c.sample_column_l_code || c.unspsc_code || '10000000',
+          sample_column_l_code: c.sample_column_l_code || c.unspsc_code || UNCLASSIFIED_COMMODITY_CODE,
           spend_fy24_cr: fy24,
           spend_fy25_cr: fy25,
           spend_fy26_cr: fy26,
