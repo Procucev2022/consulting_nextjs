@@ -8,7 +8,9 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     globalSetup: ['./tests/setupD1.mjs'],
     pool: 'forks',
-    maxWorkers: 1,
+    // Each file runs in its own fork. The seeded SQLite fixture is written once by globalSetup and only read afterwards,
+    // and every other suite uses its own in-memory database, so files can run side by side.
+    maxWorkers: '50%',
     isolate: true,
     testTimeout: 10000,
     hookTimeout: 10000,
