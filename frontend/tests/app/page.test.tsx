@@ -364,6 +364,20 @@ describe('Home Page Component', () => {
     vi.restoreAllMocks();
   });
 
+  it('keeps the workspace on screen when the remaining documents carry stored currency text after a delete', async () => {
+    const remainingFileName = 'remaining_dataset.xlsx';
+    const deleteSpy = vi.spyOn(apiClient, 'deleteIngestionDocument').mockResolvedValueOnce([
+      { ...sampleDoc, doc_id: 'DOC-PAGE-002', file_name: remainingFileName, detected_currencies: '["INR"]' }
+    ] as never);
+    await renderHome();
+
+    fireEvent.click(screen.getByTestId('delete-uploaded-dataset-btn'));
+
+    await waitFor(() => expect(deleteSpy).toHaveBeenCalledWith(sampleDoc.doc_id, sampleDoc.tenant_id));
+    expect(await screen.findByText(remainingFileName)).toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.errors.boundary.title)).not.toBeInTheDocument();
+  });
+
   it('renders initial state, loads backend data, and navigates through all module tabs', async () => {
     await renderHome();
 

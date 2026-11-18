@@ -106,6 +106,13 @@ describe('IngestionUploadSection coverage', () => {
     expect(onDeleteDocument).toHaveBeenCalledWith('DOC-COVERAGE-7');
   });
 
+  it('shows the currency fallback instead of failing when stored currency text reaches the queue', () => {
+    render(<IngestionUploadSection {...buildProps({
+      ingestionQueue: [buildDocument({ detected_currencies: '["INR","USD"]' as unknown as string[] })]
+    })} />);
+
+    expect(screen.getByText(module1.detectedCurrenciesUnavailable)).toBeInTheDocument();
+  });
   it('hides the delete control when no delete handler is supplied', () => {
     render(<IngestionUploadSection {...buildProps()} />);
 

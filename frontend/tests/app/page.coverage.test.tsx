@@ -1522,6 +1522,16 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
     expect(readProp<number | undefined>('module1', 'uniqueItemsCount')).toBeUndefined();
   });
 
+  it('keeps the active assessment data version out of the ingestion delete API and explains why', async () => {
+    await renderPage();
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-DEL-1', activeDataVersionId: 'DV-DEL-1' }));
+    await switchTab('module1', 'module1');
+
+    await runProp('module1', 'onDeleteDocument', 'DV-DEL-1');
+
+    expect(apiClient.deleteIngestionDocument).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.module1.assessmentDatasetDeleteUnavailable)).toBeInTheDocument();
+  });
   it('filters documents returned after deletion to the assigned tenant', async () => {
     vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([
       buildDocument({ doc_id: 'DOC-RETAINED' }),

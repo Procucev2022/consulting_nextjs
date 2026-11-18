@@ -1403,6 +1403,15 @@ export default function Home() {
       });
       return;
     }
+    if (activeAssessment?.activeDataVersionId && docId === activeAssessment.activeDataVersionId) {
+      frontendLogger.warn('Document deletion skipped because the card shows the active assessment data version', {
+        action: 'ingestion.document.delete',
+        documentId: docId,
+        assessmentId: activeAssessment.assessmentId
+      });
+      showToast(UI_STRINGS.module1.assessmentDatasetDeleteUnavailable);
+      return;
+    }
     if (!assignedTenantId) {
       frontendLogger.warn('Document deletion skipped because the user has no assigned tenant', {
         action: 'ingestion.document.delete',

@@ -62,6 +62,16 @@ export const parseStoredDetectedCurrencies = (value: unknown, context: D1StoredC
   }
 };
 
+// Every ingestion response passes its document rows through here, so stored currency text always leaves the Worker as an array.
+export const normalizeStoredIngestionRows = (rows: D1Record[], context: Pick<D1StoredCurrencyContext, 'tenantId' | 'requestId'>): D1Record[] =>
+  rows.map((row) => ({
+    ...row,
+    detected_currencies: parseStoredDetectedCurrencies(row.detected_currencies, {
+      requestId: context.requestId,
+      tenantId: context.tenantId,
+      documentId: String(row.doc_id)
+    })
+  }));
 const metricMap = (rows: D1MetricRow[]): Map<string, D1MetricRow> => new Map(rows.map((row) => [row.metric_key, row]));
 
 const requiredMetric = (metrics: Map<string, D1MetricRow>, key: string): number => {
@@ -160,14 +170,7 @@ export const getIngestionDataFromD1 = async (
   const hasMoreValidation = validationPage.length > D1_INGESTION_PAGE_SIZE;
   const queue = queuePage.slice(0, D1_INGESTION_PAGE_SIZE);
   const validationRecords = validationPage.slice(0, D1_INGESTION_PAGE_SIZE);
-  const normalizedQueue = queue.map((row) => ({
-    ...row,
-    detected_currencies: parseStoredDetectedCurrencies(row.detected_currencies, {
-      requestId: page.requestId,
-      tenantId,
-      documentId: String(row.doc_id)
-    })
-  }));
+  const normalizedQueue = normalizeStoredIngestionRows(queue, { requestId: page.requestId, tenantId });
   const normalizedRecords: D1Record[] = validationRecords.map((row) => ({ ...row, resolved: Boolean(row.resolved) }));
   const lastQueue = queue.at(-1);
   const lastValidation = validationRecords.at(-1);

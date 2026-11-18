@@ -237,7 +237,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                 <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono pt-0.5">
                   <div className="flex items-center space-x-1.5">
                     <span>{UI_STRINGS.module1.detectedCurrenciesLabel}</span>
-                    {doc.detected_currencies?.length
+                    {Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0
                       ? doc.detected_currencies.map((currency, currencyIndex) => (
                         <span key={`${currency}-${currencyIndex}`} className="px-1.5 py-0.2 rounded bg-slate-200 text-[10px] text-cyan-800 font-bold">
                           {currency}

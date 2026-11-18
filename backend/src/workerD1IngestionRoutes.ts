@@ -14,7 +14,7 @@ import type { MissingFxRateEntry } from './types/currency';
 import type { CloudflareD1Database, CloudflareD1MutationResult, CloudflareD1PreparedStatement, CloudflareEnvironment } from './types/cloudflare';
 import logger from './utils/logger';
 import {
-  getTenantFromD1, getIngestionDataFromD1, parseStoredDetectedCurrencies, requireD1Binding
+  getTenantFromD1, getIngestionDataFromD1, normalizeStoredIngestionRows, requireD1Binding
 } from './workerD1';
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
@@ -180,8 +180,9 @@ const addIngestion = async (request: Request, environment: CloudflareEnvironment
   `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
   void result;
   const rows = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
-    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all();
-  return { data: rows.results || [] };
+    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
+  const requestIdHeader = request.headers.get('x-request-id');
+  return { data: normalizeStoredIngestionRows(rows.results || [], { requestId: requestIdHeader, tenantId }) };
 };
 
 const uploadIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
@@ -312,14 +313,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
 
   const queueRows = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
     .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
-  const ingestionQueue = queueRows.results.map((row) => ({
-    ...row,
-    detected_currencies: parseStoredDetectedCurrencies(row.detected_currencies, {
-      requestId,
-      tenantId,
-      documentId: String(row.doc_id)
-    })
-  }));
+  const ingestionQueue = normalizeStoredIngestionRows(queueRows.results, { requestId, tenantId });
   return { data: {
     docId,
     importedCount: imported.importedCount,
@@ -453,8 +447,8 @@ const deleteIngestion = async (
     tenantId
   });
   const queue = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
-    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all();
-  return { data: queue.results || [] };
+    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
+  return { data: normalizeStoredIngestionRows(queue.results || [], { requestId, tenantId }) };
 };
 
 const resetValidationRecords = async (

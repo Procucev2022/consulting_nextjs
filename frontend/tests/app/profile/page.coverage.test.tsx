@@ -541,6 +541,17 @@ describe('ProfilePage coverage', () => {
     });
   });
 
+  it('keeps the repository on screen when a deletion returns stored currency text', async () => {
+    const remaining = { ...DOC_OWN, doc_id: 'doc-remaining-6', file_name: 'Remaining_Upload.csv', detected_currencies: '["EUR"]' };
+    vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([remaining] as never);
+    await renderProfile();
+
+    fireEvent.click(screen.getAllByRole('button', { name: DELETE_BUTTON_LABEL })[0]);
+
+    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_OWN.doc_id, PROFILE_USER.tenant_id));
+    expect(await screen.findByText(remaining.file_name)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.profile.fallbackCurrency)).toBeInTheDocument();
+  });
   it('removes a document from the repository and clears the confirmation after three seconds', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([DOC_EMAIL_SCOPED, DOC_SHARED] as never);

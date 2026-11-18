@@ -114381,3 +114381,9 @@ Keep commiting changes & pushing changes directly to current branch
 
 After logout still on that page it not directly move to sign which is not happening for that we need to click on sign in button and website data is visible ( simple word : Logout is not design correctly)
 ---
+## Prompt 639
+By default this record is visble to every user, Can you remove if this mock data.
+---
+## Prompt 640
+Not able to delete the existing file redirect to this page have to reload to move to old page (Problem in deleting uploaded files)
+---

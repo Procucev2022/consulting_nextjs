@@ -823,7 +823,7 @@ export default function ProfilePage(): React.ReactElement {
                         <span>•</span>
                         <span>{UI_STRINGS.profile.evaluatedSpendLabel} <strong className="text-emerald-700 dark:text-emerald-400">{UI_STRINGS.common.croreAmount((item.converted_inr_crores ?? 0).toFixed(2))}</strong></span>
                         <span>•</span>
-                        <span>{UI_STRINGS.profile.currenciesLabel} <strong className="text-cyan-800 dark:text-cyan-300 font-semibold">{item.detected_currencies?.join(', ') || UI_STRINGS.profile.fallbackCurrency}</strong></span>
+                        <span>{UI_STRINGS.profile.currenciesLabel} <strong className="text-cyan-800 dark:text-cyan-300 font-semibold">{(Array.isArray(item.detected_currencies) ? item.detected_currencies.join(', ') : '') || UI_STRINGS.profile.fallbackCurrency}</strong></span>
                       </div>
 
                       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono pt-0.5">

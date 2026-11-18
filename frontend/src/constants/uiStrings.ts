@@ -447,6 +447,7 @@ export const UI_STRINGS = {
       : `₹${amountCr.toFixed(2)} Cr`,
     detectedCurrenciesLabel: 'Detected Currencies:',
     detectedCurrenciesUnavailable: 'Unavailable',
+    assessmentDatasetDeleteUnavailable: 'This dataset is the active data version of the selected assessment, and this card can only remove uploaded documents. Contact the platform administrator to request its removal.',
     documentIdLabel: 'ID:',
     documentIdUnavailable: 'Unavailable',
     evaluatedSpend: (amountCr?: number): string => amountCr === undefined

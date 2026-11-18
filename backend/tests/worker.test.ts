@@ -1026,7 +1026,7 @@ describe('Cloudflare worker core routes', () => {
         file_size_mb: 3,
         records_count: 10,
         converted_inr_crores: 2.5,
-        detected_currencies: '["INR","USD"]',
+        detected_currencies: ['INR', 'USD'],
         ocr_status: 'Pending',
         progress: 0
       });
@@ -1655,6 +1655,20 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/ingestion/document/DOC-1?tenantId=TNT-1', { method: 'DELETE' });
 
       expect((((await bodyOf(response)).data) as Array<{ doc_id: string }>).map((row) => row.doc_id)).toEqual(['DOC-2']);
+    });
+
+    it('returns the remaining queue with stored currency text parsed into arrays, as the list response does', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, detected_currencies) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-KEEP', 'TNT-1', 'keep.xlsx', '2026-01-02T00:00:00Z', '["INR","USD"]'],
+        ['DOC-DROP', 'TNT-1', 'drop.xlsx', '2026-01-01T00:00:00Z', '["EUR"]']
+      ]);
+
+      const response = await send('/api/ingestion/document/DOC-DROP?tenantId=TNT-1', { method: 'DELETE' });
+      const remaining = (await bodyOf(response)).data as Array<{ doc_id: string; detected_currencies: unknown }>;
+
+      expect(response.status).toBe(200);
+      expect(remaining).toEqual([expect.objectContaining({ doc_id: 'DOC-KEEP', detected_currencies: ['INR', 'USD'] })]);
     });
 
     it('matches object keys only when the exact document id is followed by its separator', async () => {

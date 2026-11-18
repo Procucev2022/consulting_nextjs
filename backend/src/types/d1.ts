@@ -139,7 +139,7 @@ export interface D1IngestionPageOptions {
 export interface D1StoredCurrencyContext {
   tenantId: string;
   documentId?: string;
-  requestId?: string;
+  requestId?: string | null;
 }
 
 export interface D1IngestionPageMetadata {
