@@ -50,3 +50,9 @@ export const API_ERROR_MESSAGES = {
   internalError: (requestId: string): string =>
     `An unexpected server error occurred. Retry the action. If the problem continues, contact support with request ${requestId}.`
 } as const;
+
+// Log messages for responses the API builds itself. Route handlers can return a failure envelope with HTTP 200.
+// The response logger only sees statuses of 400 and above, so these messages cover that gap.
+export const API_RESPONSE_LOG_MESSAGES = {
+  failureWithSuccessStatus: 'API response reported a failure with an HTTP success status'
+} as const;

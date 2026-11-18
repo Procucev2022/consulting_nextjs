@@ -8,7 +8,7 @@ import { D1_ROUTE_MESSAGES } from './constants/d1';
 import { WORKER_JSON_BODY_MAX_BYTES } from './constants/validation';
 import type { WorkerD1Result } from './types/d1';
 import type { ApiErrorBodyOptions, ApiErrorCode } from './types/errors';
-import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
+import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS, API_RESPONSE_LOG_MESSAGES } from './constants/errors';
 import { buildApiErrorBody } from './utils/apiErrors';
 import logger from './utils/logger';
 
@@ -81,6 +81,17 @@ export const withCors = (response: Response, request: Request): Response => {
 };
 
 export const jsonResponse = (body: Record<string, unknown>, status: number, request: Request): Response => {
+  if (body.success === false && status < API_HTTP_STATUS.BAD_REQUEST) {
+    // Some handlers return a failure envelope with HTTP 200. Those never reach the response logger for 4xx and 5xx.
+    logger.warn(API_RESPONSE_LOG_MESSAGES.failureWithSuccessStatus, {
+      requestId: request.headers.get('x-request-id') || undefined,
+      method: request.method,
+      path: new URL(request.url).pathname,
+      statusCode: status,
+      errorCode: body.errorCode,
+      message: body.message
+    });
+  }
   return withCors(
     new Response(JSON.stringify(body), {
       status,
