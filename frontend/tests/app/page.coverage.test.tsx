@@ -2518,6 +2518,95 @@ describe('Home page: assessment selection and canonical Module 1 views', () => {
     expect(readProp<boolean>('pipeline', 'isStep3Complete')).toBe(false);
   });
 
+  it('drops a late line-item response from the previous assessment after the user switches assessments', async () => {
+    await renderPage();
+    let resolvePreviousAssessment: (items: LineItemMapping[]) => void = () => undefined;
+    const previousAssessmentItems = new Promise<LineItemMapping[]>((resolve) => {
+      resolvePreviousAssessment = resolve;
+    });
+    vi.mocked(apiClient.getModule2CanonicalLineItems).mockImplementation((_, assessmentId) => (
+      assessmentId === 'ASM-PREVIOUS' ? previousAssessmentItems : Promise.resolve([buildLineItem('MAP-CURRENT', 'Gasket')])
+    ));
+
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-PREVIOUS', activeDataVersionId: 'DV-PREVIOUS' }));
+    await runProp('assessmentWorkspace', 'onActiveAssessmentChange', buildAssessment({ assessmentId: 'ASM-CURRENT', activeDataVersionId: 'DV-CURRENT' }));
+    await switchTab('module2', 'module2');
+    await waitFor(() => {
+      expect(readProp<LineItemMapping[]>('module2', 'lineItems').map((item) => item.mapping_id)).toEqual(['MAP-CURRENT']);
+    });
+
+    await act(async () => {
+      resolvePreviousAssessment([buildLineItem('MAP-PREVIOUS', 'Steel Bolt M8')]);
+    });
+
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems').map((item) => item.mapping_id)).toEqual(['MAP-CURRENT']);
+  });
+
+  it('ignores a late Module 1 response that belongs to the previous assessment', async () => {
+    await renderPage();
+    let resolvePreviousCanonical: (value: Awaited<ReturnType<typeof apiClient.getCanonicalModule1>>) => void = () => undefined;
+    const previousCanonical = new Promise<Awaited<ReturnType<typeof apiClient.getCanonicalModule1>>>((resolve) => {
+      resolvePreviousCanonical = resolve;
+    });
+    vi.mocked(apiClient.getCanonicalModule1).mockImplementation((_, assessmentId) => (
+      assessmentId === 'ASM-PREVIOUS' ? previousCanonical : Promise.resolve(null)
+    ));
+
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-PREVIOUS', activeDataVersionId: 'DV-PREVIOUS' }));
+    await runProp('assessmentWorkspace', 'onActiveAssessmentChange', buildAssessment({ assessmentId: 'ASM-CURRENT', activeDataVersionId: 'DV-CURRENT' }));
+    await act(async () => {
+      resolvePreviousCanonical(asCanonicalResponse(buildCanonical({ assessmentId: 'ASM-PREVIOUS', dataVersionId: 'DV-PREVIOUS' })));
+    });
+
+    const evaluatedVersions = vi.mocked(frontendLogger.info).mock.calls
+      .filter(([message]) => message === 'syncActiveAssessmentData evaluation')
+      .map(([, context]) => (context as { cDataVersion?: string } | undefined)?.cDataVersion);
+    expect(evaluatedVersions).not.toContain('DV-PREVIOUS');
+  });
+
+  it('ignores a late Module 1 failure that belongs to the previous assessment', async () => {
+    await renderPage();
+    let rejectPreviousCanonical: (reason: Error) => void = () => undefined;
+    const previousCanonical = new Promise<Awaited<ReturnType<typeof apiClient.getCanonicalModule1>>>((_resolve, reject) => {
+      rejectPreviousCanonical = reject;
+    });
+    vi.mocked(apiClient.getCanonicalModule1).mockImplementation((_, assessmentId) => (
+      assessmentId === 'ASM-PREVIOUS' ? previousCanonical : Promise.resolve(null)
+    ));
+
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-PREVIOUS', activeDataVersionId: 'DV-PREVIOUS' }));
+    await runProp('assessmentWorkspace', 'onActiveAssessmentChange', buildAssessment({ assessmentId: 'ASM-CURRENT', activeDataVersionId: 'DV-CURRENT' }));
+    await act(async () => {
+      rejectPreviousCanonical(new Error('late Module 1 failure'));
+    });
+
+    const loggedMessages = vi.mocked(frontendLogger.error).mock.calls.map(([message]) => String(message));
+    expect(loggedMessages.some((message) => message.includes('late Module 1 failure'))).toBe(false);
+  });
+
+  it('ignores a late line-item failure that belongs to the previous assessment', async () => {
+    await renderPage();
+    let rejectPreviousItems: (reason: Error) => void = () => undefined;
+    const previousItems = new Promise<LineItemMapping[]>((_resolve, reject) => {
+      rejectPreviousItems = reject;
+    });
+    vi.mocked(apiClient.getModule2CanonicalLineItems).mockImplementation((_, assessmentId) => (
+      assessmentId === 'ASM-PREVIOUS' ? previousItems : Promise.resolve([])
+    ));
+
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-PREVIOUS', activeDataVersionId: 'DV-PREVIOUS' }));
+    await runProp('assessmentWorkspace', 'onActiveAssessmentChange', buildAssessment({ assessmentId: 'ASM-CURRENT', activeDataVersionId: 'DV-CURRENT' }));
+    await act(async () => {
+      rejectPreviousItems(new Error('late line-item failure'));
+    });
+
+    const staleLogs = vi.mocked(frontendLogger.error).mock.calls.filter(([message, context]) => (
+      message === 'syncActiveAssessmentData could not load Module 2 line items' &&
+      (context as { assessmentId?: string } | undefined)?.assessmentId === 'ASM-PREVIOUS'
+    ));
+    expect(staleLogs).toHaveLength(0);
+  });
+
   it('applies a supplier-based pareto when the canonical view has no hierarchy', async () => {
     await renderPage();
     vi.mocked(apiClient.getCanonicalModule1).mockResolvedValueOnce(

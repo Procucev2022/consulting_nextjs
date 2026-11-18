@@ -950,6 +950,8 @@ export default function Home() {
 
   // Synchronize Module 1-4 analytical data strictly with the active assessment
   useEffect(() => {
+    // A response that arrives after the active assessment changed belongs to the previous assessment, so it is dropped.
+    let isCurrent = true;
     async function syncActiveAssessmentData(): Promise<void> {
       if (!activeAssessment?.assessmentId || !activeAssessment.activeDataVersionId) {
         setCanonicalModule1(null);
@@ -980,6 +982,7 @@ export default function Home() {
 
       try {
         const canonicalRes = await apiClient.getCanonicalModule1(undefined, activeAssessment.assessmentId);
+        if (!isCurrent) return;
         const canonicalData = (canonicalRes as any)?.data ?? canonicalRes;
         frontendLogger.info('syncActiveAssessmentData evaluation', {
           hasCanonicalData: Boolean(canonicalData),
@@ -1005,6 +1008,7 @@ export default function Home() {
           setIngestionQueue([]);
         }
       } catch (err: any) {
+        if (!isCurrent) return;
         frontendLogger.error(`syncActiveAssessmentData caught error: ${err?.message || String(err)}`, {
           message: err?.message,
           stack: err?.stack
@@ -1015,14 +1019,20 @@ export default function Home() {
 
       try {
         const m2Items = await apiClient.getModule2CanonicalLineItems(undefined, activeAssessment?.assessmentId);
-        if (m2Items && m2Items.length > 0) {
+        if (isCurrent && m2Items && m2Items.length > 0) {
           setLineItems(m2Items);
         }
-      } catch {
-        // safe fallback
+      } catch (error: unknown) {
+        if (!isCurrent) return;
+        frontendLogger.error('syncActiveAssessmentData could not load Module 2 line items', {
+          assessmentId: activeAssessment?.assessmentId
+        }, error);
       }
     }
     void syncActiveAssessmentData();
+    return () => {
+      isCurrent = false;
+    };
   }, [activeAssessment]);
 
   useEffect(() => {
