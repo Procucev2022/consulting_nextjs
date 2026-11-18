@@ -14,3 +14,6 @@ export const LEVEL_PRIORITY: Record<LogLevel, number> = {
 export const DEFAULT_SERVICE_NAME = 'consulting-frontend';
 export const DEFAULT_MIN_LEVEL: LogLevel = 'debug';
 export const DEFAULT_MAX_HISTORY = 100;
+
+// Replaces log context that cannot be serialized, such as a circular object, so the record is still written.
+export const LOG_RECORD_UNSERIALIZABLE_CONTEXT = { serializationFailed: true } as const;

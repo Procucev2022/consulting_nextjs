@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
-import { AUTH_MESSAGES, AUTH_ROLES } from '../src/constants/auth';
+import {
+  AUTH_BOOTSTRAP_TOKEN_HEADER, AUTH_MESSAGES, AUTH_REGISTRATION_SUBSCRIPTION_TIER, AUTH_ROLES
+} from '../src/constants/auth';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { RequestJsonParseError } from '../src/workerHttp';
 import logger from '../src/utils/logger';
 import {
@@ -17,7 +20,7 @@ import {
 
 const AUTH_URL = 'https://edge.example.com/api/auth';
 const ADMIN_URL = 'https://edge.example.com/api/admin';
-const ENDPOINT_NOT_FOUND = 'Endpoint not found in the Cloudflare Worker.';
+const ENDPOINT_NOT_FOUND = API_ERROR_MESSAGES.routeNotFound;
 const ADMIN_USER_NOT_FOUND = 'User not found in registry';
 const REGISTRATION = {
   name: 'Asha Rao',
@@ -332,8 +335,9 @@ describe('workerAuth register', () => {
 
   it('honours an explicit subscription tier', async () => {
     const result = await registerPending({ subscription_tier: 'GOLD' });
+    expect(AUTH_REGISTRATION_SUBSCRIPTION_TIER).toBe('BRONZE');
 
-    expect((result.body.user as Record<string, unknown>).subscription_tier).toBe('GOLD');
+    expect((result.body.user as Record<string, unknown>).subscription_tier).toBe(AUTH_REGISTRATION_SUBSCRIPTION_TIER);
   });
 });
 
@@ -659,7 +663,15 @@ describe('workerAuth authenticated routes', () => {
 
     const result = await authCall('GET', '/logout', { headers: bearer(await tokenFor(id)) });
 
-    expect(result).toEqual({ status: 404, body: { success: false, message: ENDPOINT_NOT_FOUND } });
+    expect(result).toEqual({
+      status: 404,
+      body: {
+        success: false,
+        message: ENDPOINT_NOT_FOUND,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND
+      }
+    });
   });
 
   it('returns 404 when a known path is called with an unsupported method', async () => {
@@ -989,7 +1001,15 @@ describe('workerAuth admin routes', () => {
       headers: bearer(await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN }))
     });
 
-    expect(result).toEqual({ status: 404, body: { success: false, message: ENDPOINT_NOT_FOUND } });
+    expect(result).toEqual({
+      status: 404,
+      body: {
+        success: false,
+        message: ENDPOINT_NOT_FOUND,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND
+      }
+    });
   });
 });
 
@@ -1014,6 +1034,35 @@ describe('administrator account provisioning', () => {
     });
     expect(updated).toMatchObject({ status: 200, body: { success: true, user: { name: 'Updated Administrator' } } });
     expect(await countUsers()).toBe(1);
+  });
+
+  it('never changes an existing account during first-administrator setup', async () => {
+    const registration = await register();
+    const id = registeredId(registration);
+    const before = await userRow(id);
+
+    const refused = await adminCall('/create-admin', { method: 'POST', body: { ...payload, email: REGISTRATION.email } });
+
+    expect(refused).toEqual({ status: 409, body: { success: false, message: AUTH_MESSAGES.bootstrapAccountExists } });
+    expect(await userRow(id)).toEqual(before);
+  });
+
+  it('requires the configured bootstrap token before the first administrator is created', async () => {
+    const environment = environmentWith({ AUTH_BOOTSTRAP_TOKEN: 'bootstrap-value-for-tests' });
+
+    const withoutToken = await adminCall('/create-admin', { method: 'POST', body: payload, environment });
+    const wrongToken = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment, headers: { [AUTH_BOOTSTRAP_TOKEN_HEADER]: 'wrong-value' }
+    });
+
+    expect(withoutToken).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid } });
+    expect(wrongToken).toEqual({ status: 403, body: { success: false, message: AUTH_MESSAGES.bootstrapTokenInvalid } });
+    expect(await countUsers()).toBe(0);
+
+    const created = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment, headers: { [AUTH_BOOTSTRAP_TOKEN_HEADER]: 'bootstrap-value-for-tests' }
+    });
+    expect(created).toMatchObject({ status: 201, body: { success: true, user: { role: 'ADMIN' } } });
   });
 
   it('rejects invalid provisioning fields and unavailable D1 bindings', async () => {

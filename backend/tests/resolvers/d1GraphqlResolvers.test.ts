@@ -672,7 +672,7 @@ describe('addIngestionItem', () => {
     fixture.close();
   });
 
-  it('inserts a completed ingestion document for the tenant and returns it', async () => {
+  it('records a metadata-only ingestion document as pending until rows are parsed', async () => {
     await insertTenant(fixture.d1, 'TNT-1', '2026-01-01 00:00:00');
 
     const document = await resolvers.addIngestionItem(
@@ -687,8 +687,8 @@ describe('addIngestionItem', () => {
       file_type: 'XLSX',
       file_size_mb: 3.5,
       records_count: 420,
-      ocr_status: 'Completed',
-      progress: 100
+      ocr_status: 'Pending',
+      progress: 0
     });
   });
 
@@ -855,27 +855,30 @@ describe('mergeVendor', () => {
     expect(stub.statements[1].values).toEqual(['Acme Steel', 'MV-1', 'TNT-1']);
   });
 
-  it('reports zero affected rows when the master vendor has no detail rows', async () => {
+  it('rejects a merge that changes no rows because the master vendor has no detail rows', async () => {
     const stub = createStubD1({ runResult: { success: true, meta: { changes: 0 } } });
 
-    expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 0 });
+    await expect(resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1)))
+      .rejects.toThrow(D1_ROUTE_MESSAGES.supplierMasterNotFound(MERGE_ARGS.input.masterId));
   });
 
   it('keeps both vendor updates tenant-scoped when the GraphQL context has no tenant', async () => {
     const stub = createStubD1({ runResult: { success: true, meta: { changes: 0 } } });
     const context = { ...contextFor(stub.d1), tenantId: undefined };
 
-    expect(await resolvers.mergeVendor(MERGE_ARGS, context)).toEqual({ success: true, affected: 0 });
-    expect(stub.statements.map(({ values }) => values)).toEqual([
+    await expect(resolvers.mergeVendor(MERGE_ARGS, context))
+      .rejects.toThrow(D1_ROUTE_MESSAGES.supplierMasterNotFound(MERGE_ARGS.input.masterId));
+    expect(stub.statements.filter(({ sql }) => !sql.includes('CacheGeneration')).map(({ values }) => values)).toEqual([
       ['Acme Steel', 'MV-1', ''],
       ['Acme Steel', 'MV-1', '']
     ]);
   });
 
-  it('reports zero affected rows when the result has no metadata block', async () => {
+  it('rejects a merge whose result carries no change metadata', async () => {
     const stub = createStubD1({ runResult: { success: true } });
 
-    expect(await resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1))).toEqual({ success: true, affected: 0 });
+    await expect(resolvers.mergeVendor(MERGE_ARGS, contextFor(stub.d1)))
+      .rejects.toThrow(D1_ROUTE_MESSAGES.supplierMasterNotFound(MERGE_ARGS.input.masterId));
   });
 
   it('batches both tenant-scoped vendor table updates when D1 supports batch writes', async () => {

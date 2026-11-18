@@ -75,7 +75,7 @@ const handleStaticDataRoute = async (
         database, canonicalName, masterId, tenantId, request.headers.get('x-request-id') || undefined
       );
       if (affected === null) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.vendorMergeBatchUnavailable }, 503, request);
-      if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
+      if (affected === 0) return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.supplierMasterNotFound(masterId) }, 404, request);
       logger.info('Supplier master name updated in D1', {
         targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined
       });
@@ -107,7 +107,7 @@ const handleStaticDataRoute = async (
         )
         RETURNING *
       `).bind(targetModule, targetModule, opportunityId, tenantId).first<Record<string, unknown>>();
-      invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
+      await invalidateTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES);
       if (!deployed) return jsonResponse({ success: false, message: `Savings opportunity ${opportunityId} was not found.` }, 404, request);
       logger.info('Savings opportunity deployed from D1', {
         opportunityId, targetModule, requestId: request.headers.get('x-request-id') || undefined
@@ -143,13 +143,23 @@ const handleFinancialRoute = async (
     const rates = await getCurrencyRatesFromD1(database, request.headers.get('x-request-id') || undefined);
     if (!from) return apiData(rates, request);
     const selected = rates[from] as { currentRate?: number; lastUpdated?: string | null } | undefined;
-    if (!selected && from !== 'INR') return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.currencyNotFound(from) }, 400, request);
     const requestedDate = parsed.data.date || parsed.data.year;
     const effectiveDate = requestedDate == null ? null : /^\d{4}$/u.test(String(requestedDate))
       ? `${requestedDate}-12-31`
       : String(requestedDate).slice(0, 10).replaceAll('/', '-');
-    let rate = from === 'INR' ? 1 : Number(selected?.currentRate || 0);
-    let rateDate = from === 'INR' ? effectiveDate : selected?.lastUpdated || null;
+    if (!selected && from !== 'INR') {
+      // The catalog leaves out currencies with no stored rate. A known currency with no rate is reported as such.
+      const knownCurrency = await database.prepare('SELECT currency FROM FxCurrencyMaster WHERE currency = ?')
+        .bind(from).first();
+      return jsonResponse({
+        success: false,
+        message: knownCurrency
+          ? D1_ROUTE_MESSAGES.currencyRateUnavailable(from, effectiveDate || D1_ROUTE_MESSAGES.latestRateDateLabel)
+          : D1_ROUTE_MESSAGES.currencyNotFound(from)
+      }, 400, request);
+    }
+    let rate = from === 'INR' ? 1 : Number(selected?.currentRate);
+    let rateDate = from === 'INR' ? effectiveDate : selected?.lastUpdated;
     if (from !== 'INR' && effectiveDate) {
       const historicalRate = await database.prepare(`
         SELECT inr_per_unit, rate_date FROM FxReferenceRate
@@ -161,6 +171,15 @@ const handleFinancialRoute = async (
       }
       rate = Number(historicalRate.inr_per_unit);
       rateDate = historicalRate.rate_date;
+    }
+    if (from !== 'INR' && !(rate > 0)) {
+      // A missing rate must not be reported as a converted amount of zero.
+      logger.warn('Currency conversion refused because no exchange rate is stored', {
+        currency: from, effectiveDate, requestId: request.headers.get('x-request-id') || undefined
+      });
+      return jsonResponse({
+        success: false, message: D1_ROUTE_MESSAGES.currencyRateUnavailable(from, effectiveDate || D1_ROUTE_MESSAGES.latestRateDateLabel)
+      }, 400, request);
     }
     return apiData({ amount, fromCurrency: from, amountINR: Number((amount * rate).toFixed(2)), exchangeRate: rate, rateDate }, request);
   }

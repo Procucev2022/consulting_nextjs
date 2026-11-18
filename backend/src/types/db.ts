@@ -50,3 +50,9 @@ export interface D1ReferenceCacheState {
   entries: D1ReferenceCacheEntries;
   loads: D1ReferenceCacheLoads;
 }
+
+/** Half-open primary-key bounds that select the validation records of one data version. */
+export interface ValidationRecordKeyRange {
+  lowerBound: string;
+  upperBound: string;
+}

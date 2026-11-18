@@ -10,7 +10,7 @@ import { aiCategorizationService } from './services/aiCategorizationService';
 import { aiReportService } from './services/aiReportService';
 import { aiAnomalyService } from './services/aiAnomalyService';
 import { lookupTaxonomyRecordFromD1 } from './workerD1';
-import { jsonResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
+import { jsonResponse, notFoundResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 const requestJsonFailureResponse = (request: Request, error: unknown): Response | null => {
   const tooLarge = error instanceof RequestBodyTooLargeError;
@@ -170,5 +170,5 @@ export const handleAiRoute = async (request: Request, url: URL, environment: Clo
     }
   }
 
-  return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
+  return notFoundResponse(request);
 };

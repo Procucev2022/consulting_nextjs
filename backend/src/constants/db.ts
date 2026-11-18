@@ -20,6 +20,8 @@ export const D1_SINGLE_ROW_CHANGE_COUNT = 1;
 export const DEFAULT_CACHE_TTL_MS = 60000; // 60 seconds
 export const D1_REFERENCE_CACHE_MAX_ENTRIES = 128;
 export const D1_TENANT_DATA_CACHE_MAX_ROWS = 1000;
+// The database status counts scan the ledger and validation tables, so a poll reuses them for this long.
+export const D1_DATABASE_STATUS_CACHE_TTL_MS = 30000;
 export const D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES = 8;
 export const D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS = 30000;
 export const D1_RUNTIME_RECENT_AUDIT_LIMIT = 100;
@@ -27,7 +29,8 @@ export const D1_RUNTIME_RECENT_AUDIT_LIMIT = 100;
 export const D1_REFERENCE_CACHE_KEYS = {
   CURRENCY_RATES: 'reference:currency-rates',
   INDUSTRY_CATALOG: 'reference:industry-catalog',
-  PCBI_BENCHMARKS: 'reference:pcbi-benchmarks'
+  PCBI_BENCHMARKS: 'reference:pcbi-benchmarks',
+  DATABASE_STATUS: 'system:database-status'
 } as const;
 
 export const D1_TENANT_DATA_CACHE_KEYS = {
@@ -38,6 +41,10 @@ export const D1_TENANT_DATA_CACHE_KEYS = {
   SAVINGS_OPPORTUNITIES: 'tenant-data:savings-opportunities'
 } as const;
 
+// Scope prefix of the generation row that guards each tenant's assessment-scoped Module 2 analysis cache.
+export const D1_MODULE2_ANALYSIS_CACHE_SCOPE = 'module2-analysis';
+// Scope of the generation row that guards the published PCBI master version and the benchmarks derived from it.
+export const D1_PCBI_PUBLISHED_CACHE_SCOPE = 'pcbi-published';
 export const CACHE_KEYS = {
   TENANT: 'tenant:master',
   INGESTION_QUEUE: 'ingestion:queue',
@@ -49,4 +56,11 @@ export const CACHE_KEYS = {
   VENDOR_RANKINGS: 'vendors:rankings',
   SAVINGS_OPPORTUNITIES: 'savings:opportunities',
   CONVERSION_FUNNEL: 'conversion:funnel'
+} as const;
+
+/** SQL for the per-scope generation counter that tells every isolate when cached tenant data has changed. */
+export const CACHE_GENERATION_SQL = {
+  read: 'SELECT generation FROM CacheGeneration WHERE scope_key = ?',
+  bump: `INSERT INTO CacheGeneration (scope_key, generation, updated_at) VALUES (?, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT(scope_key) DO UPDATE SET generation = generation + 1, updated_at = CURRENT_TIMESTAMP`
 } as const;

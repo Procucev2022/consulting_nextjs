@@ -4,6 +4,10 @@ import { importIngestionWorkbook } from '../../src/services/ingestionWorkbookImp
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import { createWorkerDatabase, insertRows } from '../helpers/workerCoreFixtures';
 
+vi.mock('../../src/utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
 const asBytes = (
   rows: Array<Array<string | number | Date | null>>,
   bookType: 'xlsx' | 'biff8' = 'xlsx'
@@ -57,6 +61,35 @@ describe('importIngestionWorkbook', () => {
       { record_id: 'REC-DOC-TEST-1-ROW-3', tenant_id: 'TNT-1', issue_flag: 'Unmapped Supplier Name', action_status: 'Merge Vendor', resolved: 0 }
     ]);
     expect(fixture.db.prepare('SELECT raw_json FROM ProcurementTransaction WHERE transaction_id = ?').get('DOC-TEST-1-ROW-2')).toMatchObject({ raw_json: expect.stringContaining('Resin') });
+  });
+
+  it('advances the Module 2 analysis generation once after a failed batch, because earlier batches were written', async () => {
+    const fixture = createFixture();
+    const bytes = asBytes([
+      ['PO Number', 'Supplier Name', 'Quantity', 'Net Price', 'Currency', 'Total INR'],
+      ...Array.from({ length: 41 }, (_, index) => [`PO-${index + 1}`, 'Acme', 1, 10, 'INR', null])
+    ]);
+    const originalBatch = fixture.d1.batch.bind(fixture.d1);
+    let batchCount = 0;
+    vi.spyOn(fixture.d1, 'batch').mockImplementation((statements) => {
+      batchCount += 1;
+      if (batchCount === 2) return Promise.reject(new Error('D1 batch unavailable'));
+      return originalBatch(statements);
+    });
+
+    await expect(importIngestionWorkbook({
+      db: fixture.d1,
+      bytes,
+      fileName: 'ledger.xlsx',
+      fileType: 'XLSX',
+      docId: 'DOC-FAILED-BATCH',
+      tenantId: 'TNT-1',
+      assessmentId: 'AIC-1'
+    })).rejects.toThrow('D1 batch unavailable');
+
+    expect(batchCount).toBe(2);
+    expect(fixture.db.prepare('SELECT generation FROM CacheGeneration WHERE scope_key = ?').get('module2-analysis:TNT-1'))
+      .toEqual({ generation: 1 });
   });
 
   it('marks missing and unavailable currencies unresolved and uses explicit INR totals when present', async () => {

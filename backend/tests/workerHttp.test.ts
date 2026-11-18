@@ -10,6 +10,7 @@ import {
   RequestBodyTooLargeError, RequestJsonParseError, withCors
 } from '../src/workerHttp';
 import { D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES, API_RESPONSE_LOG_MESSAGES } from '../src/constants/errors';
 import logger from '../src/utils/logger';
 
 const ORIGIN = 'https://app.example.com';
@@ -193,7 +194,34 @@ describe('workerHttp notFoundResponse', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ORIGIN);
     await expect(response.json()).resolves.toEqual({
       success: false,
-      message: 'Endpoint not found in the Cloudflare Worker.'
+      message: API_ERROR_MESSAGES.routeNotFound,
+      errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+      errorCategory: API_ERROR_CATEGORY.NOT_FOUND
     });
+  });
+});
+
+describe('failure envelopes returned with a success status', () => {
+  it('logs the failure with its request, route, and message', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    const response = jsonResponse(
+      { success: false, status: 'NOT_CONFIGURED', message: 'AI extraction is not configured' },
+      200,
+      new Request('https://edge.test/api/ai/extract', { method: 'POST', headers: { 'x-request-id': 'req-ai-1' } })
+    );
+    expect(response.status).toBe(200);
+    expect(warn).toHaveBeenCalledWith(API_RESPONSE_LOG_MESSAGES.failureWithSuccessStatus, expect.objectContaining({
+      requestId: 'req-ai-1', method: 'POST', path: '/api/ai/extract', statusCode: 200,
+      message: 'AI extraction is not configured'
+    }));
+    warn.mockRestore();
+  });
+
+  it('does not log successful responses or failures that already carry an error status', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+    jsonResponse({ success: true, data: [] }, 200, new Request('https://edge.test/api/categories'));
+    jsonResponse({ success: false, message: 'Bad input' }, 400, new Request('https://edge.test/api/categories'));
+    expect(warn).not.toHaveBeenCalledWith(API_RESPONSE_LOG_MESSAGES.failureWithSuccessStatus, expect.anything());
+    warn.mockRestore();
   });
 });

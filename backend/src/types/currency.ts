@@ -55,3 +55,10 @@ export interface TotalSpendResult {
   formattedTotalSpendCrores: string;
   lineItemCount: number;
 }
+
+/** A remediation skip: records in one currency that no stored rate can convert on their effective date. */
+export interface MissingFxRateEntry {
+  currency: string;
+  effectiveDate: string | null;
+  recordCount: number;
+}

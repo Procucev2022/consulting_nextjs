@@ -1,11 +1,42 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { AssessmentDeliveryTab } from '../../../src/components/assessment/AssessmentDeliveryTab';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import type { DeliveryPackageResult } from '../../../src/types';
+import { apiClient } from '../../../src/utils/api';
+
+interface FakeResponseInit {
+  ok: boolean;
+  status: number;
+  body?: unknown;
+}
+
+const fakeResponse = (init: FakeResponseInit): Response => ({
+  ok: init.ok,
+  status: init.status,
+  headers: { get: (): string | null => null },
+  json: async (): Promise<unknown> => init.body,
+  blob: async (): Promise<Blob> => new Blob(['pdf-bytes'])
+}) as unknown as Response;
+
+const briefPackage = (): DeliveryPackageResult => ({
+  assessmentId: 'A-1', analysisRunId: 'RUN-001', dataVersionId: 'DV-001', customerName: 'Demo Client',
+  assessmentPeriod: '', packageTitle: 'Delivery Package', generatedAt: '2026-10-09T12:00:00.000Z',
+  approvedBy: 'analyst@example.test', approvedAt: '2026-10-09T12:00:00.000Z', releaseVersion: '1.0.0',
+  checksums: {},
+  items: [{
+    id: 'EXECUTIVE_OPPORTUNITY_BRIEF', title: 'Executive Opportunity Brief', format: 'PDF', artifactStatus: 'GENERATED',
+    analysisRunId: 'RUN-001', dataVersionId: 'DV-001', generatedAt: '2026-10-09T12:00:00.000Z', fileName: 'report.pdf'
+  }]
+});
 
 describe('AssessmentDeliveryTab', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('renders not approved alert when deliveryPackage is null', () => {
     render(<AssessmentDeliveryTab deliveryPackage={null} />);
     expect(screen.getByText(UI_STRINGS.ASSESSMENT.delivery.notApprovedAlert)).toBeInTheDocument();
@@ -66,8 +97,38 @@ describe('AssessmentDeliveryTab', () => {
       checksums: {}, items: [generatedItem]
     };
     render(<AssessmentDeliveryTab deliveryPackage={deliveryPackage} />);
-    expect(screen.getByTestId('download-assessment-artifact-EXECUTIVE_OPPORTUNITY_BRIEF'))
-      .toHaveAttribute('href', '/api/assessment/A-1/delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF');
+    expect(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.delivery.btnDownload })).toBeEnabled();
     expect(screen.queryByTestId('download-assessment-artifact-MODULE_1_REPORT')).not.toBeInTheDocument();
+  });
+
+  it('downloads a generated deliverable with the Bearer token and saves it from a Blob URL', async () => {
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('tok-1');
+    const fetchMock = vi.fn().mockResolvedValue(fakeResponse({ ok: true, status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    URL.createObjectURL = vi.fn(() => 'blob:brief-1');
+    URL.revokeObjectURL = vi.fn();
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    render(<AssessmentDeliveryTab deliveryPackage={briefPackage()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.delivery.btnDownload }));
+
+    await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+    const [requestedUrl, init] = fetchMock.mock.calls[0];
+    expect(String(requestedUrl)).toContain('/api/assessment/A-1/delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF');
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer tok-1');
+    expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+  });
+
+  it('shows the server reason and keeps the button available when a download fails', async () => {
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('tok-1');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fakeResponse({
+      ok: false, status: 403, body: { message: 'Only administrators can download this package.' }
+    })));
+    render(<AssessmentDeliveryTab deliveryPackage={briefPackage()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.delivery.btnDownload }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Only administrators can download this package.');
+    expect(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.delivery.btnDownload })).toBeEnabled();
   });
 });

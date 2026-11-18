@@ -1,4 +1,4 @@
-const INTERNAL_TABLE_NAMES = new Set(['D1SeedFileLedger']);
+const INTERNAL_TABLE_NAMES = new Set(['CacheGeneration', 'D1SeedFileLedger']);
 const R2_CLEANUP_INDEX_DEFINITIONS = Object.freeze({
   idx_r2_cleanup_created: 'createindexidx_r2_cleanup_createdonr2objectcleanupoutbox(next_attempt_at,created_at,cleanup_id)',
   idx_r2_cleanup_tenant_created: 'createindexidx_r2_cleanup_tenant_createdonr2objectcleanupoutbox(tenant_id,next_attempt_at,created_at,cleanup_id)'

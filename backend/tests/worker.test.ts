@@ -7,6 +7,7 @@ import type {
 import { CLOUDFLARE_API_PREFIX, CLOUDFLARE_HEALTH_PATH, CLOUDFLARE_SERVICE_NAME } from '../src/constants/cloudflare';
 import { D1_QUERY_LOG_MESSAGES } from '../src/constants/db';
 import { D1_LOG_ACTIONS, D1_LOG_FALLBACKS, D1_LOG_MESSAGES, D1_ROUTE_MESSAGES } from '../src/constants/d1';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from '../src/constants/errors';
 import { R2_CLEANUP_LOG_MESSAGES } from '../src/constants';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../src/constants/graphql';
 import { AI_LOG_MESSAGES, CLASSIFICATION_STATUS, EXTRACTION_STATUS } from '../src/constants/ai';
@@ -700,7 +701,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/health');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
       expect(execution.passThroughOnException).toHaveBeenCalledTimes(1);
     });
 
@@ -708,7 +715,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/not-a-route');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
     });
 
     it('rejects malformed correlation IDs and still returns a support correlation ID', async () => {
@@ -734,10 +747,22 @@ describe('Cloudflare worker core routes', () => {
 
       expect(unavailable.status).toBe(503);
       expect(unavailable.headers.get('x-request-id')).toBe('req-d1-failure');
-      await expect(bodyOf(unavailable)).resolves.toEqual({ success: false, message: 'Cloudflare D1 replica unavailable' });
+      await expect(bodyOf(unavailable)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.databaseUnavailable('req-d1-failure'),
+        errorCode: API_ERROR_CODE.DATABASE_UNAVAILABLE,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId: 'req-d1-failure'
+      });
       expect(exploded.status).toBe(500);
       expect(exploded.headers.get('x-request-id')).toBe('req-api-failure');
-      await expect(bodyOf(exploded)).resolves.toEqual({ success: false, message: 'evidence exploded' });
+      await expect(bodyOf(exploded)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError('req-api-failure'),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId: 'req-api-failure'
+      });
       expect(errorLog).toHaveBeenCalledWith('Worker request failed', expect.objectContaining({
         requestId: 'req-d1-failure', path: '/api/orchestration/jobs', statusCode: 503, durationMs: expect.any(Number)
       }), expect.any(Error));
@@ -752,7 +777,14 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/reports/executive-brief/anything');
 
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'brief pipeline stopped' });
+      const body = await bodyOf(response);
+      expect(body).toMatchObject({
+        success: false,
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER
+      });
+      expect(body.message).toBe(API_ERROR_MESSAGES.internalError(response.headers.get('x-request-id') || ''));
+      expect(JSON.stringify(body)).not.toContain('brief pipeline stopped');
     });
   });
 
@@ -773,7 +805,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/orchestrationarchive');
 
       expect(response.status).toBe(404);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.routeNotFound,
+        errorCode: API_ERROR_CODE.ROUTE_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
     });
 
     it('returns the evidence module response unchanged', async () => {
@@ -989,7 +1027,8 @@ describe('Cloudflare worker core routes', () => {
         records_count: 10,
         converted_inr_crores: 2.5,
         detected_currencies: '["INR","USD"]',
-        ocr_status: 'Completed'
+        ocr_status: 'Pending',
+        progress: 0
       });
     });
 
@@ -1297,8 +1336,15 @@ describe('Cloudflare worker core routes', () => {
     it('fails a binary upload when the object bucket binding is absent', async () => {
       const response = await send('/api/ingestion/upload', jsonBody('POST', { tenant_id: 'TNT-1', fileName: 'book.xlsx', fileBase64: 'aGVsbG8=' }), environmentWithDb({ OBJECTS: undefined }));
 
+      const requestId = response.headers.get('x-request-id') ?? '';
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'Cloudflare R2 binding OBJECTS is required for binary uploads' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId
+      });
     });
 
     it.each([
@@ -1340,6 +1386,7 @@ describe('Cloudflare worker core routes', () => {
         await Promise.all(statements.map((statement) => statement.run()));
         return statements.map(() => ({ meta: { changes: 1 } }));
       });
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
       const records = data.records as Array<Record<string, unknown>>;
@@ -1356,13 +1403,42 @@ describe('Cloudflare worker core routes', () => {
       const persistedSecond = await fixture.d1.prepare('SELECT amount_inr, inr_crores, fx_rate_applied FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-FX-2').first();
       const untouched = await fixture.d1.prepare('SELECT amount_inr, issue_flag, resolved FROM ValidationPreCheckRecord WHERE record_id = ?').bind('REC-NO-DATE').first();
 
-      expect(data).toMatchObject({ updatedCount: 2, skippedCount: 2 });
+      expect(data).toMatchObject({
+        updatedCount: 2,
+        skippedCount: 2,
+        missingRateCount: 2,
+        missingRates: expect.arrayContaining([
+          { currency: 'USD', effectiveDate: null, recordCount: 1 },
+          { currency: 'USD', effectiveDate: '2024-06-30', recordCount: 1 }
+        ])
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        currency: 'USD', effectiveDate: '2024-06-30', recordCount: 1
+      }));
       expect(records).toHaveLength(2);
       expect(persisted).toEqual({ amount_inr: 8500, inr_crores: 0.00085, fx_rate_applied: 85, issue_flag: 'Passed Clean', action_status: 'Ready', resolved: 1 });
       expect(persistedSecond).toEqual({ amount_inr: 17000, inr_crores: 0.0017, fx_rate_applied: 85 });
       expect(untouched).toEqual({ amount_inr: null, issue_flag: 'Currency Review', resolved: 0 });
     });
 
+    it('groups records that share a missing currency and effective date into one report entry', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, transaction_date, issue_flag, action_status, resolved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-GROUP-1', 'TNT-1', 'PO-GROUP-1', 'Acme', 'Group item one', 40, 'EUR', '2025-02-01', 'Currency Review', 'Review', 0],
+        ['REC-GROUP-2', 'TNT-1', 'PO-GROUP-2', 'Acme', 'Group item two', 60, 'EUR', '2025-02-01', 'Currency Review', 'Review', 0]
+      ]);
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+      const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
+      expect(data).toMatchObject({
+        updatedCount: 0,
+        skippedCount: 2,
+        missingRateCount: 2,
+        missingRates: [{ currency: 'EUR', effectiveDate: '2025-02-01', recordCount: 2 }]
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+        currency: 'EUR', effectiveDate: '2025-02-01', recordCount: 2
+      }));
+    });
     it('keeps a single-record remediation working when the D1 adapter does not expose batch', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
@@ -1461,7 +1537,7 @@ describe('Cloudflare worker core routes', () => {
       seedTenant('TNT-1');
       const data = await dataOf(await send('/api/ingestion/remediate?tenantId=TNT-1', { method: 'POST' }));
 
-      expect(data).toEqual({ updatedCount: 0, skippedCount: 0, records: [] });
+      expect(data).toEqual({ updatedCount: 0, skippedCount: 0, missingRateCount: 0, missingRates: [], records: [] });
     });
 
     it('keeps an already-normalized INR record unchanged during remediation', async () => {
@@ -1717,15 +1793,25 @@ describe('Cloudflare worker core routes', () => {
       await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 2 });
     });
 
-    it('clears the whole ingestion queue when no document identifier is given', async () => {
+    it.each([
+      ['bare ingestion route', '/api/ingestion?tenantId=TNT-1'],
+      ['document route without an identifier', '/api/ingestion/document?tenantId=TNT-1'],
+      ['document route with a malformed encoded identifier', '/api/ingestion/document/%E0%A4%A?tenantId=TNT-1']
+    ])('refuses a %s delete and keeps every document for the tenant', async (_label, path) => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at) VALUES (?, ?, ?, ?)', [
-        ['DOC-1', 'TNT-1', 'a.xlsx', '2026-01-01T00:00:00Z']
+        ['DOC-1', 'TNT-1', 'a.xlsx', '2026-01-01T00:00:00Z'],
+        ['DOC-2', 'TNT-1', 'b.xlsx', '2026-01-02T00:00:00Z']
       ]);
 
-      const response = await send('/api/ingestion?tenantId=TNT-1', { method: 'DELETE' });
+      const response = await send(path, { method: 'DELETE' });
 
-      await expect(bodyOf(response)).resolves.toMatchObject({ data: [] });
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.ingestionDocumentIdRequired
+      });
+      await expect(fixture.d1.prepare('SELECT COUNT(*) AS total FROM RawDocumentIngestion').first()).resolves.toEqual({ total: 2 });
     });
 
     it('resets tenant ingestion records after an object deletion failure', async () => {
@@ -1947,7 +2033,8 @@ describe('Cloudflare worker core routes', () => {
       expect(metrics.recentAudits).toEqual(expect.arrayContaining([
         expect.objectContaining({ requestId: statusRequestId, operation: 'SELECT' })
       ]));
-      expect(metricsResponse.data).toMatchObject({ cacheSize: 0 });
+      // The status poll above cached its ledger counts, so the reference cache holds exactly that one entry.
+      expect(metricsResponse.data).toMatchObject({ cacheSize: 1 });
     });
 
     it('summarises spend, savings and audited lines for the report', async () => {
@@ -1983,7 +2070,7 @@ describe('Cloudflare worker core routes', () => {
       expect(data.tenant).toMatchObject({ tenant_id: 'TNT-1' });
       expect(data.categoryHighlights).toHaveLength(1);
       expect((data.topActionableOpportunities as Array<{ opp_id: string }>).map((row) => row.opp_id)).toEqual(['OPP-2', 'OPP-1']);
-      expect(prepareSpy.mock.calls).toHaveLength(3);
+      expect(prepareSpy.mock.calls.filter(([sql]) => !sql.includes('CacheGeneration'))).toHaveLength(3);
       expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('FROM TenantMaster AS tenant'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.filter(([sql]) => sql.includes('SUM(converted_inr_crores'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*) AS count FROM ValidationPreCheckRecord'))).toBe(false);
@@ -2032,6 +2119,54 @@ describe('Cloudflare worker core routes', () => {
   });
 
   describe('static data, currency and category routes', () => {
+    it('refuses a conversion for a currency with no stored rate instead of returning zero', async () => {
+      fixture.db.prepare(
+        "INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES ('CHF', 'Swiss Franc', 'MASTER_ONLY', 'seed', 'v1')"
+      ).run();
+
+      const response = await send('/api/currency?from=CHF&amount=10');
+
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('CHF', D1_ROUTE_MESSAGES.latestRateDateLabel)
+      });
+    });
+
+    it('reports an unknown currency as not found and a known currency with no rate for the requested date', async () => {
+      const unknown = await send('/api/currency?from=XYZ&amount=10');
+      expect(unknown.status).toBe(400);
+      await expect(bodyOf(unknown)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyNotFound('XYZ')
+      });
+      fixture.db.prepare(
+        "INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES ('CHF', 'Swiss Franc', 'MASTER_ONLY', 'seed', 'v1')"
+      ).run();
+      const dated = await send('/api/currency?from=CHF&amount=10&date=2026-01-01');
+      expect(dated.status).toBe(400);
+      await expect(bodyOf(dated)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('CHF', '2026-01-01')
+      });
+    });
+    it('refuses a conversion when the stored rate on the requested date is zero', async () => {
+      insertRows(fixture.db, 'INSERT INTO FxCurrencyMaster (currency, currency_name, coverage_status, approved_source, fx_master_version) VALUES (?, ?, ?, ?, ?)', [
+        ['EUR', 'Euro', 'FULL', 'ECB', 'FX-2026']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
+        ['EUR', '2025-01-01', 0, 'FX-2026'],
+        ['EUR', '2026-01-15', 92, 'FX-2026']
+      ]);
+      const warning = vi.spyOn(logger, 'warn').mockImplementation(() => logger.formatEntry('warn', ''));
+      const response = await send('/api/currency?from=EUR&amount=10&date=2025-06-01');
+      expect(response.status).toBe(400);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.currencyRateUnavailable('EUR', '2025-06-01')
+      });
+      expect(warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ currency: 'EUR', effectiveDate: '2025-06-01' }));
+    });
     it('rejects unsupported collection methods and converts INR without an external rate', async () => {
       const categories = await send('/api/categories', { method: 'POST' });
       const vendors = await send('/api/vendors', { method: 'DELETE' });
@@ -2121,7 +2256,7 @@ describe('Cloudflare worker core routes', () => {
 
       expect(response.status).toBe(200);
       await expect(bodyOf(response)).resolves.toMatchObject({ success: true, data: { success: true, affected: 3 } });
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(2);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(2);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('COUNT(*)'))).toBe(false);
       await expect(fixture.d1.prepare('SELECT vendor_name FROM VendorYearDetail ORDER BY id').all())
         .resolves.toEqual({ results: [{ vendor_name: 'Acme Steel' }, { vendor_name: 'Acme Steel' }] });
@@ -2225,7 +2360,7 @@ describe('Cloudflare worker core routes', () => {
       expect(data).toMatchObject({ totalPotentialSavingsCr: 2.5 });
       expect(data.opportunities).toHaveLength(2);
       expect(cachedData).toEqual(data);
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(1);
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
     });
@@ -2249,7 +2384,7 @@ describe('Cloudflare worker core routes', () => {
       await send('/api/savings?tenantId=TNT-1');
       const prepareSpy = vi.spyOn(fixture.d1, 'prepare');
       const deployed = await send('/api/savings?tenantId=TNT-1', jsonBody('POST', { opp_id: 'OPP-DEPLOY', targetModule: 'DPS NXT' }));
-      expect(prepareSpy.mock.calls.map(([sql]) => sql)).toHaveLength(1);
+      expect(prepareSpy.mock.calls.map(([sql]) => sql).filter((sql) => !sql.includes('CacheGeneration'))).toHaveLength(1);
       expect(prepareSpy.mock.calls[0]?.[0]).toContain('RETURNING *');
       expect(prepareSpy.mock.calls.some(([sql]) => sql.includes('TenantMaster'))).toBe(false);
       const persisted = await fixture.d1.prepare('SELECT recommended_module, push_to_module, status FROM SavingsOpportunity WHERE opp_id = ?')
@@ -2356,9 +2491,15 @@ describe('Cloudflare worker core routes', () => {
       const invalid = await send(`/api/ingestion/canonical?assessmentId=${'x'.repeat(121)}`);
 
       expect(canonical).toMatchObject({ totalSpendCr: 100, billingMonths: 12 });
-      expect(unknownAssessment.status).toBe(500);
-      await expect(bodyOf(unknownAssessment)).resolves.toEqual({ success: false, message: D1_ROUTE_MESSAGES.missingCanonical('AIC-404') });
-      expect(headerScoped.status).toBe(500);
+      expect(unknownAssessment.status).toBe(404);
+      await expect(bodyOf(unknownAssessment)).resolves.toEqual({
+        success: false,
+        message: D1_ROUTE_MESSAGES.missingCanonical('AIC-404'),
+        errorCode: API_ERROR_CODE.DATASET_NOT_FOUND,
+        errorCategory: API_ERROR_CATEGORY.NOT_FOUND,
+        requestId: expect.any(String)
+      });
+      expect(headerScoped.status).toBe(404);
       expect(invalid.status).toBe(400);
       await expect(bodyOf(invalid)).resolves.toMatchObject({ success: false, message: 'Validation failed', errors: expect.any(Array) });
     });
@@ -2366,8 +2507,15 @@ describe('Cloudflare worker core routes', () => {
     it('reports an incomplete seed as a server error on the canonical dataset', async () => {
       const response = await send('/api/ingestion/canonical');
 
+      const requestId = response.headers.get('x-request-id') ?? '';
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ success: false, message: 'D1 seed is missing required dataset metric: totalSpendCr' });
+      await expect(bodyOf(response)).resolves.toEqual({
+        success: false,
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        errorCode: API_ERROR_CODE.INTERNAL_ERROR,
+        errorCategory: API_ERROR_CATEGORY.SERVER,
+        requestId
+      });
     });
 
     it('returns 503 for the canonical dataset without a D1 binding', async () => {
@@ -2412,6 +2560,23 @@ describe('Cloudflare worker core routes', () => {
       expect(posted.status).toBe(200);
       await expect(bodyOf(posted)).resolves.toEqual({ data: { __typename: 'Query' } });
       await expect(bodyOf(fetched)).resolves.toEqual({ data: { __typename: 'Query' } });
+    });
+
+    it('rejects schema introspection unless the environment enables it', async () => {
+      seedTenant();
+      const query = '{ __schema { queryType { name } } }';
+
+      const disabled = await send('/api/graphql', jsonBody('POST', { query }));
+      const enabled = await send('/api/graphql', jsonBody('POST', { query }),
+        environmentWithDb({ GRAPHQL_INTROSPECTION_ENABLED: 'true' }));
+
+      expect(disabled.status).toBe(200);
+      const disabledBody = await bodyOf(disabled) as { errors: Array<{ message: string }> };
+      expect(disabledBody.errors).toEqual(expect.arrayContaining([expect.objectContaining({
+        message: expect.stringMatching(/introspection/iu)
+      })]));
+      expect(enabled.status).toBe(200);
+      await expect(bodyOf(enabled)).resolves.toEqual({ data: { __schema: { queryType: { name: 'Query' } } } });
     });
 
     it('serves bounded GraphQL ingestion pages with opaque cursors and dashboard page metadata', async () => {
@@ -2538,6 +2703,13 @@ describe('Cloudflare worker core routes', () => {
         expect.objectContaining({ name: 'RequestBodyTooLargeError' }));
     });
 
+    it('rejects a GraphQL mutation sent as a GET query string before any resolver runs', async () => {
+      const response = await send(`/api/graphql?query=${encodeURIComponent('mutation Probe { __typename }')}`);
+
+      expect(response.status).toBe(405);
+      await expect(bodyOf(response)).resolves.toEqual({ errors: [{ message: GRAPHQL_ERRORS.MUTATION_REQUIRES_POST }] });
+    });
+
     it('maps a D1 binding failure during GraphQL tenant resolution to 503', async () => {
       vi.mocked(getTenantFromD1).mockRejectedValueOnce(new Error(D1_ROUTE_MESSAGES.missingBinding));
 
@@ -2578,7 +2750,13 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/graphql', jsonBody('POST', { query: '{ __typename }' }));
 
       expect(response.status).toBe(500);
-      await expect(bodyOf(response)).resolves.toEqual({ errors: [{ message: 'tenant service down' }] });
+      const body = await bodyOf(response);
+      const requestId = response.headers.get('x-request-id') || '';
+      expect(body).toEqual({ errors: [{
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        extensions: { code: API_ERROR_CODE.INTERNAL_ERROR, errorCategory: API_ERROR_CATEGORY.SERVER, requestId }
+      }] });
+      expect(JSON.stringify(body)).not.toContain('tenant service down');
     });
 
     it('answers 503 for taxonomy and GraphQL when the binding is absent', async () => {

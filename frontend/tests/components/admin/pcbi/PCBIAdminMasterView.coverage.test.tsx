@@ -1,3 +1,4 @@
+import { AUTH_ADMIN_DISPLAY_FALLBACK } from '../../../../src/constants/auth';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import * as XLSX from 'xlsx';
@@ -21,7 +22,7 @@ vi.mock('../../../../src/utils/pcbiValidator', async (importOriginal) => {
   return { ...actual, validatePCBIUpload: vi.fn(actual.validatePCBIUpload) };
 });
 
-const ADMIN_NAME = 'Sriman Admin';
+const ADMIN_NAME = AUTH_ADMIN_DISPLAY_FALLBACK;
 const WORKBOOK_FILE_NAME = 'PCBI_TEST.xlsx';
 const WORKBOOK_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const MASTER_SHEET_NAME = 'PCBI_Master';

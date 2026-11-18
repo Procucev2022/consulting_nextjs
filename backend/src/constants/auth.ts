@@ -2,6 +2,8 @@
  * Authentication Constants (Backend)
  */
 
+import type { AuthRateLimitScope } from '../types/auth';
+
 export const AUTH_ROLES = {
   USER: 'USER',
   ADMIN: 'ADMIN'
@@ -20,6 +22,7 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 export const AUTH_TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
+export const AUTH_BOOTSTRAP_TOKEN_HEADER = 'x-admin-bootstrap-token';
 export const AUTH_LEGACY_PASSWORD_PATTERN = /^[0-9a-f]{32}:[0-9a-f]{128}$/iu;
 export const AUTH_HEX_BYTE_PATTERN = /[0-9a-f]{2}/giu;
 
@@ -29,6 +32,8 @@ export const AUTH_MESSAGES = {
   TENANT_ASSIGNMENT_PENDING: 'Your account is awaiting administrator tenant assignment. Contact your administrator before signing in.',
   LOGIN_SUCCESS: 'Authentication successful',
   EMAIL_EXISTS: 'An account with this organization email already exists',
+  bootstrapAccountExists: 'An account with this email already exists, so the first-administrator setup did not change it. Sign in as an administrator to update that account.',
+  bootstrapTokenInvalid: 'The bootstrap token is missing or incorrect. Send the X-Admin-Bootstrap-Token value from this environment\'s deployment settings and retry.',
   INVALID_CREDENTIALS: 'Invalid organization email or password',
   ACCOUNT_INACTIVE: 'Account is currently suspended or inactive. Please contact support.',
   UNAUTHORIZED: 'Authentication required. Missing or invalid authorization token.',
@@ -57,4 +62,29 @@ export const AUTH_SQL = {
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
     ON CONFLICT DO NOTHING
   `
+} as const;
+
+/** Subscription tier every self-registered account starts on. Upgrades go through the commercial workflow. */
+export const AUTH_REGISTRATION_SUBSCRIPTION_TIER = 'BRONZE' as const;
+
+/** Length of the rate-limit window. The Cloudflare binding in wrangler.jsonc allows the same count per window. */
+export const AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
+
+/** Key prefix for each request family. The network address is appended to make each key unique to a client. */
+export const AUTH_RATE_LIMIT_NAMESPACE: Readonly<Record<AuthRateLimitScope, string>> = {
+  login: 'auth-login',
+  register: 'auth-register',
+  upgradeRequest: 'upgrade-request'
+};
+
+export const AUTH_RATE_LIMIT_MESSAGES: Readonly<Record<AuthRateLimitScope, string>> = {
+  login: 'Too many sign-in attempts from this network. Wait one minute, then try again. If the problem continues, contact your administrator.',
+  register: 'Too many registration requests from this network. Wait one minute, then try again.',
+  upgradeRequest: 'Too many upgrade requests from this network. Wait one minute, then try again.'
+};
+
+export const AUTH_RATE_LIMIT_LOG_MESSAGES = {
+  limited: 'Authentication request rate limit reached',
+  limiterMissing: 'Authentication rate limiter is not bound; the request was not limited',
+  limiterFailed: 'Authentication rate limiter failed; the request was not limited'
 } as const;

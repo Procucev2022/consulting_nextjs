@@ -10,6 +10,7 @@ import type {
   CategoryTopItem
 } from '../types';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+import { UNCLASSIFIED_COMMODITY_CODE } from '../constants/taxonomy';
 import {
   addSpendToFiscalYear,
   getItemSpendCr,
@@ -134,7 +135,7 @@ function buildFallbackCategoryDetail(
     id: c.id || `CAT-${idx + 1}`,
     category: catName,
     core_bucket: bucket,
-    sample_column_l_code: c.column_l_code || '00000000',
+    sample_column_l_code: c.column_l_code || UNCLASSIFIED_COMMODITY_CODE,
     sample_column_l_title: c.sample_column_l_title || 'General Category',
     spend_fy24_cr: fy24,
     spend_fy25_cr: fy25,
@@ -190,6 +191,7 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
   const descMatch = lookupUNSPSCByDescription(item.raw_desc);
   const isClassified = descMatch?.classificationStatus === 'CLASSIFIED';
   const fallback = lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
+  const matchedCode = isClassified ? descMatch?.commodityCode : UNCLASSIFIED_COMMODITY_CODE;
   return {
     spendFY24: 0,
     spendFY25: 0,
@@ -198,7 +200,7 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
     vendors: new Set(),
     items: new Map(),
     coreBucket: item.core_bucket || 'Direct Materials',
-    sampleColumnL: item.unspsc_code || (isClassified ? descMatch?.commodityCode : '00000000') || '00000000',
+    sampleColumnL: item.unspsc_code || matchedCode || UNCLASSIFIED_COMMODITY_CODE,
     sampleColumnLTitle:
       item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle,
     lineItemsCount: 0

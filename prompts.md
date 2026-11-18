@@ -114312,3 +114312,65 @@ Please check why it's failing, how we can fix, also, remove any such data seedin
 
 ## Prompt 629
 Please commit & push the chnages
+
+---
+## Prompt 630
+Code Stability:  
+1. Analyse the code, there are a Lot of Architectural issues:   
+Analyse the database, lot of database tables or data not in sync, duplicate data in the DB tables etc. please analyse database issues.  
+Too many Cloudflare D1 database utilisation issues, please check.  
+No proper logs or error capturing: Errors are not getting detected, very less errors in production logs, please check & add detailed logs as much as you can even if we have some backup or work around for the exception or issue.  
+Sometimes one feature is working & tested, next time it's not working, please check the issue.  
+Please do a detailed analysis, what all features are pending or missing, & then continue adding the remaining missing features & functionalities & tell apart from these what else is pending. Also don't forget to seed mock data in the database for this.  
+Any check for any missing routes or mocked features.   
+At some places, the application data is getting loaded very slowly. Please check once. There are latency issues. Also in case there is a possibility of latency, then we can add some loading related UI to make sure customer User experience is good.  
+  
+  
+Keep solving the issues as well till zero issues are left. Keep committing & pushing the changes one by one as soon as you improve something.   
+  
+Currently the customers are already using the system.  
+  
+Currently the customers are not using the system. So we are free to do any changes.  
+Make sure to have proper error messages& error codes if any error
+
+---
+## Prompt 631
+Please keep fixing the issues & keep resolving the issues till any issues are pending
+## Prompt 632
+resume
+---
+## Prompt 633
+resume
+---
+## Prompt 634
+resume
+---
+## Prompt 635
+resume, do not stop till all issues / enhancements are solved or done, List in the end what else is pending
+---
+## Prompt 636
+resume
+---
+## Prompt 637
+Analyse the code, there are a Lot of Architectural issues: 
+Analyse the database, lot of database tables or data not in sync, duplicate data in the DB tables etc. please analyse database issues.
+Too many Cloudflare D1 database utilisation issues, please check.
+No proper logs or error capturing: Errors are not getting detected, very less errors in production logs, please check & add detailed logs as much as you can even if we have some backup or work around for the exception or issue.
+Sometimes one feature is working & tested, next time it's not working, please check the issue.
+Please do a detailed analysis, what all features are pending or missing, & then continue adding the remaining missing features & functionalities & tell apart from these what else is pending. Also don't forget to seed mock data in the database for this.
+Any check for any missing routes or mocked features. 
+At some places, the application data is getting loaded very slowly. Please check once. There are latency issues. Also in case there is a possibility of latency, then we can add some loading related UI to make sure customer User experience is good.
+
+
+Keep solving the issues as well till zero issues are left. Keep committing & pushing the changes one by one as soon as you improve something. 
+
+Currently the customers are already using the system.
+
+Currently the customers are not using the system. So we are free to do any changes.
+Make sure to have proper error messages
+
+
+Currently for any small change in antigravity, it is taking too much time in quality checks, any way to speed it up.  
+
+A lot of mock data in the codebase, remove any mock data in the codebase, make sure all data is fetched from the database only. Seed the mock data in current local database only if required but all data should be fetched from database,
+---

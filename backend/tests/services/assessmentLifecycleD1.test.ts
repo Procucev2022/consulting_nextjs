@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { handleAssessmentRoute } from '../../src/workerD1Assessment';
 import { handleAssessmentLifecycleAction } from '../../src/services/assessmentLifecycleD1';
-import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
+import { createWorkerDatabase, WORKER_CORE_SECRET } from '../helpers/workerCoreFixtures';
 import { ASSESSMENT_REVIEW_GATE_KEYS } from '../../src/constants/assessmentD1';
+import { createWorkerAuthToken } from '../../src/workerAuth';
 import type { CloudflareEnvironment } from '../../src/types/cloudflare';
+
+const ACTOR_ACCOUNTS = {
+  admin: { id: 'lifecycle-admin', email: 'admin@example.test', role: 'ADMIN' },
+  customer: { id: 'lifecycle-customer', email: 'buyer@example.test', role: 'USER' }
+} as const;
+
+type ActorKind = keyof typeof ACTOR_ACCOUNTS | 'anonymous';
+
+const seedActorAccounts = (fixture: ReturnType<typeof createWorkerDatabase>): void => {
+  const insertUser = fixture.db.prepare(`INSERT INTO User (
+    id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  insertUser.run('lifecycle-admin', 'Lifecycle Admin', '+10000000010', 'admin@example.test', 'Internal', 'Address',
+    'unused', 'ADMIN', 'ACTIVE', 'GOLD', 'TNT-GLOBAL-8902');
+  insertUser.run('lifecycle-customer', 'Lifecycle Buyer', '+10000000011', 'buyer@example.test', 'Customer', 'Address',
+    'unused', 'USER', 'ACTIVE', 'BRONZE', 'TNT-GLOBAL-8902');
+};
 
 const createArtifactEnvironment = () => {
   const stored = new Map<string, Uint8Array>();
@@ -22,6 +40,7 @@ const createArtifactEnvironment = () => {
 };
 
 const seedAssessment = (fixture: ReturnType<typeof createWorkerDatabase>, options: Record<string, unknown> = {}): void => {
+  seedActorAccounts(fixture);
   const assessmentId = String(options.assessmentId || 'A-LIFECYCLE');
   const runId = options.activeRunId === null ? '' : String(options.activeRunId || 'RUN-LIFECYCLE');
   fixture.db.prepare(`INSERT INTO AssessmentRecord (
@@ -67,13 +86,21 @@ const seedAssessment = (fixture: ReturnType<typeof createWorkerDatabase>, option
 const invoke = async (
   fixture: ReturnType<typeof createWorkerDatabase>,
   action: string,
-  options: { method?: string; body?: unknown; headers?: Record<string, string>; assessmentId?: string; environment?: CloudflareEnvironment } = {}
+  options: {
+    method?: string; body?: unknown; headers?: Record<string, string>; assessmentId?: string;
+    environment?: CloudflareEnvironment; as?: ActorKind
+  } = {}
 ) => {
   const assessmentId = options.assessmentId || 'A-LIFECYCLE';
   const path = `/${assessmentId}/${action}`;
+  const actor = options.as ?? 'admin';
+  const authorization = actor === 'anonymous' ? {} : {
+    Authorization: `Bearer ${await createWorkerAuthToken(ACTOR_ACCOUNTS[actor], WORKER_CORE_SECRET)}`
+  };
   const headers = {
     'x-resolved-tenant-id': 'C-LIFECYCLE',
     ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...authorization,
     ...options.headers
   };
   const request = new Request(`https://consulting.edge/api/assessment${path}`, {
@@ -84,6 +111,8 @@ const invoke = async (
   const environment = options.environment || createArtifactEnvironment().environment;
   return handleAssessmentRoute(fixture.d1, path, request, new URL(request.url), {
     ...environment,
+    DB: fixture.d1,
+    AUTH_SECRET: WORKER_CORE_SECRET,
     REQUEST_TENANT_ID: 'C-LIFECYCLE'
   });
 };
@@ -121,7 +150,7 @@ describe('D1 assessment lifecycle actions', () => {
     const artifactEnvironment = createArtifactEnvironment();
     try {
       const approval = await invoke(fixture, 'approve', { body: { approvalComment: 'Reviewed and approved' } });
-      expect(approval.data).toMatchObject({ status: 'APPROVED', approvedBy: 'analyst@procucev.com' });
+      expect(approval.data).toMatchObject({ status: 'APPROVED', approvedBy: 'admin@example.test' });
       expect(fixture.db.prepare('SELECT is_approved FROM AssessmentAnalysisRun WHERE analysis_run_id = ?')
         .get('RUN-LIFECYCLE').is_approved).toBe(1);
       fixture.db.prepare(`INSERT INTO FxMasterVersion (
@@ -141,17 +170,18 @@ describe('D1 assessment lifecycle actions', () => {
         .get().count).toBe(1);
 
       const delivered = await invoke(fixture, 'deliver', {
-        body: { recipientEmail: 'buyer@example.test', deliveryChannel: 'PORTAL', notes: 'Secure release' },
-        headers: { 'x-user-email': 'admin@example.test', 'x-user-role': 'INTERNAL_ADMIN' }
+        body: { recipientEmail: 'buyer@example.test', deliveryChannel: 'PORTAL', notes: 'Secure release' }
       });
       expect(delivered.data).toMatchObject({
         status: 'DELIVERED', deliveredBy: 'admin@example.test', deliveredToEmail: 'buyer@example.test',
         deliveryChannel: 'PORTAL'
       });
 
-      const accepted = await invoke(fixture, 'accept', { body: { acceptanceComment: 'Reviewed', acceptedBy: 'buyer@example.test' } });
+      const accepted = await invoke(fixture, 'accept', {
+        as: 'customer', body: { acceptanceComment: 'Reviewed', acceptedBy: 'buyer@example.test' }
+      });
       expect(accepted.data).toMatchObject({
-        status: 'ACCEPTED', isReportAccepted: true, allModulesCompleted: true
+        status: 'ACCEPTED', isReportAccepted: true, allModulesCompleted: true, acceptedBy: 'buyer@example.test'
       });
       const closed = await invoke(fixture, 'close', { body: {} });
       expect((closed.data as any).status).toBe('CLOSED');
@@ -344,16 +374,16 @@ describe('D1 assessment lifecycle actions', () => {
     }
   });
 
-  it('supports the legacy delivery request body and uses action-specific default actor identities', async () => {
+  it('supports the legacy delivery request body and records the verified account as the actor', async () => {
     const fixture = createWorkerDatabase();
     seedAssessment(fixture, { status: 'APPROVED', runApproved: 1 });
     try {
       const delivered = await invoke(fixture, 'deliver', { body: { deliveredToEmail: 'buyer@example.test', deliveryNotes: 'Email release' } });
       expect(delivered.data).toMatchObject({
-        deliveredBy: 'admin@procucev.com', deliveredToEmail: 'buyer@example.test', deliveryChannel: 'EMAIL'
+        deliveredBy: 'admin@example.test', deliveredToEmail: 'buyer@example.test', deliveryChannel: 'EMAIL'
       });
-      const accepted = await invoke(fixture, 'accept', { body: {} });
-      expect((accepted.data as any).acceptedBy).toBe('customer@procucev.com');
+      const accepted = await invoke(fixture, 'accept', { as: 'customer', body: {} });
+      expect((accepted.data as any).acceptedBy).toBe('buyer@example.test');
     } finally {
       fixture.close();
     }
@@ -363,7 +393,16 @@ describe('D1 assessment lifecycle actions', () => {
     await expectStatus('approve', 400, {}, { body: { approvalComment: 'no' } });
     await expectStatus('approve', 403, {}, {
       body: { approvalComment: 'Reviewed and approved' },
-      headers: { 'x-user-role': 'CUSTOMER' }
+      as: 'customer'
+    });
+    await expectStatus('approve', 403, {}, {
+      body: { approvalComment: 'Reviewed and approved' },
+      as: 'customer',
+      headers: { 'x-user-role': 'ADMIN', 'x-user-email': 'admin@example.test' }
+    });
+    await expectStatus('approve', 401, {}, {
+      body: { approvalComment: 'Reviewed and approved' },
+      as: 'anonymous'
     });
     await expectStatus('approve', 400, { activeRunId: null }, { body: { approvalComment: 'Reviewed and approved' } });
     await expectStatus('approve', 404, { missingRun: true }, { body: { approvalComment: 'Reviewed and approved' } });
@@ -376,10 +415,9 @@ describe('D1 assessment lifecycle actions', () => {
     seedAssessment(fixture);
     try {
       const approved = await invoke(fixture, 'approve', {
-        body: { approvalComment: 'Reviewed and approved', dataVersionId: 'DV-LIFECYCLE' },
-        headers: { 'x-user-role': 'ANALYST', 'x-user-email': 'reviewer@example.test' }
+        body: { approvalComment: 'Reviewed and approved', dataVersionId: 'DV-LIFECYCLE' }
       });
-      expect((approved.data as any).approvedBy).toBe('reviewer@example.test');
+      expect((approved.data as any).approvedBy).toBe('admin@example.test');
     } finally {
       fixture.close();
     }
@@ -393,7 +431,7 @@ describe('D1 assessment lifecycle actions', () => {
 
   it('rejects package generation unless actor, assessment, active run, approval, and source version are valid', async () => {
     await expectStatus('delivery-package', 403, { status: 'APPROVED', runApproved: 1 }, {
-      body: {}, headers: { 'x-user-role': 'CUSTOMER' }
+      body: {}, as: 'customer'
     });
     await expectStatus('delivery-package', 400, { status: 'ANALYST_REVIEW', runApproved: 1 }, { body: {} });
     await expectStatus('delivery-package', 400, { status: 'APPROVED', activeRunId: null }, { body: {} });
@@ -451,6 +489,29 @@ describe('D1 assessment lifecycle actions', () => {
         requestId: 'missing-assessment-approval'
       });
       expect(result.status).toBe(404);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('denies delivery and closing to customer accounts', async () => {
+    await expectStatus('deliver', 403, { status: 'APPROVED' }, {
+      body: { recipientEmail: 'buyer@example.test' }, as: 'customer'
+    });
+    await expectStatus('close', 403, {}, { body: {}, as: 'customer' });
+  });
+
+  it('rejects acceptance recorded for another account and records the signed-in account as acceptor', async () => {
+    await expectStatus('accept', 403, { status: 'APPROVED' }, {
+      body: { acceptedBy: 'someone.else@example.test' }, as: 'customer'
+    });
+    const fixture = createWorkerDatabase();
+    seedAssessment(fixture, { status: 'APPROVED' });
+    try {
+      const accepted = await invoke(fixture, 'accept', {
+        as: 'customer', body: { acceptedBy: 'BUYER@example.test' }
+      });
+      expect(accepted.data).toMatchObject({ status: 'ACCEPTED', acceptedBy: 'buyer@example.test' });
     } finally {
       fixture.close();
     }

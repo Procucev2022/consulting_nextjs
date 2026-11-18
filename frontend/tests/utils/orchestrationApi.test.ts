@@ -1,3 +1,4 @@
+import { API_LOG_MESSAGES } from '../../src/constants/apiLogging';
 import { expectApiFetchCall } from './apiFetchAssertions';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { OrchestrationApiClient } from '../../src/utils/orchestrationApi';
@@ -117,7 +118,9 @@ describe('OrchestrationApiClient Unit Tests', () => {
         .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadHttpFailure(
           'Spend_Data.xlsx', 503, UI_STRINGS.orchestration.datasetDownloadResponseFailure('Spend_Data.xlsx'), UI_STRINGS.common.notAvailable
         ));
-      expect(frontendLogger.error).toHaveBeenCalledTimes(2);
+      // Two caller logs for the two failures, plus the wrapper's own log for the 503 server response.
+      expect(frontendLogger.error).toHaveBeenCalledTimes(3);
+      expect(frontendLogger.error).toHaveBeenCalledWith(API_LOG_MESSAGES.httpFailure, expect.objectContaining({ statusCode: 503 }));
     });
 
     it('reports and logs a response body read failure', async () => {

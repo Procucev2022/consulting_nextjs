@@ -177,7 +177,6 @@ export const UI_STRINGS = {
     validatedBadge: 'Validated',
     managementQuickSummaryUnavailable: 'Management Quick Summary unavailable until analysis is complete',
     moreReportsUnavailable: 'No persisted reports available for this assessment',
-    evaluatedSpendFallback: '₹732.41 Cr',
     totalSpendEvaluatedPrefix: 'Total Spend Evaluated: ',
     viewExecutiveReport: 'View Executive Report',
     themeToggleDark: 'Switch to Dark Mode',
@@ -1723,6 +1722,7 @@ export const UI_STRINGS = {
       opportunity: 'save the opportunity status'
     },
     apiNoDetails: 'The server returned no usable savings data or error detail',
+    ingestionDocumentIdRequired: 'The ingestion document was not deleted because no document was selected. Refresh the upload list, choose one document, and retry. Use the dataset reset action to remove all documents.',
     tenantApiNoDetails: 'The server returned no organization error detail',
     apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry after checking Worker route availability. If this continues, contact support with request ${requestId}.`,
     apiInvalidResponse: (operation: string, status: number, requestId: string): string => `Could not ${operation} (HTTP ${status}) because the server returned malformed JSON. Retry; if this continues, contact support with request ${requestId}.`,
@@ -1990,7 +1990,6 @@ export const UI_STRINGS = {
     description: 'Bridging high-impact diagnostic consulting engagements into sticky, multi-year recurring enterprise SaaS contracts in INR Crores (₹ Cr).',
     generateBrief: 'Generate Executive Brief',
     funnelTitle: 'Client Conversion Funnel & SaaS Value Lifecycle',
-    funnelSubtitle: 'The 3-phase strategic roadmap driving 3x faster conversion from diagnostic advisory to long-term SaaS ARR across ₹732.41 Cr evaluated spend.',
     conversionViewBadge: 'Conversion View',
     funnelHeaders: {
       funnelPhase: 'Funnel Phase',
@@ -2387,15 +2386,6 @@ export const UI_STRINGS = {
       kpiTotalSavings: 'Total Savings',
       totalSavingsVal: (savings: number) => `₹${savings.toFixed(2)} Cr`,
       totalSavingsSub: 'Share of Total Spend',
-      kpiPriceCreep: 'Price Creep Leak',
-      priceCreepVal: '₹20.53 Cr',
-      priceCreepSub: 'Unjustified vs Market Index',
-      kpiConversionVelocity: 'Conversion Velocity',
-      conversionVelocityVal: '3x',
-      conversionVelocitySub: 'Advisory to SaaS Lock-in',
-      kpiAiConfidence: 'AI Confidence',
-      aiConfidenceVal: '98.4%',
-      aiConfidenceSub: 'Enterprise QUA Model',
       section1Title: '1. Category Spend & Target Savings Distribution (INR in Crores)',
       tableHeaders: {
         category: 'Core Spend Category',
@@ -2576,23 +2566,6 @@ export const UI_STRINGS = {
       networkCount: '50,000+',
       networkLabel: 'Verified Network',
       networkDesc: 'Pre-screened, category-indexed enterprise supplier ecosystem delivering immediate competitive tension and dual-sourcing resilience.'
-    },
-    scorecard: {
-      badge: 'EXECUTIVE SUMMARY & PERFORMANCE SCORECARD',
-      title: 'Enterprise Spend Diagnosis & Value Realization Scorecard',
-      subtitle: 'High-impact findings across ₹732.41 Cr baseline spend and multi-currency transaction logs',
-      kpiBaselineSpend: 'Analyzed Spend Baseline',
-      kpiBaselineSpendVal: '₹732.41 Cr',
-      kpiBaselineSpendSub: 'Multi-Currency Ingestion Baseline',
-      kpiIdentifiedSavings: 'Quantified Savings Target',
-      kpiIdentifiedSavingsVal: '₹119.67 Cr',
-      kpiIdentifiedSavingsSub: 'Net Spend Reduction',
-      kpiPriceCreep: 'Price Creep Leakage',
-      kpiPriceCreepVal: '₹20.53 Cr',
-      kpiPriceCreepSub: '8.4% Unbudgeted Inflation Drift',
-      kpiVelocity: 'Conversion Velocity',
-      kpiVelocityVal: '3x Faster',
-      kpiVelocitySub: 'Advisory to SaaS Lock-in'
     },
     ingestion: {
       badge: 'STAGE 1: INGESTION & DATA RECONCILIATION',
@@ -2914,6 +2887,7 @@ export const UI_STRINGS = {
     registering: 'Creating Free Workspace...',
     registrationSuccess: 'Account created successfully! Welcome to aiCEV.',
     registrationPending: 'Your account request was received. An administrator must assign your organization before you can sign in.',
+    sessionExpired: 'Your session has ended. Sign in again to continue.',
     tenantAssignmentRequired: 'Your account is not assigned to an active organization, so this upload cannot be saved. Ask an administrator to assign your tenant, then sign in again.',
     loginSuccess: 'Login successful. Redirecting...',
     alreadyHaveAccount: 'Already have an account? Sign In',
@@ -3085,7 +3059,7 @@ export const UI_STRINGS = {
     companyAddressLabel: 'Company Address',
     companyAddressPlaceholder: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India',
     quickFillAdminButton: 'Quick-Fill Admin Credentials (admin@procucev.com)',
-    fillDefaultDetailsButton: 'Fill Default Admin Details (admin@procucev.com / Procucev@123)',
+    fillDefaultDetailsButton: 'Fill Default Admin Details',
     submitLoginButton: 'Enter Admin Dashboard',
     submitCreateButton: 'Create / Update Admin Details',
     submittingLogin: 'Authenticating Administrator...',
@@ -3094,6 +3068,8 @@ export const UI_STRINGS = {
     createSuccessMessage: 'Admin details created and verified successfully for admin@procucev.com.',
     loginFailureFallback: 'Administrator sign-in failed because the login service returned an unreadable error. Verify the email and password, then retry; contact support if it continues.',
     provisioningFailureFallback: 'Administrator setup failed because the service returned an unreadable error. Verify the required details and connection, then retry; contact support if it continues.',
+    provisioningFailureWithStatus: (status: number) =>
+      `Administrator setup failed with HTTP ${status}. Check the administrator details and connection, then retry; contact support with this status code if it continues.`,
     passwordMismatchMessage: 'Password confirmation failed because the two password values differ. Enter the same password in both fields and retry.',
     accessDeniedMessage:
       'Access Denied: Administrative privileges required. Only system administrators can access this console.',
@@ -3105,7 +3081,7 @@ export const UI_STRINGS = {
     signOutButton: 'Sign Out Administrator',
     badgeAdminRole: 'ROLE: ADMIN',
     badgeGoldTier: 'TIER: GOLD',
-    loginHelperText: 'Use admin@procucev.com with password Procucev@123 to authenticate as administrator.',
+    loginHelperText: 'Sign in with the administrator email and password issued for this environment.',
     createHelperText: 'Creates or updates the admin account details in the database and active session store.'
   },
 

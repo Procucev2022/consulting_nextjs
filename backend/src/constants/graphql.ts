@@ -311,10 +311,16 @@ export const GRAPHQL_ERRORS = {
   EXECUTION_FAILED: 'GraphQL execution encountered errors',
   MISSING_OPERATION: 'GraphQL request requires query or mutation string',
   QUERY_REQUIRED: 'GraphQL query is required',
+  MUTATION_REQUIRES_POST: 'GraphQL mutations must be sent as a POST request with the query in the JSON body. Change the request method to POST and retry.',
   MISSING_BINDING: 'Cloudflare D1 binding DB is not configured.'
 } as const;
 
+// Introspection lists every type and field. It stays off unless GRAPHQL_INTROSPECTION_ENABLED is exactly this value.
+export const GRAPHQL_INTROSPECTION_ENABLED_VALUE = 'true' as const;
+
 export const GRAPHQL_LOG_MESSAGES = {
+  introspectionRejected: 'Rejected a GraphQL introspection query because introspection is disabled for this environment',
+  mutationOverGetRejected: 'Rejected a GraphQL mutation sent over GET. Mutations are accepted only as POST requests.',
   invalidPagination: 'GraphQL ingestion pagination input was rejected',
   operationRejected: 'GraphQL operation was rejected',
   executionFailed: 'GraphQL field execution failed',

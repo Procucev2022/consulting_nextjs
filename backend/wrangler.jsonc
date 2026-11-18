@@ -37,6 +37,11 @@
       "name": "CLIENT_ERROR_RATE_LIMITER",
       "namespace_id": "8110801",
       "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "8110803",
+      "simple": { "limit": 10, "period": 60 }
     }
   ],
   "vars": {
@@ -44,6 +49,7 @@
     "R2_BUCKET": "consulting-doc",
     "LOG_PERSISTENCE": "false",
     "APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
+    "GRAPHQL_INTROSPECTION_ENABLED": "false",
     "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
     "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
     "GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
@@ -76,6 +82,11 @@
           "name": "CLIENT_ERROR_RATE_LIMITER",
           "namespace_id": "8110802",
           "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "8110804",
+          "simple": { "limit": 10, "period": 60 }
         }
       ],
       "vars": {
@@ -83,6 +94,7 @@
         "R2_BUCKET": "consulting-doc-dev",
         "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
+        "GRAPHQL_INTROSPECTION_ENABLED": "true",
         "FRONTEND_URL": "https://consulting-frontend-dev.anshul-goel.workers.dev",
         "NEXT_PUBLIC_APP_URL": "https://consulting-frontend-dev.anshul-goel.workers.dev",
         "GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
@@ -115,6 +127,11 @@
           "name": "CLIENT_ERROR_RATE_LIMITER",
           "namespace_id": "8110801",
           "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "8110803",
+          "simple": { "limit": 10, "period": 60 }
         }
       ],
       "vars": {
@@ -122,6 +139,7 @@
         "R2_BUCKET": "consulting-doc",
         "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "PRODUCTION",
+        "GRAPHQL_INTROSPECTION_ENABLED": "false",
         "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
@@ -154,6 +172,11 @@
           "name": "CLIENT_ERROR_RATE_LIMITER",
           "namespace_id": "8110801",
           "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "8110803",
+          "simple": { "limit": 10, "period": 60 }
         }
       ],
       "vars": {
@@ -161,6 +184,7 @@
         "R2_BUCKET": "consulting-doc",
         "LOG_PERSISTENCE": "false",
         "APP_OPERATING_MODE": "PRODUCTION",
+        "GRAPHQL_INTROSPECTION_ENABLED": "false",
         "FRONTEND_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "NEXT_PUBLIC_APP_URL": "https://consulting-frontend.srinivas-mukku.workers.dev",
         "GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",

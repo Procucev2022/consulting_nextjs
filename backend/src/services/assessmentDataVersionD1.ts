@@ -1,3 +1,4 @@
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import { validateAssessmentDatasetSchema } from '../constants/assessmentValidation';
 import { ASSESSMENT_D1_MESSAGES } from '../constants/assessmentD1';
 import { D1_TABLES } from '../constants/d1';
@@ -79,9 +80,10 @@ export const validateAssessmentDataVersion = async (
   };
 
   const dataVersionId = String(dataVersion.data_version_id);
+  const keyRange = validationRecordKeyRange(dataVersionId);
   const records = await db.prepare(`SELECT issue_flag, action_status, resolved FROM ${D1_TABLES.validation}
-    WHERE record_id LIKE ? AND tenant_id = ? ORDER BY record_id`)
-    .bind(`REC-${dataVersionId}-ROW-%`, assessment.tenant_id).all<D1Record>();
+    WHERE record_id >= ? AND record_id < ? AND tenant_id = ? ORDER BY record_id`)
+    .bind(keyRange.lowerBound, keyRange.upperBound, assessment.tenant_id).all<D1Record>();
   const validationSummary = buildValidationSummary(records.results);
   const nextDataStatus = validationSummary.sourceRowCount
     ? ASSESSMENT_DATA_STATUS_VALIDATED : ASSESSMENT_DATA_STATUS_CLARIFICATION;

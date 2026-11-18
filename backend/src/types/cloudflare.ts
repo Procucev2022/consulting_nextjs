@@ -50,12 +50,14 @@ export interface CloudflareRateLimiter {
 export interface CloudflareEnvironment {
   DB?: CloudflareD1Database;
   CLIENT_ERROR_RATE_LIMITER?: CloudflareRateLimiter;
+  AUTH_RATE_LIMITER?: CloudflareRateLimiter;
   REQUEST_TENANT_ID?: string;
   REQUEST_USER_ID?: string;
   REQUEST_USER_ROLE?: string;
   OBJECTS?: CloudflareR2Bucket;
   FRONTEND_URL?: string;
   AUTH_SECRET?: string;
+  AUTH_BOOTSTRAP_TOKEN?: string;
   APP_ENCRYPTION_KEY?: string;
   NEXT_PUBLIC_APP_URL?: string;
   R2_BUCKET?: string;
@@ -66,6 +68,7 @@ export interface CloudflareEnvironment {
   RESEND_FROM?: string;
   ENVIRONMENT?: string;
   APP_OPERATING_MODE?: string;
+  GRAPHQL_INTROSPECTION_ENABLED?: string;
   GEMINI_API_KEY?: string;
   GEMINI_BACKUP_KEYS?: string;
   GEMINI_BASE_URL?: string;

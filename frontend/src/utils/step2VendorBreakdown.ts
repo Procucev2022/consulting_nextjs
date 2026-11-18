@@ -9,6 +9,7 @@ import {
   upsertTopItem
 } from './step2BreakdownShared';
 import { resolveHumanReadableCategory } from './procurementCategoryResolver';
+import { UNCLASSIFIED_COMMODITY_CODE } from '../constants/taxonomy';
 
 interface VendorAggregate {
   spendFY24: number;
@@ -59,7 +60,7 @@ function aggregateLineItemVendor(
   entry.categories.set(cat, (entry.categories.get(cat) || 0) + spendCr);
 
   const rawDesc = item.raw_desc || item.material_desc || 'Item';
-  const code = item.unspsc_code || '10000000';
+  const code = item.unspsc_code || UNCLASSIFIED_COMMODITY_CODE;
   upsertTopItem(entry.items, item, rawDesc, vName, spendCr, code);
 }
 

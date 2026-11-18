@@ -56,3 +56,11 @@ export interface Module2StrategicSourcingLoadFailure {
   nextStep: string;
   requestId?: string;
 }
+
+/** Error object that Next.js passes to route error pages. The digest matches the server-side log entry, when there is one. */
+export type RouteError = Error & { digest?: string };
+
+export interface RouteErrorFallbackProps {
+  error: RouteError;
+  onRetry: () => void;
+}

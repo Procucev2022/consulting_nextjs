@@ -19,6 +19,7 @@ import { UI_STRINGS } from '../../../constants';
 import { pcbiAdminApi } from '../../../utils/pcbiAdminApi';
 import { validatePCBIUpload } from '../../../utils/pcbiValidator';
 import frontendLogger from '../../../utils/logger';
+import { getAdministratorDisplayName } from '../../../utils/adminIdentity';
 import { PCBIDashboardTab } from './PCBIDashboardTab';
 import { PCBIUploadTab } from './PCBIUploadTab';
 import { PCBIValidateTab } from './PCBIValidateTab';
@@ -118,7 +119,7 @@ export const PCBIAdminMasterView: React.FC = () => {
       name: file.name,
       sizeMb: file.size / (1024 * 1024),
       uploadDate: new Date().toISOString(),
-      uploadedBy: 'Sriman Admin',
+      uploadedBy: getAdministratorDisplayName(),
       worksheetCount: ws.length,
       totalRecords: totalRows
     });
@@ -200,7 +201,7 @@ export const PCBIAdminMasterView: React.FC = () => {
 
     try {
       setIsPublishing(true);
-      await pcbiAdminApi.publishVersion(targetVer, 'Sriman Admin');
+      await pcbiAdminApi.publishVersion(targetVer, getAdministratorDisplayName());
       await loadVersions();
       setIsPublishModalOpen(false);
       setActiveTab('PUBLISHED');
@@ -348,7 +349,7 @@ export const PCBIAdminMasterView: React.FC = () => {
         <PCBIVersionsTab
           versions={versions}
           onPublishVersion={async (v) => {
-            await pcbiAdminApi.publishVersion(v, 'Sriman Admin');
+            await pcbiAdminApi.publishVersion(v, getAdministratorDisplayName());
             await loadVersions();
           }}
         />
@@ -358,7 +359,7 @@ export const PCBIAdminMasterView: React.FC = () => {
         <PCBIVersionsTab
           versions={versions}
           onPublishVersion={async (v) => {
-            await pcbiAdminApi.publishVersion(v, 'Sriman Admin');
+            await pcbiAdminApi.publishVersion(v, getAdministratorDisplayName());
             await loadVersions();
           }}
           showOnlyPublished

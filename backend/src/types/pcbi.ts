@@ -19,7 +19,13 @@ export interface PCBIHistoricalObservationRecord {
 
 export interface PCBIPublishedPayloadCacheEntry {
   expiresAt: number;
+  generation: number;
   payload: PcbiAdminImportInput | null;
+}
+
+export interface PCBIPublishedPayloadLoad {
+  generation: number;
+  promise: Promise<PcbiAdminImportInput | null>;
 }
 
 export type PCBISector =

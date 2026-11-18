@@ -1,6 +1,6 @@
 import { D1_TABLES } from './constants/d1';
 import {
-  ASSESSMENT_D1_ACTION_METHODS, ASSESSMENT_D1_DEFAULT_ACTORS, ASSESSMENT_D1_LIFECYCLE_ACTIONS,
+  ASSESSMENT_D1_ACTION_METHODS, ASSESSMENT_D1_ACTOR_ROLES, ASSESSMENT_D1_LIFECYCLE_ACTIONS,
   ASSESSMENT_D1_MESSAGES, ASSESSMENT_REVIEW_GATE_KEYS, ASSESSMENT_REVIEW_GATE_STATUSES
 } from './constants/assessmentD1';
 import {
@@ -21,6 +21,7 @@ import { queryAll, queryFirst } from './services/assessmentD1Queries';
 import { readJson } from './workerHttp';
 import logger from './utils/logger';
 import { authenticateWorkerUser } from './workerAuth';
+import { AUTH_ROLES } from './constants/auth';
 
 const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): Promise<D1Record[]> => {
   const rows = await queryAll<D1Record>(db,
@@ -144,32 +145,40 @@ export const handleAssessmentAction = async (
       : validateAssessmentDataVersion(context);
   }
   if (ASSESSMENT_D1_LIFECYCLE_ACTIONS.has(action)) {
+    // The actor comes from the verified token, never from request headers. Administrators act as internal
+    // administrators; every other authenticated account acts as the customer.
+    const authentication = await authenticateWorkerUser(request, environment, false);
+    if (!authentication.user) return {
+      status: authentication.status,
+      data: { success: false, message: authentication.message || ASSESSMENT_D1_MESSAGES.reviewGatePermissionDenied }
+    };
+    const lifecycleActor = {
+      email: authentication.user.email,
+      role: authentication.user.role === AUTH_ROLES.ADMIN
+        ? ASSESSMENT_D1_ACTOR_ROLES.internalAdmin
+        : ASSESSMENT_D1_ACTOR_ROLES.customer
+    };
     if (action === 'delivery-package' && artifactId) {
       if (request.method !== 'GET') return {
         status: 405, data: { success: false, message: ASSESSMENT_D1_MESSAGES.unsupportedMethod }
       };
       const artifactContext: AssessmentLifecycleActionContext = {
         db, environment, assessmentId, action, body: {},
-        actorEmail: request.headers.get('x-user-email') || ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminEmail,
-        actorRole: request.headers.get('x-user-role') || ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminRole,
+        actorEmail: lifecycleActor.email,
+        actorRole: lifecycleActor.role,
         requestId: request.headers.get('x-request-id') || undefined
       };
       return handleAssessmentLifecycleAction(artifactContext, decodeURIComponent(artifactId));
     }
     const body: unknown = request.method === 'GET' ? {} : await readJson(request);
-    const defaultActor = action === 'accept'
-      ? { email: ASSESSMENT_D1_DEFAULT_ACTORS.customerEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.customerRole }
-      : action === 'approve'
-        ? { email: ASSESSMENT_D1_DEFAULT_ACTORS.analystEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.analystRole }
-        : { email: ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminRole };
     const context: AssessmentLifecycleActionContext = {
       db,
       environment,
       assessmentId,
       action: action as AssessmentLifecycleActionContext['action'],
       body,
-      actorEmail: request.headers.get('x-user-email') || defaultActor.email,
-      actorRole: request.headers.get('x-user-role') || defaultActor.role,
+      actorEmail: lifecycleActor.email,
+      actorRole: lifecycleActor.role,
       requestId: request.headers.get('x-request-id') || undefined
     };
     return handleAssessmentLifecycleAction(context);

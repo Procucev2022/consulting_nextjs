@@ -79,6 +79,19 @@ describe('D1 drift diagnostics', () => {
     expect(INTERNAL_TABLE_NAMES.has('D1SeedFileLedger')).toBe(true);
   });
 
+  it('skips row-count comparison for the runtime cache generation table', () => {
+    expect(INTERNAL_TABLE_NAMES.has('CacheGeneration')).toBe(true);
+    const report = compareD1Drift({
+      expectedTables: ['CacheGeneration'],
+      actualTables: ['CacheGeneration'],
+      expectedCounts: { CacheGeneration: 0 },
+      actualCounts: [{ table_name: 'CacheGeneration', row_count: 4 }]
+    });
+    expect(report.missingTables).toEqual([]);
+    expect(report.extraTables).toEqual([]);
+    expect(report.rowCountMismatches).toEqual([]);
+  });
+
   it('counts tenant references that do not resolve to a tenant master row', () => {
     const db = new DatabaseSync(':memory:');
     try {

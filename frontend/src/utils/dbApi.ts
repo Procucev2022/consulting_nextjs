@@ -1,5 +1,5 @@
 import { apiFetch } from './apiFetch';
-import type { DBHealthData, DBTableData, DBTestConnectionResponse, DatabaseSchemaEntity } from '../types/dbView';
+import type { DBHealthData, DBTestConnectionResponse, DatabaseSchemaEntity } from '../types/dbView';
 import frontendLogger from './logger';
 import { UI_STRINGS } from '../constants/uiStrings';
 import { databaseSchemaResponseSchema } from '../constants/validation';
@@ -25,19 +25,6 @@ export const dbApiClient = {
   async getDBMetrics(): Promise<Record<string, unknown>> {
     frontendLogger.debug('Fetching database optimization metrics');
     const res = await apiFetch(`${API_BASE}/api/db/metrics`);
-    const json = await res.json();
-    return json.data;
-  },
-
-  async getDBTableData(table: string, page = 1, limit = 20, search = ''): Promise<DBTableData> {
-    frontendLogger.debug('Fetching database table data', { table, page, limit, search });
-    const query = new URLSearchParams({
-      table,
-      page: String(page),
-      limit: String(limit),
-      ...(search ? { search } : {})
-    });
-    const res = await apiFetch(`${API_BASE}/api/db/tables?${query.toString()}`);
     const json = await res.json();
     return json.data;
   },

@@ -1,17 +1,45 @@
-import { buildSchema, graphql, type GraphQLSchema } from 'graphql';
-import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES, GRAPHQL_SCHEMA_SDL } from './constants/graphql';
+import {
+  buildSchema, graphql, Kind, NoSchemaIntrospectionCustomRule, OperationTypeNode, parse, validate,
+  type GraphQLError, type GraphQLSchema
+} from 'graphql';
+import {
+  GRAPHQL_ERRORS, GRAPHQL_INTROSPECTION_ENABLED_VALUE, GRAPHQL_LOG_MESSAGES, GRAPHQL_SCHEMA_SDL
+} from './constants/graphql';
+import { API_ERROR_CATEGORY, API_ERROR_CODE, API_ERROR_MESSAGES } from './constants/errors';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { createD1GraphqlResolvers } from './resolvers/d1GraphqlResolvers';
 import logger from './utils/logger';
+import { toGraphqlClientErrors } from './utils/graphqlErrors';
 import { getTenantFromD1, requireD1Binding } from './workerD1';
 import { jsonResponse, readJson, RequestBodyTooLargeError, RequestJsonParseError } from './workerHttp';
 
 let cachedGraphqlSchema: GraphQLSchema | undefined;
 
+// Mutations change data, so they are accepted only from POST bodies. A GET query string can be triggered by a link or an image tag.
+const isMutationDocument = (source: string): boolean => {
+  try {
+    return parse(source).definitions.some((definition) =>
+      definition.kind === Kind.OPERATION_DEFINITION && definition.operation === OperationTypeNode.MUTATION);
+  } catch {
+    // A syntax error is reported by graphql() itself, so the mutation check does not need to reject it here.
+    return false;
+  }
+};
+
 const getGraphqlSchema = (): GraphQLSchema => {
   cachedGraphqlSchema ??= buildSchema(GRAPHQL_SCHEMA_SDL);
   return cachedGraphqlSchema;
+};
+
+// Reports only the introspection fields (__schema and __type). Other validation problems are left to graphql().
+const findIntrospectionErrors = (source: string): readonly GraphQLError[] => {
+  try {
+    return validate(getGraphqlSchema(), parse(source), [NoSchemaIntrospectionCustomRule]);
+  } catch {
+    // A syntax error is reported by graphql() itself, so the introspection check does not need to report it here.
+    return [];
+  }
 };
 
 export const handleGraphQLRoute = async (
@@ -37,6 +65,27 @@ export const handleGraphQLRoute = async (
     }
 
     if (!source) return jsonResponse({ errors: [{ message: GRAPHQL_ERRORS.QUERY_REQUIRED }] }, 400, request);
+    if (request.method === 'GET' && isMutationDocument(source)) {
+      logger.warn(GRAPHQL_LOG_MESSAGES.mutationOverGetRejected, {
+        requestId: request.headers.get('x-request-id') || undefined,
+        method: request.method,
+        path: url.pathname,
+        operationName
+      });
+      return jsonResponse({ errors: [{ message: GRAPHQL_ERRORS.MUTATION_REQUIRES_POST }] }, 405, request);
+    }
+    if (environment.GRAPHQL_INTROSPECTION_ENABLED !== GRAPHQL_INTROSPECTION_ENABLED_VALUE) {
+      const introspectionErrors = findIntrospectionErrors(source);
+      if (introspectionErrors.length > 0) {
+        logger.warn(GRAPHQL_LOG_MESSAGES.introspectionRejected, {
+          requestId: request.headers.get('x-request-id') || undefined,
+          method: request.method,
+          path: url.pathname,
+          operationName
+        });
+        return jsonResponse({ errors: introspectionErrors }, 200, request);
+      }
+    }
     const tenant = await getTenantFromD1(database, environment.REQUEST_TENANT_ID);
     // The Worker entry point assigns a validated request ID before API dispatch.
     const requestId = request.headers.get('x-request-id') as string;
@@ -72,7 +121,9 @@ export const handleGraphQLRoute = async (
         logger.warn(GRAPHQL_LOG_MESSAGES.operationRejected, errorContext);
       }
     }
-    return jsonResponse(result as Record<string, unknown>, 200, request);
+    // Only successful results keep their original shape. Errors pass through toGraphqlClientErrors.
+    const body = result.errors ? { ...result, errors: toGraphqlClientErrors(result.errors, requestId) } : result;
+    return jsonResponse(body as Record<string, unknown>, 200, request);
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const invalidJson = err instanceof RequestJsonParseError;
@@ -92,6 +143,14 @@ export const handleGraphQLRoute = async (
       message: bodyTooLarge ? errorMsg : D1_ROUTE_MESSAGES.validationFailed,
       errors: [{ path: 'body', message: errorMsg }]
     }, bodyTooLarge ? 413 : 400, request);
-    return jsonResponse({ errors: [{ message: errorMsg }] }, failureStatus, request);
+    // The raw exception text stays in the logs. Clients get a fixed message with the request ID for support.
+    if (failureStatus === 503) return jsonResponse({ errors: [{ message: D1_ROUTE_MESSAGES.missingBinding }] }, 503, request);
+    const requestId = request.headers.get('x-request-id') as string;
+    return jsonResponse({
+      errors: [{
+        message: API_ERROR_MESSAGES.internalError(requestId),
+        extensions: { code: API_ERROR_CODE.INTERNAL_ERROR, errorCategory: API_ERROR_CATEGORY.SERVER, requestId }
+      }]
+    }, failureStatus, request);
   }
 };

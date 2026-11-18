@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import type { MaterialMappingEntry } from '../src/types/module2MaterialMapping';
+import { AUTH_MESSAGES } from '../src/constants/auth';
 import { MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import {
   executeMaterialMappingStatements, handleBulkMaterialMappingUpdate, handleMaterialMappingUpdate, handleProcurementComplianceReview,
@@ -112,10 +113,11 @@ describe('Module 2 specification review routes', () => {
     expect(await handleSpecificationReview(db, requestFor('/review', {}), url)).toMatchObject({ status: 400 });
     routeMocks.authenticate.mockResolvedValueOnce({ status: 401 });
     expect(await handleSpecificationReview(db, requestFor('/review', validSpecificationReview()), url))
-      .toMatchObject({ status: 401, data: { message: 'Authentication required.' } });
+      .toMatchObject({ status: 401, data: { message: AUTH_MESSAGES.UNAUTHORIZED } });
     routeMocks.authenticate.mockResolvedValueOnce({ status: 403, message: 'Forbidden.' });
     expect(await handleSpecificationReview(db, requestFor('/review', validSpecificationReview()), url))
       .toMatchObject({ status: 403, data: { message: 'Forbidden.' } });
+    expect(routeMocks.authenticate).toHaveBeenLastCalledWith(expect.any(Request), expect.any(Object), true);
     routeMocks.scoped.mockResolvedValueOnce({ data: { candidates: [] } });
     expect(await handleSpecificationReview(db, requestFor('/review', validSpecificationReview()), url))
       .toMatchObject({ status: 404 });

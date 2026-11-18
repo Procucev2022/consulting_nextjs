@@ -14,6 +14,7 @@ export interface ScopedModule2Analysis {
 
 export interface ScopedModule2CacheEntry {
   expiresAt: number;
+  generation: number;
   rowCount: number;
   value: Promise<ScopedModule2Analysis>;
 }

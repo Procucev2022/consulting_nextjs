@@ -4,6 +4,7 @@
 
 import type { LineItemMapping, StrategicSingleVendorItem, CoreBucket } from '../types';
 import { lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+import { UNCLASSIFIED_COMMODITY_CODE } from '../constants/taxonomy';
 
 interface MaterialVendorAggregate {
   materialCode: string;
@@ -61,7 +62,7 @@ function resolveTaxonomyInfo(desc: string): { code: string; commodity: string; c
   const descMatch = lookupUNSPSCByDescription(desc);
   const isClassified = descMatch?.classificationStatus === 'CLASSIFIED';
   return {
-    code: isClassified && descMatch ? descMatch.commodityCode : '00000000',
+    code: isClassified && descMatch ? descMatch.commodityCode : UNCLASSIFIED_COMMODITY_CODE,
     commodity: isClassified && descMatch ? descMatch.commodityTitle : 'Unclassified Commodity',
     classTitle: isClassified && descMatch ? descMatch.classTitle : 'Unclassified Class'
   };

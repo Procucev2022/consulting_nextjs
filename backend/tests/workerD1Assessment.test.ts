@@ -555,6 +555,32 @@ describe('workerD1Assessment handler', () => {
     expect(createRes2.status).toBe(201);
   });
 
+  it('creates assessments with NULL financial columns instead of the schema sample figures', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const created = await handleAssessmentRoute(fixture.d1, '/', req('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assessmentId: 'AIC-NULL-FINANCIALS', customerName: 'Unpriced Client', industry: 'Manufacturing',
+          assessmentOwner: 'analyst@example.test', assessmentPeriodStart: '2026-01-01', assessmentPeriodEnd: '2026-12-31'
+        })
+      }), new URL('https://consulting.edge/api/assessment'));
+
+      expect(created.status).toBe(201);
+      expect(created.data).not.toHaveProperty('totalSpendCr');
+      expect(created.data).not.toHaveProperty('potentialSavingsCr');
+      expect(fixture.db.prepare(`SELECT total_spend_cr, validated_spend_cr, gross_spend_cr, fx_impact_cr,
+        potential_savings_cr, savings_pct FROM AssessmentRecord WHERE assessment_id = ?`).get('AIC-NULL-FINANCIALS'))
+        .toEqual({
+          total_spend_cr: null, validated_spend_cr: null, gross_spend_cr: null, fx_impact_cr: null,
+          potential_savings_cr: null, savings_pct: null
+        });
+    } finally {
+      fixture.close();
+    }
+  });
+
   it('handles /:id actions: nda, data-status, audit, and detail', async () => {
     const sampleAssessment = { assessment_id: 'AIC-2026-0001', customer_name: 'Acme' };
     const db = mockDb({

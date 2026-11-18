@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ClientErrorBoundary } from '../components/errors/ClientErrorBoundary';
 import { ClientErrorMonitor } from '../components/errors/ClientErrorMonitor';
+import { SessionExpiryRedirect } from '../components/auth/SessionExpiryRedirect';
 
 export const metadata: Metadata = {
   title: 'PROCUCEV Platform Engine | AI Procurement Advisory & Analytics',
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className="bg-[#EEF7FF] text-[#0B1B33] antialiased selection:bg-sky-500/20 selection:text-sky-900 min-h-screen" style={{fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"}}>
         <ClientErrorBoundary>
           <ClientErrorMonitor />
+          <SessionExpiryRedirect />
           {children}
         </ClientErrorBoundary>
       </body>

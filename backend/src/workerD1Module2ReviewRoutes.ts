@@ -12,6 +12,7 @@ import {
 import { MODULE2_D1_MATERIAL_MAPPING_DIAGNOSTICS, MODULE2_D1_ROUTE_MESSAGES } from './constants/module2D1Scoped';
 import { clearScopedModule2Cache, handleScopedModule2Route } from './services/workerD1Module2Scoped';
 import { authenticateWorkerUser } from './workerAuth';
+import { AUTH_MESSAGES } from './constants/auth';
 import { applySpecificationReviewHistory, loadSpecificationReviewHistory } from './services/workerD1SpecificationReviews';
 import type { MaterialMappingEntry } from './types/module2MaterialMapping';
 import type { VendorConsolidationResult } from './types/module2VendorConsolidation';
@@ -47,13 +48,14 @@ const withAssessmentScope = (url: URL, assessmentId: string): URL => {
   return scopedUrl;
 };
 
-const rejectUnauthenticatedMutation = async (
+// Sign-offs and mapping changes are consultant decisions. Only administrator accounts may record them.
+const authorizeAdministratorMutation = async (
   request: Request, db: CloudflareD1Database, authSecret?: string
 ): Promise<{ user: WorkerAuthIdentity } | WorkerD1Result> => {
-  const authentication = await authenticateWorkerUser(request, { DB: db, AUTH_SECRET: authSecret });
+  const authentication = await authenticateWorkerUser(request, { DB: db, AUTH_SECRET: authSecret }, true);
   return authentication.user ? { user: authentication.user } : {
     status: authentication.status,
-    data: { success: false, message: authentication.message || 'Authentication required.' }
+    data: { success: false, message: authentication.message || AUTH_MESSAGES.UNAUTHORIZED }
   };
 };
 
@@ -73,13 +75,13 @@ export const specificationReport = async (
 export const handleSpecificationReview = async (
   db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
 ): Promise<WorkerD1Result> => {
+  const auth = await authorizeAdministratorMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
   const parsed = specificationReviewSchema.safeParse(await readJson(request));
   if (!parsed.success) return { status: 400, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidSpecificationReview,
     errors: parsed.error.issues
   } };
-  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
-  if (!('user' in auth)) return auth;
   const payload: SpecificationReviewInput = parsed.data;
   const current = await specificationReport(db, request, url, payload.assessmentId);
   const candidate = (current?.data as SpecificationRationalisationResult | undefined)?.candidates
@@ -110,13 +112,13 @@ export const handleSpecificationReview = async (
 export const handleMaterialMappingUpdate = async (
   db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
 ): Promise<WorkerD1Result> => {
+  const auth = await authorizeAdministratorMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
   const parsed = materialMappingUpdateSchema.safeParse(await readJson(request));
   if (!parsed.success) return { status: 400, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidMaterialMapping,
     errors: parsed.error.issues
   } };
-  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
-  if (!('user' in auth)) return auth;
   const { assessmentId, ...payload } = parsed.data;
   const persisted = await persistMaterialMappingUpdates(db, request, url, assessmentId, [payload], auth.user);
   if (persisted.status) return persisted;
@@ -127,13 +129,13 @@ export const handleMaterialMappingUpdate = async (
 export const handleBulkMaterialMappingUpdate = async (
   db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
 ): Promise<WorkerD1Result> => {
+  const auth = await authorizeAdministratorMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
   const parsed = materialMappingBulkUpdateSchema.safeParse(await readJson(request));
   if (!parsed.success) return { status: 400, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidMaterialMapping,
     errors: parsed.error.issues
   } };
-  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
-  if (!('user' in auth)) return auth;
   const { assessmentId, mappings }: MaterialMappingBulkUpdateInput = parsed.data;
   const persisted = await persistMaterialMappingUpdates(db, request, url, assessmentId, mappings, auth.user);
   if (persisted.status) return persisted;
@@ -209,7 +211,7 @@ const persistMaterialMappingUpdates = async (
     status: 503,
     data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingBatchUnavailable }
   };
-  clearScopedModule2Cache();
+  await clearScopedModule2Cache(db, request.headers.get('x-resolved-tenant-id') || undefined, assessmentId);
   logger.info('Persisted D1 assessment material classifications', {
     assessmentId, mappingCount: updatedMappings.length,
     reviewerId: reviewer.id, reviewStatus: payloads[0]?.reviewStatus
@@ -226,13 +228,13 @@ export const procurementComplianceReport = async (
 export const handleProcurementComplianceReview = async (
   db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
 ): Promise<WorkerD1Result> => {
+  const auth = await authorizeAdministratorMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
   const parsed = procurementComplianceReviewSchema.safeParse(await readJson(request));
   if (!parsed.success) return { status: 400, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidComplianceReview,
     errors: parsed.error.issues
   } };
-  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
-  if (!('user' in auth)) return auth;
   const payload: ProcurementComplianceReviewInput = parsed.data;
   const current = await procurementComplianceReport(db, request, url, payload.assessmentId);
   if (!current) return {

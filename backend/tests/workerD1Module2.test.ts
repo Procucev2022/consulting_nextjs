@@ -4,6 +4,7 @@ import { handleModule2Route as handleModule2RouteImpl } from '../src/workerD1Mod
 import { handleProcurementComplianceRoute } from '../src/workerD1Module2ComplianceRoutes';
 import { handleEAuctionPlanningAssumptionsRoute } from '../src/workerD1Module2EAuctionRoutes';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
+import { AUTH_MESSAGES } from '../src/constants/auth';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
 import { createWorkerDatabase, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
@@ -286,7 +287,7 @@ describe('workerD1Module2 handler', () => {
         id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         'usr-reviewer', 'Asha Reviewer', '+910000000010', 'reviewer@example.test', 'Example', 'Pune',
-        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1'
+        'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD', 'T1'
       );
 
       const dataRequest = req('/sourcing/specification-rationalisation?assessmentId=A1&tenantId=T1');
@@ -358,7 +359,7 @@ describe('workerD1Module2 handler', () => {
         id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('usr-mapper', 'Mapping Reviewer', '+910000000011', 'mapper@example.test', 'Example', 'Pune',
-          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1');
+          'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD', 'T1');
       const token = await issueEvidenceToken({ userId: 'usr-mapper' }, WORKER_CORE_SECRET);
       const update = req('/sourcing/vendor-consolidation/mappings/update', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -419,7 +420,7 @@ describe('workerD1Module2 handler', () => {
         id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run('usr-bulk-mapper', 'Bulk Reviewer', '+910000000013', 'bulk@example.test', 'Example', 'Pune',
-          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1');
+          'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD', 'T1');
       const token = await issueEvidenceToken({ userId: 'usr-bulk-mapper' }, WORKER_CORE_SECRET);
       const update = req('/sourcing/vendor-consolidation/mappings/bulk-update', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -471,7 +472,7 @@ describe('workerD1Module2 handler', () => {
         id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         'usr-compliance-reviewer', 'Compliance Reviewer', '+910000000012', 'compliance@example.test', 'Example',
-        'Pune', 'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1'
+        'Pune', 'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD', 'T1'
       );
       const token = await issueEvidenceToken({ userId: 'usr-compliance-reviewer' }, WORKER_CORE_SECRET);
       const get = req('/sourcing/procurement-compliance?assessmentId=A1&tenantId=T1');
@@ -561,7 +562,7 @@ describe('workerD1Module2 handler', () => {
     }
   });
 
-  it('validates all D1 review routes before authentication and rejects unsupported methods', async () => {
+  it('authenticates all D1 review routes before validating bodies and rejects unsupported methods', async () => {
     const db = mockDb();
     const requests = [
       {
@@ -588,7 +589,7 @@ describe('workerD1Module2 handler', () => {
 
       const malformed = req(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
       expect(await handleModule2Route(db, path, malformed, new URL(malformed.url), WORKER_CORE_SECRET))
-        .toMatchObject({ status: 400 });
+        .toMatchObject({ status: 401 });
 
       const unauthenticated = req(path, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -1141,5 +1142,34 @@ describe('workerD1Module2 handler', () => {
     const mutation = req('/sourcing/alternate-sourcing?assessmentId=A1', { method: 'POST' });
     expect(await handleModule2Route(database, '/sourcing/alternate-sourcing', mutation,
       new URL(mutation.url))).toMatchObject({ status: 405 });
+  });
+
+  it('rejects sign-offs and mapping changes from non-administrator accounts before reading the body', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'usr-signoff-customer', 'Customer Buyer', '+910000000030', 'buyer-signoff@example.test', 'Example', 'Pune',
+        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD', 'T1'
+      );
+      const token = await issueEvidenceToken({ userId: 'usr-signoff-customer' }, WORKER_CORE_SECRET);
+      for (const path of [
+        '/sourcing/specification-rationalisation/review',
+        '/sourcing/vendor-consolidation/mappings/update',
+        '/sourcing/vendor-consolidation/mappings/bulk-update',
+        '/sourcing/procurement-compliance/review'
+      ]) {
+        const request = req(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: '{not json'
+        });
+        expect(await handleModule2Route(fixture.d1, path, request, new URL(request.url), WORKER_CORE_SECRET))
+          .toMatchObject({ status: 403, data: { success: false, message: AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY } });
+      }
+    } finally {
+      fixture.close();
+    }
   });
 });

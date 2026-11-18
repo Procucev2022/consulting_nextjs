@@ -4,6 +4,7 @@ import { apiFetch } from './apiFetch';
  */
 
 import type { CreateAdminDetailsPayload, CreateAdminResponse } from '../types';
+import { UI_STRINGS } from '../constants/uiStrings';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import { createAdminDetailsSchema } from '../constants/adminValidation';
@@ -47,8 +48,14 @@ export const adminAuthApiClient = {
     });
 
     if (!res.ok) {
-      const errorJson = await res.json().catch(() => null);
-      const errorMsg = errorJson?.message ?? `Failed to provision administrator (HTTP ${res.status})`;
+      const errorJson = await res.json().catch((error: unknown) => {
+        frontendLogger.warn(
+          'Administrator provisioning error body could not be read as JSON', { status: res.status }, error
+        );
+        return null;
+      });
+      const errorMsg = errorJson?.message ?? UI_STRINGS.admin.provisioningFailureWithStatus(res.status);
+      frontendLogger.error('Administrator provisioning request was rejected', { status: res.status });
       throw new Error(errorMsg);
     }
 

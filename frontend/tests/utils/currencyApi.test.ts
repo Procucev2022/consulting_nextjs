@@ -2,9 +2,10 @@ import { expectApiFetchCall } from './apiFetchAssertions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { currencyApiClient } from '../../src/utils/currencyApi';
+import frontendLogger from '../../src/utils/logger';
 
 vi.mock('../../src/utils/logger', () => ({
-  default: { debug: vi.fn() }
+  default: { debug: vi.fn(), warn: vi.fn() }
 }));
 
 const ratesPayload = {
@@ -69,6 +70,15 @@ describe('currencyApiClient', () => {
     await expect(currencyApiClient.getCurrencyRates()).rejects.toThrow(UI_STRINGS.module1.fxReferenceResponseInvalid);
     await expect(currencyApiClient.getCurrencyRates()).rejects.toThrow(UI_STRINGS.module1.fxReferenceResponseInvalid);
     await expect(currencyApiClient.getCurrencyRates()).rejects.toThrow(UI_STRINGS.module1.fxReferenceResponseInvalid);
+  });
+
+  it('logs an unreadable currency body before reporting the invalid catalog', async () => {
+    const unreadable = response(null);
+    (unreadable.json as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('invalid JSON'));
+    stubFetch(vi.fn().mockResolvedValueOnce(unreadable));
+
+    await expect(currencyApiClient.getCurrencyRates()).rejects.toThrow(UI_STRINGS.module1.fxReferenceResponseInvalid);
+    expect(frontendLogger.warn).toHaveBeenCalledWith(expect.any(String), expect.any(Object), expect.any(Error));
   });
 
   it('loads a validated D1 historical currency conversion', async () => {

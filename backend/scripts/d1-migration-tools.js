@@ -87,14 +87,19 @@ const USER_NORMALIZED_EMAIL_INDEX_DEFINITION = 'createuniqueindexidx_user_email_
 
 const quoteSqlLiteral = (value) => `'${String(value).replace(/'/gu, "''")}'`;
 
+const temporaryTableName = (tableName) => `__D1_MIGRATION_${tableName}_TENANT_KEY`;
 const buildMigrationInventorySql = () => {
-  const tableValues = TABLES_TO_INSPECT.map((tableName) => `(${quoteSqlLiteral(tableName)})`).join(', ');
-  const tableNames = TABLES_TO_INSPECT.map(quoteSqlLiteral).join(', ');
+  const inspectedTables = [
+    ...TABLES_TO_INSPECT,
+    ...TENANT_SCOPED_PRIMARY_KEY_MIGRATIONS.map(({ tableName }) => temporaryTableName(tableName))
+  ];
+  const tableValues = inspectedTables.map((tableName) => `(${quoteSqlLiteral(tableName)})`).join(', ');
+  const tableNames = inspectedTables.map(quoteSqlLiteral).join(', ');
   const indexNames = INDEX_NAMES_TO_INSPECT.map(quoteSqlLiteral).join(', ');
   const tableRows = `WITH table_inventory(table_name) AS (VALUES ${tableValues})
     SELECT 'table' AS record_type, name AS table_name, NULL AS object_name, NULL AS definition
       FROM sqlite_master WHERE type = 'table' AND name IN (${tableNames})`;
-  const columnRows = TABLES_TO_INSPECT.map((tableName) =>
+  const columnRows = inspectedTables.map((tableName) =>
     `SELECT 'column' AS record_type, ${quoteSqlLiteral(tableName)} AS table_name,
       name AS object_name, pk AS definition
     FROM pragma_table_info(${quoteSqlLiteral(tableName)})`
@@ -222,14 +227,24 @@ const applyD1CompatibilityMigrations = (executeSqlCommand) => {
 
   for (const migration of TENANT_SCOPED_PRIMARY_KEY_MIGRATIONS) {
     const { tableName, legacyKey, columns, columnNames } = migration;
-    if (!tableNames.has(tableName)) continue;
+    const temporaryName = temporaryTableName(tableName);
+    // The rebuild runs as plain statements, not a transaction, so a run can stop between them. A stop after the
+    // original table was dropped leaves the complete copy under the temporary name, and it is renamed into place.
+    if (!tableNames.has(tableName)) {
+      if (tableNames.has(temporaryName)) {
+        statements.push(`ALTER TABLE ${temporaryName} RENAME TO ${tableName};`);
+        migratedTables.add(tableName);
+      }
+      continue;
+    }
+    // A copy left by a stop before the drop is stale. The original table still holds every row, so rebuild from it.
+    if (tableNames.has(temporaryName)) statements.push(`DROP TABLE ${temporaryName};`);
     const currentKey = primaryKeyColumns(tableName);
     const scopedKey = ['tenant_id', legacyKey];
     if (currentKey.join(',') === scopedKey.join(',')) continue;
     if (currentKey.length !== 1 || currentKey[0] !== legacyKey) {
       throw new Error(`Cannot safely migrate ${tableName}: unexpected primary key (${currentKey.join(', ') || 'none'}).`);
     }
-    const temporaryName = `__D1_MIGRATION_${tableName}_TENANT_KEY`;
     statements.push(
       `CREATE TABLE ${temporaryName} (${columns}, PRIMARY KEY (tenant_id, ${legacyKey}));`,
       `INSERT INTO ${temporaryName} (${columnNames}) SELECT ${columnNames} FROM ${tableName};`,
@@ -240,7 +255,8 @@ const applyD1CompatibilityMigrations = (executeSqlCommand) => {
   }
 
   for (const [tableName, indexName, indexColumns] of TENANT_OWNED_TABLE_MIGRATIONS) {
-    if (tableNames.has(tableName) && indexName && (!indexesByName.has(indexName) || migratedTables.has(tableName))) {
+    const tableIsPresent = tableNames.has(tableName) || migratedTables.has(tableName);
+    if (tableIsPresent && indexName && (!indexesByName.has(indexName) || migratedTables.has(tableName))) {
       statements.push(`CREATE INDEX IF NOT EXISTS ${indexName} ON ${tableName}(${indexColumns});`);
     }
   }

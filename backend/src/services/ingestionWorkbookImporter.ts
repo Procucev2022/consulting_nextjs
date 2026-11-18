@@ -104,7 +104,6 @@ const getFxRate = async (
 const runInBatches = async (
   db: IngestionWorkbookInput['db'],
   statements: CloudflareD1PreparedStatement[],
-  afterBatch: () => void,
   context: IngestionWorkbookInput
 ): Promise<void> => {
   requireD1AtomicBatch(db, {
@@ -118,7 +117,6 @@ const runInBatches = async (
   for (let offset = 0; offset < statements.length; offset += statementLimit) {
     const batch = statements.slice(offset, offset + statementLimit);
     await db.batch(batch);
-    afterBatch();
   }
 };
 
@@ -281,8 +279,12 @@ export const importIngestionWorkbook = async (input: IngestionWorkbookInput): Pr
     statements.push(prepared.transactionStatement, prepared.validationStatement);
   }
 
-  await runInBatches(input.db, statements,
-    () => clearScopedModule2Cache(input.db, input.tenantId, input.assessmentId), input);
+  try {
+    await runInBatches(input.db, statements, input);
+  } finally {
+    // Runs after a failed batch as well, because earlier batches may already have written rows.
+    await clearScopedModule2Cache(input.db, input.tenantId, input.assessmentId);
+  }
   return {
     importedCount: rows.length,
     validationCount: rows.length,

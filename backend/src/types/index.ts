@@ -3,6 +3,7 @@
  */
 
 export * from './models';
+export * from './errors';
 export * from './ingestionWorkbook';
 export * from './logger';
 export * from './currency';

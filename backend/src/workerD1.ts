@@ -18,6 +18,8 @@ import type { CoreBucket, UNSPSCCommodityRecord } from './types/taxonomy';
 import { readJson } from './workerHttp';
 import { d1DatasetScopeSchema } from './constants/validation';
 import logger from './utils/logger';
+import { ClientFacingError } from './utils/apiErrors';
+import { API_ERROR_CODE, API_HTTP_STATUS } from './constants/errors';
 import {
   loadAssessmentSavingsFromD1, loadSavingsFromD1, updateActionPlanInD1, updateOpportunityStatusInD1
 } from './services/workerD1Savings';
@@ -25,7 +27,7 @@ import {
 export type { WorkerD1Result } from './types/d1';
 
 export const requireD1Binding = (db?: CloudflareD1Database): CloudflareD1Database => {
-  if (!db) throw new Error('Cloudflare D1 binding DB is not configured');
+  if (!db) throw new ClientFacingError(API_HTTP_STATUS.SERVICE_UNAVAILABLE, API_ERROR_CODE.DATABASE_UNAVAILABLE, D1_ROUTE_MESSAGES.missingBinding);
   return db;
 };
 
@@ -356,19 +358,31 @@ export const getCurrencyRatesFromD1 = async (
       const currencies = await queryAll<D1FxCurrencyRow>(db, `SELECT * FROM ${D1_TABLES.fxCurrencies} ORDER BY currency`, [], requestId);
       const rates = await queryAll<D1FxRateRow>(db, `SELECT r.* FROM ${D1_TABLES.fxRates} r INNER JOIN (SELECT currency, MAX(rate_date) AS rate_date FROM ${D1_TABLES.fxRates} GROUP BY currency) latest ON latest.currency = r.currency AND latest.rate_date = r.rate_date`, [], requestId);
       const rateMap = new Map(rates.map((rate) => [rate.currency, rate]));
-      return Object.fromEntries(currencies.map((currency) => {
+      // A currency without a stored positive rate is left out, so no zero rate is shown as a real price.
+      const uncoveredCurrencies: string[] = [];
+      const catalog = currencies.flatMap((currency) => {
         const rate = rateMap.get(currency.currency);
-        return [currency.currency, {
+        if (!rate || !(Number(rate.inr_per_unit) > 0)) {
+          uncoveredCurrencies.push(currency.currency);
+          return [];
+        }
+        return [[currency.currency, {
           ticker: `${currency.currency}INR=X`,
           currencyPair: `${currency.currency} / INR`,
           currencyCode: currency.currency,
           name: currency.currency_name,
-          currentRate: rate?.inr_per_unit || 0,
-          lastUpdated: rate?.rate_date || null,
+          currentRate: Number(rate.inr_per_unit),
+          lastUpdated: rate.rate_date || null,
           coverageStatus: currency.coverage_status,
-          source: rate?.source_name || currency.approved_source || null
-        }];
-      }));
+          source: rate.source_name || currency.approved_source || null
+        }] as const];
+      });
+      if (uncoveredCurrencies.length > 0) {
+        logger.warn('Currencies without a stored FX rate were left out of the currency catalog', {
+          currencies: uncoveredCurrencies, requestId
+        });
+      }
+      return Object.fromEntries(catalog);
     }
   );
   logger.debug('Resolved D1 currency reference cache', {

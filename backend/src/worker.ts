@@ -7,8 +7,10 @@ import { requestHeadersSchema } from './constants/validation';
 import logger from './utils/logger';
 import { D1_ROUTE_MESSAGES } from './constants/d1';
 import {
-  jsonResponse, RequestBodyTooLargeError, RequestJsonParseError, withCors
+  apiErrorResponse, jsonResponse, notFoundResponse, RequestBodyTooLargeError, RequestJsonParseError, withCors
 } from './workerHttp';
+import { API_ERROR_CODE, API_ERROR_MESSAGES, API_HTTP_STATUS } from './constants/errors';
+import { ClientFacingError } from './utils/apiErrors';
 import { D1_QUERY_LOG_MESSAGES } from './constants/db';
 import { createD1RequestMetrics, instrumentD1Database } from './services/d1QueryTelemetry';
 import { authorizeTenantRequest } from './services/workerTenantAccess';
@@ -72,11 +74,11 @@ export const fetch = async (
         path: new URL(request.url).pathname,
         errors: headerValidation.error.issues
       });
-      return finishResponse(jsonResponse({
-        success: false,
-        message: 'Validation failed',
-        errors: headerValidation.error.issues
-      }, 400, request));
+      return finishResponse(apiErrorResponse(request, API_HTTP_STATUS.BAD_REQUEST,
+        API_ERROR_CODE.INVALID_REQUEST_CORRELATION, D1_ROUTE_MESSAGES.validationFailed, {
+          requestId,
+          extra: { errors: headerValidation.error.issues }
+        }));
     }
 
     requestId = headerValidation.data['x-request-id'] || requestId;
@@ -116,12 +118,21 @@ export const fetch = async (
     }
 
     executionContext.passThroughOnException();
-    return finishResponse(jsonResponse({ success: false, message: 'Endpoint not found.' }, 404, correlatedRequest));
+    return finishResponse(notFoundResponse(correlatedRequest));
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const invalidJson = err instanceof RequestJsonParseError;
     const bodyTooLarge = err instanceof RequestBodyTooLargeError;
-    const status = bodyTooLarge ? 413 : invalidJson ? 400 : errorMsg.includes('Cloudflare D1') ? 503 : 500;
+    const clientFacing = err instanceof ClientFacingError ? err : undefined;
+    const status = bodyTooLarge
+      ? API_HTTP_STATUS.PAYLOAD_TOO_LARGE
+      : invalidJson
+        ? API_HTTP_STATUS.BAD_REQUEST
+        : clientFacing
+          ? clientFacing.status
+          : errorMsg.includes('Cloudflare D1')
+            ? API_HTTP_STATUS.SERVICE_UNAVAILABLE
+            : API_HTTP_STATUS.INTERNAL_SERVER_ERROR;
     const context = {
       requestId,
       method: correlatedRequest.method,
@@ -131,11 +142,24 @@ export const fetch = async (
     };
     if (bodyTooLarge) logger.warn('Worker rejected an oversized JSON request body', { ...context, maxBytes: err.maxBytes }, err);
     else if (invalidJson) logger.warn('Worker rejected an invalid JSON request body', context, err.underlyingError);
-    else logger.error('Worker request failed', context, err);
-    const response = invalidJson || bodyTooLarge
-      ? { success: false, message: bodyTooLarge ? errorMsg : D1_ROUTE_MESSAGES.validationFailed, errors: [{ path: 'body', message: errorMsg }] }
-      : { success: false, message: errorMsg };
-    return finishResponse(jsonResponse(response, status, correlatedRequest), invalidJson || bodyTooLarge);
+    else if (clientFacing && clientFacing.status < API_HTTP_STATUS.INTERNAL_SERVER_ERROR) {
+      logger.warn('Worker rejected a request that cannot be completed', { ...context, errorCode: clientFacing.errorCode }, err);
+    } else logger.error('Worker request failed', context, err);
+    // Internal exception text stays in the logs above. Clients receive a fixed message and the request ID.
+    if (invalidJson || bodyTooLarge) {
+      return finishResponse(apiErrorResponse(correlatedRequest, status,
+        bodyTooLarge ? API_ERROR_CODE.REQUEST_BODY_TOO_LARGE : API_ERROR_CODE.INVALID_JSON_BODY,
+        bodyTooLarge ? errorMsg : D1_ROUTE_MESSAGES.validationFailed,
+        { requestId, extra: { errors: [{ path: 'body', message: errorMsg }] } }), true);
+    }
+    if (clientFacing) {
+      return finishResponse(apiErrorResponse(correlatedRequest, status, clientFacing.errorCode, clientFacing.message, { requestId }), false);
+    }
+    const databaseUnavailable = status === API_HTTP_STATUS.SERVICE_UNAVAILABLE;
+    return finishResponse(apiErrorResponse(correlatedRequest, status,
+      databaseUnavailable ? API_ERROR_CODE.DATABASE_UNAVAILABLE : API_ERROR_CODE.INTERNAL_ERROR,
+      databaseUnavailable ? API_ERROR_MESSAGES.databaseUnavailable(requestId) : API_ERROR_MESSAGES.internalError(requestId),
+      { requestId }), false);
   }
 };
 

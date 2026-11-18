@@ -35,6 +35,11 @@ export const apiRequestIdSchema = z.string()
   .max(CLIENT_ERROR_REPORT_MAX_CLIENT_REQUEST_ID_LENGTH)
   .regex(/^[A-Za-z0-9._-]+$/u);
 
+export const ingestionDocumentDeleteRequestSchema = z.object({
+  docId: z.string().trim().min(1).max(200),
+  tenantId: z.string().trim().min(1).max(120).optional()
+});
+
 export const assessmentIdQuerySchema = z.object({
   assessmentId: z.string().trim().min(1).max(120)
 });

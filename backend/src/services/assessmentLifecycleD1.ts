@@ -4,6 +4,7 @@ import {
   analystApprovalSchema
 } from '../constants/assessmentValidation';
 import {
+  ASSESSMENT_D1_INTERNAL_ACTOR_ROLES,
   ASSESSMENT_D1_MESSAGES as LIFECYCLE_MESSAGES,
   ASSESSMENT_REVIEW_GATE_KEYS
 } from '../constants/assessmentD1';
@@ -34,6 +35,12 @@ const resultError = (status: number, message: string, errors?: unknown): WorkerD
   status,
   data: { success: false, message, ...(errors === undefined ? {} : { errors }) }
 });
+
+const isInternalActor = (context: AssessmentLifecycleActionContext): boolean =>
+  ASSESSMENT_D1_INTERNAL_ACTOR_ROLES.includes(context.actorRole);
+
+const isSameEmail = (left: string, right: string): boolean =>
+  left.trim().toLowerCase() === right.trim().toLowerCase();
 
 const auditStatement = (
   context: AssessmentLifecycleActionContext,
@@ -134,7 +141,7 @@ const persistAssessment = async (
 const approveAssessment = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
   const parsed = analystApprovalSchema.safeParse(context.body);
   if (!parsed.success) return resultError(400, LIFECYCLE_MESSAGES.actionValidation, parsed.error.issues);
-  if (!['INTERNAL_ADMIN', 'ANALYST'].includes(context.actorRole)) {
+  if (!isInternalActor(context)) {
     return resultError(403, LIFECYCLE_MESSAGES.permissionDenied);
   }
   const loaded = await loadAssessment(context);
@@ -162,6 +169,7 @@ const approveAssessment = async (context: AssessmentLifecycleActionContext): Pro
 };
 
 const deliverAssessment = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
+  if (!isInternalActor(context)) return resultError(403, LIFECYCLE_MESSAGES.permissionDenied);
   const parsed = assessmentDeliverySchema.safeParse(context.body);
   if (!parsed.success) return resultError(400, LIFECYCLE_MESSAGES.actionValidation, parsed.error.issues);
   const loaded = await loadAssessment(context);
@@ -191,6 +199,9 @@ const deliverAssessment = async (context: AssessmentLifecycleActionContext): Pro
 const acceptAssessment = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
   const parsed = assessmentAcceptanceSchema.safeParse(context.body ?? {});
   if (!parsed.success) return resultError(400, LIFECYCLE_MESSAGES.actionValidation, parsed.error.issues);
+  if (parsed.data.acceptedBy && !isSameEmail(parsed.data.acceptedBy, context.actorEmail)) {
+    return resultError(403, LIFECYCLE_MESSAGES.acceptedByMismatch(context.actorEmail));
+  }
   const loaded = await loadAssessment(context);
   if (!loaded.ok) return loaded.result;
   const { assessment, row, snapshot } = loaded;
@@ -204,7 +215,7 @@ const acceptAssessment = async (context: AssessmentLifecycleActionContext): Prom
   if (loadedRun.run.status.toUpperCase() !== 'COMPLETED') {
     return resultError(400, LIFECYCLE_MESSAGES.completedRunRequired);
   }
-  const acceptedBy = parsed.data.acceptedBy || context.actorEmail;
+  const acceptedBy = context.actorEmail;
   const now = new Date().toISOString();
   const updated = await persistAssessment(context, row, snapshot, {
     acceptedBy, acceptedAt: now, isReportAccepted: true, allModulesCompleted: true,
@@ -220,6 +231,7 @@ const acceptAssessment = async (context: AssessmentLifecycleActionContext): Prom
 };
 
 const closeAssessment = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
+  if (!isInternalActor(context)) return resultError(403, LIFECYCLE_MESSAGES.permissionDenied);
   const loaded = await loadAssessment(context);
   if (!loaded.ok) return loaded.result;
   const now = new Date().toISOString();

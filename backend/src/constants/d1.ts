@@ -130,6 +130,10 @@ export const D1_ROUTE_MESSAGES = {
   validationFailed: 'Validation failed',
   invalidJsonBody: 'Request body must be a JSON object. Correct its syntax and retry.',
   requestBodyTooLarge: (maxBytes: number): string => `Request body exceeds the ${maxBytes}-byte limit. Reduce the payload size and retry.`,
+  supplierMasterNotFound: (masterId: string): string =>
+    `Supplier master ${masterId} was not found for this tenant. Refresh the supplier list and choose an existing supplier.`,
+  latestRateDateLabel: 'the latest stored date',
+  ingestionDocumentIdRequired: 'Delete one ingestion document by including its identifier in the path: DELETE /api/ingestion/document/{documentId}. To remove every document for this tenant, use POST /api/ingestion/reset.',
   ingestionUploadFileTooLarge: 'Uploaded procurement files must be no larger than 10 MiB. Choose a smaller file and retry.',
   ingestionUploadBase64Invalid: 'Uploaded file content is not valid Base64. Choose the original file and retry.',
   missingBinding: 'Cloudflare D1 binding DB is not configured',
@@ -181,6 +185,7 @@ export const D1_ROUTE_MESSAGES = {
 
 export const D1_LOG_MESSAGES = {
   invalidStoredCurrencyMetadata: 'Stored ingestion currency metadata could not be parsed; an empty currency list was used.',
+  ingestionDeleteWithoutDocumentId: 'Rejected an ingestion delete that did not identify one document. No rows were removed.',
   invalidPcbiAdminStoredJson: 'Stored PCBI administration JSON is invalid; the value was not trusted',
   invalidPcbiAdminPayloadSchema: 'Stored PCBI administration payload does not match its schema; publication was blocked',
   invalidPaymentTermsSourceJson: 'Malformed D1 payment-term source JSON reduced verified coverage',
@@ -205,6 +210,7 @@ export const D1_LOG_ACTIONS = {
   ingestionUploadRollback: 'd1.ingestion.upload.rollback',
   ingestionDelete: 'd1.ingestion.delete',
   ingestionReset: 'd1.ingestion.reset',
+  ingestionValidationReset: 'd1.ingestion.validation.reset',
   atomicBatchUnavailable: 'd1.write.batch_unavailable'
 } as const;
 
@@ -216,6 +222,9 @@ export const D1_TAXONOMY_DEFAULT_LIMIT = 50;
 export const D1_TAXONOMY_MAX_LIMIT = 1000;
 export const D1_INGESTION_PAGE_SIZE = 100;
 export const D1_INGESTION_PAGE_QUERY_LIMIT = D1_INGESTION_PAGE_SIZE + 1;
+export const D1_INGESTION_DOCUMENT_PATH_MARKER = '/document/';
+export const D1_VALIDATION_RECORD_ID_PREFIX = 'REC-';
+export const D1_VALIDATION_RECORD_ROW_SEGMENT = '-ROW';
 export const D1_INGESTION_CURSOR_ID_MAX_LENGTH = 200;
 export const D1_INGESTION_CURSOR_TIMESTAMP_MAX_LENGTH = 80;
 export const D1_GRAPHQL_CURSOR_VERSION = 1;
@@ -271,12 +280,12 @@ export const D1_INGESTION_REMEDIATION_CANDIDATES_QUERY = `
   SELECT candidate_records.*,
     CASE
       WHEN UPPER(TRIM(COALESCE(candidate_records.raw_currency, ''))) = 'INR' THEN 1
-      ELSE COALESCE((
+      ELSE (
         SELECT rate.inr_per_unit FROM FxReferenceRate AS rate
         WHERE rate.currency = UPPER(TRIM(COALESCE(candidate_records.raw_currency, '')))
           AND rate.rate_date <= candidate_records.remediation_effective_date
         ORDER BY rate.rate_date DESC LIMIT 1
-      ), 0)
+      )
     END AS remediation_fx_rate
   FROM candidate_records
 `;

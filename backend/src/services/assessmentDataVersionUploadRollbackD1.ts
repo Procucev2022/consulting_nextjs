@@ -1,3 +1,4 @@
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import { ASSESSMENT_DATA_VERSION_ROLLBACK_SQL } from '../constants/assessmentD1';
 import { D1_TABLES } from '../constants/d1';
 import type {
@@ -19,12 +20,13 @@ export const cleanupFailedAssessmentDataVersionUpload = async (
 ): Promise<void> => {
   const { db, environment, assessmentId } = context;
   const { assessment, dataVersionId, objectKey, previousDataStatus, previousSnapshot } = prepared;
+  const keyRange = validationRecordKeyRange(dataVersionId);
   try {
     await runStatements(db, [
       db.prepare(`DELETE FROM ${D1_TABLES.transactions} WHERE source_document_id = ? AND assessment_id = ? AND tenant_id = ?`)
         .bind(dataVersionId, assessmentId, assessment.tenant_id),
-      db.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ? AND tenant_id = ?')
-        .bind(`REC-${dataVersionId}-ROW-%`, assessment.tenant_id),
+      db.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id >= ? AND record_id < ? AND tenant_id = ?')
+        .bind(keyRange.lowerBound, keyRange.upperBound, assessment.tenant_id),
       db.prepare(`DELETE FROM ${D1_TABLES.dataVersions} WHERE data_version_id = ? AND assessment_id = ?`)
         .bind(dataVersionId, assessmentId),
       db.prepare('DELETE FROM ObjectMetadata WHERE object_key = ? AND assessment_id = ? AND tenant_id = ?')
@@ -55,7 +57,7 @@ export const cleanupFailedAssessmentDataVersionUpload = async (
       assessmentId, tenantId: assessment.tenant_id, dataVersionId, requestId: context.requestId
     }, error);
   }
-  clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
+  await clearScopedModule2Cache(db, assessment.tenant_id, assessmentId);
   if (!objectStored) return;
   try {
     await environment.OBJECTS?.delete(objectKey);

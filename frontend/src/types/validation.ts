@@ -9,6 +9,7 @@ import type {
   clientErrorReportSchema,
   apiRequestIdSchema,
   assessmentIdQuerySchema,
+  ingestionDocumentDeleteRequestSchema,
   paymentTermsResponseSchema,
   taxonomyPageRequestSchema,
   taxonomyPageResponseSchema,
@@ -54,6 +55,7 @@ import type { pcbiGapResolutionRequestSchema } from '../constants/orchestrationV
 export type TaxonomyPageRequest = z.infer<typeof taxonomyPageRequestSchema>;
 export type ClientErrorReport = z.infer<typeof clientErrorReportSchema>;
 export type ApiRequestId = z.infer<typeof apiRequestIdSchema>;
+export type IngestionDocumentDeleteRequest = z.infer<typeof ingestionDocumentDeleteRequestSchema>;
 export type AssessmentIdQuery = z.infer<typeof assessmentIdQuerySchema>;
 export type PaymentTermsResponse = z.infer<typeof paymentTermsResponseSchema>;
 export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;

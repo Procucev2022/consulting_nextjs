@@ -1,3 +1,4 @@
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import { MANDATORY_MODULE_GATES, ASSESSMENT_STATUSES, DATA_STATUSES, AUDIT_ACTIONS } from '../constants/assessment';
 import {
   ASSESSMENT_D1_ANALYSIS_GATES, ASSESSMENT_D1_MESSAGES, ASSESSMENT_D1_RUN_SNAPSHOT_TYPE
@@ -65,8 +66,9 @@ const loadAnalysisSourceRows = async (
   const [transactions, validationRows] = await Promise.all([
     context.db.prepare(`SELECT * FROM ${D1_TABLES.transactions} WHERE assessment_id = ? AND source_document_id = ? ` +
       'ORDER BY source_row_number ASC').bind(context.assessmentId, dataVersionId).all<D1Record>(),
-    context.db.prepare(`SELECT * FROM ${D1_TABLES.validation} WHERE record_id LIKE ? ORDER BY record_id`)
-      .bind(`REC-${dataVersionId}-ROW-%`).all<D1Record>()
+    context.db.prepare(`SELECT * FROM ${D1_TABLES.validation} WHERE record_id >= ? AND record_id < ? ORDER BY record_id`)
+      .bind(validationRecordKeyRange(dataVersionId).lowerBound, validationRecordKeyRange(dataVersionId).upperBound)
+      .all<D1Record>()
   ]);
   return { transactionRows: transactions.results || [], records: validationRows.results || [] };
 };
