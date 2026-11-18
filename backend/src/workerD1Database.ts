@@ -1,4 +1,6 @@
 import { D1_DATABASE_STATUS_QUERY, D1_SCHEMA_QUERY } from './constants/d1';
+import { D1_DATABASE_STATUS_CACHE_TTL_MS, D1_REFERENCE_CACHE_KEYS } from './constants/db';
+import { getOrLoadD1ReferenceData } from './services/d1ReferenceDataCache';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import type { D1SchemaQueryRow, D1SchemaTable } from './types/d1';
 import { getD1ReferenceDataCacheSize } from './services/d1ReferenceDataCache';
@@ -47,14 +49,23 @@ export const handleDatabaseRoute = async (
     const database = environment.DB;
     if (!database) return jsonResponse({ success: false, message: 'Cloudflare D1 binding DB is not configured.' }, 503, request);
     requireD1Binding(database);
-    const statusRows = await database.prepare(D1_DATABASE_STATUS_QUERY).all<{ name: string; totalRecords: number }>();
+    // The counts scan the ledger and validation tables, so polls reuse them for a short time instead of recounting.
+    const status = await getOrLoadD1ReferenceData<{ name: string; totalRecords: number }[]>(
+      database,
+      D1_REFERENCE_CACHE_KEYS.DATABASE_STATUS,
+      async () => (await database.prepare(D1_DATABASE_STATUS_QUERY)
+        .all<{ name: string; totalRecords: number }>()).results,
+      D1_DATABASE_STATUS_CACHE_TTL_MS
+    );
+    const statusRows = status.value;
     return apiData({
       isConnected: true,
       provider: 'Cloudflare D1',
       databaseName: environment.D1_DATABASE_NAME || null,
       serverTime: new Date().toISOString(),
-      tablesCount: statusRows.results.length,
-      totalRecords: Number(statusRows.results[0]?.totalRecords || 0)
+      statusCacheStatus: status.cacheStatus,
+      tablesCount: statusRows.length,
+      totalRecords: Number(statusRows[0]?.totalRecords || 0)
     }, request);
   }
   if (path.endsWith('/test-connection')) {

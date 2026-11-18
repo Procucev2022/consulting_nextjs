@@ -20,6 +20,8 @@ export const D1_SINGLE_ROW_CHANGE_COUNT = 1;
 export const DEFAULT_CACHE_TTL_MS = 60000; // 60 seconds
 export const D1_REFERENCE_CACHE_MAX_ENTRIES = 128;
 export const D1_TENANT_DATA_CACHE_MAX_ROWS = 1000;
+// The database status counts scan the ledger and validation tables, so a poll reuses them for this long.
+export const D1_DATABASE_STATUS_CACHE_TTL_MS = 30000;
 export const D1_MODULE2_ANALYSIS_CACHE_MAX_ENTRIES = 8;
 export const D1_MODULE2_ANALYSIS_CACHE_MAX_ROWS = 30000;
 export const D1_RUNTIME_RECENT_AUDIT_LIMIT = 100;
@@ -27,7 +29,8 @@ export const D1_RUNTIME_RECENT_AUDIT_LIMIT = 100;
 export const D1_REFERENCE_CACHE_KEYS = {
   CURRENCY_RATES: 'reference:currency-rates',
   INDUSTRY_CATALOG: 'reference:industry-catalog',
-  PCBI_BENCHMARKS: 'reference:pcbi-benchmarks'
+  PCBI_BENCHMARKS: 'reference:pcbi-benchmarks',
+  DATABASE_STATUS: 'system:database-status'
 } as const;
 
 export const D1_TENANT_DATA_CACHE_KEYS = {

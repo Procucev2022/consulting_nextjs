@@ -2033,7 +2033,8 @@ describe('Cloudflare worker core routes', () => {
       expect(metrics.recentAudits).toEqual(expect.arrayContaining([
         expect.objectContaining({ requestId: statusRequestId, operation: 'SELECT' })
       ]));
-      expect(metricsResponse.data).toMatchObject({ cacheSize: 0 });
+      // The status poll above cached its ledger counts, so the reference cache holds exactly that one entry.
+      expect(metricsResponse.data).toMatchObject({ cacheSize: 1 });
     });
 
     it('summarises spend, savings and audited lines for the report', async () => {
