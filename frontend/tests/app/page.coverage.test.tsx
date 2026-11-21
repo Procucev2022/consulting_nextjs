@@ -1169,9 +1169,9 @@ describe('Home page: operating mode and assessment restoration', () => {
     await renderPage();
 
     await waitFor(() => {
-      expect(assessmentApiClient.getAssessments).toHaveBeenCalled();
+      expect(readProp<OperatingModeConfig>('header', 'operatingMode').isInternalAssessment).toBe(true);
     });
-    expect(readProp<OperatingModeConfig>('header', 'operatingMode').isInternalAssessment).toBe(true);
+    expect(readProp<AssessmentRecord | null>('header', 'activeAssessment')).toBeNull();
     expect(mocks.props.assessmentWorkspace).toBeUndefined();
     expect(mocks.props.module1).toBeDefined();
   });
@@ -1222,7 +1222,7 @@ describe('Home page: operating mode and assessment restoration', () => {
     expect(assessmentApiClient.getAssessmentById).toHaveBeenCalledWith('ASM-Q');
   });
 
-  it('restores the validated assessment from the list when none is stored', async () => {
+  it('keeps the workspace empty by default when creating a new account or when no assessment is selected', async () => {
     vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
     vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([
       buildAssessment({ assessmentId: 'ASM-1', validatedSpendCr: 0 }),
@@ -1232,24 +1232,18 @@ describe('Home page: operating mode and assessment restoration', () => {
     await renderPage();
 
     await waitFor(() => {
-      expect(assessmentApiClient.getAssessmentById).toHaveBeenCalledWith('ASM-2');
+      expect(readProp<AssessmentRecord | null>('header', 'activeAssessment')).toBeNull();
     });
+    expect(assessmentApiClient.getAssessmentById).not.toHaveBeenCalled();
+    expect(readProp<TenantMaster>('header', 'tenant').enterprise_name).toBe(UI_STRINGS.header.noActiveCustomer);
+    expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(0);
+
+    await switchTab('module1', 'module1');
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
   });
 
-  it('uses the first listed assessment when none has validated spend', async () => {
+  it('skips restoration when no assessment is stored in localStorage or parameters', async () => {
     vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
-    vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([buildAssessment({ assessmentId: 'ASM-1' })]);
-
-    await renderPage();
-
-    await waitFor(() => {
-      expect(assessmentApiClient.getAssessmentById).toHaveBeenCalledWith('ASM-1');
-    });
-  });
-
-  it('skips restoration when the assessment list cannot be loaded', async () => {
-    vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
-    vi.mocked(assessmentApiClient.getAssessments).mockRejectedValue(new Error('list offline'));
 
     await renderPage();
 
@@ -3432,7 +3426,7 @@ describe('Home page: FX and tenant mapping edge cases', () => {
     expect(readProp<unknown[]>('module1', 'savedDataVersions')).toEqual([savedVersion]);
   });
 
-  it('auto-hydrates previously uploaded saved data in internal mode when no active assessment dataset exists', async () => {
+  it('keeps previously uploaded saved data available in the saved list while leaving ingestionQueue empty by default', async () => {
     const savedDoc = buildDocument({ doc_id: 'DOC-INGEST-AUTO', file_name: 'Auto_Saved.xlsx', converted_inr_crores: 44.5 });
     vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(INTERNAL_MODE);
     vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([]);
@@ -3444,7 +3438,7 @@ describe('Home page: FX and tenant mapping edge cases', () => {
     await renderPage();
     await switchTab('module1', 'module1');
 
-    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([savedDoc]);
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
     expect(readProp<RawDocumentIngestion[]>('module1', 'savedDocuments')).toEqual([savedDoc]);
   });
 

@@ -39,12 +39,14 @@ describe('authApiClient and auth utilities', () => {
       expect(authApiClient.getStoredUser()).toBeNull();
 
       authApiClient.setStoredSession('token-12345', mockUser);
+      localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-123');
       expect(authApiClient.getStoredToken()).toBe('token-12345');
       expect(authApiClient.getStoredUser()).toEqual(mockUser);
 
       authApiClient.clearStoredSession();
       expect(authApiClient.getStoredToken()).toBeNull();
       expect(authApiClient.getStoredUser()).toBeNull();
+      expect(localStorage.getItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID)).toBeNull();
     });
 
     it('should return null when stored user profile contains corrupted JSON', () => {

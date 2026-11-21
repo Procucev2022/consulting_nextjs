@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { AuthCard } from '../../../src/components/auth/AuthCard';
 import { apiClient } from '../../../src/utils/api';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { AUTH_STORAGE_KEYS } from '../../../src/constants/auth';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -25,6 +26,7 @@ describe('AuthCard Component', () => {
   });
 
   it('renders initial tab, conversion banner, and reassurance footer', () => {
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
 
     expect(screen.getByText(UI_STRINGS.auth.startWithYourDataBadge)).toBeInTheDocument();
@@ -34,6 +36,7 @@ describe('AuthCard Component', () => {
   });
 
   it('switches between LOGIN and REGISTER tabs cleanly', () => {
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
 
     const registerTab = screen.getByRole('button', { name: UI_STRINGS.auth.createAccountTab });
@@ -67,6 +70,7 @@ describe('AuthCard Component', () => {
       }
     });
 
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
 
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), {
@@ -80,6 +84,7 @@ describe('AuthCard Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.auth.loginSuccess)).toBeInTheDocument();
+      expect(localStorage.getItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID)).toBeNull();
     });
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/');
@@ -89,6 +94,7 @@ describe('AuthCard Component', () => {
   it('handles login failure and displays error message', async () => {
     vi.spyOn(apiClient, 'login').mockRejectedValue(new Error('Invalid credentials provided'));
 
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
 
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), {
@@ -181,6 +187,7 @@ describe('AuthCard Component', () => {
   it('handles non-Error object exceptions on login and registration', async () => {
     vi.spyOn(apiClient, 'login').mockRejectedValue('String error failure');
 
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), { target: { value: 'user@example.com' } });
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), { target: { value: 'pass' } });
@@ -225,6 +232,7 @@ describe('AuthCard Component', () => {
       }
     });
 
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), { target: { value: 'admin@procucev.com' } });
     fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), { target: { value: 'adminPass' } });
@@ -237,6 +245,7 @@ describe('AuthCard Component', () => {
 
   it('requires explicit registered credentials even in development', () => {
     process.env = { ...originalEnv, NODE_ENV: 'development' };
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
     expect(screen.getByRole('note')).toHaveTextContent(UI_STRINGS.auth.developmentAuthNotice);
     const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
@@ -246,6 +255,7 @@ describe('AuthCard Component', () => {
   });
 
   it('handles switching between login and register using form links', () => {
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-OLD');
     render(<AuthCard initialTab="LOGIN" />);
 
     const switchBtn = screen.getByText(UI_STRINGS.auth.dontHaveAccount);

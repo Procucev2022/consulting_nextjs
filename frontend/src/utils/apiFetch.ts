@@ -92,6 +92,7 @@ const clearStoredSessionKeys = (requestId: string, path: string): void => {
     window.localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
     window.localStorage.removeItem(AUTH_STORAGE_KEYS.CURRENT_USER);
     window.localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+    window.localStorage.removeItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID);
   } catch (error: unknown) {
     frontendLogger.warn(API_LOG_MESSAGES.sessionClearFailed, {
       action: 'api.session.clear', path, statusCode: AUTH_HTTP_STATUS.UNAUTHORIZED, requestId

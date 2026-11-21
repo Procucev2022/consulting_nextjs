@@ -114,6 +114,7 @@ export const authApiClient = {
     localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(AUTH_STORAGE_KEYS.CURRENT_USER);
     localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID);
     try {
       sessionStorage.removeItem('procucev_uploaded_dataset');
       sessionStorage.removeItem('procucev_autofill_active_doc');

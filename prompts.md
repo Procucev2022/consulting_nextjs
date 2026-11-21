@@ -114412,3 +114412,6 @@ we don't see previously upload saved data
 ## Prompt 647
 keep commiting & pushing the changes to current branch 
 ---
+## Prompt 648
+Bug: creating any new account we are seeing 19670 Records already available by default it should be empty
+---

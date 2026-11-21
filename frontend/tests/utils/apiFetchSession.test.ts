@@ -24,6 +24,7 @@ describe('apiFetch session and failure handling', () => {
     localStorage.setItem(AUTH_STORAGE_KEYS.AUTH_TOKEN, 'expired-token');
     localStorage.setItem(AUTH_STORAGE_KEYS.CURRENT_USER, '{"id":"usr-1"}');
     localStorage.setItem(AUTH_STORAGE_KEYS.SIMULATED_TIER, 'GOLD');
+    localStorage.setItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID, 'ASM-EXP');
     globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
     const announce = vi.fn();
     window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, announce);
@@ -35,6 +36,7 @@ describe('apiFetch session and failure handling', () => {
       expect(localStorage.getItem(AUTH_STORAGE_KEYS.AUTH_TOKEN)).toBeNull();
       expect(localStorage.getItem(AUTH_STORAGE_KEYS.CURRENT_USER)).toBeNull();
       expect(localStorage.getItem(AUTH_STORAGE_KEYS.SIMULATED_TIER)).toBeNull();
+      expect(localStorage.getItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID)).toBeNull();
       expect(announce).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalledWith(API_LOG_MESSAGES.sessionExpired, expect.objectContaining({
         path: '/api/categories', statusCode: 401

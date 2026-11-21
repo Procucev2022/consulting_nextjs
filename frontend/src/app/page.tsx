@@ -74,7 +74,7 @@ import {
 import {
   executiveBriefDownloadFormatSchema
 } from '@/constants/validation';
-import { AUTH_ROUTES } from '@/constants/auth';
+import { AUTH_ROUTES, AUTH_STORAGE_KEYS } from '@/constants/auth';
 import { getApiBaseUrl } from '@/utils/apiBase';
 import {
   formatExecutiveOpportunityBriefError,
@@ -887,44 +887,28 @@ export default function Home() {
               setToastMessage(UI_STRINGS.auth.tenantAssignmentRequired);
             }
           } else {
-            let restoredAssessment: AssessmentRecord | null = null;
-            let explicitAssessmentMismatch = false;
             let storedAssessmentId: string | undefined;
 
             try {
               const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
               storedAssessmentId = (typeof window !== 'undefined'
-                ? localStorage.getItem('aicev_selected_assessment_id')
+                ? localStorage.getItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID)
                 : null) || undefined;
               if (!storedAssessmentId) {
                 const assessmentParam = currentParams?.get('assessmentId');
                 if (assessmentParam) {
                   storedAssessmentId = assessmentParam;
-                } else {
-                  try {
-                    const list = await assessmentApiClient.getAssessments();
-                    if (list && list.length > 0) {
-                      const validated = list.find((a: any) => a.validatedSpendCr && a.validatedSpendCr > 0);
-                      storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
-                    }
-                  } catch {
-                    storedAssessmentId = undefined;
-                  }
                 }
               }
               if (storedAssessmentId) {
                 const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
                 const record = res?.assessment || res;
                 if (record?.assessmentId === storedAssessmentId) {
-                  restoredAssessment = record;
                   setSavedAssessmentVersions(Array.isArray(res?.versions) ? res.versions : []);
                   handleActiveAssessmentChange(record);
-                } else {
-                  explicitAssessmentMismatch = true;
                 }
               }
             } catch (storageErr) {
-              explicitAssessmentMismatch = Boolean(storedAssessmentId);
               frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
             }
 
@@ -933,12 +917,6 @@ export default function Home() {
                 const savedIngestion = await apiClient.getIngestionData(internalTenantId);
                 const savedDocs = resolveSavedDocumentsList(savedIngestion, internalTenantId);
                 setSavedIngestionDocuments(savedDocs);
-                const hasAssessmentCanonicalData = Boolean(
-                  restoredAssessment && (restoredAssessment.activeDataVersionId || restoredAssessment.canonicalModule1)
-                );
-                if (!hasAssessmentCanonicalData && !explicitAssessmentMismatch && savedDocs.length > 0) {
-                  applyD1SavedDocumentSelection(savedIngestion, internalTenantId, savedDocs[0].doc_id ?? undefined);
-                }
               } catch (savedDocsErr: unknown) {
                 frontendLogger.warn('Could not load saved ingestion documents in internal mode', {
                   action: 'dashboard.saved_documents.load',

@@ -14,7 +14,8 @@ export const PASSWORD_MINIMUM_LENGTH = 6;
 export const AUTH_STORAGE_KEYS = {
   AUTH_TOKEN: 'procucev_auth_token',
   CURRENT_USER: 'procucev_current_user',
-  SIMULATED_TIER: 'procucev_simulated_tier'
+  SIMULATED_TIER: 'procucev_simulated_tier',
+  SELECTED_ASSESSMENT_ID: 'aicev_selected_assessment_id'
 } as const;
 
 export const AUTH_API_ENDPOINTS = {

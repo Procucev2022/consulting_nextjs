@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Sparkles } from 'lucide-react';
-import { UI_STRINGS } from '../../constants';
+import { AUTH_STORAGE_KEYS, UI_STRINGS } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
 import type { LoginFormData, RegisterFormData } from '../../types';
@@ -45,6 +45,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
     try {
       frontendLogger.info('Submitting user login form', { email: loginForm.email });
       const response = await apiClient.login(loginForm);
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID);
+      }
       setSuccessMessage(UI_STRINGS.auth.loginSuccess);
 
       setTimeout(() => {
@@ -81,6 +84,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
         company: registerForm.company_name
       });
       await apiClient.register(registerForm);
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(AUTH_STORAGE_KEYS.SELECTED_ASSESSMENT_ID);
+      }
       setSuccessMessage(UI_STRINGS.auth.registrationPending);
       setActiveTab('LOGIN');
       setLoginForm((current) => ({ ...current, email: registerForm.email }));
