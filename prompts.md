@@ -114435,3 +114435,17 @@ Report we are downloading is also are demo values need real values and same with
 ## Prompt 653
 Same with Savings module, demo data value for every data, please check & fix
 ---
+## Prompt 654
+why getting this on click of AI categorize engine  on click of 2nd I am able to change ?? need to do the same what kind of error this 
+
+Select an active assessment before saving a material classification.  just move to AI classification why getting this and creating chaos check fix fast 
+---
+
+## Prompt 655
+complete the rest task 
+---
+
+## Prompt 656
+is completed shall I push the code with new branch ??? 
+---
+

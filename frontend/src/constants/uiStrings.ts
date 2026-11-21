@@ -2479,6 +2479,7 @@ export const UI_STRINGS = {
       taxonomySuggestionsSaved: (count: number) => `${count} taxonomy suggestions were saved to D1 as provisional. Review and confirm each mapping before using it in reports.`,
       noTaxonomySuggestionsSaved: 'No suggestions matched a D1 taxonomy code and stable material identifier. Check the uploaded material codes and D1 taxonomy catalog, then retry.',
       module2AssessmentRequired: 'Select an active assessment before saving a material classification.',
+      aiCategorizationPreviewOnly: 'AI categorization preview complete. Results are displayed but not saved to D1 — select an active assessment and re-run to persist classifications.',
       module2MaterialCodeRequired: 'This transaction has no stable material code, so its classification cannot be safely saved. Add a material code in the source data and retry.',
       module2UnspscSelectionRequired:
         'This line item is currently Unclassified (00000000). Use Re-Assign to select a valid 8-digit UNSPSC commodity code before confirming to D1.',
