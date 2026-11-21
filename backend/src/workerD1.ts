@@ -176,9 +176,10 @@ export const getIngestionDataFromD1 = async (
   ]);
   const summary = summaryRows[0] ?? null;
   const hasMoreQueue = !page.queueDocumentId && queuePage.length > D1_INGESTION_PAGE_SIZE;
-  const hasMoreValidation = validationPage.length > D1_INGESTION_PAGE_SIZE;
   const queue = queuePage.slice(0, D1_INGESTION_PAGE_SIZE);
-  const validationRecords = validationPage.slice(0, D1_INGESTION_PAGE_SIZE);
+  const userHasNoData = Boolean(page.userId && !page.queueDocumentId && queue.length === 0);
+  const hasMoreValidation = !userHasNoData && validationPage.length > D1_INGESTION_PAGE_SIZE;
+  const validationRecords = userHasNoData ? [] : validationPage.slice(0, D1_INGESTION_PAGE_SIZE);
   const normalizedQueue = normalizeStoredIngestionRows(queue, { requestId: page.requestId, tenantId });
   const normalizedRecords: D1Record[] = validationRecords.map((row) => ({ ...row, resolved: Boolean(row.resolved) }));
   const lastQueue = queue.at(-1);
@@ -201,17 +202,17 @@ export const getIngestionDataFromD1 = async (
       }
     },
     summary: summary ? {
-      totalFiles: Number(summary?.total_files || 0),
-      totalRecords: Number(summary?.total_records || 0),
-      cleanCount: Number(summary?.clean_count || 0),
-      anomaliesCount: Number(summary?.anomalies_count || 0),
-      allResolvedCount: Number(summary?.all_resolved_count || 0),
-      pendingActionsCount: Number(summary?.pending_actions_count || 0),
-      conversionCount: Number(summary?.conversion_count || 0),
-      vendorDuplicationCount: Number(summary?.vendor_duplication_count || 0),
-      itemDuplicationCount: Number(summary?.item_duplication_count || 0),
-      totalSpendCr: Number(summary?.total_spend_cr || 0),
-      pendingSpendCr: Number(summary.pending_spend_cr || 0)
+      totalFiles: userHasNoData ? 0 : Number(summary?.total_files || 0),
+      totalRecords: userHasNoData ? 0 : Number(summary?.total_records || 0),
+      cleanCount: userHasNoData ? 0 : Number(summary?.clean_count || 0),
+      anomaliesCount: userHasNoData ? 0 : Number(summary?.anomalies_count || 0),
+      allResolvedCount: userHasNoData ? 0 : Number(summary?.all_resolved_count || 0),
+      pendingActionsCount: userHasNoData ? 0 : Number(summary?.pending_actions_count || 0),
+      conversionCount: userHasNoData ? 0 : Number(summary?.conversion_count || 0),
+      vendorDuplicationCount: userHasNoData ? 0 : Number(summary?.vendor_duplication_count || 0),
+      itemDuplicationCount: userHasNoData ? 0 : Number(summary?.item_duplication_count || 0),
+      totalSpendCr: userHasNoData ? 0 : Number(summary?.total_spend_cr || 0),
+      pendingSpendCr: userHasNoData ? 0 : Number(summary.pending_spend_cr || 0)
     } : undefined
   };
 };

@@ -1784,6 +1784,68 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
+    it('rejects a buyer deleting a legacy document that has a null user_id with 403', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-LEGACY', 'TNT-1', 'legacy.xlsx', '2026-01-01T00:00:00Z', null]
+      ]);
+
+      const response = await send(
+        '/api/ingestion/document/DOC-LEGACY?tenantId=TNT-1',
+        { method: 'DELETE' },
+        environmentWithDb({ REQUEST_USER_ID: 'user-buyer', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(response.status).toBe(403);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.ingestionDocumentUnauthorized
+      });
+    });
+
+    it('returns empty queue and 0 validation metrics for a new buyer who has no uploaded datasets', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-OTHER', 'TNT-1', 'other.xlsx', '2026-01-01T00:00:00Z', 'user-other']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, amount_inr, inr_crores, fx_rate_applied, issue_flag, action_status, resolved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-DOC-OTHER-ROW-1', 'TNT-1', 'PO-1', 'Vendor', 'Item', 100, 'INR', 100, 0.00001, 1, 'Passed Clean', 'Ready', 1, '2026-01-01T00:00:00Z']
+      ]);
+
+      const response = await send(
+        '/api/ingestion?tenantId=TNT-1',
+        {},
+        environmentWithDb({ REQUEST_USER_ID: 'user-brand-new', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(response.status).toBe(200);
+      const body = await bodyOf(response);
+      const data = body.data as { queue: unknown[]; validationRecords: unknown[]; summary: { totalFiles: number; totalRecords: number } };
+      expect(data.queue).toEqual([]);
+      expect(data.validationRecords).toEqual([]);
+      expect(data.summary.totalFiles).toBe(0);
+      expect(data.summary.totalRecords).toBe(0);
+    });
+
+    it('does not return validation records when a buyer requests an unowned queueDocumentId', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-OTHER', 'TNT-1', 'other.xlsx', '2026-01-01T00:00:00Z', 'user-other']
+      ]);
+      insertRows(fixture.db, 'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, amount, raw_currency, amount_inr, inr_crores, fx_rate_applied, issue_flag, action_status, resolved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        ['REC-DOC-OTHER-ROW-1', 'TNT-1', 'PO-1', 'Vendor', 'Item', 100, 'INR', 100, 0.00001, 1, 'Passed Clean', 'Ready', 1, '2026-01-01T00:00:00Z']
+      ]);
+
+      const response = await send(
+        '/api/ingestion?tenantId=TNT-1&queueDocumentId=DOC-OTHER',
+        {},
+        environmentWithDb({ REQUEST_USER_ID: 'user-brand-new', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(response.status).toBe(200);
+      const body = await bodyOf(response);
+      const data = body.data as { queue: unknown[]; validationRecords: unknown[] };
+      expect(data.queue).toEqual([]);
+      expect(data.validationRecords).toEqual([]);
+    });
+
     it('allows a buyer to delete their own document and returns their user-scoped queue', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [

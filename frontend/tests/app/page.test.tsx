@@ -1216,8 +1216,15 @@ describe('Home Page Component', () => {
     }
   });
 
-  it('requires an active assessment before starting persistent Module 2 categorization', async () => {
+  it('runs AI categorization in preview mode from Module 1 when no active assessment exists', async () => {
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
+    vi.spyOn(aiApiClient, 'categorizeItems').mockResolvedValue({
+      success: true,
+      status: 'COMPLETED',
+      mappings: [],
+      model: 'gemini',
+      error: null
+    });
     await renderHome();
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -1227,11 +1234,11 @@ describe('Home Page Component', () => {
     const runAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
     fireEvent.click(runAiBtn);
 
-    // Categorization decisions are keyed to a D1 assessment and must not run as local-only state.
+    // Moves to Module 2 and runs AI preview without blocking with an error toast
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.toasts.aiCategorizationPreviewOnly)).toBeInTheDocument();
     });
-    expect(aiApiClient.categorizeItems).not.toHaveBeenCalled();
+    expect(aiApiClient.categorizeItems).toHaveBeenCalled();
   });
 
   it('renders masked overlay for Bronze tier and shows upgrade trigger', async () => {

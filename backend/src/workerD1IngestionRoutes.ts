@@ -27,6 +27,9 @@ import { enqueueR2ObjectCleanup, processR2ObjectCleanupOutbox } from './services
 import { R2_CLEANUP_REASONS, R2_CLEANUP_SQL } from './constants';
 import { requireD1AtomicBatch, runD1Statements } from './services/workerD1Query';
 
+const isBuyerUser = (environment: CloudflareEnvironment): boolean =>
+  environment.REQUEST_USER_ROLE === 'USER';
+
 const getIngestionData = async (
   environment: CloudflareEnvironment,
   page?: IngestionDataQueryInput,
@@ -36,9 +39,9 @@ const getIngestionData = async (
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
   const database = environment.DB as CloudflareD1Database;
-  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const isBuyer = isBuyerUser(environment);
   const effectiveUserId = isBuyer
-    ? (environment.REQUEST_USER_ID || page?.userId)
+    ? (environment.REQUEST_USER_ID || page?.userId || '__NONE__')
     : (page?.userId || undefined);
   const includeSummary = !page?.queueAfterUploadedAt && !page?.validationAfterCreatedAt;
   const validationCursor = page?.validationAfterCreatedAt && page.validationAfterRecordId
@@ -210,7 +213,7 @@ const addIngestion = async (request: Request, environment: CloudflareEnvironment
     ) VALUES (?, ?, ?, ?, ?, ?, 'Pending', 0, ?, ?, ?)
   `).bind(docId, tenantId, userId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
   void result;
-  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const isBuyer = isBuyerUser(environment);
   const queueSql = isBuyer && userId
     ? 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?'
     : 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?';
@@ -348,7 +351,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     validationCount: imported.validationCount
   });
 
-  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const isBuyer = isBuyerUser(environment);
   const queueSql = isBuyer && userId
     ? 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?'
     : 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?';
@@ -433,14 +436,14 @@ const deleteIngestion = async (
     });
     return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentIdRequired }, status: 400 };
   }
-  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const isBuyer = isBuyerUser(environment);
   const effectiveUserId = isBuyer ? environment.REQUEST_USER_ID : undefined;
   const docCheck = await database.prepare('SELECT doc_id, user_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?')
     .bind(documentId, tenantId).first<{ doc_id: string; user_id?: string | null }>();
   if (!docCheck) {
     return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentNotFound(documentId) }, status: 404 };
   }
-  if (effectiveUserId && docCheck.user_id && docCheck.user_id !== effectiveUserId) {
+  if (isBuyer && (!effectiveUserId || docCheck.user_id !== effectiveUserId)) {
     logger.warn('Rejected deletion of ingestion document owned by another user', {
       action: D1_LOG_ACTIONS.ingestionDelete,
       requestId,

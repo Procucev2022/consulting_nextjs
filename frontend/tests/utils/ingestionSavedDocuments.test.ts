@@ -56,6 +56,28 @@ describe('ingestionSavedDocuments utilities', () => {
     expect(result).toHaveLength(1);
     expect(result[0].doc_id).toBe('DOC-1');
     expect(sanitizeSavedDocumentsForTenant('invalid', 'TNT-1')).toEqual([]);
+
+    const userScoped = sanitizeSavedDocumentsForTenant(
+      [
+        doc({ doc_id: 'DOC-MINE', tenant_id: 'TNT-1', user_id: 'USR-ME' }),
+        doc({ doc_id: 'DOC-OTHER-USER', tenant_id: 'TNT-1', user_id: 'USR-OTHER' })
+      ],
+      'TNT-1',
+      'USR-ME'
+    );
+    expect(userScoped).toHaveLength(1);
+    expect(userScoped[0].doc_id).toBe('DOC-MINE');
+
+    const adminView = sanitizeSavedDocumentsForTenant(
+      [
+        doc({ doc_id: 'DOC-MINE', tenant_id: 'TNT-1', user_id: 'USR-ME' }),
+        doc({ doc_id: 'DOC-OTHER-USER', tenant_id: 'TNT-1', user_id: 'USR-OTHER' }),
+        doc({ doc_id: 'DOC-NO-USER', tenant_id: 'TNT-1', user_id: undefined })
+      ],
+      'TNT-1',
+      undefined
+    );
+    expect(adminView).toHaveLength(3);
   });
 
   it('resolves ordered saved documents and merges incoming uploads', () => {

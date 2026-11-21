@@ -1866,12 +1866,13 @@ describe('Home page: batch upload outcomes', () => {
 });
 
 describe('Home page: Module 2 categorization', () => {
-  it('requires an assessment for categorization and a material code for reassignment', async () => {
+  it('runs AI categorization in preview mode when no assessment is active, and requires a material code for reassignment', async () => {
     await renderPage();
     await switchTab('module2', 'module2');
 
     await runProp('module2', 'onStartAICategorization');
-    expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
+    // Without an active assessment the engine runs but results are not saved to D1; a preview toast is shown instead.
+    expect(screen.getByText(UI_STRINGS.toasts.aiCategorizationPreviewOnly)).toBeInTheDocument();
 
     await runProp('reassign', 'onSave', 'MISSING-MAPPING', '31161500', 'Bolts', 'Direct Materials');
     expect(screen.getByText(UI_STRINGS.toasts.module2MaterialCodeRequired)).toBeInTheDocument();
@@ -2028,6 +2029,24 @@ describe('Home page: Module 2 categorization', () => {
       expect(mocks.props.module2).toBeDefined();
     });
     expect(aiApiClient.categorizeItems).toHaveBeenCalled();
+  });
+
+  it('runs AI categorization from Module 1 in preview mode when no assessment is active', async () => {
+    await renderPage();
+    if (!mocks.props.module1) {
+      await switchTab('module1', 'module1');
+    }
+
+    await runProp('module1', 'onRunAICategorization');
+
+    await waitFor(() => {
+      expect(mocks.props.module2).toBeDefined();
+    });
+    // AI engine runs and navigates to module2 — but results are not saved to D1
+    expect(aiApiClient.categorizeItems).toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.aiCategorizationPreviewOnly)).toBeInTheDocument();
+    // No D1 save should happen without an active assessment
+    expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
   });
 
   it('moves Module 2 to Module 3 and Module 3 to Module 4 with their transition toasts', async () => {

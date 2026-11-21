@@ -2470,11 +2470,14 @@ export default function Home() {
   const persistD1MappingDecisions = async (
     items: LineItemMapping[],
     reviewStatus: 'PROVISIONAL' | 'CLIENT_APPROVED',
-    auditNotes: string
+    auditNotes: string,
+    silentAssessmentCheck = false
   ) => {
     const assessmentId = activeAssessment?.assessmentId;
     if (!assessmentId) {
-      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      if (!silentAssessmentCheck) {
+        showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      }
       return null;
     }
 
@@ -2596,14 +2599,6 @@ export default function Home() {
   };
 
   const handleStartAICategorization = async () => {
-    const documentIdInUrl = typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('documentId')
-      : null;
-    const effectiveScopeId = activeAssessment?.assessmentId || documentIdInUrl || ingestionQueue[0]?.doc_id;
-    if (!effectiveScopeId) {
-      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
-      return;
-    }
     try {
       await loadUNSPSCTaxonomy();
     } catch {
@@ -2673,9 +2668,19 @@ export default function Home() {
       const saved = await persistD1MappingDecisions(
         suggestedItems,
         'PROVISIONAL',
-        VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_SUGGESTION_AUDIT_NOTE
+        VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_SUGGESTION_AUDIT_NOTE,
+        true
       );
-      if (!saved?.length) return;
+      // When no active assessment, persistD1MappingDecisions returns null (skips D1 save).
+      // Still apply AI-suggested items to local state for preview; show info toast instead of blocking.
+      if (!saved?.length) {
+        if (!activeAssessment?.assessmentId) {
+          setLineItems(suggestedItems);
+          setCompletedSteps((previous) => ({ ...previous, step1: true, step2: true }));
+          showToast(UI_STRINGS.toasts.aiCategorizationPreviewOnly);
+        }
+        return;
+      }
       const unclassifiedByMappingId = new Map(
         suggestedItems
           .filter((item) => !item.unspsc_code?.trim() || item.unspsc_code.trim() === UNCLASSIFIED_COMMODITY_CODE)
@@ -2686,11 +2691,11 @@ export default function Home() {
           const fallbackItem = unclassifiedByMappingId.get(item.mapping_id);
           return fallbackItem
             ? {
-                ...fallbackItem,
-                unspsc_code: UNCLASSIFIED_COMMODITY_CODE,
-                ai_confidence: UNCLASSIFIED_CONFIDENCE_PCT,
-                status: 'Pending Review'
-              }
+              ...fallbackItem,
+              unspsc_code: UNCLASSIFIED_COMMODITY_CODE,
+              ai_confidence: UNCLASSIFIED_CONFIDENCE_PCT,
+              status: 'Pending Review'
+            }
             : item;
         }));
       }
@@ -2894,10 +2899,6 @@ export default function Home() {
               onResetValidationRecords={handleResetValidationRecords}
               onRunAICategorization={async () => {
                 userNavigatedRef.current = true;
-                if (!activeAssessment?.assessmentId) {
-                  showToast(UI_STRINGS.toasts.module2AssessmentRequired);
-                  return;
-                }
                 setCompletedSteps((prev) => ({ ...prev, step1: true }));
                 setActiveTab('module2');
                 await handleStartAICategorization();

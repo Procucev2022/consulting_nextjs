@@ -217,5 +217,15 @@ describe('workerD1IngestionDocumentAnalytics', () => {
       { includeSummary: true }
     );
     expect(noSummary.summary).toBeUndefined();
+
+    const unownedResponse = await enrichSelectedDocumentIngestionResponse(
+      fixture.d1,
+      'TNT-1',
+      'DOC-UNOWNED',
+      { queue: [], validationRecords: [{ record_id: 'OTHER' }] },
+      { userId: 'usr-different', includeSummary: true }
+    );
+    expect(unownedResponse.validationRecords).toEqual([]);
+    expect(unownedResponse.documentAnalytics).toBeUndefined();
   });
 });
