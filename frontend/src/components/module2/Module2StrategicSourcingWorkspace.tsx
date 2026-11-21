@@ -100,9 +100,9 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     }
     setIsLoading(true);
     const [summaryResult, profilesResult, directPriceResult] = await Promise.allSettled([
-        Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
-        Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId),
-        Module2StrategicSourcingApi.getDirectPriceImprovement(effectiveAssessmentId)
+      Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
+      Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId),
+      Module2StrategicSourcingApi.getDirectPriceImprovement(effectiveAssessmentId)
     ]);
     if (isMountedRef.current && isLatestRequest()) {
       const failures = [summaryResult, profilesResult]
@@ -306,11 +306,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-overview"
           onClick={() => setActiveTab('overview')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'overview'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'overview'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>10 Levers Overview</span>
         </button>
@@ -318,11 +317,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-consolidatedSavings"
           onClick={() => setActiveTab('consolidatedSavings')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'consolidatedSavings'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'consolidatedSavings'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Consolidated Savings & Deduplication</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 font-bold">
@@ -333,11 +331,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-directPrice"
           onClick={() => setActiveTab('directPrice')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'directPrice'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'directPrice'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 1: Direct Price Improvement</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -348,11 +345,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-eAuction"
           onClick={() => setActiveTab('eAuction')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'eAuction'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'eAuction'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 2: E-Auction Dynamic Bidding</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -363,11 +359,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-vendorConsolidation"
           onClick={() => setActiveTab('vendorConsolidation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'vendorConsolidation'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'vendorConsolidation'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 3: Vendor Base Consolidation</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -378,11 +373,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-volumeAggregation"
           onClick={() => setActiveTab('volumeAggregation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'volumeAggregation'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'volumeAggregation'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 4: Volume Aggregation</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -393,11 +387,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-paymentTerms"
           onClick={() => setActiveTab('paymentTerms')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'paymentTerms'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'paymentTerms'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 5: Payment Terms</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -408,11 +401,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-categorySpecialisation"
           onClick={() => setActiveTab('categorySpecialisation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'categorySpecialisation'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'categorySpecialisation'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 6: Category Specialisation</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -423,11 +415,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-logisticsPackaging"
           onClick={() => setActiveTab('logisticsPackaging')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'logisticsPackaging'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'logisticsPackaging'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>{UI_STRINGS.module2Logistics.title}</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold">
@@ -438,11 +429,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-specificationRationalisation"
           onClick={() => setActiveTab('specificationRationalisation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'specificationRationalisation'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'specificationRationalisation'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 8: Specification Rationalisation</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -453,11 +443,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-procurementCompliance"
           onClick={() => setActiveTab('procurementCompliance')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'procurementCompliance'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'procurementCompliance'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 9: Procurement Compliance</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -468,11 +457,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-alternateSourcing"
           onClick={() => setActiveTab('alternateSourcing')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'alternateSourcing'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'alternateSourcing'
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Lever 10: Alternate Sourcing</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
@@ -483,11 +471,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-strategy"
           onClick={() => setActiveTab('strategy')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
-            activeTab === 'strategy'
-              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${activeTab === 'strategy'
+            ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           <span>Category Sourcing Strategy</span>
         </button>
@@ -500,16 +487,16 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           onSelectLever={(lever) =>
             setActiveTab(
               lever as
-                | 'directPrice'
-                | 'eAuction'
-                | 'vendorConsolidation'
-                | 'volumeAggregation'
-                | 'paymentTerms'
-                | 'logisticsPackaging'
-                | 'categorySpecialisation'
-                | 'specificationRationalisation'
-                | 'procurementCompliance'
-                | 'alternateSourcing'
+              | 'directPrice'
+              | 'eAuction'
+              | 'vendorConsolidation'
+              | 'volumeAggregation'
+              | 'paymentTerms'
+              | 'logisticsPackaging'
+              | 'categorySpecialisation'
+              | 'specificationRationalisation'
+              | 'procurementCompliance'
+              | 'alternateSourcing'
             )
           }
         />
@@ -523,12 +510,16 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       )}
 
       {activeTab === 'directPrice' && (
-        <DirectPriceImprovementView assessmentId={effectiveAssessmentId || ''} />
+        <DirectPriceImprovementView
+          assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
+        />
       )}
 
       {activeTab === 'eAuction' && (
         <EAuctionDynamicBiddingView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
@@ -536,6 +527,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'vendorConsolidation' && (
         <VendorConsolidationView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
@@ -543,6 +535,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'volumeAggregation' && (
         <VolumeAggregationView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
@@ -550,6 +543,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'paymentTerms' && (
         <PaymentTermsView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
@@ -569,6 +563,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'specificationRationalisation' && (
         <SpecificationRationalisationView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}
@@ -576,6 +571,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'procurementCompliance' && (
         <ProcurementComplianceView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}

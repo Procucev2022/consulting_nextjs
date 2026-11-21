@@ -156,6 +156,7 @@ export interface EAuctionQueryOptions {
 
 export interface EAuctionDynamicBiddingViewProps {
   assessmentId: string;
+  documentId?: string;
   onCustomerChange?: (assessmentId: string) => void;
   onBackToOverview?: () => void;
 }

@@ -87,11 +87,24 @@ const getFailurePresentation = (
   };
 };
 
-export const loadVolumeAggregation = async (assessmentId: string): Promise<VolumeAggregationResult> => {
+export const loadVolumeAggregation = async (
+  assessmentId?: string,
+  documentId?: string
+): Promise<VolumeAggregationResult> => {
   const requestId = createClientRequestId();
-  const validatedAssessmentId = parseAssessmentId(assessmentId, requestId);
+  const query = new URLSearchParams();
+  let scopedIdentifier = '';
+  if (assessmentId) {
+    const validatedAssessmentId = parseAssessmentId(assessmentId, requestId);
+    query.set('assessmentId', validatedAssessmentId);
+    scopedIdentifier = validatedAssessmentId;
+  } else if (documentId) {
+    query.set('documentId', documentId);
+    scopedIdentifier = documentId;
+  } else {
+    scopedIdentifier = parseAssessmentId('', requestId);
+  }
 
-  const query = new URLSearchParams({ assessmentId: validatedAssessmentId });
   const path = `${VOLUME_AGGREGATION_ENDPOINT}?${query.toString()}`;
   let response: Response | null = null;
   try {
@@ -107,7 +120,7 @@ export const loadVolumeAggregation = async (assessmentId: string): Promise<Volum
       action: 'module2.volume-aggregation.load',
       method: 'GET',
       path,
-      assessmentId: validatedAssessmentId,
+      assessmentId: scopedIdentifier,
       statusCode: failure.statusCode ?? 0,
       requestId: responseRequestId,
       errorCategory: failure.errorCategory

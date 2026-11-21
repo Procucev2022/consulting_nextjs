@@ -164,4 +164,19 @@ describe('CategorySpecialisationView coverage', () => {
       expect.anything()
     );
   });
+
+  it('renders download link with documentId and token when documentId is provided without assessmentId', async () => {
+    localStorage.setItem('aicev_auth_token', 'test-token-cs');
+    stubFetch(successResponse());
+    render(<CategorySpecialisationView documentId="DOC-INGEST-L6" />);
+
+    await screen.findByTestId(OVERVIEW_TAB_TEST_ID);
+    const downloadLink = screen.getByRole('link', {
+      name: new RegExp(CATEGORY_SPECIALISATION_UI_STRINGS.EXPORT_BUTTON)
+    });
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('documentId=DOC-INGEST-L6'));
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('token=test-token-cs'));
+    expect(downloadLink).toHaveAttribute('download', 'Category_Specialisation_DOC-INGEST-L6.xlsx');
+    localStorage.removeItem('aicev_auth_token');
+  });
 });

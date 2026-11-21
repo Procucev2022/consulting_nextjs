@@ -159,25 +159,35 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
         </div>
 
         {/* Declarative Excel Download */}
-        <a
-          href={`/api/module2/sourcing/category-specialisation/export-excel?assessmentId=${assessmentId}`}
-          download={`Category_Specialisation_${assessmentId}.xlsx`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            backgroundColor: '#047857',
-            color: '#ffffff',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            fontSize: '13px',
-            fontWeight: 600,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-          }}
-        >
-          📊 {CATEGORY_SPECIALISATION_UI_STRINGS.EXPORT_BUTTON}
-        </a>
+        {(() => {
+          const exportParams = new URLSearchParams();
+          const scopeId = assessmentId || documentId || '';
+          if (assessmentId) exportParams.set('assessmentId', assessmentId);
+          else if (documentId) exportParams.set('documentId', documentId);
+          const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') : null;
+          if (token) exportParams.set('token', token);
+          return (
+            <a
+              href={`/api/module2/sourcing/category-specialisation/export-excel?${exportParams.toString()}`}
+              download={`Category_Specialisation_${scopeId}.xlsx`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                backgroundColor: '#047857',
+                color: '#ffffff',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                fontSize: '13px',
+                fontWeight: 600,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              📊 {CATEGORY_SPECIALISATION_UI_STRINGS.EXPORT_BUTTON}
+            </a>
+          );
+        })()}
       </div>
 
       {/* Mandatory Planning Disclaimer Banner */}

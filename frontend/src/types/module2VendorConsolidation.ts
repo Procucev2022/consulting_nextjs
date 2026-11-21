@@ -248,6 +248,7 @@ export interface VendorConsolidationMappingQueueTableProps {
 
 export interface VendorConsolidationViewProps {
   assessmentId: string;
+  documentId?: string;
   onBackToOverview?: () => void;
 }
 

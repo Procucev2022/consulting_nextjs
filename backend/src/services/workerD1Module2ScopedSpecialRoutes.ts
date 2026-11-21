@@ -17,7 +17,7 @@ const scopeRequired = (): WorkerD1Result => ({
 const handlePaymentTermsRoute = async (
   db: CloudflareD1Database, scope: ProcurementTransactionScope, requestId: string
 ): Promise<WorkerD1Result> => {
-  if (!scope.assessmentId) return scopeRequired();
+  if (!scope.assessmentId && !scope.documentId) return scopeRequired();
   return { data: await loadPaymentTermsResultFromD1(db, scope, requestId) };
 };
 
@@ -30,14 +30,15 @@ const handleVendorConsolidationRoute = async (
   options: ScopedModule2FilterOptions['vendorConsolidationOptions'],
   loaders: ScopedModule2RouteLoaders
 ): Promise<WorkerD1Result> => {
-  if (!scope.assessmentId) return scopeRequired();
+  const scopeVal = scope.assessmentId || scope.documentId;
+  if (!scopeVal) return scopeRequired();
   const result = await loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const customerName = await loaders.loadCustomerName(db, scope, path, requestId);
-  const mappingOverrides = await loadAssessmentMaterialMappings(db, scope.assessmentId, {
+  const mappingOverrides = scope.assessmentId ? await loadAssessmentMaterialMappings(db, scope.assessmentId, {
     requestId, tenantId: scope.tenantId
-  });
+  }) : [];
   return { data: buildVendorConsolidationResult(
-    scope.assessmentId, customerName, result.transactions, options, mappingOverrides
+    scopeVal, customerName, result.transactions, options, mappingOverrides
   ) };
 };
 
@@ -49,10 +50,11 @@ const handleAlternateSourcingRoute = async (
   requestId: string,
   loaders: ScopedModule2RouteLoaders
 ): Promise<WorkerD1Result> => {
-  if (!scope.assessmentId) return scopeRequired();
+  const scopeVal = scope.assessmentId || scope.documentId;
+  if (!scopeVal) return scopeRequired();
   const result = await loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const alternateSourcing = await loadAlternateSourcingResultFromD1(
-    db, scope.assessmentId, result.transactions,
+    db, scopeVal, result.transactions,
     options || { geographicPreference: 'ALL_LOCATIONS' }, requestId
   );
   return { data: alternateSourcing };
@@ -66,14 +68,15 @@ const handleProcurementComplianceRoute = async (
   requestId: string,
   loaders: ScopedModule2RouteLoaders
 ): Promise<WorkerD1Result> => {
-  if (!scope.assessmentId) return scopeRequired();
+  const scopeVal = scope.assessmentId || scope.documentId;
+  if (!scopeVal) return scopeRequired();
   const [analysis, customerName, reviews] = await Promise.all([
     loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId),
     loaders.loadCustomerName(db, scope, path, requestId),
-    loadProcurementComplianceReviewHistory(db, scope.assessmentId)
+    scope.assessmentId ? loadProcurementComplianceReviewHistory(db, scope.assessmentId) : {}
   ]);
   return { data: buildProcurementComplianceResult(
-    scope.assessmentId, scope.tenantId || '', customerName, analysis.transactions, { reviews }
+    scopeVal, scope.tenantId || '', customerName, analysis.transactions, { reviews }
   ) };
 };
 
@@ -97,6 +100,6 @@ export const handleScopedSpecialRoute = async (
   if (path.startsWith('/alternate-sourcing')) return handleAlternateSourcingRoute(
     db, scope, url, filterOptions.alternateSourcingOptions, requestId, loaders
   );
-  if (path === '/export' && !scope.assessmentId) return scopeRequired();
+  if (path === '/export' && !scope.assessmentId && !scope.documentId) return scopeRequired();
   return null;
 };

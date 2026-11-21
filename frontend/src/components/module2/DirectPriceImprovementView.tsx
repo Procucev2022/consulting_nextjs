@@ -26,6 +26,7 @@ import { DirectPriceItemDrillDownModal } from './DirectPriceItemDrillDownModal';
 
 export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProps> = ({
   assessmentId,
+  documentId,
   onCustomerChange
 }) => {
   const strings = UI_STRINGS.module2DirectPrice;
@@ -72,13 +73,14 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
     }
   }, [assessmentId]);
 
-  const fetchDirectPriceData = useCallback(async (cId: string, fy: string): Promise<void> => {
+  const fetchDirectPriceData = useCallback(async (cId: string, fy: string, docId?: string): Promise<void> => {
     // Responses from superseded requests are ignored, so a slow earlier request for another
     // financial year or customer cannot overwrite the dataset the user is currently viewing.
     const requestId = latestRequestRef.current + 1;
     latestRequestRef.current = requestId;
     const isLatestRequest = (): boolean => requestId === latestRequestRef.current;
-    if (!cId) {
+    const scopeId = cId || docId;
+    if (!scopeId) {
       setResult(null);
       setIsLoading(false);
       return;
@@ -86,8 +88,9 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await Module2StrategicSourcingApi.getDirectPriceImprovement(cId, {
-        financialYear: fy !== 'ALL' ? fy : undefined
+      const data = await Module2StrategicSourcingApi.getDirectPriceImprovement(cId || undefined, {
+        financialYear: fy !== 'ALL' ? fy : undefined,
+        documentId: !cId ? docId : undefined
       });
       if (!isLatestRequest()) return;
       if (!data) {
@@ -106,8 +109,8 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
   }, [strings]);
 
   useEffect(() => {
-    void fetchDirectPriceData(effectiveAssessmentId, selectedFy);
-  }, [fetchDirectPriceData, effectiveAssessmentId, selectedFy]);
+    void fetchDirectPriceData(effectiveAssessmentId, selectedFy, documentId);
+  }, [fetchDirectPriceData, effectiveAssessmentId, selectedFy, documentId]);
 
   const handleSelectCustomer = (newAssessmentId: string): void => {
     setEffectiveAssessmentId(newAssessmentId);
@@ -142,7 +145,11 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
   };
 
   const handleDownloadExcel = (): void => {
-    const url = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl(effectiveAssessmentId, selectedFy);
+    const scopeId = effectiveAssessmentId || documentId;
+    if (!scopeId) return;
+    const url = documentId
+      ? Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl(effectiveAssessmentId, selectedFy, documentId)
+      : Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl(effectiveAssessmentId, selectedFy);
     window.open(url, '_blank');
   };
 
@@ -218,7 +225,8 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
           <button
             type="button"
             onClick={handleDownloadExcel}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            disabled={!effectiveAssessmentId && !documentId}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{strings.btnDownloadExcel}</span>

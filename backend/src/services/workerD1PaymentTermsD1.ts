@@ -12,9 +12,11 @@ import logger from '../utils/logger';
 export const loadPaymentTermsResultFromD1 = async (
   db: CloudflareD1Database, scope: ProcurementTransactionScope, requestId: string
 ): Promise<PaymentTermsResult> => {
-  if (!scope.assessmentId) throw new Error(MODULE2_D1_PAYMENT_TERMS_MESSAGES.SCOPE_REQUIRED);
-  const filters = ['assessment_id = ?', MODULE2_D1_VALID_TRANSACTION_FILTER];
-  const params: string[] = [scope.assessmentId];
+  const scopeVal = scope.assessmentId || scope.documentId;
+  if (!scopeVal) throw new Error(MODULE2_D1_PAYMENT_TERMS_MESSAGES.SCOPE_REQUIRED);
+  const scopeFilter = scope.assessmentId ? 'assessment_id = ?' : 'source_document_id = ?';
+  const filters = [scopeFilter, MODULE2_D1_VALID_TRANSACTION_FILTER];
+  const params: string[] = [scopeVal];
   if (scope.tenantId) {
     filters.push('tenant_id = ?');
     params.push(scope.tenantId);
@@ -24,7 +26,7 @@ export const loadPaymentTermsResultFromD1 = async (
     'material_group AS spend_category, total_inr_raw AS spend_inr, raw_json ' +
     `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC`,
     params, requestId);
-  const result = buildPaymentTermsResult(scope.assessmentId, rows);
+  const result = buildPaymentTermsResult(scopeVal, rows);
   const malformedSourceRecords = result.coverageRecords.filter((record) =>
     record.gapDetails === MODULE2_D1_PAYMENT_TERMS_MESSAGES.INVALID_SOURCE
   );
@@ -40,7 +42,7 @@ export const loadPaymentTermsResultFromD1 = async (
     }, new SyntaxError('Stored payment-term source JSON could not be parsed.'));
   }
   logger.info('Calculated assessment-scoped payment-terms evidence from D1', {
-    assessmentId: scope.assessmentId, tenantId: scope.tenantId, requestId,
+    assessmentId: scope.assessmentId || scope.documentId, tenantId: scope.tenantId, requestId,
     recordCount: rows.length, verifiedRecordCount: result.coverageSummary.completeRecordsCount
   });
   return result;

@@ -767,6 +767,36 @@ describe('EAuctionDynamicBiddingView Component', () => {
     expect(screen.queryByText(strings.cardTotalSpendReviewed)).not.toBeInTheDocument();
   });
 
+  it('loads candidates and downloads excel when documentId is provided without assessmentId', async () => {
+    const downloadSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getEAuctionExcelDownloadUrl')
+      .mockReturnValue('/api/export-eauction.xlsx');
+    const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<EAuctionDynamicBiddingView assessmentId={undefined} documentId="DOC-123" />);
+    await waitFor(() => {
+      expect(Module2StrategicSourcingApi.getEAuctionDynamicBidding).toHaveBeenCalledWith(undefined, {
+        financialYear: undefined,
+        documentId: 'DOC-123'
+      });
+    });
+
+    const downloadBtn = screen.getByRole('button', { name: strings.btnDownloadExcel });
+    expect(downloadBtn).not.toBeDisabled();
+    fireEvent.click(downloadBtn);
+    expect(downloadSpy).toHaveBeenCalledWith('', 'ALL', 'DOC-123');
+    expect(windowSpy).toHaveBeenCalledWith('/api/export-eauction.xlsx', '_blank');
+    windowSpy.mockRestore();
+    downloadSpy.mockRestore();
+  });
+
+  it('disables download excel button when neither assessmentId nor documentId is present', async () => {
+    render(<EAuctionDynamicBiddingView assessmentId={undefined} documentId={undefined} />);
+    const downloadBtn = screen.getByRole('button', { name: strings.btnDownloadExcel });
+    expect(downloadBtn).toBeDisabled();
+    fireEvent.click(downloadBtn);
+  });
+
   it('treats an undefined assessment prop as no selection', async () => {
     render(<EAuctionDynamicBiddingView assessmentId={undefined} />);
     await act(async () => {
@@ -775,6 +805,36 @@ describe('EAuctionDynamicBiddingView Component', () => {
     });
     expect(Module2StrategicSourcingApi.getEAuctionDynamicBidding).not.toHaveBeenCalled();
     expect(screen.queryByText(strings.cardTotalSpendReviewed)).not.toBeInTheDocument();
+  });
+
+  it('loads candidates and downloads excel when documentId is provided without assessmentId', async () => {
+    const downloadSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getEAuctionExcelDownloadUrl')
+      .mockReturnValue('/api/export-eauction.xlsx');
+    const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<EAuctionDynamicBiddingView assessmentId={undefined} documentId="DOC-123" />);
+    await waitFor(() => {
+      expect(Module2StrategicSourcingApi.getEAuctionDynamicBidding).toHaveBeenCalledWith(undefined, {
+        financialYear: undefined,
+        documentId: 'DOC-123'
+      });
+    });
+
+    const downloadBtn = screen.getByRole('button', { name: strings.btnDownloadExcel });
+    expect(downloadBtn).not.toBeDisabled();
+    fireEvent.click(downloadBtn);
+    expect(downloadSpy).toHaveBeenCalledWith('', 'ALL', 'DOC-123');
+    expect(windowSpy).toHaveBeenCalledWith('/api/export-eauction.xlsx', '_blank');
+    windowSpy.mockRestore();
+    downloadSpy.mockRestore();
+  });
+
+  it('disables download excel button when neither assessmentId nor documentId is present', async () => {
+    render(<EAuctionDynamicBiddingView assessmentId={undefined} documentId={undefined} />);
+    const downloadBtn = screen.getByRole('button', { name: strings.btnDownloadExcel });
+    expect(downloadBtn).toBeDisabled();
+    fireEvent.click(downloadBtn);
   });
 
   it('drills into a category and returns to the category register', async () => {

@@ -25,6 +25,7 @@ import { EAuctionMaterialTable } from './EAuctionMaterialTable';
 
 export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProps> = ({
   assessmentId,
+  documentId,
   onCustomerChange,
   onBackToOverview
 }) => {
@@ -67,11 +68,12 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
     }
   }, [assessmentId]);
 
-  const fetchEAuctionData = useCallback(async (cId: string, fy: string): Promise<void> => {
+  const fetchEAuctionData = useCallback(async (cId: string, fy: string, docId?: string): Promise<void> => {
     // Only the newest request may update state, so a slow earlier response cannot overwrite newer data.
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
-    if (!cId) {
+    const scopeId = cId || docId;
+    if (!scopeId) {
       setResult(null);
       setIsLoading(false);
       return;
@@ -79,8 +81,9 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await Module2StrategicSourcingApi.getEAuctionDynamicBidding(cId, {
-        financialYear: fy !== 'ALL' ? fy : undefined
+      const data = await Module2StrategicSourcingApi.getEAuctionDynamicBidding(cId || undefined, {
+        financialYear: fy !== 'ALL' ? fy : undefined,
+        documentId: !cId ? docId : undefined
       });
       if (requestId !== latestRequestIdRef.current) return;
       if (!data) {
@@ -89,7 +92,11 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
       setResult(data);
     } catch (err: unknown) {
       if (requestId !== latestRequestIdRef.current) return;
-      logger.error('E-Auction dynamic bidding candidates failed to load', { assessmentId: cId, financialYear: fy }, err);
+      logger.error('E-Auction dynamic bidding candidates failed to load', {
+        assessmentId: cId,
+        documentId: docId,
+        financialYear: fy
+      }, err);
       setErrorMessage(err instanceof Error ? err.message : UI_STRINGS.module2EAuction.errorUnknown);
     } finally {
       if (requestId === latestRequestIdRef.current) {
@@ -99,8 +106,8 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
   }, []);
 
   useEffect(() => {
-    void fetchEAuctionData(effectiveAssessmentId, selectedFy);
-  }, [fetchEAuctionData, effectiveAssessmentId, selectedFy]);
+    void fetchEAuctionData(effectiveAssessmentId, selectedFy, documentId);
+  }, [fetchEAuctionData, effectiveAssessmentId, selectedFy, documentId]);
 
   const handleSelectCustomer = (newAssessmentId: string): void => {
     setEffectiveAssessmentId(newAssessmentId);
@@ -117,7 +124,11 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
   };
 
   const handleDownloadExcel = (): void => {
-    const url = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl(effectiveAssessmentId, selectedFy);
+    const scopeId = effectiveAssessmentId || documentId;
+    if (!scopeId) return;
+    const url = documentId
+      ? Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl(effectiveAssessmentId, selectedFy, documentId)
+      : Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl(effectiveAssessmentId, selectedFy);
     window.open(url, '_blank');
   };
 
@@ -204,7 +215,8 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
           <button
             type="button"
             onClick={handleDownloadExcel}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            disabled={!effectiveAssessmentId && !documentId}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{strings.btnDownloadExcel}</span>

@@ -26,10 +26,11 @@ const ProcurementComplianceReviewModal = dynamic(() =>
 
 export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps> = ({
   assessmentId = '',
+  documentId,
   onNavigateBack
 }) => {
   const [data, setData] = useState<ProcurementComplianceResult | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!!assessmentId);
+  const [isLoading, setIsLoading] = useState<boolean>(!!assessmentId || !!documentId);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'ALL' | 'AWAITING' | 'VERIFIED' | 'DISMISSED' | 'GAPS'>('ALL');
@@ -49,7 +50,8 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
 
   const loadData = useCallback(async (): Promise<void> => {
     const requestId = beginRequest();
-    if (!assessmentId) {
+    const scopeId = assessmentId || documentId;
+    if (!scopeId) {
       setData(null);
       setIsLoading(false);
       return;
@@ -60,7 +62,10 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await apiFetch(`/api/module2/sourcing/procurement-compliance?assessmentId=${encodeURIComponent(assessmentId)}`, { headers });
+      const params = new URLSearchParams();
+      if (assessmentId) params.set('assessmentId', assessmentId);
+      else if (documentId) params.set('documentId', documentId);
+      const res = await apiFetch(`/api/module2/sourcing/procurement-compliance?${params.toString()}`, { headers });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
       if (!isCurrentRequest(requestId)) return;
@@ -72,7 +77,7 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
     } finally {
       if (isCurrentRequest(requestId)) setIsLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, beginRequest, documentId, isCurrentRequest]);
 
   useEffect(() => {
     setSelectedException(null);
@@ -151,12 +156,18 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
   useEffect(() => invalidateReviewRequests, [assessmentId, invalidateReviewRequests]);
 
   const handleExportExcel = async (): Promise<void> => {
+    const scopeId = assessmentId || documentId;
+    if (!scopeId) return;
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;
+      const params = new URLSearchParams();
+      if (assessmentId) params.set('assessmentId', assessmentId);
+      else if (documentId) params.set('documentId', documentId);
+      if (token) params.set('token', token);
       const res = await apiFetch(
-        `/api/module2/sourcing/procurement-compliance/export-excel?assessmentId=${encodeURIComponent(assessmentId)}`,
+        `/api/module2/sourcing/procurement-compliance/export-excel?${params.toString()}`,
         { headers }
       );
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -169,7 +180,7 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
         setDownloadBlobUrl(null);
       }, 50);
     } catch (err) {
-      logger.error('Failed to export compliance Excel', { assessmentId }, err);
+      logger.error('Failed to export compliance Excel', { assessmentId, documentId }, err);
       setError('Failed to export compliance workbook. Please verify permissions.');
     }
   };
@@ -351,7 +362,7 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
         <a
           ref={downloadLinkRef}
           href={downloadBlobUrl}
-          download={`Procurement_Compliance_${assessmentId}.xlsx`}
+          download={`Procurement_Compliance_${assessmentId || documentId}.xlsx`}
           className="hidden"
           aria-hidden="true"
         />

@@ -149,4 +149,16 @@ describe('loadVolumeAggregation', () => {
       expect.any(Error)
     );
   });
+
+  it('loads dataset with documentId when assessmentId is undefined', async () => {
+    const dataset = { assessmentId: 'DOC-INGEST-123', coverageSummary: {}, transactions: [] };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      createResponse(200, { success: true, data: dataset }, 'req-volume-doc')
+    );
+
+    await expect(loadVolumeAggregation(undefined, 'DOC-INGEST-123')).resolves.toEqual(dataset);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(
+      `${VOLUME_AGGREGATION_ENDPOINT}?documentId=DOC-INGEST-123`
+    );
+  });
 });

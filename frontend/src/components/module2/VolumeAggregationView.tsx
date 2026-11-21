@@ -21,6 +21,7 @@ import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   assessmentId,
+  documentId,
   onBackToOverview
 }) => {
   const [data, setData] = useState<VolumeAggregationResult | null>(null);
@@ -35,7 +36,7 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
     setError(null);
     setData(null);
     try {
-      const result = await loadVolumeAggregation(assessmentId);
+      const result = await loadVolumeAggregation(assessmentId, documentId);
       if (!isCurrentRequest(requestId)) return;
       setData(result);
     } catch (err: unknown) {
@@ -44,7 +45,7 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
     } finally {
       if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, beginRequest, documentId, isCurrentRequest]);
 
   useEffect(() => {
     void fetchData();
@@ -99,7 +100,12 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   }
 
   const cov = data.coverageSummary;
-  const exportQuery = new URLSearchParams({ assessmentId: data.assessmentId });
+  const scopeId = data.assessmentId || assessmentId || documentId || '';
+  const exportQuery = new URLSearchParams();
+  if (data.assessmentId || assessmentId) exportQuery.set('assessmentId', data.assessmentId || assessmentId);
+  else if (documentId) exportQuery.set('documentId', documentId);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') : null;
+  if (token) exportQuery.set('token', token);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
@@ -143,7 +149,7 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
         {/* Declarative Virtual DOM Excel Download (Rule 15 Compliant) */}
         <a
           href={`${VOLUME_AGGREGATION_EXPORT_ENDPOINT}?${exportQuery.toString()}`}
-          download={`Volume_Aggregation_${data.assessmentId}.xlsx`}
+          download={`Volume_Aggregation_${scopeId}.xlsx`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

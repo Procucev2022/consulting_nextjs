@@ -111,7 +111,8 @@ export interface PaymentTermsCalculationOptions {
 }
 
 export interface PaymentTermsViewProps {
-  assessmentId: string;
+  assessmentId?: string;
+  documentId?: string;
   onBackToOverview?: () => void;
 }
 

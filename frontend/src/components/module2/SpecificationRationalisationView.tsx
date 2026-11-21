@@ -21,10 +21,11 @@ import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const SpecificationRationalisationView: React.FC<SpecificationRationalisationViewProps> = ({
   assessmentId = '',
+  documentId,
   onNavigateBack
 }) => {
   const [data, setData] = useState<SpecificationRationalisationResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!assessmentId);
+  const [loading, setLoading] = useState<boolean>(!!assessmentId || !!documentId);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'awaiting' | 'verified' | 'rejected' | 'dataGaps'>('all');
   const [selectedCandidate, setSelectedCandidate] = useState<SpecificationCandidateItem | null>(null);
@@ -34,7 +35,8 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
 
   const fetchData = useCallback(async () => {
     const requestId = beginRequest();
-    if (!assessmentId) {
+    const scopeId = assessmentId || documentId;
+    if (!scopeId) {
       setData(null);
       setLoading(false);
       return;
@@ -43,8 +45,11 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
     setError(null);
     setData(null);
     try {
+      const params = new URLSearchParams();
+      if (assessmentId) params.set('assessmentId', assessmentId);
+      else if (documentId) params.set('documentId', documentId);
       const res = await apiFetch(
-        `/api/module2/sourcing/specification-rationalisation?assessmentId=${encodeURIComponent(assessmentId)}`
+        `/api/module2/sourcing/specification-rationalisation?${params.toString()}`
       );
       if (!res.ok) {
         throw new Error(`Failed to load Specification Rationalisation (HTTP ${res.status})`);
@@ -61,7 +66,7 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
     } finally {
       if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, beginRequest, documentId, isCurrentRequest]);
 
   useEffect(() => {
     void fetchData();
@@ -69,9 +74,14 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
   }, [fetchData, invalidateRequests]);
 
   const handleExportExcel = async (): Promise<void> => {
-    const url = `/api/module2/sourcing/specification-rationalisation/export-excel?assessmentId=${encodeURIComponent(
-      assessmentId
-    )}`;
+    const scopeId = assessmentId || documentId;
+    if (!scopeId) return;
+    const params = new URLSearchParams();
+    if (assessmentId) params.set('assessmentId', assessmentId);
+    else if (documentId) params.set('documentId', documentId);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') : null;
+    if (token) params.set('token', token);
+    const url = `/api/module2/sourcing/specification-rationalisation/export-excel?${params.toString()}`;
     window.open(url, '_blank');
   };
 

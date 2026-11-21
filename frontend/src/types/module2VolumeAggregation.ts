@@ -241,7 +241,8 @@ export interface VolumeAggregationResult {
 export type VolumeAggregationTab = 'overview' | 'plants' | 'materials' | 'transactions' | 'poConsolidation';
 
 export interface VolumeAggregationViewProps {
-  assessmentId: string;
+  assessmentId?: string;
+  documentId?: string;
   onBackToOverview?: () => void;
 }
 

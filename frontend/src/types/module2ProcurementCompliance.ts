@@ -166,6 +166,7 @@ export interface ProcurementComplianceResult {
 
 export interface ProcurementComplianceViewProps {
   assessmentId?: string;
+  documentId?: string;
   onNavigateBack?: () => void;
 }
 

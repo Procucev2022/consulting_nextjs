@@ -753,6 +753,36 @@ describe('DirectPriceImprovementView data flow and error handling', () => {
     expect(screen.queryByText(UI_STRINGS.module2DirectPrice.certificationNotice)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnRefresh })).toBeEnabled();
   });
+
+  it('loads data and downloads excel when documentId is provided without assessmentId', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+    const downloadSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceExcelDownloadUrl')
+      .mockReturnValue('/api/export-direct-price.xlsx');
+    const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<DirectPriceImprovementView assessmentId={undefined} documentId="DOC-123" />);
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledWith(undefined, { financialYear: undefined, documentId: 'DOC-123' });
+    });
+
+    const downloadBtn = screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnDownloadExcel });
+    expect(downloadBtn).not.toBeDisabled();
+    fireEvent.click(downloadBtn);
+    expect(downloadSpy).toHaveBeenCalledWith('', 'ALL', 'DOC-123');
+    expect(windowSpy).toHaveBeenCalledWith('/api/export-direct-price.xlsx', '_blank');
+    windowSpy.mockRestore();
+    downloadSpy.mockRestore();
+  });
+
+  it('disables download excel button when neither assessmentId nor documentId is present', async () => {
+    render(<DirectPriceImprovementView assessmentId={undefined} documentId={undefined} />);
+    const downloadBtn = screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnDownloadExcel });
+    expect(downloadBtn).toBeDisabled();
+    fireEvent.click(downloadBtn);
+  });
 });
 
 describe('DirectPriceItemDrillDownModal evidence tabs', () => {

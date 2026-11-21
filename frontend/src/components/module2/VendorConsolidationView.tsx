@@ -25,6 +25,7 @@ import { VendorConsolidationMappingQueueTable } from './VendorConsolidationMappi
 
 export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = ({
   assessmentId,
+  documentId,
   onBackToOverview
 }) => {
   const strings = UI_STRINGS.module2VendorConsolidation;
@@ -49,34 +50,42 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
     setErrorAssessmentId(null);
     setResult(null);
     setResultAssessmentId(null);
-    if (!assessmentId) {
+    const scopeId = assessmentId || documentId;
+    if (!scopeId) {
       setIsLoading(false);
       return;
     }
     try {
-      const data = await Module2StrategicSourcingApi.getVendorConsolidation(assessmentId);
+      const data = !assessmentId && documentId
+        ? await Module2StrategicSourcingApi.getVendorConsolidation(undefined, { documentId })
+        : await Module2StrategicSourcingApi.getVendorConsolidation(assessmentId);
       if (!isCurrentRequest()) return;
       if (data) {
         setResult(data);
-        setResultAssessmentId(assessmentId);
+        setResultAssessmentId(scopeId);
       } else {
         logger.warn('Vendor consolidation view received no data for the assessment', {
           assessmentId,
+          documentId,
           userMessage: strings.loadFailedNoPayloadCause
         });
         setErrorCause(strings.loadFailedNoPayloadCause);
-        setErrorAssessmentId(assessmentId);
+        setErrorAssessmentId(scopeId);
       }
     } catch (err: unknown) {
       if (!isCurrentRequest()) return;
       const cause = err instanceof Error ? err.message : strings.loadFailedUnknownCause;
-      logger.error('Vendor consolidation view failed to load', { assessmentId, userMessage: cause }, err);
+      logger.error('Vendor consolidation view failed to load', {
+        assessmentId,
+        documentId,
+        userMessage: cause
+      }, err);
       setErrorCause(cause);
-      setErrorAssessmentId(assessmentId);
+      setErrorAssessmentId(scopeId);
     } finally {
       if (isCurrentRequest()) setIsLoading(false);
     }
-  }, [assessmentId, strings]);
+  }, [assessmentId, documentId, strings]);
 
   useEffect(() => {
     setActiveDimension('UNSPSC');
@@ -101,7 +110,11 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
     setDrillDownLevel('CATEGORIES');
   };
 
-  const excelUrl = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl(assessmentId);
+  const excelUrl = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl(
+    assessmentId,
+    undefined,
+    documentId
+  );
 
   return (
     <div className="space-y-6" data-testid="vendor-consolidation-view">
@@ -139,7 +152,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
 
           <a
             href={excelUrl}
-            download
+            download={`Vendor_Consolidation_${assessmentId || documentId || 'Report'}.xlsx`}
             className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />

@@ -430,4 +430,49 @@ describe('SpecificationRationalisationView coverage paths', () => {
     expect(await screen.findByText('LEGACY_PATTERN')).toBeInTheDocument();
     expect(screen.getByText('SUPERSEDED')).toBeInTheDocument();
   });
+
+  it('exports excel with assessmentId and auth token', async () => {
+    localStorage.setItem('aicev_auth_token', 'test-spec-token');
+    stubLoadedResult();
+    const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<SpecificationRationalisationView assessmentId={ASSESSMENT_ID} />);
+    await screen.findByText(SPECIFICATION_UI_STRINGS.TITLE);
+
+    const exportBtn = screen.getByRole('button', { name: SPECIFICATION_UI_STRINGS.BTN_EXPORT_EXCEL });
+    fireEvent.click(exportBtn);
+
+    expect(windowSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`assessmentId=${ASSESSMENT_ID}`),
+      '_blank'
+    );
+    expect(windowSpy).toHaveBeenCalledWith(
+      expect.stringContaining('token=test-spec-token'),
+      '_blank'
+    );
+    localStorage.removeItem('aicev_auth_token');
+    windowSpy.mockRestore();
+  });
+
+  it('loads and exports excel when documentId is provided without assessmentId', async () => {
+    stubLoadedResult();
+    const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<SpecificationRationalisationView documentId="DOC-123" />);
+    await screen.findByText(SPECIFICATION_UI_STRINGS.TITLE);
+
+    const exportBtn = screen.getByRole('button', { name: SPECIFICATION_UI_STRINGS.BTN_EXPORT_EXCEL });
+    fireEvent.click(exportBtn);
+
+    expect(windowSpy).toHaveBeenCalledWith(
+      expect.stringContaining('documentId=DOC-123'),
+      '_blank'
+    );
+    windowSpy.mockRestore();
+  });
+
+  it('disables download when neither assessmentId nor documentId is present', async () => {
+    render(<SpecificationRationalisationView />);
+    expect(await screen.findByText('Unable to load Specification Rationalisation data.')).toBeInTheDocument();
+  });
 });

@@ -193,6 +193,18 @@ describe('authenticateWorkerUser', () => {
       new Request(`${AUTH_URL}/mutation`, { headers: bearer(adminToken) }), environmentWith(), true
     )).resolves.toMatchObject({ status: 200, user: { id: 'usr-admin', role: 'ADMIN' } });
   });
+
+  it('authenticates using token query parameter when Authorization header is absent', async () => {
+    seedRegistry();
+    const regularToken = await tokenFor('usr-asha');
+    const queryRequest = new Request(`${AUTH_URL}/export?token=${regularToken}`);
+    await expect(authenticateWorkerUser(queryRequest, environmentWith()))
+      .resolves.toMatchObject({ status: 200, user: { id: 'usr-asha', role: 'USER', name: 'Asha Rao' } });
+
+    const bearerQueryRequest = new Request(`${AUTH_URL}/export?token=Bearer%20${regularToken}`);
+    await expect(authenticateWorkerUser(bearerQueryRequest, environmentWith()))
+      .resolves.toMatchObject({ status: 200, user: { id: 'usr-asha', role: 'USER', name: 'Asha Rao' } });
+  });
 });
 
 describe('workerAuth register', () => {

@@ -161,6 +161,7 @@ export interface DirectPriceQueryOptions {
 
 export interface DirectPriceImprovementViewProps {
   assessmentId: string;
+  documentId?: string;
   onCustomerChange?: (assessmentId: string) => void;
 }
 

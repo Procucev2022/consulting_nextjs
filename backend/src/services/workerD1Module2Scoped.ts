@@ -51,38 +51,38 @@ const toTransaction = (value: D1Record): StrategicInputTransaction => {
 const loadAnalysis = async (
   db: CloudflareD1Database, scope: ProcurementTransactionScope, refresh: boolean, requestId: string
 ): Promise<ScopedModule2Analysis> => getOrLoadScopedModule2Analysis(db, scope, refresh, requestId, async () => {
-    const startedAt = Date.now();
-    const filters = scope.documentId ? ['(source_document_id = ? OR transaction_id LIKE ?)']
-      : [scope.assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
-    const params: string[] = scope.documentId ? [scope.documentId, `%${scope.documentId}%`]
-      : (scope.assessmentId ? [scope.assessmentId] : []);
-    if (scope.tenantId) { filters.push('tenant_id = ?'); params.push(scope.tenantId); }
-    filters.push(MODULE2_D1_VALID_TRANSACTION_FILTER);
-    let rows = await queryD1Rows(db,
-      `SELECT ${MODULE2_D1_PROJECTION} FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ` +
-      'ORDER BY source_row_number ASC', params, requestId);
-    if (rows.length === 0 && scope.documentId) {
-      const vRows = await queryD1Rows<D1Record>(db,
-        'SELECT record_id AS id, po_number, vendor_name, vendor_name AS vendor_code, material_code, ' +
-        'raw_desc AS material_desc, material_group AS spend_category, order_quantity AS quantity, ' +
-        'net_price AS unit_price, amount_inr AS total_spend_inr, raw_currency AS currency ' +
-        `FROM ${D1_TABLES.validation} WHERE tenant_id = ? AND record_id LIKE ? LIMIT 5000`,
-        [scope.tenantId || '', `%${scope.documentId}%`], requestId);
-      if (vRows.length > 0) rows = vRows;
-    }
-    const categoryMappingRows = await queryD1Rows(db,
-      `SELECT material_group_code, category_name FROM ${D1_TABLES.procurementCategoryMappings}`,
-      [], requestId);
-    setProcurementCategoryMappings(Object.fromEntries(categoryMappingRows.map((row) => [
-      String(row.material_group_code), String(row.category_name)
-    ])));
-    const transactions = rows.map(toTransaction);
-    const analysis = Module2CompactSourcingEngine.analyze(transactions);
-    logger.info('Calculated assessment-scoped sourcing results from D1', {
-      ...scope, requestId, transactionCount: transactions.length, durationMs: Date.now() - startedAt
-    });
-    return { transactions, analysis };
+  const startedAt = Date.now();
+  const filters = scope.documentId ? ['(source_document_id = ? OR transaction_id LIKE ?)']
+    : [scope.assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
+  const params: string[] = scope.documentId ? [scope.documentId, `%${scope.documentId}%`]
+    : (scope.assessmentId ? [scope.assessmentId] : []);
+  if (scope.tenantId) { filters.push('tenant_id = ?'); params.push(scope.tenantId); }
+  filters.push(MODULE2_D1_VALID_TRANSACTION_FILTER);
+  let rows = await queryD1Rows(db,
+    `SELECT ${MODULE2_D1_PROJECTION} FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ` +
+    'ORDER BY source_row_number ASC', params, requestId);
+  if (rows.length === 0 && scope.documentId) {
+    const vRows = await queryD1Rows<D1Record>(db,
+      'SELECT record_id AS id, po_number, vendor_name, vendor_name AS vendor_code, column_l_code AS material_code, ' +
+      'raw_desc AS material_desc, core_category AS spend_category, order_quantity AS quantity, ' +
+      'net_price AS unit_price, amount_inr AS total_spend_inr, raw_currency AS currency ' +
+      `FROM ${D1_TABLES.validation} WHERE tenant_id = ? AND record_id LIKE ? LIMIT 5000`,
+      [scope.tenantId || '', `%${scope.documentId}%`], requestId);
+    if (vRows.length > 0) rows = vRows;
+  }
+  const categoryMappingRows = await queryD1Rows(db,
+    `SELECT material_group_code, category_name FROM ${D1_TABLES.procurementCategoryMappings}`,
+    [], requestId);
+  setProcurementCategoryMappings(Object.fromEntries(categoryMappingRows.map((row) => [
+    String(row.material_group_code), String(row.category_name)
+  ])));
+  const transactions = rows.map(toTransaction);
+  const analysis = Module2CompactSourcingEngine.analyze(transactions);
+  logger.info('Calculated assessment-scoped sourcing results from D1', {
+    ...scope, requestId, transactionCount: transactions.length, durationMs: Date.now() - startedAt
   });
+  return { transactions, analysis };
+});
 
 const suppliersFromAnalysis = (result: ScopedModule2Analysis): ScopedModule2Supplier[] => {
   const suppliers = new Map<string, ScopedModule2Supplier>();
@@ -149,9 +149,13 @@ const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResu
     request.headers.get('x-resolved-tenant-id') ?? undefined;
   if (assessmentId === undefined && tenantId === undefined && documentId === undefined) return { kind: 'none' };
   const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId, documentId });
-  if (!parsed.success) return { kind: 'invalid', error: { status: 400, data: {
-    success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: parsed.error.issues
-  } } };
+  if (!parsed.success) return {
+    kind: 'invalid', error: {
+      status: 400, data: {
+        success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: parsed.error.issues
+      }
+    }
+  };
   return { kind: 'valid', scope: parsed.data };
 };
 
@@ -159,9 +163,13 @@ const resolveTrustedDatasetScope = async (
   db: CloudflareD1Database, request: Request, requestedScope: ProcurementTransactionScope, requestId: string
 ): Promise<ScopedModule2TrustedScopeResult> => {
   const trustedTenantId = request.headers.get('x-resolved-tenant-id');
-  if (!trustedTenantId) return { error: { status: 403, data: {
-    success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired
-  } } };
+  if (!trustedTenantId) return {
+    error: {
+      status: 403, data: {
+        success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired
+      }
+    }
+  };
   if (requestedScope.tenantId && requestedScope.tenantId !== trustedTenantId) {
     return { error: { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch } } };
   }
@@ -170,9 +178,13 @@ const resolveTrustedDatasetScope = async (
     const rows = await queryD1Rows<{ assessment_id: string; customer_name?: string | null }>(db,
       `SELECT assessment_id, customer_name FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ? LIMIT 1`,
       [scope.assessmentId, trustedTenantId], requestId);
-    if (!rows.length) return { error: { status: 404, data: {
-      success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound
-    } } };
+    if (!rows.length) return {
+      error: {
+        status: 404, data: {
+          success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound
+        }
+      }
+    };
     return { scope, customerName: String(rows[0].customer_name || scope.assessmentId) };
   }
   return { scope, customerName: scope.documentId || '' };
@@ -193,9 +205,11 @@ const categoryDetails = (result: ScopedModule2Analysis, path: string): WorkerD1R
   const id = decodeURIComponent(path.slice('/category/'.length)).toLowerCase();
   const profile = result.analysis.profiles.find((item) =>
     item.categoryId.toLowerCase() === id || item.categoryName.toLowerCase() === id);
-  if (!profile) return { status: 404, data: {
-    success: false, message: MODULE2_D1_SCOPED_MESSAGES.missingCategory
-  } };
+  if (!profile) return {
+    status: 404, data: {
+      success: false, message: MODULE2_D1_SCOPED_MESSAGES.missingCategory
+    }
+  };
   const key = (profile as ScopedCategoryProfile).sourceCategoryKey;
   const groups = Module2StrategicSourcingEngine.groupTransactionsByCategory(result.transactions);
   return { data: Module2StrategicSourcingEngine.buildCategoryProfile(key, groups.get(key) || []) };
@@ -238,12 +252,16 @@ const buildSpecialisedRoute = (
   tenantId?: string, documentId?: string
 ): WorkerD1Result | null => {
   const scopeId = assessmentId || documentId || '';
-  if (path === '/specification-rationalisation') return { data: buildSpecificationRationalisationFromD1({
-    assessmentId: scopeId, tenantId: tenantId || '', customerName, transactions: result.transactions
-  }) };
-  if (path === '/category-specialisation') return { data: buildCategorySpecialisationFromD1({
-    assessmentId: scopeId, tenantId: tenantId || '', customerName: customerName || scopeId, scopedAnalysis: result
-  }) };
+  if (path === '/specification-rationalisation') return {
+    data: buildSpecificationRationalisationFromD1({
+      assessmentId: scopeId, tenantId: tenantId || '', customerName, transactions: result.transactions
+    })
+  };
+  if (path === '/category-specialisation') return {
+    data: buildCategorySpecialisationFromD1({
+      assessmentId: scopeId, tenantId: tenantId || '', customerName: customerName || scopeId, scopedAnalysis: result
+    })
+  };
   if (path === '/export') return { data: { success: true, dossier: buildModule2D1AuditDossier(assessmentId, tenantId, result) } };
   return null;
 };
@@ -285,7 +303,7 @@ export const handleScopedModule2Route = async (
   const result = await loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const customerName = await loadCustomerName(scope, path, resolvedCustomerName);
   return analysisCollections(result, path) ?? analysisDetails(
-    result, path, scope.assessmentId, filterOptions.eauctionOptions,
+    result, path, scope.assessmentId || scope.documentId || '', filterOptions.eauctionOptions,
     filterOptions.directPriceOptions, customerName, scope.tenantId, scope.documentId
   );
 };

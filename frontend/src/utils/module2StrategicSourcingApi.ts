@@ -215,12 +215,13 @@ export class Module2StrategicSourcingApi {
    * Fetch Direct Price Improvement (Lever 1)
    */
   public static async getDirectPriceImprovement(
-    assessmentId: string,
-    options?: DirectPriceQueryOptions
+    assessmentId?: string,
+    options?: DirectPriceQueryOptions & { documentId?: string }
   ): Promise<DirectPriceImprovementResult | null> {
     try {
       const path = this.appendQueryParams('/direct-price-improvement', {
-        assessmentId,
+        assessmentId: assessmentId || undefined,
+        documentId: options?.documentId || undefined,
         financialYear: options?.financialYear,
         materialCode: options?.materialCode,
         category: options?.category
@@ -240,12 +241,13 @@ export class Module2StrategicSourcingApi {
    * Fetch E-Auction / Dynamic Bidding Candidates (Lever 2)
    */
   public static async getEAuctionDynamicBidding(
-    assessmentId: string,
-    options?: EAuctionQueryOptions
+    assessmentId?: string,
+    options?: EAuctionQueryOptions & { documentId?: string }
   ): Promise<EAuctionResult | null> {
     try {
       const path = this.appendQueryParams('/e-auction', {
-        assessmentId,
+        assessmentId: assessmentId || undefined,
+        documentId: options?.documentId || undefined,
         financialYear: options?.financialYear,
         category: options?.category,
         suitability: options?.suitability,
@@ -266,12 +268,13 @@ export class Module2StrategicSourcingApi {
    * Fetch Vendor Base Consolidation Opportunities (Lever 3)
    */
   public static async getVendorConsolidation(
-    assessmentId: string,
-    options?: { category?: string; status?: string; materialCode?: string }
+    assessmentId?: string,
+    options?: { category?: string; status?: string; materialCode?: string; documentId?: string }
   ): Promise<VendorConsolidationResult | null> {
     try {
       const path = this.appendQueryParams('/vendor-consolidation', {
-        assessmentId,
+        assessmentId: assessmentId || undefined,
+        documentId: options?.documentId || undefined,
         category: options?.category,
         status: options?.status,
         materialCode: options?.materialCode
@@ -290,10 +293,17 @@ export class Module2StrategicSourcingApi {
   /**
    * Get direct URL for Lever 1 Excel download
    */
-  public static getDirectPriceExcelDownloadUrl(assessmentId: string, financialYear?: string): string {
+  public static getDirectPriceExcelDownloadUrl(
+    assessmentId?: string,
+    financialYear?: string,
+    documentId?: string
+  ): string {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') || undefined : undefined;
     const path = this.appendQueryParams('/direct-price-improvement/export-excel', {
-      assessmentId,
-      financialYear: financialYear && financialYear !== 'ALL' ? financialYear : undefined
+      assessmentId: assessmentId || undefined,
+      documentId: documentId || undefined,
+      financialYear: financialYear && financialYear !== 'ALL' ? financialYear : undefined,
+      token
     });
     return this.getFullUrl(path);
   }
@@ -301,10 +311,17 @@ export class Module2StrategicSourcingApi {
   /**
    * Get direct URL for Lever 2 Excel download
    */
-  public static getEAuctionExcelDownloadUrl(assessmentId: string, financialYear?: string): string {
+  public static getEAuctionExcelDownloadUrl(
+    assessmentId?: string,
+    financialYear?: string,
+    documentId?: string
+  ): string {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') || undefined : undefined;
     const path = this.appendQueryParams('/e-auction/export-excel', {
-      assessmentId,
-      financialYear: financialYear && financialYear !== 'ALL' ? financialYear : undefined
+      assessmentId: assessmentId || undefined,
+      documentId: documentId || undefined,
+      financialYear: financialYear && financialYear !== 'ALL' ? financialYear : undefined,
+      token
     });
     return this.getFullUrl(path);
   }
@@ -312,10 +329,17 @@ export class Module2StrategicSourcingApi {
   /**
    * Get direct URL for Lever 3 Excel download
    */
-  public static getVendorConsolidationExcelDownloadUrl(assessmentId: string, category?: string): string {
+  public static getVendorConsolidationExcelDownloadUrl(
+    assessmentId?: string,
+    category?: string,
+    documentId?: string
+  ): string {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') || undefined : undefined;
     const path = this.appendQueryParams('/vendor-consolidation/export-excel', {
-      assessmentId,
-      category: category && category !== 'ALL' ? category : undefined
+      assessmentId: assessmentId || undefined,
+      documentId: documentId || undefined,
+      category: category && category !== 'ALL' ? category : undefined,
+      token
     });
     return this.getFullUrl(path);
   }

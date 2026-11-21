@@ -448,5 +448,19 @@ describe('Module2StrategicSourcingApi', () => {
       expect(urlDefault).toContain('assessmentId=ASS-1');
       expect(urlDefault).not.toContain('category=');
     });
+
+    it('generates download URLs with documentId when assessmentId is omitted', () => {
+      const dpUrl = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl(undefined, undefined, 'DOC-123');
+      expect(dpUrl).toContain('documentId=DOC-123');
+      expect(dpUrl).not.toContain('assessmentId=');
+
+      const eaUrl = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl(undefined, undefined, 'DOC-123');
+      expect(eaUrl).toContain('documentId=DOC-123');
+      expect(eaUrl).not.toContain('assessmentId=');
+
+      const vcUrl = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl(undefined, undefined, 'DOC-123');
+      expect(vcUrl).toContain('documentId=DOC-123');
+      expect(vcUrl).not.toContain('assessmentId=');
+    });
   });
 });

@@ -86,7 +86,8 @@ const req = (path: string, options: RequestInit = {}): Request => {
   if (typeof options.body === 'string') {
     try { bodyAssessmentId = assessmentIdFromBody(JSON.parse(options.body)); } catch { bodyAssessmentId = undefined; }
   }
-  const assessmentScoped = url.searchParams.has('assessmentId') || headers.has('x-assessment-id') || Boolean(bodyAssessmentId);
+  const assessmentScoped = url.searchParams.has('assessmentId') || url.searchParams.has('documentId') ||
+    headers.has('x-assessment-id') || Boolean(bodyAssessmentId);
   const tenantId = url.searchParams.get('tenantId') || headers.get('x-tenant-id') ||
     (assessmentScoped ? 'T1' : undefined);
   if (tenantId) {
@@ -246,6 +247,10 @@ describe('workerD1Module2 handler', () => {
       expect(workbook.SheetNames).toEqual(['Summary', 'Categories', 'Methodology']);
       expect(MODULE2_D1_PENDING_ROUTES.has('/category-specialisation/export-excel')).toBe(false);
 
+      const unknownSubpath = req('/sourcing/category-specialisation/other?assessmentId=A1&tenantId=T1');
+      expect(await handleModule2Route(fixture.d1, '/sourcing/category-specialisation/other', unknownSubpath, new URL(unknownSubpath.url)))
+        .toMatchObject({ status: 404 });
+
       const headerRequest = req('/sourcing/category-specialisation', {
         headers: { 'x-assessment-id': 'A1', 'x-tenant-id': 'T1' }
       });
@@ -264,6 +269,11 @@ describe('workerD1Module2 handler', () => {
       expect(docData.data).toMatchObject({
         assessmentId: 'DOC-INGEST-L6', summary: { tenantId: 'T1', totalProcurementSpendInr: 500 }
       });
+
+      const docExport = req('/sourcing/category-specialisation/export-excel?documentId=DOC-INGEST-L6&tenantId=T1');
+      const docExported = await handleModule2Route(fixture.d1, '/sourcing/category-specialisation/export-excel',
+        docExport, new URL(docExport.url));
+      expect(docExported.response?.headers.get('Content-Disposition')).toContain('Category_Specialisation_DOC-INGEST-L6.xlsx');
     } finally {
       fixture.close();
     }
@@ -329,6 +339,16 @@ describe('workerD1Module2 handler', () => {
       expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation')).toBe(false);
       expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation/export-excel')).toBe(false);
       expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation/review')).toBe(false);
+
+      const docExport = req('/sourcing/specification-rationalisation/export-excel?documentId=DOC-INGEST-L6&tenantId=T1');
+      const docExported = await handleModule2Route(fixture.d1, '/sourcing/specification-rationalisation/export-excel',
+        docExport, new URL(docExport.url));
+      expect(docExported.response?.headers.get('Content-Disposition'))
+        .toContain(`${MODULE2_D1_SPECIFICATION_RATIONALISATION.EXPORT.FILENAME_PREFIX}DOC-INGEST-L6.xlsx`);
+
+      const unknownSpec = req('/sourcing/specification-rationalisation/unknown?assessmentId=A1&tenantId=T1');
+      expect(await handleModule2Route(fixture.d1, '/sourcing/specification-rationalisation/unknown', unknownSpec, new URL(unknownSpec.url)))
+        .toMatchObject({ status: 404 });
       const token = await issueEvidenceToken({ userId: 'usr-reviewer' }, WORKER_CORE_SECRET);
       const review = req('/sourcing/specification-rationalisation/review', {
         method: 'POST',
@@ -517,6 +537,15 @@ describe('workerD1Module2 handler', () => {
       expect(exported.response?.headers.get('Content-Disposition')).toContain('Procurement_Compliance_A1.xlsx');
       expect(XLSX.read(await exported.response?.arrayBuffer(), { type: 'array' }).SheetNames)
         .toEqual(['Summary', 'Exceptions', 'Control Checks', 'Methodology']);
+
+      const docExport = req('/sourcing/procurement-compliance/export-excel?documentId=DOC-INGEST-L6&tenantId=T1');
+      const docExported = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/export-excel',
+        docExport, new URL(docExport.url));
+      expect(docExported.response?.headers.get('Content-Disposition')).toContain('Procurement_Compliance_DOC-INGEST-L6.xlsx');
+
+      const unknownCompliance = req('/sourcing/procurement-compliance/unknown?assessmentId=A1&tenantId=T1');
+      expect(await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/unknown', unknownCompliance, new URL(unknownCompliance.url)))
+        .toMatchObject({ status: 404 });
 
       const review = req('/sourcing/procurement-compliance/review', {
         method: 'POST',
@@ -740,6 +769,14 @@ describe('workerD1Module2 handler', () => {
     expect(exportResult.response?.headers.get('Content-Disposition')).toContain('Volume_Aggregation_AIC-2026-0001.xlsx');
     const bytes = new Uint8Array(await exportResult.response!.arrayBuffer());
     expect([...bytes.slice(0, 2)]).toEqual([0x50, 0x4b]);
+
+    const docExport = req('/sourcing/volume-aggregation/export-excel?documentId=DOC-INGEST-123');
+    const docExportResult = await handleModule2Route(db, '/sourcing/volume-aggregation/export-excel', docExport, new URL(docExport.url));
+    expect(docExportResult.response?.headers.get('Content-Disposition')).toContain('Volume_Aggregation_DOC-INGEST-123.xlsx');
+
+    const unknownVol = req('/sourcing/volume-aggregation/unknown?assessmentId=AIC-2026-0001');
+    expect(await handleModule2Route(db, '/sourcing/volume-aggregation/unknown', unknownVol, new URL(unknownVol.url)))
+      .toMatchObject({ status: 404 });
   });
 
   it('serves D1-backed e-auction analysis and a real assessment-scoped XLSX export', async () => {
@@ -770,6 +807,16 @@ describe('workerD1Module2 handler', () => {
     expect(exportResult.response?.headers.get('Content-Type')).toContain('spreadsheetml.sheet');
     expect(exportResult.response?.headers.get('Content-Disposition')).toContain('EAuction_Candidates_A-1.xlsx');
     expect(workbook.SheetNames).toEqual(['Summary', 'Categories', 'Materials', 'Limitations', 'Planning Assumptions']);
+
+    const docExport = req('/sourcing/e-auction/export-excel?documentId=DOC-INGEST-123');
+    const docExportResult = await handleModule2Route(
+      db, '/sourcing/e-auction/export-excel', docExport, new URL(docExport.url)
+    );
+    expect(docExportResult.response?.headers.get('Content-Disposition')).toContain('EAuction_Candidates_DOC-INGEST-123.xlsx');
+
+    const unknownEAuction = req('/sourcing/e-auction/unknown?assessmentId=A-1');
+    expect(await handleModule2Route(db, '/sourcing/e-auction/unknown', unknownEAuction, new URL(unknownEAuction.url)))
+      .toMatchObject({ status: 404 });
 
     const invalid = req('/sourcing/e-auction?assessmentId=A-1&financialYear=FY2025');
     expect(await handleModule2Route(db, '/sourcing/e-auction', invalid, new URL(invalid.url)))
@@ -906,6 +953,16 @@ describe('workerD1Module2 handler', () => {
     expect(exportResult.response?.headers.get('Content-Disposition')).toContain('Direct_Price_History_A-2.xlsx');
     expect(workbook.SheetNames).toEqual(['Summary', 'Categories', 'Materials', 'Transactions']);
 
+    const docExportRequest = req('/sourcing/direct-price-improvement/export-excel?documentId=DOC-INGEST-123');
+    const docExportResult = await handleModule2Route(
+      db, '/sourcing/direct-price-improvement/export-excel', docExportRequest, new URL(docExportRequest.url)
+    );
+    expect(docExportResult.response?.headers.get('Content-Disposition')).toContain('Direct_Price_History_DOC-INGEST-123.xlsx');
+
+    const unknownDirect = req('/sourcing/direct-price-improvement/unknown?assessmentId=A-2');
+    expect(await handleModule2Route(db, '/sourcing/direct-price-improvement/unknown', unknownDirect, new URL(unknownDirect.url)))
+      .toMatchObject({ status: 404 });
+
     const invalid = req('/sourcing/direct-price-improvement?assessmentId=A-2&financialYear=FY2025');
     expect(await handleModule2Route(db, '/sourcing/direct-price-improvement', invalid, new URL(invalid.url)))
       .toMatchObject({ status: 400, data: { success: false } });
@@ -946,6 +1003,17 @@ describe('workerD1Module2 handler', () => {
     expect(exportResult.response?.headers.get('Content-Disposition'))
       .toContain('Payment_Terms_PT-ASSESSMENT.xlsx');
 
+    const docExportPt = req('/sourcing/payment-terms/export-excel?documentId=DOC-INGEST-123');
+    const docExportPtResult = await handleModule2Route(
+      db, '/sourcing/payment-terms/export-excel', docExportPt, new URL(docExportPt.url)
+    );
+    expect(docExportPtResult.response?.headers.get('Content-Disposition'))
+      .toContain('Payment_Terms_DOC-INGEST-123.xlsx');
+
+    const unknownPt = req('/sourcing/payment-terms/unknown?assessmentId=PT-ASSESSMENT');
+    expect(await handleModule2Route(db, '/sourcing/payment-terms/unknown', unknownPt, new URL(unknownPt.url)))
+      .toMatchObject({ status: 404 });
+
     const unscoped = req('/sourcing/payment-terms');
     expect(await handleModule2Route(db, '/sourcing/payment-terms', unscoped, new URL(unscoped.url)))
       .toMatchObject({ status: 409, data: { success: false } });
@@ -982,6 +1050,17 @@ describe('workerD1Module2 handler', () => {
     expect(workbook.SheetNames).toContain('Transaction Sample');
     expect(exportResult.response?.headers.get('Content-Disposition'))
       .toContain('Vendor_Consolidation_VC-ASSESSMENT.xlsx');
+
+    const docExportVc = req('/sourcing/vendor-consolidation/export-excel?documentId=DOC-INGEST-123');
+    const docExportVcResult = await handleModule2Route(
+      db, '/sourcing/vendor-consolidation/export-excel', docExportVc, new URL(docExportVc.url)
+    );
+    expect(docExportVcResult.response?.headers.get('Content-Disposition'))
+      .toContain('Vendor_Consolidation_DOC-INGEST-123.xlsx');
+
+    const unknownVc = req('/sourcing/vendor-consolidation/unknown?assessmentId=VC-ASSESSMENT');
+    expect(await handleModule2Route(db, '/sourcing/vendor-consolidation/unknown', unknownVc, new URL(unknownVc.url)))
+      .toMatchObject({ status: 404 });
 
     const invalid = req('/sourcing/vendor-consolidation?assessmentId=VC-ASSESSMENT&status=APPROVED');
     expect(await handleModule2Route(db, '/sourcing/vendor-consolidation', invalid, new URL(invalid.url)))

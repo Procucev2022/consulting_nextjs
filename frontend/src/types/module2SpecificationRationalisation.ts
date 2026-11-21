@@ -123,6 +123,7 @@ export interface SpecificationRationalisationResult {
 
 export interface SpecificationRationalisationViewProps {
   assessmentId?: string;
+  documentId?: string;
   onNavigateBack?: () => void;
 }
 

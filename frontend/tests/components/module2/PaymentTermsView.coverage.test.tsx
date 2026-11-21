@@ -320,4 +320,28 @@ describe('PaymentTermsView coverage', () => {
       errorCategory: ERROR_CATEGORIES.VALIDATION_ERROR
     }), expect.any(Error));
   });
+
+  it('loads payment terms and renders download link with documentId and token when documentId is provided without assessmentId', async () => {
+    localStorage.setItem('aicev_auth_token', 'test-token-pt');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => jsonResponse({ success: true, data: RESULT }));
+
+    render(<PaymentTermsView documentId="DOC-123" />);
+
+    await screen.findByRole('heading', { name: UI_STRINGS.module2.paymentTerms.title });
+    const downloadLink = screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.paymentTerms.exportButton)
+    });
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('documentId=DOC-123'));
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('token=test-token-pt'));
+    expect(downloadLink).toHaveAttribute('download', 'Payment_Terms_DOC-123.xlsx');
+    localStorage.removeItem('aicev_auth_token');
+  });
+
+  it('rejects when neither assessmentId nor documentId is provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    render(<PaymentTermsView assessmentId={undefined} documentId={undefined} />);
+
+    await screen.findByText(UI_STRINGS.module2.paymentTerms.missingAssessment);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });

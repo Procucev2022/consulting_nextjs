@@ -105,7 +105,16 @@ export const authenticateWorkerUser = async (
     return { status: 503, message: 'Cloudflare D1 or AUTH_SECRET is not configured.' };
   }
   const header = request.headers.get('Authorization') || request.headers.get('x-auth-token') || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : header;
+  let token = header.startsWith('Bearer ') ? header.slice(7) : header;
+  if (!token) {
+    try {
+      const url = new URL(request.url);
+      const queryToken = url.searchParams.get('token') || '';
+      token = queryToken.startsWith('Bearer ') ? queryToken.slice(7) : queryToken;
+    } catch {
+      token = '';
+    }
+  }
   const claims = await verifyToken(token, environment.AUTH_SECRET);
   if (typeof claims?.userId !== 'string' || !claims.userId) {
     return { status: 401, message: 'Authentication required. Missing or invalid authorization token.' };

@@ -576,4 +576,19 @@ describe('VolumeAggregationView', () => {
     await screen.findByText(UI_STRINGS.module2.volumeAggregation.unexpectedFailure);
     expect(screen.getByText(UI_STRINGS.module2.volumeAggregation.errorTitle)).toBeDefined();
   });
+
+  it('renders download link with documentId and token when documentId is provided without assessmentId', async () => {
+    localStorage.setItem('aicev_auth_token', 'test-token-vol');
+    const mockDocData = { ...mockResult, assessmentId: '' };
+    vi.spyOn(volumeAggregationApi, 'loadVolumeAggregation').mockResolvedValue(mockDocData);
+    render(<VolumeAggregationView documentId="DOC-123" />);
+
+    await screen.findByText(UI_STRINGS.module2.volumeAggregation.title);
+    const downloadLink = screen.getByRole('link', {
+      name: new RegExp(UI_STRINGS.module2.volumeAggregation.exportButton)
+    });
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('documentId=DOC-123'));
+    expect(downloadLink).toHaveAttribute('href', expect.stringContaining('token=test-token-vol'));
+    localStorage.removeItem('aicev_auth_token');
+  });
 });

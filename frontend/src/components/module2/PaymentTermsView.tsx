@@ -21,6 +21,7 @@ import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
   assessmentId,
+  documentId,
   onBackToOverview
 }) => {
   const [data, setData] = useState<PaymentTermsResult | null>(null);
@@ -38,12 +39,22 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
     let response: Response | null = null;
     let invalidAssessment = false;
     try {
-      const parsedAssessment = assessmentIdQuerySchema.safeParse({ assessmentId });
-      if (!parsedAssessment.success) {
+      const scopeId = assessmentId || documentId;
+      if (!scopeId) {
         invalidAssessment = true;
-        throw parsedAssessment.error;
+        throw new Error(UI_STRINGS.module2.paymentTerms.missingAssessment);
       }
-      const query = new URLSearchParams(parsedAssessment.data);
+      const query = new URLSearchParams();
+      if (assessmentId) {
+        const parsedAssessment = assessmentIdQuerySchema.safeParse({ assessmentId });
+        if (!parsedAssessment.success) {
+          invalidAssessment = true;
+          throw parsedAssessment.error;
+        }
+        query.set('assessmentId', parsedAssessment.data.assessmentId);
+      } else if (documentId) {
+        query.set('documentId', documentId);
+      }
       const path = `${PAYMENT_TERMS_ENDPOINT}?${query.toString()}`;
       const res = await apiFetch(path, { headers: { [API_REQUEST_ID_HEADER]: clientRequestId } });
       response = res;
@@ -109,7 +120,7 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
     } finally {
       if (isCurrentRequest(requestSequence)) setLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, beginRequest, documentId, isCurrentRequest]);
 
   useEffect(() => {
     void fetchData();
@@ -186,25 +197,35 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
         </div>
 
         {/* Declarative Virtual DOM Excel Download */}
-        <a
-          href={`/api/module2/sourcing/payment-terms/export-excel?assessmentId=${assessmentId}`}
-          download={`Payment_Terms_${assessmentId}.xlsx`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            backgroundColor: '#047857',
-            color: '#ffffff',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            fontSize: '13px',
-            fontWeight: 600,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-          }}
-        >
-          📊 {UI_STRINGS.module2.paymentTerms.exportButton}
-        </a>
+        {(() => {
+          const exportQuery = new URLSearchParams();
+          const scopeId = assessmentId || documentId || '';
+          if (assessmentId) exportQuery.set('assessmentId', assessmentId);
+          else if (documentId) exportQuery.set('documentId', documentId);
+          const token = typeof window !== 'undefined' ? localStorage.getItem('aicev_auth_token') : null;
+          if (token) exportQuery.set('token', token);
+          return (
+            <a
+              href={`/api/module2/sourcing/payment-terms/export-excel?${exportQuery.toString()}`}
+              download={`Payment_Terms_${scopeId}.xlsx`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                backgroundColor: '#047857',
+                color: '#ffffff',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                fontSize: '13px',
+                fontWeight: 600,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              📊 {UI_STRINGS.module2.paymentTerms.exportButton}
+            </a>
+          );
+        })()}
       </div>
 
       {/* Payment Terms KPI Cards, Explicit Disclosure & Planning Scenario */}
