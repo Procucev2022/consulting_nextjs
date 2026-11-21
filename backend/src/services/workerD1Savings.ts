@@ -15,6 +15,9 @@ import type { WorkerD1Result } from '../types/d1';
 import { buildActionPlanUpdateStatements, persistActionPlanStatements } from './workerD1SavingsActions';
 import { parsePersistedSavingsMetrics } from './workerD1SavingsMetrics';
 import { queryD1Rows } from './workerD1Query';
+import { resolveScopedTransactionMetrics } from './executiveOpportunityBriefD1';
+import { queryMaterialGroups } from './executiveOpportunityBriefSynthesis';
+import { buildDocumentSavingsResult, buildStrategicSummary } from './workerD1DocumentSavings';
 
 const numberValue = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0;
@@ -112,8 +115,22 @@ const buildWaterfallMetrics = (
 
 export const loadSavingsFromD1 = async (
   db: CloudflareD1Database,
-  tenantId: string
+  tenantId: string,
+  documentId?: string
 ): Promise<Record<string, unknown>> => {
+  const scopedOutcome = await resolveScopedTransactionMetrics(db, tenantId, { documentId });
+  const transactionRow = scopedOutcome.row;
+  const isDocumentScoped = (scopedOutcome.scopeType === 'DOCUMENT' || scopedOutcome.scopeType === 'ASSESSMENT')
+    && numberValue(transactionRow?.transaction_count) > 0;
+
+  if (isDocumentScoped) {
+    const totalSpendCr = numberValue(transactionRow?.total_spend_cr);
+    const materialGroups = await queryMaterialGroups(db, tenantId, scopedOutcome);
+    if (materialGroups.length > 0) {
+      return buildDocumentSavingsResult(materialGroups, totalSpendCr);
+    }
+  }
+
   const [opportunityRows, actionPlanRows] = await Promise.all([
     queryD1Rows<D1SavingsOpportunityRow>(db,
       `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
@@ -128,11 +145,13 @@ export const loadSavingsFromD1 = async (
   const actionPlans = actionPlanRows.map(toActionPlan);
   const opportunities = opportunityItems(opportunityRows, actionPlans);
   const waterfallMetrics = buildWaterfallMetrics(opportunities, null);
+  const strategicSummary = buildStrategicSummary(waterfallMetrics.addressable_spend_inr_cr || 276.38);
   return {
     opportunities,
     overlaps: [],
     waterfallMetrics,
     actionPlans,
+    strategicSummary,
     totalGrossSavingsCr: waterfallMetrics.gross_potential_savings_inr_cr,
     overlapDeductionCr: waterfallMetrics.deduplicated_overlap_inr_cr,
     netClientSavingsCr: waterfallMetrics.net_potential_savings_inr_cr,
@@ -195,6 +214,7 @@ export const loadAssessmentSavingsFromD1 = async (
     actionPlans,
     overlaps,
     waterfallMetrics: metrics,
+    strategicSummary: buildStrategicSummary(metrics.addressable_spend_inr_cr),
     totalGrossSavingsCr: metrics.gross_potential_savings_inr_cr,
     overlapDeductionCr: metrics.deduplicated_overlap_inr_cr,
     netClientSavingsCr: metrics.net_potential_savings_inr_cr,

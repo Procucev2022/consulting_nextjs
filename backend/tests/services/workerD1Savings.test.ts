@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWorkerDatabase, insertRows, type WorkerDatabaseFixture } from '../helpers/workerCoreFixtures';
-import { loadSavingsFromD1, updateActionPlanInD1, updateOpportunityStatusInD1 } from '../../src/services/workerD1Savings';
+import { loadAssessmentSavingsFromD1, loadSavingsFromD1, updateActionPlanInD1, updateOpportunityStatusInD1 } from '../../src/services/workerD1Savings';
 import { D1_LOG_FALLBACKS } from '../../src/constants/d1';
 import { SAVINGS_D1_LOG_ACTIONS, SAVINGS_D1_LOG_MESSAGES, SAVINGS_D1_MESSAGES } from '../../src/constants/savingsD1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
@@ -118,6 +118,89 @@ describe('D1 savings reads', () => {
     };
     expect(empty).toMatchObject({ opportunities: [], actionPlans: [], overlaps: [], totalGrossSavingsCr: 0 });
     expect(empty.waterfallMetrics).toMatchObject({ identified_opportunities_count: 0, net_potential_savings_inr_cr: 0 });
+  });
+
+  it('synthesizes savings from document validation records when document is present', async () => {
+    insertRows(fixture.db,
+      'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, records_count, converted_inr_crores, uploaded_at, ocr_status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [['DOC-1', 'TNT-1', 'Spend.xlsx', 10, 50.0, '2026-11-20T10:00:00Z', 'Completed']]);
+    insertRows(fixture.db,
+      'INSERT INTO ValidationPreCheckRecord (record_id, tenant_id, po_number, vendor_name, raw_desc, inr_crores, core_category) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+        ['DOC-1:1', 'TNT-1', 'PO-100', 'Vendor A', 'Item A', 30.0, 'Direct Materials'],
+        ['DOC-1:2', 'TNT-1', 'PO-200', 'Vendor B', 'Item B', 20.0, 'Packaging']
+      ]);
+
+    const result = await loadSavingsFromD1(fixture.d1, 'TNT-1', 'DOC-1') as {
+      opportunities: Array<{ opportunity_id: string; category: string; spend_inr_cr: number }>;
+      waterfallMetrics: Record<string, number>;
+      strategicSummary: Record<string, number>;
+    };
+
+    expect(result.opportunities).toHaveLength(2);
+    expect(result.opportunities[0].category).toBe('Direct Materials');
+    expect(result.waterfallMetrics.total_spend_inr_cr).toBe(50.0);
+    expect(result.strategicSummary.totalAddressableSpendInrCr).toBe(50.0);
+  });
+
+  it('falls back to database opportunities when document has no material groups', async () => {
+    insertOpportunity({ opp_id: 'OPP-FB', est_savings_inr_cr: 2 });
+    insertRows(fixture.db,
+      'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, records_count, converted_inr_crores, uploaded_at, ocr_status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [['DOC-EMPTY', 'TNT-1', 'Empty.xlsx', 0, 0, '2026-11-20T10:00:00Z', 'Completed']]);
+
+    const result = await loadSavingsFromD1(fixture.d1, 'TNT-1', 'DOC-EMPTY') as {
+      opportunities: Array<{ opportunity_id: string }>;
+    };
+    expect(result.opportunities).toHaveLength(1);
+    expect(result.opportunities[0].opportunity_id).toBe('OPP-FB');
+  });
+
+  it('loads assessment savings or returns 404 if missing', async () => {
+    const missing = await loadAssessmentSavingsFromD1(fixture.d1, 'AIC-NONEXISTENT', 'TNT-1');
+    expect(missing).toMatchObject({ status: 404 });
+
+    insertRows(fixture.db,
+      'INSERT INTO AssessmentRecord (assessment_id, tenant_id, customer_id, customer_name, industry, assessment_owner, total_spend_cr, validated_spend_cr, addressable_spend_cr, gross_opportunity_cr, overlap_deductions_cr, net_defensible_opportunity_cr, proven_opportunity_cr, potential_savings_cr, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [['AIC-SAV-1', 'TNT-1', 'C-1', 'Client', 'Chemicals', 'analyst', 100, 95, 90, 10, 2, 8, 3, 8, '2026-01-01']]);
+
+    const withoutRun = await loadAssessmentSavingsFromD1(fixture.d1, 'AIC-SAV-1', 'TNT-1');
+    expect(withoutRun.data).toMatchObject({
+      assessmentId: 'AIC-SAV-1',
+      waterfallMetrics: {
+        total_spend_inr_cr: 100,
+        addressable_spend_inr_cr: 90,
+        identified_opportunities_count: 0,
+        net_potential_savings_inr_cr: 8
+      }
+    });
+
+    const metricsJson = JSON.stringify({
+      opportunities: [{ opportunity_id: 'OPP-A', title: 'Opp A' }],
+      actionPlans: [{ id: 'ACT-A' }],
+      overlaps: [{ id: 'OV-A' }],
+      validatedSavingsInrCr: 4,
+      approvedSavingsInrCr: 3,
+      realizedSavingsInrCr: 1
+    });
+
+    insertRows(fixture.db,
+      'INSERT INTO AssessmentAnalysisRun (analysis_run_id, assessment_id, data_version_id, status, metrics_json, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [['RUN-1', 'AIC-SAV-1', 'VER-1', 'COMPLETED', metricsJson, '2026-01-02']]);
+
+    const withRun = await loadAssessmentSavingsFromD1(fixture.d1, 'AIC-SAV-1', 'TNT-1', 'req-sav-test');
+    expect(withRun.data).toMatchObject({
+      assessmentId: 'AIC-SAV-1',
+      opportunities: [{ opportunity_id: 'OPP-A', title: 'Opp A' }],
+      actionPlans: [{ id: 'ACT-A' }],
+      overlaps: [{ id: 'OV-A' }],
+      waterfallMetrics: {
+        total_spend_inr_cr: 100,
+        identified_opportunities_count: 1,
+        validated_savings_inr_cr: 4,
+        approved_savings_inr_cr: 3,
+        realized_savings_inr_cr: 1
+      }
+    });
   });
 });
 

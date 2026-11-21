@@ -101,10 +101,16 @@ export const savingsApiClient = {
     return readOpportunityHandoff(response, await readOpportunityHandoffBody(response), opp_id);
   },
 
-  async getConsolidatedSavings(assessmentId?: string): Promise<ConsolidatedSavingsData> {
-    frontendLogger.debug('Fetching consolidated savings with overlap de-duplication', { assessmentId });
-    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
-    const res = await apiFetch(`${API_BASE}/api/savings/consolidated${query}`);
+  async getConsolidatedSavings(assessmentId?: string, documentId?: string): Promise<ConsolidatedSavingsData> {
+    frontendLogger.debug('Fetching consolidated savings with overlap de-duplication', { assessmentId, documentId });
+    const params = new URLSearchParams();
+    if (assessmentId) params.set('assessmentId', assessmentId);
+    if (documentId) params.set('documentId', documentId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const headers: Record<string, string> = {};
+    if (assessmentId) headers['x-assessment-id'] = assessmentId;
+    if (documentId) headers['x-document-id'] = documentId;
+    const res = await apiFetch(`${API_BASE}/api/savings/consolidated${query}`, { headers });
     return readSavingsResponse<ConsolidatedSavingsData>(res, UI_STRINGS.module4.apiOperations.load);
   },
 

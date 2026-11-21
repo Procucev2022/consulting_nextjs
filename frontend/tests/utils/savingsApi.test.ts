@@ -91,6 +91,21 @@ describe('savingsApiClient Unit Tests', () => {
       expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/consolidated'));
       expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('?assessmentId='));
     });
+
+    it('fetches consolidated savings with documentId parameter', async () => {
+      const mockData = {
+        identifiedOpportunityInrCr: 50.0,
+        levers: []
+      };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: mockData })
+      });
+
+      const result = await savingsApiClient.getConsolidatedSavings(undefined, 'DOC-1');
+      expect(result).toEqual(mockData);
+      expectApiFetchCall(global.fetch, expect.stringContaining('/api/savings/consolidated?documentId=DOC-1'));
+    });
   });
 
   describe('updateActionPlan', () => {

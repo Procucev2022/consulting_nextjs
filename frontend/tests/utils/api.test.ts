@@ -203,6 +203,16 @@ describe('apiClient', () => {
     const res = await apiClient.getSavingsOpportunities();
     expectApiFetchCall(global.fetch, '/api/savings');
     expect(res).toEqual(mockData);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({ success: true, data: mockData })
+    });
+    const resDoc = await apiClient.getSavingsOpportunities('DOC-1');
+    expectApiFetchCall(global.fetch, '/api/savings?documentId=DOC-1');
+    expect(resDoc).toEqual(mockData);
   });
 
   it('deployOpportunity should perform POST /api/savings', async () => {

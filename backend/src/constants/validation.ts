@@ -59,6 +59,7 @@ export const pcbiHistoricalObservationsQuerySchema = z.object({
 
 export const d1DatasetScopeSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120).optional(),
+  documentId: z.string().trim().min(1).max(120).optional(),
   tenantId: z.string().trim().min(1).max(120).optional(),
   limit: z.coerce.number().int().min(1).max(D1_REPORTING.maxDatasetLimit).default(D1_REPORTING.datasetLimit)
 });

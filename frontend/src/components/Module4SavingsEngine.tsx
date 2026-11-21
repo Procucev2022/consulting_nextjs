@@ -43,6 +43,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   onUpgrade,
   onNavigateToSection,
   assessmentId,
+  documentId,
   onDownloadReportPdf,
   onDownloadReportPptx,
   downloadingReportFormat = null
@@ -59,7 +60,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     setConsolidatedData(null);
     setSaveError(null);
     apiClient
-      .getConsolidatedSavings(assessmentId)
+      .getConsolidatedSavings(assessmentId, documentId)
       .then((data) => {
         if (isMounted && data) {
           setConsolidatedData(data);
@@ -69,6 +70,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         if (!isMounted) return;
         frontendLogger.warn('Consolidated savings could not be loaded. Showing the opportunity list only.', {
           assessmentId,
+          documentId,
           error: describeError(error)
         });
       });
@@ -76,7 +78,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [assessmentId]);
+  }, [assessmentId, documentId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -145,11 +147,10 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   };
 
   const effectiveOpportunities: SavingsOpportunity[] = React.useMemo(() => {
-    if (opportunities && opportunities.length > 0) return opportunities;
     if (consolidatedData?.opportunities && consolidatedData.opportunities.length > 0) {
       return consolidatedData.opportunities.map((o) => ({
         opp_id: o.opportunity_id,
-        title: `${o.category} - ${o.source_engine.replace(/_/g, ' ')}`,
+        title: o.item || `${o.category} - ${o.source_engine.replace(/_/g, ' ')}`,
         category: o.category,
         current_spend: o.spend_inr,
         current_spend_inr_cr: o.spend_inr_cr,
@@ -164,6 +165,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         lever: o.source_engine
       }));
     }
+    if (opportunities && opportunities.length > 0) return opportunities;
     return [];
   }, [opportunities, consolidatedData]);
 
@@ -214,40 +216,68 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   const mroMetrics = getCategoryMetrics('Indirect & MRO');
   const logMetrics = getCategoryMetrics('Logistics & Freight');
 
-  const categoryBreakdowns = [
-    {
-      name: UI_STRINGS.module4.categories.directMaterials,
-      targetPct: dmMetrics.targetPct,
-      savingsFound: dmMetrics.savingsFound,
-      color: 'from-cyan-500 to-blue-500',
-      textColor: 'text-cyan-700',
-      progressPct: dmMetrics.progressPct
-    },
-    {
-      name: UI_STRINGS.module4.categories.packagingMaterials,
-      targetPct: pkgMetrics.targetPct,
-      savingsFound: pkgMetrics.savingsFound,
-      color: 'from-blue-500 to-indigo-500',
-      textColor: 'text-blue-700',
-      progressPct: pkgMetrics.progressPct
-    },
-    {
-      name: UI_STRINGS.module4.categories.indirectMRO,
-      targetPct: mroMetrics.targetPct,
-      savingsFound: mroMetrics.savingsFound,
-      color: 'from-purple-500 to-violet-500',
-      textColor: 'text-purple-700',
-      progressPct: mroMetrics.progressPct
-    },
-    {
-      name: UI_STRINGS.module4.categories.logisticsFreight,
-      targetPct: logMetrics.targetPct,
-      savingsFound: logMetrics.savingsFound,
-      color: 'from-emerald-500 to-teal-500',
-      textColor: 'text-emerald-700',
-      progressPct: logMetrics.progressPct
-    }
+  const uniqueCategories = React.useMemo(() => {
+    const set = new Set<string>();
+    effectiveOpportunities.forEach((opp) => {
+      if (opp.category) set.add(opp.category);
+    });
+    return Array.from(set);
+  }, [effectiveOpportunities]);
+
+  const categoryPalette = [
+    { color: 'from-cyan-500 to-blue-500', textColor: 'text-cyan-700' },
+    { color: 'from-blue-500 to-indigo-500', textColor: 'text-blue-700' },
+    { color: 'from-purple-500 to-violet-500', textColor: 'text-purple-700' },
+    { color: 'from-emerald-500 to-teal-500', textColor: 'text-emerald-700' }
   ];
+
+  const categoryBreakdowns = uniqueCategories.length > 0
+    ? uniqueCategories.slice(0, 4).map((catName, idx) => {
+        const metrics = getCategoryMetrics(catName);
+        const palette = categoryPalette[idx % categoryPalette.length];
+        return {
+          name: catName,
+          targetPct: metrics.targetPct,
+          savingsFound: metrics.savingsFound,
+          color: palette.color,
+          textColor: palette.textColor,
+          progressPct: metrics.progressPct
+        };
+      })
+    : [
+        {
+          name: UI_STRINGS.module4.categories.directMaterials,
+          targetPct: dmMetrics.targetPct,
+          savingsFound: dmMetrics.savingsFound,
+          color: 'from-cyan-500 to-blue-500',
+          textColor: 'text-cyan-700',
+          progressPct: dmMetrics.progressPct
+        },
+        {
+          name: UI_STRINGS.module4.categories.packagingMaterials,
+          targetPct: pkgMetrics.targetPct,
+          savingsFound: pkgMetrics.savingsFound,
+          color: 'from-blue-500 to-indigo-500',
+          textColor: 'text-blue-700',
+          progressPct: pkgMetrics.progressPct
+        },
+        {
+          name: UI_STRINGS.module4.categories.indirectMRO,
+          targetPct: mroMetrics.targetPct,
+          savingsFound: mroMetrics.savingsFound,
+          color: 'from-purple-500 to-violet-500',
+          textColor: 'text-purple-700',
+          progressPct: mroMetrics.progressPct
+        },
+        {
+          name: UI_STRINGS.module4.categories.logisticsFreight,
+          targetPct: logMetrics.targetPct,
+          savingsFound: logMetrics.savingsFound,
+          color: 'from-emerald-500 to-teal-500',
+          textColor: 'text-emerald-700',
+          progressPct: logMetrics.progressPct
+        }
+      ];
 
   const filteredOpportunities = effectiveOpportunities.filter((opp) => {
     if (selectedCategory !== 'ALL' && opp.category !== selectedCategory && !opp.category?.includes(selectedCategory.split(' ')[0])) return false;

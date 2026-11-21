@@ -478,6 +478,14 @@ describe('Module4SavingsEngine Component', () => {
       expect(screen.getByTestId('waterfall-stub')).toBeInTheDocument();
     });
 
+    it('passes documentId to getConsolidatedSavings and renders document-scoped opportunities', async () => {
+      vi.spyOn(apiClient, 'getConsolidatedSavings').mockResolvedValue(consolidatedData);
+      renderEngine({ documentId: 'DOC-CUSTOM-1', opportunities: [] });
+
+      expect(apiClient.getConsolidatedSavings).toHaveBeenCalledWith(undefined, 'DOC-CUSTOM-1');
+      expect(await screen.findByText('OPP-A')).toBeInTheDocument();
+    });
+
     it('shows the opportunity list only and logs a warning when consolidated savings cannot be loaded', async () => {
       vi.spyOn(apiClient, 'getConsolidatedSavings').mockRejectedValue(new Error('Savings API down'));
       renderEngine();

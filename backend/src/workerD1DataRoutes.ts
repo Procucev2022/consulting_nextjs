@@ -13,6 +13,7 @@ import { getCurrencyRatesFromD1, requireD1Binding } from './workerD1';
 import logger from './utils/logger';
 import { apiData, jsonResponse, readJson } from './workerHttp';
 import { executeVendorMergeInD1 } from './services/workerD1VendorMerge';
+import { loadSavingsFromD1 } from './services/workerD1Savings';
 
 const handleConversion = async (
   request: Request,
@@ -115,6 +116,13 @@ const handleStaticDataRoute = async (
       return apiData(deployed, request);
     }
     if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Savings data supports GET and POST requests only.' }, 405, request);
+    const documentId = url.searchParams.get('documentId') || request.headers.get('x-document-id') || undefined;
+    if (documentId) {
+      const savingsResult = await loadSavingsFromD1(database, tenantId, documentId);
+      const opportunities = Array.isArray(savingsResult.opportunities) ? savingsResult.opportunities : [];
+      const totalPotentialSavingsCr = Number(savingsResult.netClientSavingsCr || 0);
+      return apiData({ opportunities, totalPotentialSavingsCr }, request);
+    }
     const opportunities = await getTenantD1Data(database, tenantId, D1_TENANT_DATA_CACHE_KEYS.SAVINGS_OPPORTUNITIES, async () =>
       (await database.prepare(`SELECT opportunity.* FROM SavingsOpportunity AS opportunity
         INNER JOIN SavingsOpportunityTenantScope AS scope ON scope.opp_id = opportunity.opp_id

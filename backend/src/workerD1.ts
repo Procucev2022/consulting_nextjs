@@ -307,6 +307,7 @@ export const handleSavingsRoute = async (
   };
   if (subPath === '/consolidated') {
     const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined;
+    const documentId = url.searchParams.get('documentId') ?? request.headers.get('x-document-id') ?? undefined;
     const requestedTenantId = url.searchParams.get('tenantId') ??
       (request.headers.get('x-resolved-tenant-id') ? undefined : request.headers.get('x-tenant-id') || undefined);
     const tenantId = environment.REQUEST_TENANT_ID || request.headers.get('x-resolved-tenant-id') || undefined;
@@ -314,17 +315,24 @@ export const handleSavingsRoute = async (
     if (requestedTenantId && requestedTenantId !== tenantId) return {
       status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch }
     };
-    if (assessmentId !== undefined || requestedTenantId !== undefined) {
-      const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId: requestedTenantId });
+    if (assessmentId !== undefined || requestedTenantId !== undefined || documentId !== undefined) {
+      const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId: requestedTenantId, documentId });
       if (!parsed.success) return { status: 400, data: {
         success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: parsed.error.issues
       } };
-      if (!parsed.data.assessmentId) return { status: 400, data: {
-        success: false, message: D1_ROUTE_MESSAGES.savingsAssessmentRequired
-      } };
-      return loadAssessmentSavingsFromD1(
-        database, parsed.data.assessmentId, tenantId, request.headers.get('x-request-id') || undefined
-      );
+      if (parsed.data.assessmentId) {
+        return loadAssessmentSavingsFromD1(
+          database, parsed.data.assessmentId, tenantId, request.headers.get('x-request-id') || undefined
+        );
+      }
+      if (parsed.data.documentId) {
+        return { data: await loadSavingsFromD1(database, tenantId, parsed.data.documentId) };
+      }
+      if (requestedTenantId !== undefined) {
+        return { status: 400, data: {
+          success: false, message: D1_ROUTE_MESSAGES.savingsAssessmentRequired
+        } };
+      }
     }
     return { data: await loadSavingsFromD1(database, tenantId) };
   }

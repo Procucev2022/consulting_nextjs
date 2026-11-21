@@ -114431,3 +114431,7 @@ we see Demo Data in Executive brief
 Report we are downloading is also are demo values need real values and same with ppt
 ---
 
+
+## Prompt 653
+Same with Savings module, demo data value for every data, please check & fix
+---

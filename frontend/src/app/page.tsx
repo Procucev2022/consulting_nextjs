@@ -976,7 +976,9 @@ export default function Home() {
             ingestionDataRequest,
             canReadTenantData ? apiClient.getCategories() : Promise.resolve(null),
             canReadTenantData ? apiClient.getVendors() : Promise.resolve(null),
-            canReadTenantData ? apiClient.getSavingsOpportunities() : Promise.resolve(null)
+            canReadTenantData
+              ? apiClient.getSavingsOpportunities(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('documentId') || undefined : undefined)
+              : Promise.resolve(null)
           ]);
 
           const dashboardRequests: DashboardRequestResult[] = [
@@ -1686,6 +1688,16 @@ export default function Home() {
       );
       if (selected?.doc_id === docId) {
         replaceDocumentQueryInHistory(docId);
+        void apiClient.getSavingsOpportunities(docId).then((savings) => {
+          if (savings?.opportunities) {
+            setOpportunities(savings.opportunities);
+          }
+        }).catch((err: unknown) => {
+          frontendLogger.warn('Could not sync savings opportunities for saved document', {
+            docId,
+            error: err instanceof Error ? err.message : String(err)
+          });
+        });
         showToast(UI_STRINGS.module1.savedDatasetLoaded(selected.file_name || docId));
       }
     } catch (error: unknown) {
@@ -2946,6 +2958,7 @@ export default function Home() {
           <Module4SavingsEngine
             opportunities={opportunities}
             assessmentId={activeAssessment?.assessmentId}
+            documentId={(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('documentId') : null) || ingestionQueue[0]?.doc_id || savedIngestionDocuments[0]?.doc_id}
             onOpenProCPX={(opp) => setSelectedOppForProCPX(opp)}
             onOpenDPSNXT={(opp) => setSelectedOppForDPSNXT(opp)}
             onProceedToConversion={() => {

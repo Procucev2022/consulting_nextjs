@@ -107,7 +107,7 @@ const resolveLatestScopedMetrics = async (
   return null;
 };
 
-const resolveScopedTransactionMetrics = async (
+export const resolveScopedTransactionMetrics = async (
   db: CloudflareD1Database,
   tenantId: string,
   scope: ExecutiveOpportunityBriefScope

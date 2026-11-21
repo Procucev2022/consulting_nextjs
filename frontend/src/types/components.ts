@@ -195,6 +195,7 @@ export interface Module4SavingsEngineProps {
   onUpgrade?: (tier: SubscriptionTier) => void;
   onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
   assessmentId?: string;
+  documentId?: string;
   onDownloadReportPdf?: () => void;
   onDownloadReportPptx?: () => void;
   downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;

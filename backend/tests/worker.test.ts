@@ -2524,6 +2524,24 @@ describe('Cloudflare worker core routes', () => {
       expect(getD1RuntimeMetrics(fixture.d1)).toMatchObject({ cacheHits: 1, cacheMisses: 1 });
     });
 
+    it('returns document-scoped savings opportunities when documentId query or header is provided', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO SavingsOpportunity (opp_id, category, title, est_savings_inr_cr) VALUES (?, ?, ?, ?)', [
+        ['OPP-DOC-1', 'Chemicals', 'Renegotiate chemical contract', 1.5]
+      ]);
+      insertRows(fixture.db, 'INSERT INTO SavingsOpportunityTenantScope (opp_id, tenant_id) VALUES (?, ?)', [
+        ['OPP-DOC-1', 'TNT-1']
+      ]);
+
+      const docData = await dataOf(await send('/api/savings?tenantId=TNT-1&documentId=DOC-TEST'));
+      expect(docData).toBeDefined();
+      expect(Array.isArray(docData.opportunities)).toBe(true);
+
+      const headerDocData = await dataOf(await send('/api/savings?tenantId=TNT-1', { headers: { 'x-document-id': 'DOC-TEST' } }));
+      expect(headerDocData).toBeDefined();
+      expect(Array.isArray(headerDocData.opportunities)).toBe(true);
+    });
+
     it('persists savings opportunity deployment and validates missing or unsupported requests', async () => {
       seedTenant('TNT-1');
       insertRows(fixture.db, 'INSERT INTO SavingsOpportunity (opp_id, category, title, est_savings_inr_cr, recommended_module, push_to_module, status) VALUES (?, ?, ?, ?, ?, ?, ?)', [

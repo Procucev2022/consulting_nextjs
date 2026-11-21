@@ -481,6 +481,9 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
     it('should reject dataset limits above the maximum and blank identifiers', () => {
       expect(d1DatasetScopeSchema.safeParse({ limit: D1_REPORTING.maxDatasetLimit + 1 }).success).toBe(false);
       expect(d1DatasetScopeSchema.safeParse({ assessmentId: '   ' }).success).toBe(false);
+      expect(d1DatasetScopeSchema.safeParse({ documentId: '   ' }).success).toBe(false);
+      const withDoc = d1DatasetScopeSchema.safeParse({ documentId: 'DOC-1' });
+      expect(withDoc.success).toBe(true);
     });
   });
 

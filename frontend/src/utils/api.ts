@@ -224,9 +224,12 @@ export const apiClient = {
   },
 
   // Savings
-  async getSavingsOpportunities(): Promise<SavingsOpportunitiesApiData> {
-    frontendLogger.debug('Fetching savings engine opportunities');
-    const res = await apiFetch(`${API_BASE}/api/savings`);
+  async getSavingsOpportunities(documentId?: string): Promise<SavingsOpportunitiesApiData> {
+    frontendLogger.debug('Fetching savings engine opportunities', { documentId });
+    const query = documentId ? `?documentId=${encodeURIComponent(documentId)}` : '';
+    const headers: Record<string, string> = {};
+    if (documentId) headers['x-document-id'] = documentId;
+    const res = await apiFetch(`${API_BASE}/api/savings${query}`, { headers });
     return readDashboardApiData<SavingsOpportunitiesApiData>(
       res, '/api/savings', UI_STRINGS.databaseData.apiOperations.savings
     );
