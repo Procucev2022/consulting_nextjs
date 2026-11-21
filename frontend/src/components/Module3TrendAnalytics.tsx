@@ -8,11 +8,24 @@ import {
   ArrowRight,
   CheckCircle2
 } from 'lucide-react';
-import type { Module3TrendAnalyticsProps } from '../types';
+import type { Module3ChartViewMode, Module3TrendAnalyticsProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import { apiClient } from '../utils/api';
 import { pcbiBenchmarkResponseSchema, pcbiWeeklyIndexResponseSchema } from '../constants/validation';
-import { MODULE3_HIGH_CREEP_THRESHOLD_PERCENT, MODULE3_PCBI_INDEX_HISTORY_LIMIT, UI_STRINGS } from '../constants';
+import {
+  MODULE3_CHART_VIEW_MODES,
+  MODULE3_HIGH_CREEP_THRESHOLD_PERCENT,
+  MODULE3_PCBI_INDEX_HISTORY_LIMIT,
+  UI_STRINGS
+} from '../constants';
+import {
+  alignWeeklyIndicesToMonths,
+  buildCorrelatedMonthlySeries,
+  calculateModule3SummaryMetrics,
+  deriveVendorRankingsFromValidationRecords,
+  formatMonthRangeLabel,
+  sortMonthsChronologically
+} from '../utils/module3Trend';
 import type { PcbiBenchmarkResponse, PcbiWeeklyIndexResponse } from '../types/validation';
 import frontendLogger from '../utils/logger';
 import {
@@ -45,7 +58,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   theme = 'light',
   currentTier = 'GOLD',
   onUpgrade,
-  assessmentId
+  assessmentId,
+  months,
+  spendCurrency = 'INR',
+  validationRecords
 }) => {
   const [benchmarks, setBenchmarks] = useState<PcbiBenchmarkResponse>([]);
   const [selectedBenchmarkId, setSelectedBenchmarkId] = useState('');
@@ -55,6 +71,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   const [benchmarkLoadError, setBenchmarkLoadError] = useState(false);
   const [indexLoadError, setIndexLoadError] = useState(false);
   const [filterRisk, setFilterRisk] = useState<'ALL' | 'CREEP_ANOMALY' | 'ALIGNED'>('ALL');
+  const [viewMode, setViewMode] = useState<Module3ChartViewMode>(MODULE3_CHART_VIEW_MODES.CORRELATED);
 
   useEffect(() => {
     let isMounted = true;
@@ -117,51 +134,98 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
     return () => { isMounted = false; };
   }, [assessmentId, selectedBenchmarkId]);
 
-  const totalLeakageCr = vendorRankings.reduce(
-    (sum, v) => sum + (v.variance_leakage_inr_cr || 0),
-    0
-  );
-  const highCreepVendors = vendorRankings.filter((v) =>
-    v.risk_status === 'HIGH CREEP' || (v.price_creep_pct ?? 0) > MODULE3_HIGH_CREEP_THRESHOLD_PERCENT
-  );
-  const creepAnomalyCount = vendorRankings.filter((v) =>
-    v.risk_status === 'HIGH CREEP' || v.risk_status === 'REVIEW' ||
-    (v.price_creep_pct ?? 0) > MODULE3_HIGH_CREEP_THRESHOLD_PERCENT
-  ).length;
-  const highCreepCount = highCreepVendors.length;
-  const highCreepLeakageCr = highCreepVendors.reduce(
-    (sum, v) => sum + (v.variance_leakage_inr_cr || 0),
-    0
-  );
-  const avgMarkupPct = vendorRankings.length > 0
-    ? (vendorRankings.reduce((sum, v) => sum + (v.price_creep_pct || 0), 0) / vendorRankings.length).toFixed(1)
-    : null;
+  const effectiveVendorRankings = vendorRankings.length > 0
+    ? vendorRankings
+    : deriveVendorRankingsFromValidationRecords(validationRecords || []);
+
+  const {
+    totalLeakageCr,
+    highCreepCount,
+    highCreepLeakageCr,
+    creepAnomalyCount,
+    avgMarkupPct
+  } = calculateModule3SummaryMetrics(effectiveVendorRankings);
 
   const isDark = theme === 'dark';
+  const sortedMonths = months && months.length > 0 ? sortMonthsChronologically(months) : [];
+  const hasUploadedMonths = sortedMonths.length > 0;
+  const dateRangeLabel = formatMonthRangeLabel(sortedMonths);
 
   const selectedBenchmark = benchmarks.find((benchmark) => benchmark.pcbi_id === selectedBenchmarkId);
-  const firstIndex = weeklyIndices[0]?.index_value;
-  const latestIndex = weeklyIndices[weeklyIndices.length - 1]?.index_value;
+  const alignedWeeklyIndices = alignWeeklyIndicesToMonths(weeklyIndices, sortedMonths);
+
+  const firstIndex = alignedWeeklyIndices[0]?.index_value;
+  const latestIndex = alignedWeeklyIndices[alignedWeeklyIndices.length - 1]?.index_value;
   const indexChange = firstIndex && latestIndex !== undefined
     ? `${latestIndex >= firstIndex ? '+' : ''}${(((latestIndex - firstIndex) / firstIndex) * 100).toFixed(1)}%`
     : UI_STRINGS.module3.noIndexHistory;
 
+  const benchmarkUnit = selectedBenchmark?.benchmark_unit || 'Points';
+  const spendUnit = spendCurrency === 'USD' ? '$ M' : '₹ Cr';
+
+  const chartLabels = hasUploadedMonths
+    ? sortedMonths.map((month) => month.month_label)
+    : alignedWeeklyIndices.map((record) => record.week_start);
+
+  const correlatedMonthlyBenchmark = hasUploadedMonths
+    ? buildCorrelatedMonthlySeries(sortedMonths, alignedWeeklyIndices)
+    : [];
+
+  const spendDatasetData = hasUploadedMonths
+    ? sortedMonths.map((month) =>
+        spendCurrency === 'USD'
+          ? (month.spend_usd_m ?? Number(((month.spend_inr_cr || 0) / 0.838).toFixed(2)))
+          : (month.spend_inr_cr || 0)
+      )
+    : [];
+
+  const benchmarkDatasetData = hasUploadedMonths
+    ? correlatedMonthlyBenchmark
+    : alignedWeeklyIndices.map((record) => record.index_value);
+
+  const datasets = [];
+
+  if (hasUploadedMonths && (viewMode === MODULE3_CHART_VIEW_MODES.CORRELATED || viewMode === MODULE3_CHART_VIEW_MODES.UPLOADED_SPEND)) {
+    datasets.push({
+      label: UI_STRINGS.module3.datasetSpendLabel(spendUnit),
+      data: spendDatasetData,
+      borderColor: '#0284c7',
+      backgroundColor: isDark ? 'rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.08)',
+      borderWidth: 3,
+      pointBackgroundColor: '#0284c7',
+      pointRadius: 4,
+      tension: 0.35,
+      fill: true,
+      yAxisID: 'y'
+    });
+  }
+
+  if (!hasUploadedMonths || viewMode === MODULE3_CHART_VIEW_MODES.CORRELATED || viewMode === MODULE3_CHART_VIEW_MODES.BENCHMARK) {
+    const isCorrelatedDualAxis = hasUploadedMonths && viewMode === MODULE3_CHART_VIEW_MODES.CORRELATED;
+    datasets.push({
+      label: UI_STRINGS.module3.datasetBenchmarkLabel(
+        selectedBenchmark?.benchmark_name || UI_STRINGS.module3.benchmarkLabel,
+        benchmarkUnit
+      ),
+      data: benchmarkDatasetData,
+      borderColor: isCorrelatedDualAxis ? '#d97706' : '#0284c7',
+      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.08)' : 'rgba(217, 119, 6, 0.05)',
+      borderWidth: 2.5,
+      borderDash: isCorrelatedDualAxis ? [5, 5] : undefined,
+      pointBackgroundColor: isCorrelatedDualAxis ? '#d97706' : '#0284c7',
+      pointRadius: isCorrelatedDualAxis ? 3.5 : 4,
+      tension: 0.35,
+      fill: false,
+      yAxisID: isCorrelatedDualAxis ? 'y1' : 'y'
+    });
+  }
+
   const chartData = {
-    labels: weeklyIndices.map((record) => record.week_start),
-    datasets: [
-      {
-        label: selectedBenchmark?.benchmark_name || UI_STRINGS.module3.benchmarkLabel,
-        data: weeklyIndices.map((record) => record.index_value),
-        borderColor: '#0284c7', // Sky-600
-        backgroundColor: isDark ? 'rgba(6, 182, 212, 0.05)' : 'rgba(2, 132, 199, 0.05)',
-        borderWidth: 3,
-        pointBackgroundColor: '#0284c7',
-        pointRadius: 4,
-        tension: 0.35,
-        fill: false
-      }
-    ]
+    labels: chartLabels,
+    datasets
   };
+
+  const isCorrelatedDualAxis = hasUploadedMonths && viewMode === MODULE3_CHART_VIEW_MODES.CORRELATED;
 
   const chartOptions = {
     responsive: true,
@@ -188,7 +252,8 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         bodyColor: '#cbd5e1',
         padding: 10,
         callbacks: {
-          label: (context: any) => ` ${context.dataset.label}: ${context.parsed.y} ${selectedBenchmark?.benchmark_unit || ''}`
+          label: (context: { dataset: { label?: string }; parsed: { y: number | null } }) =>
+            ` ${context.dataset.label || ''}: ${context.parsed.y ?? 0}`
         }
       }
     },
@@ -203,25 +268,51 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         }
       },
       y: {
+        position: 'left' as const,
+        title: {
+          display: true,
+          text: hasUploadedMonths && viewMode !== MODULE3_CHART_VIEW_MODES.BENCHMARK
+            ? UI_STRINGS.module3.spendAxisTitle(spendUnit)
+            : UI_STRINGS.module3.benchmarkAxisTitle(benchmarkUnit),
+          color: isDark ? '#94a3b8' : '#64748b',
+          font: { size: 10, family: 'Plus Jakarta Sans', weight: 'bold' as const }
+        },
         grid: {
           color: isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(148, 163, 184, 0.18)'
         },
         ticks: {
           color: isDark ? '#94a3b8' : '#64748b',
-          font: { size: 10, family: 'JetBrains Mono' },
-          callback: (value: any) => `${value} ${selectedBenchmark?.benchmark_unit || ''}`
+          font: { size: 10, family: 'JetBrains Mono' }
         }
-      }
+      },
+      ...(isCorrelatedDualAxis ? {
+        y1: {
+          position: 'right' as const,
+          title: {
+            display: true,
+            text: UI_STRINGS.module3.benchmarkAxisTitle(benchmarkUnit),
+            color: '#d97706',
+            font: { size: 10, family: 'Plus Jakarta Sans', weight: 'bold' as const }
+          },
+          grid: {
+            drawOnChartArea: false
+          },
+          ticks: {
+            color: '#d97706',
+            font: { size: 10, family: 'JetBrains Mono' }
+          }
+        }
+      } : {})
     }
   };
 
-  const filteredRankings = vendorRankings.filter((v) => {
+  const filteredRankings = effectiveVendorRankings.filter((vendor) => {
     if (filterRisk === 'CREEP_ANOMALY') {
-      return v.risk_status === 'HIGH CREEP' || v.risk_status === 'REVIEW' ||
-        (v.price_creep_pct != null && v.price_creep_pct > MODULE3_HIGH_CREEP_THRESHOLD_PERCENT);
+      return vendor.risk_status === 'HIGH CREEP' || vendor.risk_status === 'REVIEW' ||
+        (vendor.price_creep_pct != null && vendor.price_creep_pct > MODULE3_HIGH_CREEP_THRESHOLD_PERCENT);
     }
     if (filterRisk === 'ALIGNED') {
-      return v.risk_status === 'ALIGNED' || (v.price_creep_pct != null && v.price_creep_pct <= 0);
+      return vendor.risk_status === 'ALIGNED' || (vendor.price_creep_pct != null && vendor.price_creep_pct <= 0);
     }
     return true;
   });
@@ -251,6 +342,11 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
               {UI_STRINGS.module3.valuationBadge}
             </span>
+            {hasUploadedMonths && (
+              <span className="text-xs font-mono font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded border border-sky-300">
+                {UI_STRINGS.module3.uploadedCoverageBadge(dateRangeLabel)}
+              </span>
+            )}
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             {UI_STRINGS.module3.heading}
@@ -292,10 +388,14 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
                 <LineChartIcon className="w-4 h-4 text-rose-600" />
-                <span>{UI_STRINGS.module3.chartHeading}</span>
+                <span>
+                  {hasUploadedMonths ? UI_STRINGS.module3.chartHeadingUploaded : UI_STRINGS.module3.chartHeading}
+                </span>
               </h3>
               <p className="text-xs text-slate-500">
-                {UI_STRINGS.module3.chartSubheading}
+                {hasUploadedMonths
+                  ? UI_STRINGS.module3.chartSubheadingUploaded(dateRangeLabel)
+                  : UI_STRINGS.module3.chartSubheading}
               </p>
             </div>
             <div className="flex items-center space-x-3 text-xs font-mono">
@@ -304,6 +404,45 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
               </span>
             </div>
           </div>
+
+          {/* View mode toggle pills when uploaded file months exist */}
+          {hasUploadedMonths && (
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-lg w-fit">
+              <button
+                type="button"
+                onClick={() => setViewMode(MODULE3_CHART_VIEW_MODES.CORRELATED)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === MODULE3_CHART_VIEW_MODES.CORRELATED
+                    ? 'bg-white text-cyan-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {UI_STRINGS.module3.viewModeCorrelated}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode(MODULE3_CHART_VIEW_MODES.UPLOADED_SPEND)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === MODULE3_CHART_VIEW_MODES.UPLOADED_SPEND
+                    ? 'bg-white text-cyan-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {UI_STRINGS.module3.viewModeUploadedSpend}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode(MODULE3_CHART_VIEW_MODES.BENCHMARK)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === MODULE3_CHART_VIEW_MODES.BENCHMARK
+                    ? 'bg-white text-cyan-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {UI_STRINGS.module3.viewModeBenchmark}
+              </button>
+            </div>
+          )}
 
           {/* Dynamic Chart Container */}
           <div className="h-72 w-full pt-2">
@@ -323,7 +462,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
               <div className="h-full w-full flex items-center justify-center text-xs text-slate-500">
                 {UI_STRINGS.module3.noBenchmarks}
               </div>
-            ) : weeklyIndices.length === 0 ? (
+            ) : alignedWeeklyIndices.length === 0 && !hasUploadedMonths ? (
               <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl text-center p-6 space-y-2">
                 <LineChartIcon className="w-8 h-8 text-slate-400" />
                 <p className="text-xs font-bold text-slate-700">{UI_STRINGS.module3.noIndexHistory}</p>
@@ -350,10 +489,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <div className="text-right sm:pl-4 shrink-0">
               <span className="text-[10px] text-slate-500 font-mono uppercase">{UI_STRINGS.module3.varianceLeakageLabel}</span>
               <p className="text-2xl font-black font-mono text-rose-600 tracking-tight">
-                {vendorRankings.length > 0 ? `₹${totalLeakageCr.toFixed(2)} Cr` : UI_STRINGS.module3.unavailableMetric}
+                {effectiveVendorRankings.length > 0 ? `₹${totalLeakageCr.toFixed(2)} Cr` : UI_STRINGS.module3.unavailableMetric}
               </p>
               <span className="text-[10px] text-slate-400 font-mono">
-                {vendorRankings.length === 0
+                {effectiveVendorRankings.length === 0
                   ? UI_STRINGS.module3.noVendorRankings
                   : totalLeakageCr > 0 ? UI_STRINGS.module3.leakageValueSource : UI_STRINGS.module3.alignedLeakageVal}
               </span>
@@ -388,10 +527,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-xs text-slate-500">{UI_STRINGS.module3.highCreepVendorsLabel}</span>
                 <p className="text-xl font-bold font-mono text-amber-600 mt-0.5">
-                  {vendorRankings.length === 0 ? UI_STRINGS.module3.unavailableMetric : UI_STRINGS.module3.highCreepVendorCount(highCreepCount)}
+                  {effectiveVendorRankings.length === 0 ? UI_STRINGS.module3.unavailableMetric : UI_STRINGS.module3.highCreepVendorCount(highCreepCount)}
                 </p>
                 <span className="text-[10px] text-slate-400">
-                  {vendorRankings.length === 0 ? UI_STRINGS.module3.noVendorRankings : UI_STRINGS.module3.highCreepLeakage(highCreepLeakageCr)}
+                  {effectiveVendorRankings.length === 0 ? UI_STRINGS.module3.noVendorRankings : UI_STRINGS.module3.highCreepLeakage(highCreepLeakageCr)}
                 </span>
               </div>
             </div>
@@ -430,11 +569,11 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                   onClick={() => setFilterRisk('ALL')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     filterRisk === 'ALL'
-                      ? 'bg-white text-white shadow-xs'
+                      ? 'bg-slate-900 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
-                  {UI_STRINGS.module3.filterAllVendors(vendorRankings.length)}
+                  {UI_STRINGS.module3.filterAllVendors(effectiveVendorRankings.length)}
                 </button>
                 <button
                   type="button"
@@ -456,7 +595,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                       : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
-                  {UI_STRINGS.module3.filterAligned(vendorRankings.filter((v) => v.risk_status === 'ALIGNED' || (v.price_creep_pct != null && v.price_creep_pct <= 0)).length)}
+                  {UI_STRINGS.module3.filterAligned(effectiveVendorRankings.filter((v) => v.risk_status === 'ALIGNED' || (v.price_creep_pct != null && v.price_creep_pct <= 0)).length)}
                 </button>
               </div>
             </div>
@@ -508,10 +647,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                             <span
                               className={`font-bold ${
                                 (vendor.price_creep_pct ?? 0) > MODULE3_HIGH_CREEP_THRESHOLD_PERCENT
-                                  ? 'text-rose-600'
-                                  : vendor.price_creep_pct > 0
-                                  ? 'text-amber-600'
-                                  : 'text-emerald-600'
+                                   ? 'text-rose-600'
+                                   : (vendor.price_creep_pct ?? 0) > 0
+                                   ? 'text-amber-600'
+                                   : 'text-emerald-600'
                               }`}
                             >
                               {vendor.price_creep_pct == null

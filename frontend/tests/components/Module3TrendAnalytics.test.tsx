@@ -255,6 +255,83 @@ describe('Module3TrendAnalytics Component', () => {
     fireEvent.click(upgradeBtn);
     expect(onUpgrade).toHaveBeenCalledWith('GOLD');
   });
+
+  it('renders uploaded dataset timeline and toggles chart view modes', async () => {
+    const sampleMonths = [
+      {
+        month_key: '2023-04',
+        month_label: 'Apr 2023',
+        fiscal_year: 'FY24',
+        spend_inr_cr: 12.5,
+        spend_usd_m: 1.5,
+        po_count: 5,
+        top_material_group: 'Direct',
+        top_plant: 'Plant 1'
+      },
+      {
+        month_key: '2025-03',
+        month_label: 'Mar 2025',
+        fiscal_year: 'FY25',
+        spend_inr_cr: 18.2,
+        spend_usd_m: 2.2,
+        po_count: 8,
+        top_material_group: 'Packaging',
+        top_plant: 'Plant 2'
+      }
+    ];
+
+    await renderAndFlushD1(
+      <Module3TrendAnalytics
+        vendorRankings={sampleVendorPriceRanks}
+        months={sampleMonths}
+        spendCurrency="USD"
+        onProceedToSavings={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module3.chartHeadingUploaded)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.uploadedCoverageBadge('Apr 2023 – Mar 2025'))).toBeInTheDocument();
+
+    const correlatedBtn = screen.getByRole('button', { name: UI_STRINGS.module3.viewModeCorrelated });
+    const spendBtn = screen.getByRole('button', { name: UI_STRINGS.module3.viewModeUploadedSpend });
+    const benchmarkBtn = screen.getByRole('button', { name: UI_STRINGS.module3.viewModeBenchmark });
+
+    expect(correlatedBtn).toBeInTheDocument();
+    expect(spendBtn).toBeInTheDocument();
+    expect(benchmarkBtn).toBeInTheDocument();
+
+    fireEvent.click(spendBtn);
+    fireEvent.click(benchmarkBtn);
+    fireEvent.click(correlatedBtn);
+  });
+
+  it('derives vendor rankings from validation records when vendorRankings is empty', async () => {
+    const sampleValidationRecords = [
+      {
+        record_id: 'R-101',
+        po_number: 'PO-1',
+        vendor_name: 'Derived Vendor Inc',
+        raw_desc: 'Packaging Box',
+        core_category: 'Packaging Materials',
+        inr_crores: 15.5,
+        net_price: 100,
+        spend_year: 2024,
+        issue_flag: 'Passed Clean'
+      }
+    ];
+
+    await renderAndFlushD1(
+      <Module3TrendAnalytics
+        vendorRankings={[]}
+        validationRecords={sampleValidationRecords}
+        onProceedToSavings={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Derived Vendor Inc')).toBeInTheDocument();
+    expect(screen.getByText('Packaging')).toBeInTheDocument();
+    expect(screen.getByText('₹15.50 Cr')).toBeInTheDocument();
+  });
 });
 
 

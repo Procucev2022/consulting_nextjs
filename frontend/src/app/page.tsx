@@ -2895,6 +2895,9 @@ export default function Home() {
         {activeTab === 'module3' && (
           <Module3TrendAnalytics
             vendorRankings={vendorRankings}
+            months={uploadedMonths}
+            spendCurrency={currency === 'USD' ? 'USD' : 'INR'}
+            validationRecords={validationRecords}
             assessmentId={activeAssessment?.assessmentId}
             onProceedToSavings={() => {
               userNavigatedRef.current = true;

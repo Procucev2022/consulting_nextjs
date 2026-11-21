@@ -170,6 +170,8 @@ export interface Module2CategorizationProps {
   assessmentId?: string;
 }
 
+export type Module3ChartViewMode = 'CORRELATED' | 'UPLOADED_SPEND' | 'BENCHMARK';
+
 export interface Module3TrendAnalyticsProps {
   vendorRankings: VendorPriceRank[];
   onProceedToSavings: () => void;
@@ -177,6 +179,9 @@ export interface Module3TrendAnalyticsProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   assessmentId?: string;
+  months?: MonthWiseSummary[];
+  spendCurrency?: 'INR' | 'USD';
+  validationRecords?: ValidationPreCheckRecord[];
 }
 
 export interface Module4SavingsEngineProps {
