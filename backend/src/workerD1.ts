@@ -114,27 +114,36 @@ export const getIngestionDataFromD1 = async (
   const validationCursor = page.validationCursor;
   const includeQueue = page.includeQueue ?? true;
   const includeValidationRecords = page.includeValidationRecords ?? true;
+  const userFilter = page.userId ? ' AND user_id = ?' : '';
   const queueSql = page.queueDocumentId
-    ? `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ? AND doc_id = ? LIMIT 1`
+    ? `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ? AND doc_id = ?${userFilter} LIMIT 1`
     : queueCursor
-    ? `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ? AND
+    ? `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ?${userFilter} AND
        (uploaded_at < ? OR (uploaded_at = ? AND doc_id < ?))
        ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?`
-    : `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ?
+    : `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ?${userFilter}
        ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?`;
+  const queueParams = page.queueDocumentId
+    ? (page.userId ? [tenantId, page.queueDocumentId, page.userId] : [tenantId, page.queueDocumentId])
+    : queueCursor
+      ? (page.userId
+        ? [tenantId, page.userId, queueCursor.uploadedAt, queueCursor.uploadedAt, queueCursor.docId, D1_INGESTION_PAGE_QUERY_LIMIT]
+        : [tenantId, queueCursor.uploadedAt, queueCursor.uploadedAt, queueCursor.docId, D1_INGESTION_PAGE_QUERY_LIMIT])
+      : (page.userId
+        ? [tenantId, page.userId, D1_INGESTION_PAGE_QUERY_LIMIT]
+        : [tenantId, D1_INGESTION_PAGE_QUERY_LIMIT]);
   const validationSql = validationCursor
     ? `SELECT * FROM ${D1_TABLES.validation} WHERE tenant_id = ? AND
        (created_at < ? OR (created_at = ? AND record_id < ?))
        ORDER BY created_at DESC, record_id DESC LIMIT ?`
     : `SELECT * FROM ${D1_TABLES.validation}
        WHERE tenant_id = ? ORDER BY created_at DESC, record_id DESC LIMIT ?`;
+  const summaryParams = page.userId
+    ? [tenantId, page.userId, D1_REPORTING.inrPerCrore, D1_REPORTING.inrPerCrore, tenantId]
+    : [tenantId, D1_REPORTING.inrPerCrore, D1_REPORTING.inrPerCrore, tenantId];
   const [queuePage, validationPage, summaryRows] = await Promise.all([
     includeQueue
-      ? queryAll(database, queueSql, page.queueDocumentId
-        ? [tenantId, page.queueDocumentId]
-        : queueCursor
-          ? [tenantId, queueCursor.uploadedAt, queueCursor.uploadedAt, queueCursor.docId, D1_INGESTION_PAGE_QUERY_LIMIT]
-          : [tenantId, D1_INGESTION_PAGE_QUERY_LIMIT])
+      ? queryAll(database, queueSql, queueParams)
       : Promise.resolve([]),
     includeValidationRecords
       ? queryAll(database, validationSql, validationCursor
@@ -144,7 +153,7 @@ export const getIngestionDataFromD1 = async (
     page.includeSummary === false
       ? Promise.resolve([] as D1Record[])
       : queryAll<D1Record>(database, `SELECT
-      (SELECT COUNT(*) FROM ${D1_TABLES.ingestion} WHERE tenant_id = ?) AS total_files,
+      (SELECT COUNT(*) FROM ${D1_TABLES.ingestion} WHERE tenant_id = ?${userFilter}) AS total_files,
       validation.total_records, validation.clean_count, validation.anomalies_count,
       validation.all_resolved_count, validation.pending_actions_count,
       validation.conversion_count, validation.vendor_duplication_count, validation.item_duplication_count,
@@ -163,7 +172,7 @@ export const getIngestionDataFromD1 = async (
             THEN COALESCE(inr_crores, amount_inr / ?, 0) ELSE 0 END), 0) AS pending_spend_cr
         FROM ${D1_TABLES.validation} WHERE tenant_id = ?
       ) AS validation`,
-      [tenantId, D1_REPORTING.inrPerCrore, D1_REPORTING.inrPerCrore, tenantId])
+      summaryParams)
   ]);
   const summary = summaryRows[0] ?? null;
   const hasMoreQueue = !page.queueDocumentId && queuePage.length > D1_INGESTION_PAGE_SIZE;

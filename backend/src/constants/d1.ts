@@ -134,6 +134,8 @@ export const D1_ROUTE_MESSAGES = {
     `Supplier master ${masterId} was not found for this tenant. Refresh the supplier list and choose an existing supplier.`,
   latestRateDateLabel: 'the latest stored date',
   ingestionDocumentIdRequired: 'Delete one ingestion document by including its identifier in the path: DELETE /api/ingestion/document/{documentId}. To remove every document for this tenant, use POST /api/ingestion/reset.',
+  ingestionDocumentUnauthorized: "You are not authorized to delete another user's dataset.",
+  ingestionDocumentNotFound: (docId: string): string => `Ingestion document ${docId} was not found.`,
   ingestionUploadFileTooLarge: 'Uploaded procurement files must be no larger than 10 MiB. Choose a smaller file and retry.',
   ingestionUploadBase64Invalid: 'Uploaded file content is not valid Base64. Choose the original file and retry.',
   missingBinding: 'Cloudflare D1 binding DB is not configured',

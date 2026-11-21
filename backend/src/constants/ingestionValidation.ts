@@ -18,6 +18,7 @@ const INGESTION_BASE64_PATTERN = /^(?:data:[^;]+;base64,)?[A-Za-z0-9+/]*={0,2}$/
 export const addIngestionFileSchema = z.object({
   doc_id: z.string().trim().min(1).max(120).optional(),
   tenant_id: z.string().trim().min(1).max(120).optional(),
+  user_id: z.string().trim().min(1).max(120).optional(),
   file_name: z.string().trim().min(1, 'File name is required').max(255),
   file_type: z.string().trim().min(1, 'File type is required').max(80).optional().default('XLSX'),
   file_size_mb: z.number().finite().positive('File size must be positive').max(100).optional().default(1),
@@ -51,7 +52,9 @@ export const uploadIngestionFileSchema = z.object({
   detectedCurrencies: z.array(z.string().regex(/^[A-Z]{3}$/u)).max(20).optional(),
   parseTransactions: z.boolean().optional(),
   assessment_id: z.string().trim().min(1).max(120).optional(),
-  datasetType: z.string().trim().max(120).optional()
+  datasetType: z.string().trim().max(120).optional(),
+  user_id: z.string().trim().min(1).max(120).optional(),
+  userId: z.string().trim().min(1).max(120).optional()
 }).superRefine((body, context) => {
   const uploadedFileBytes = (body.fileSizeMb ?? 0) * 1024 * 1024;
   if (body.fileBase64 && body.fileSizeMb !== undefined && uploadedFileBytes > INGESTION_UPLOAD_MAX_FILE_BYTES) {
@@ -60,6 +63,8 @@ export const uploadIngestionFileSchema = z.object({
 });
 
 export const ingestionDataQuerySchema = z.object({
+  tenantId: z.string().trim().min(1).max(120).optional(),
+  userId: z.string().trim().min(1).max(120).optional(),
   queueDocumentId: z.string().trim().min(1).max(D1_INGESTION_CURSOR_ID_MAX_LENGTH).optional(),
   queueAfterUploadedAt: z.string().trim().min(1).max(D1_INGESTION_CURSOR_TIMESTAMP_MAX_LENGTH).optional(),
   queueAfterDocId: z.string().trim().min(1).max(D1_INGESTION_CURSOR_ID_MAX_LENGTH).optional(),

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { authApiClient } from '../../utils/authApi';
 import { apiClient } from '../../utils/api';
+import { resolveEffectiveUserId } from '../../utils/ingestionSavedDocuments';
 import frontendLogger from '../../utils/logger';
 import type { UserProfile, TenantMaster, RawDocumentIngestion, IngestionQueuePageCursor } from '../../types';
 import { AICEV_LOGO_SRC, PASSWORD_MINIMUM_LENGTH, UI_STRINGS } from '../../constants';
@@ -176,9 +177,10 @@ export default function ProfilePage(): React.ReactElement {
           return;
         }
 
+        const activeUserId = resolveEffectiveUserId(activeUser);
         const [tenantResult, ingestionResult] = await Promise.allSettled([
           apiClient.getTenant(activeTenantId),
-          apiClient.getIngestionData(activeTenantId)
+          apiClient.getIngestionData(activeTenantId, { userId: activeUserId })
         ]);
 
         if (!isMounted) return;
@@ -198,7 +200,11 @@ export default function ProfilePage(): React.ReactElement {
 
         if (ingestionResult.status === 'fulfilled') {
           const ingRes = ingestionResult.value;
-          if (ingRes.queue) setIngestionQueue(ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId));
+          if (ingRes.queue) {
+            setIngestionQueue(
+              ingRes.queue.filter((doc) => doc.tenant_id === activeTenantId && (!activeUserId || !doc.user_id || doc.user_id === activeUserId))
+            );
+          }
           if (ingRes.pagination?.queue) {
             setQueueCursor(ingRes.pagination.queue.nextCursor);
             setHasMoreIngestionDocuments(ingRes.pagination.queue.hasMore);
@@ -233,10 +239,16 @@ export default function ProfilePage(): React.ReactElement {
     if (!queueCursor || !hasMoreIngestionDocuments || isLoadingMoreIngestionDocuments || !user?.tenant_id) return;
     setIsLoadingMoreIngestionDocuments(true);
     try {
-      const nextPage = await apiClient.getIngestionData(user.tenant_id, { queueCursor });
+      const activeUserId = resolveEffectiveUserId(user);
+      const nextPage = await apiClient.getIngestionData(user.tenant_id, {
+        queueCursor,
+        userId: activeUserId
+      });
       setIngestionQueue((current) => {
         const documentsById = new Map(current.map((document) => [document.doc_id, document]));
-        nextPage.queue.forEach((document) => documentsById.set(document.doc_id, document));
+        nextPage.queue
+          .filter((document) => !activeUserId || !document.user_id || document.user_id === activeUserId)
+          .forEach((document) => documentsById.set(document.doc_id, document));
         return [...documentsById.values()];
       });
       setQueueCursor(nextPage.pagination.queue.nextCursor);
@@ -315,7 +327,8 @@ export default function ProfilePage(): React.ReactElement {
         return;
       }
       const updatedQueue = await apiClient.deleteIngestionDocument(docId, activeTenantId);
-      const buyerDocs = (updatedQueue || []).filter((doc) => doc.tenant_id === activeTenantId);
+      const isBuyer = user?.role !== 'ADMIN';
+      const buyerDocs = (updatedQueue || []).filter((doc) => doc.tenant_id === activeTenantId && (!isBuyer || !doc.user_id || doc.user_id === user?.id));
       setIngestionQueue(buyerDocs);
       setDocActionMessage(UI_STRINGS.profile.documentDeleted);
       setTimeout(() => setDocActionMessage(null), 3000);

@@ -28,6 +28,7 @@ export interface IngestionUploadPayload {
   detectedCurrencies?: string[];
   convertedInrCrores?: number;
   datasetType?: string;
+  user_id?: string;
 }
 
 export interface IngestionUploadData {
@@ -60,6 +61,7 @@ export interface IngestionPageRequest {
   queueCursor?: IngestionQueuePageCursor;
   validationCursor?: ValidationRecordPageCursor;
   queueDocumentId?: string;
+  userId?: string;
 }
 
 export interface IngestionPageMetadata<TCursor> {

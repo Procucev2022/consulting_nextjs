@@ -36,12 +36,17 @@ const getIngestionData = async (
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
   const database = environment.DB as CloudflareD1Database;
+  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const effectiveUserId = isBuyer
+    ? (environment.REQUEST_USER_ID || page?.userId)
+    : (page?.userId || undefined);
   const includeSummary = !page?.queueAfterUploadedAt && !page?.validationAfterCreatedAt;
   const validationCursor = page?.validationAfterCreatedAt && page.validationAfterRecordId
     ? { createdAt: page.validationAfterCreatedAt, recordId: page.validationAfterRecordId }
     : undefined;
   const data = await getIngestionDataFromD1(database, tenantId, {
     queueDocumentId: page?.queueDocumentId,
+    userId: effectiveUserId,
     queueCursor: page?.queueAfterUploadedAt && page.queueAfterDocId
       ? { uploadedAt: page.queueAfterUploadedAt, docId: page.queueAfterDocId }
       : undefined,
@@ -54,6 +59,7 @@ const getIngestionData = async (
   if (page?.queueDocumentId) {
     return {
       data: await enrichSelectedDocumentIngestionResponse(database, tenantId, page.queueDocumentId, data, {
+        userId: effectiveUserId,
         validationCursor,
         includeSummary,
         requestId
@@ -197,14 +203,20 @@ const addIngestion = async (request: Request, environment: CloudflareEnvironment
   const recordsCount = body.records_count;
   const convertedInrCrores = body.converted_inr_crores;
   const detectedCurrencies = JSON.stringify(body.detected_currencies);
+  const userId = environment.REQUEST_USER_ID || (body as { user_id?: string }).user_id || null;
   const result = await database.prepare(`
     INSERT INTO RawDocumentIngestion (
-      doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-    ) VALUES (?, ?, ?, ?, ?, 'Pending', 0, ?, ?, ?)
-  `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
+      doc_id, tenant_id, user_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+    ) VALUES (?, ?, ?, ?, ?, ?, 'Pending', 0, ?, ?, ?)
+  `).bind(docId, tenantId, userId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
   void result;
-  const rows = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
-    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
+  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const queueSql = isBuyer && userId
+    ? 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?'
+    : 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?';
+  const queueParams = isBuyer && userId ? [tenantId, userId, D1_INGESTION_PAGE_QUERY_LIMIT] : [tenantId, D1_INGESTION_PAGE_QUERY_LIMIT];
+  const rows = await database.prepare(queueSql)
+    .bind(...queueParams).all<Record<string, unknown>>();
   const requestIdHeader = request.headers.get('x-request-id');
   return { data: normalizeStoredIngestionRows(rows.results || [], { requestId: requestIdHeader, tenantId }) };
 };
@@ -219,6 +231,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
   const fileName = body.fileName;
   const tenantId = environment.REQUEST_TENANT_ID;
   if (!tenantId) return { data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired }, status: 403 };
+  const userId = environment.REQUEST_USER_ID || body.user_id || body.userId || null;
   const requestId = request.headers.get('x-request-id') || undefined;
   if (body.assessment_id) {
     const assessment = await database.prepare(
@@ -278,9 +291,9 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     const extractionProgress = isSupportedExtraction ? 100 : 0;
     const persistenceStatements: CloudflareD1PreparedStatement[] = [database.prepare(`
       INSERT INTO RawDocumentIngestion (
-        doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies))];
+        doc_id, tenant_id, user_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(docId, tenantId, userId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies))];
 
     if (bytes) {
       persistenceStatements.push(database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -335,8 +348,13 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     validationCount: imported.validationCount
   });
 
-  const queueRows = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
-    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
+  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const queueSql = isBuyer && userId
+    ? 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?'
+    : 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?';
+  const queueParams = isBuyer && userId ? [tenantId, userId, D1_INGESTION_PAGE_QUERY_LIMIT] : [tenantId, D1_INGESTION_PAGE_QUERY_LIMIT];
+  const queueRows = await database.prepare(queueSql)
+    .bind(...queueParams).all<Record<string, unknown>>();
   const ingestionQueue = normalizeStoredIngestionRows(queueRows.results, { requestId, tenantId });
   return { data: {
     docId,
@@ -415,6 +433,24 @@ const deleteIngestion = async (
     });
     return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentIdRequired }, status: 400 };
   }
+  const isBuyer = environment.REQUEST_USER_ROLE !== 'ADMIN';
+  const effectiveUserId = isBuyer ? environment.REQUEST_USER_ID : undefined;
+  const docCheck = await database.prepare('SELECT doc_id, user_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?')
+    .bind(documentId, tenantId).first<{ doc_id: string; user_id?: string | null }>();
+  if (!docCheck) {
+    return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentNotFound(documentId) }, status: 404 };
+  }
+  if (effectiveUserId && docCheck.user_id && docCheck.user_id !== effectiveUserId) {
+    logger.warn('Rejected deletion of ingestion document owned by another user', {
+      action: D1_LOG_ACTIONS.ingestionDelete,
+      requestId,
+      tenantId,
+      documentId,
+      documentUserId: docCheck.user_id,
+      requestingUserId: effectiveUserId
+    });
+    return { data: { success: false, message: D1_ROUTE_MESSAGES.ingestionDocumentUnauthorized }, status: 403 };
+  }
   const documents = await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?')
     .bind(documentId, tenantId).all<{ doc_id: string }>();
   const objects = documents.results.length
@@ -470,8 +506,12 @@ const deleteIngestion = async (
     requestedDocumentId: documentId || undefined,
     tenantId
   });
-  const queue = await database.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?')
-    .bind(tenantId, D1_INGESTION_PAGE_QUERY_LIMIT).all<Record<string, unknown>>();
+  const queueSql = isBuyer && effectiveUserId
+    ? 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?'
+    : 'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?';
+  const queueParams = isBuyer && effectiveUserId ? [tenantId, effectiveUserId, D1_INGESTION_PAGE_QUERY_LIMIT] : [tenantId, D1_INGESTION_PAGE_QUERY_LIMIT];
+  const queue = await database.prepare(queueSql)
+    .bind(...queueParams).all<Record<string, unknown>>();
   return { data: normalizeStoredIngestionRows(queue.results || [], { requestId, tenantId }) };
 };
 

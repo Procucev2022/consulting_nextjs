@@ -22,6 +22,7 @@ export const GRAPHQL_SCHEMA_SDL = `
   type RawDocumentIngestion {
     doc_id: String!
     tenant_id: String!
+    user_id: String
     file_name: String!
     file_type: String!
     file_size_mb: Float!

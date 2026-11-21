@@ -243,6 +243,20 @@ const buildScopedValidationSummary = (
   pendingSpendCr: toCrores(metrics.pendingSpendCr)
 });
 
+const loadEnrichmentAvailableRows = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  options: D1DocumentEnrichmentOptions
+): Promise<D1Record[]> => {
+  const availableSql = options.userId
+    ? D1_INGESTION_ANALYTICS_SQL.availableDocumentsByUser
+    : D1_INGESTION_ANALYTICS_SQL.availableDocuments;
+  const availableParams = options.userId
+    ? [tenantId, options.userId, D1_INGESTION_ANALYTICS_LIMITS.pageLimit]
+    : [tenantId, D1_INGESTION_ANALYTICS_LIMITS.pageLimit];
+  return queryD1Rows(db, availableSql, availableParams, options.requestId);
+};
+
 export const enrichSelectedDocumentIngestionResponse = async (
   db: CloudflareD1Database,
   tenantId: string,
@@ -252,12 +266,7 @@ export const enrichSelectedDocumentIngestionResponse = async (
 ): Promise<Record<string, unknown>> => {
   const shouldLoadAnalytics = options.includeSummary && !options.validationCursor;
   const [availableRows, scopedValidation, documentAnalytics] = await Promise.all([
-    queryD1Rows(
-      db,
-      D1_INGESTION_ANALYTICS_SQL.availableDocuments,
-      [tenantId, D1_INGESTION_ANALYTICS_LIMITS.pageLimit],
-      options.requestId
-    ),
+    loadEnrichmentAvailableRows(db, tenantId, options),
     loadDocumentScopedValidation(db, tenantId, documentId, options),
     shouldLoadAnalytics
       ? loadDocumentTransactionAnalytics(db, tenantId, documentId, options.requestId)

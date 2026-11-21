@@ -50,6 +50,7 @@ export const ingestionApiClient = {
       params.set('validationAfterCreatedAt', page.validationCursor.createdAt);
       params.set('validationAfterRecordId', page.validationCursor.recordId);
     }
+    if (page.userId) params.set('userId', page.userId);
     const query = params.toString() ? `?${params.toString()}` : '';
     const res = await apiFetch(`${API_BASE}/api/ingestion${query}`);
     const json = await res.json();

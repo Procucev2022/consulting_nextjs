@@ -168,6 +168,20 @@ const applyD1CompatibilityMigrations = (executeSqlCommand) => {
       );`);
   }
 
+  const ingestionNeedsUserColumn = tableNames.has('RawDocumentIngestion') &&
+    !hasColumn('RawDocumentIngestion', 'user_id');
+  if (ingestionNeedsUserColumn) {
+    statements.push('ALTER TABLE RawDocumentIngestion ADD COLUMN user_id TEXT;');
+    if (tableNames.has('User')) {
+      statements.push(`UPDATE RawDocumentIngestion
+        SET user_id = (
+          SELECT id FROM User WHERE tenant_id = RawDocumentIngestion.tenant_id AND role = 'USER' ORDER BY created_at ASC LIMIT 1
+        )
+        WHERE user_id IS NULL AND doc_id <> 'DOC-INGEST-BOROSIL-001';`);
+    }
+    migratedTables.add('RawDocumentIngestion');
+  }
+
   const userExists = tableNames.has('User');
   if (userExists && !hasColumn('User', 'email')) {
     throw new Error('Cannot enforce normalized user email uniqueness: User.email is missing.');

@@ -1,11 +1,7 @@
 import type { CloudflareD1Database, CloudflareD1MutationResult } from '../types/cloudflare';
 import { AUTH_MESSAGES, AUTH_ROLES } from '../constants/auth';
 import { D1_TENANT_DATA_CACHE_KEYS } from '../constants/db';
-import {
-  D1_GRAPHQL_CURSOR_VERSION,
-  D1_GRAPHQL_PAGE_OVERFETCH_ROWS,
-  D1_ROUTE_MESSAGES
-} from '../constants/d1';
+import { D1_GRAPHQL_CURSOR_VERSION, D1_GRAPHQL_PAGE_OVERFETCH_ROWS, D1_ROUTE_MESSAGES } from '../constants/d1';
 import { GRAPHQL_ERRORS, GRAPHQL_LOG_MESSAGES } from '../constants/graphql';
 import { graphqlIngestionPageArgsSchema, tenantUpdateSchema } from '../constants/validation';
 import { getD1RuntimeMetrics } from '../services/d1QueryTelemetry';
@@ -15,20 +11,13 @@ import logger from '../utils/logger';
 import { ClientFacingError } from '../utils/apiErrors';
 import { API_ERROR_CODE, API_HTTP_STATUS } from '../constants/errors';
 import {
-  categoryDetailsResolver,
-  categoryResolver,
-  opportunitiesResolver,
-  vendorDetailsResolver,
-  vendorRankingsResolver
+  categoryDetailsResolver, categoryResolver, opportunitiesResolver,
+  vendorDetailsResolver, vendorRankingsResolver
 } from './d1GraphqlDataResolvers';
 import { mergeVendorResolver } from './d1GraphqlVendorResolvers';
 import type {
-  D1GraphQLContext,
-  DeployOpportunityArgs,
-  GraphQLIngestionPageRequest,
-  IngestionInputArgs,
-  UpdateTenantArgs,
-  ValidationRecordArgs
+  D1GraphQLContext, DeployOpportunityArgs, GraphQLIngestionPageRequest,
+  IngestionInputArgs, UpdateTenantArgs, ValidationRecordArgs
 } from '../types/graphql';
 import type { TenantUpdateInput } from '../types/validation';
 
@@ -128,12 +117,15 @@ const tenantResolver: D1Resolver = async (_args, context) => context.tenantId
   : null;
 const ingestionResolver: D1Resolver = async (args, context) => {
   const page = parseIngestionPageRequest(args, context, 'ingestionQueue');
+  const isBuyer = context.role !== 'ADMIN';
+  const userSql = isBuyer && context.userId ? ' AND user_id = ?' : '';
+  const userParams = isBuyer && context.userId ? [context.userId] : [];
   const cursorSql = page.cursor ? ' AND (uploaded_at < ? OR (uploaded_at = ? AND doc_id < ?))' : '';
   const cursorValues = page.cursor ? [page.cursor.timestamp, page.cursor.timestamp, page.cursor.id] : [];
   const rows = await queryAll(context.db,
-    'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ?' + cursorSql +
+    'SELECT * FROM RawDocumentIngestion WHERE tenant_id = ?' + userSql + cursorSql +
       ' ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?',
-    [context.tenantId || '', ...cursorValues, page.first + D1_GRAPHQL_PAGE_OVERFETCH_ROWS]);
+    [context.tenantId || '', ...userParams, ...cursorValues, page.first + D1_GRAPHQL_PAGE_OVERFETCH_ROWS]);
   const hasNextPage = rows.length > page.first;
   const items = rows.slice(0, page.first).map(normalizeIngestion);
   const lastItem = items.at(-1);
@@ -259,11 +251,12 @@ const addIngestionResolver: D1Resolver = async (args, context) => {
   const tenantId = context.tenantId;
   if (!tenantId) throw new Error('D1 request context does not contain a tenant identifier');
   const id = `DOC-${crypto.randomUUID()}`;
+  const userId = context.userId || null;
   await context.db.prepare(
-    'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count) ' +
-    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, user_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
-    id, tenantId, input.file_name, input.file_type, input.file_size_mb, 'Pending', 0, input.records_count || 0
+    id, tenantId, userId, input.file_name, input.file_type, input.file_size_mb, 'Pending', 0, input.records_count || 0
   ).run();
   return queryFirst(context.db, 'SELECT * FROM RawDocumentIngestion WHERE doc_id = ? AND tenant_id = ?', [id, tenantId]);
 };
@@ -293,21 +286,11 @@ const deployOpportunityResolver: D1Resolver = async (args, context) => {
 };
 
 export const createD1GraphqlResolvers = (): Record<string, D1Resolver> => ({
-  tenant: tenantResolver,
-  ingestionQueue: ingestionResolver,
-  validationRecords: validationResolver,
-  categories: categoryResolver,
-  categoryDetails: categoryDetailsResolver,
-  vendorDetails: vendorDetailsResolver,
-  vendorRankings: vendorRankingsResolver,
-  lineItems: lineItemsResolver,
-  opportunities: opportunitiesResolver,
-  funnelStages: funnelResolver,
-  queryMetrics: metricsResolver,
-  dashboardOverview: dashboardResolver,
-  updateTenant: updateTenantResolver,
-  addIngestionItem: addIngestionResolver,
-  updateValidationRecord: updateValidationResolver,
-  mergeVendor: mergeVendorResolver,
+  tenant: tenantResolver, ingestionQueue: ingestionResolver, validationRecords: validationResolver,
+  categories: categoryResolver, categoryDetails: categoryDetailsResolver, vendorDetails: vendorDetailsResolver,
+  vendorRankings: vendorRankingsResolver, lineItems: lineItemsResolver, opportunities: opportunitiesResolver,
+  funnelStages: funnelResolver, queryMetrics: metricsResolver, dashboardOverview: dashboardResolver,
+  updateTenant: updateTenantResolver, addIngestionItem: addIngestionResolver,
+  updateValidationRecord: updateValidationResolver, mergeVendor: mergeVendorResolver,
   deployOpportunity: deployOpportunityResolver
 });

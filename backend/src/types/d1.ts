@@ -130,6 +130,7 @@ export interface D1IngestionPageOptions {
   queueCursor?: D1IngestionQueueCursor;
   validationCursor?: D1ValidationRecordCursor;
   queueDocumentId?: string;
+  userId?: string;
   requestId?: string;
   includeQueue?: boolean;
   includeValidationRecords?: boolean;

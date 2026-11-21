@@ -1085,6 +1085,73 @@ describe('Cloudflare worker core routes', () => {
       await expect(bodyOf(invalidCursor)).resolves.toMatchObject({ success: false, message: D1_ROUTE_MESSAGES.validationFailed });
     });
 
+    it('scopes ingestion queue by user_id for buyers and respects admin scope queries', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-U1', 'TNT-1', 'u1.xlsx', '2026-01-01T00:00:00Z', 'user-1'],
+        ['DOC-U2', 'TNT-1', 'u2.xlsx', '2026-01-02T00:00:00Z', 'user-2']
+      ]);
+
+      const buyerRes = await send(
+        '/api/ingestion?tenantId=TNT-1',
+        { method: 'GET' },
+        environmentWithDb({ REQUEST_USER_ID: 'user-1', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(buyerRes.status).toBe(200);
+      const buyerQueue = ((await bodyOf(buyerRes)).data as { queue: Array<{ doc_id: string }> }).queue;
+      expect(buyerQueue.map((r) => r.doc_id)).toEqual(['DOC-U1']);
+
+      const buyerFallback = await send(
+        '/api/ingestion?tenantId=TNT-1&userId=user-2',
+        { method: 'GET' },
+        environmentWithDb({ REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(buyerFallback.status).toBe(200);
+      const fallbackQueue = ((await bodyOf(buyerFallback)).data as { queue: Array<{ doc_id: string }> }).queue;
+      expect(fallbackQueue.map((r) => r.doc_id)).toEqual(['DOC-U2']);
+
+      const adminScoped = await send(
+        '/api/ingestion?tenantId=TNT-1&userId=user-1',
+        { method: 'GET' },
+        environmentWithDb({ REQUEST_USER_ID: 'admin-1', REQUEST_USER_ROLE: 'ADMIN' })
+      );
+      expect(adminScoped.status).toBe(200);
+      const adminScopedQueue = ((await bodyOf(adminScoped)).data as { queue: Array<{ doc_id: string }> }).queue;
+      expect(adminScopedQueue.map((r) => r.doc_id)).toEqual(['DOC-U1']);
+
+      const adminAll = await send(
+        '/api/ingestion?tenantId=TNT-1',
+        { method: 'GET' },
+        environmentWithDb({ REQUEST_USER_ID: 'admin-1', REQUEST_USER_ROLE: 'ADMIN' })
+      );
+      expect(adminAll.status).toBe(200);
+      const adminAllQueue = ((await bodyOf(adminAll)).data as { queue: Array<{ doc_id: string }> }).queue;
+      expect(adminAllQueue.map((r) => r.doc_id)).toEqual(['DOC-U2', 'DOC-U1']);
+    });
+
+    it('records user_id in addIngestion from request user or body and returns scoped queue', async () => {
+      seedTenant('TNT-1');
+
+      const addAsBuyer = await send(
+        '/api/ingestion',
+        jsonBody('POST', { file_name: 'buyer_file.xlsx', tenant_id: 'TNT-1' }),
+        environmentWithDb({ REQUEST_USER_ID: 'user-buyer', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(addAsBuyer.status).toBe(200);
+      const queue1 = ((await bodyOf(addAsBuyer)).data as Array<{ file_name: string; user_id: string }>);
+      expect(queue1[0].file_name).toBe('buyer_file.xlsx');
+      expect(queue1[0].user_id).toBe('user-buyer');
+
+      const addWithBodyUser = await send(
+        '/api/ingestion',
+        jsonBody('POST', { file_name: 'body_user_file.xlsx', tenant_id: 'TNT-1', user_id: 'user-explicit' }),
+        environmentWithDb({ REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(addWithBodyUser.status).toBe(200);
+      const queue2 = ((await bodyOf(addWithBodyUser)).data as Array<{ file_name: string; user_id: string }>);
+      expect(queue2.some((d) => d.file_name === 'body_user_file.xlsx')).toBe(true);
+    });
+
     it.each([
       ['no file name', {}],
       ['a blank file name', { file_name: '   ' }]
@@ -1687,6 +1754,52 @@ describe('Cloudflare worker core routes', () => {
       const response = await send('/api/ingestion/document/DOC-1?tenantId=TNT-1', { method: 'DELETE' });
 
       expect((((await bodyOf(response)).data) as Array<{ doc_id: string }>).map((row) => row.doc_id)).toEqual(['DOC-2']);
+    });
+
+    it('returns 404 when the document to delete does not exist', async () => {
+      seedTenant('TNT-1');
+      const response = await send('/api/ingestion/document/DOC-DOES-NOT-EXIST?tenantId=TNT-1', { method: 'DELETE' });
+      expect(response.status).toBe(404);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.ingestionDocumentNotFound('DOC-DOES-NOT-EXIST')
+      });
+    });
+
+    it('returns 403 when a buyer attempts to delete another user dataset', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-OTHER', 'TNT-1', 'other.xlsx', '2026-01-01T00:00:00Z', 'user-other']
+      ]);
+
+      const response = await send(
+        '/api/ingestion/document/DOC-OTHER?tenantId=TNT-1',
+        { method: 'DELETE' },
+        environmentWithDb({ REQUEST_USER_ID: 'user-buyer', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(response.status).toBe(403);
+      await expect(bodyOf(response)).resolves.toMatchObject({
+        success: false,
+        message: D1_ROUTE_MESSAGES.ingestionDocumentUnauthorized
+      });
+    });
+
+    it('allows a buyer to delete their own document and returns their user-scoped queue', async () => {
+      seedTenant('TNT-1');
+      insertRows(fixture.db, 'INSERT INTO RawDocumentIngestion (doc_id, tenant_id, file_name, uploaded_at, user_id) VALUES (?, ?, ?, ?, ?)', [
+        ['DOC-MINE-1', 'TNT-1', 'mine1.xlsx', '2026-01-01T00:00:00Z', 'user-buyer'],
+        ['DOC-MINE-2', 'TNT-1', 'mine2.xlsx', '2026-01-02T00:00:00Z', 'user-buyer'],
+        ['DOC-OTHER', 'TNT-1', 'other.xlsx', '2026-01-03T00:00:00Z', 'user-other']
+      ]);
+
+      const response = await send(
+        '/api/ingestion/document/DOC-MINE-1?tenantId=TNT-1',
+        { method: 'DELETE' },
+        environmentWithDb({ REQUEST_USER_ID: 'user-buyer', REQUEST_USER_ROLE: 'USER' })
+      );
+      expect(response.status).toBe(200);
+      const remaining = (((await bodyOf(response)).data) as Array<{ doc_id: string }>).map((row) => row.doc_id);
+      expect(remaining).toEqual(['DOC-MINE-2']);
     });
 
     it('returns the remaining queue with stored currency text parsed into arrays, as the list response does', async () => {

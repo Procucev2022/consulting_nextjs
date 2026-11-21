@@ -189,7 +189,10 @@ describe('ProfilePage coverage', () => {
 
     expect(await screen.findByText(secondDocument.file_name || '')).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module1.showingIngestionDocuments(2, 2))).toBeInTheDocument();
-    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(PROFILE_USER.tenant_id, { queueCursor: cursor });
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(PROFILE_USER.tenant_id, {
+      queueCursor: cursor,
+      userId: PROFILE_USER.id
+    });
     expect(screen.queryByRole('button', { name: UI_STRINGS.module1.loadMoreIngestionDocuments })).not.toBeInTheDocument();
   });
 
@@ -223,10 +226,11 @@ describe('ProfilePage coverage', () => {
 
   it('uses the assigned tenant when the cached profile has no user identifier', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...PROFILE_USER, id: '' });
+    vi.mocked(authApiClient.getMe).mockResolvedValue({ user: { ...PROFILE_USER, id: '' } } as never);
 
     await renderProfile();
 
-    expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id);
+    expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id, { userId: undefined });
     expect(screen.queryByText(DOC_OTHER_BUYER.file_name)).not.toBeInTheDocument();
   });
 
@@ -329,7 +333,9 @@ describe('ProfilePage coverage', () => {
 
     render(<ProfilePage />);
 
-    await waitFor(() => expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id));
+    await waitFor(() =>
+      expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.tenant_id, { userId: PROFILE_USER.id })
+    );
     expect(mockPush).not.toHaveBeenCalledWith('/login');
   });
 

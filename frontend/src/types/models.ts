@@ -17,6 +17,7 @@ export interface TenantMaster {
 export interface RawDocumentIngestion {
   doc_id?: string | null;
   tenant_id?: string;
+  user_id?: string | null;
   file_name?: string | null;
   file_type?: 'PDF' | 'XLSX' | 'CSV' | 'XML' | 'ZIP' | string | null;
   file_size_mb?: number | null;

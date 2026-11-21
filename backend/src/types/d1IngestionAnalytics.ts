@@ -62,6 +62,7 @@ export interface D1DocumentIngestionAnalytics {
 export interface D1DocumentEnrichmentOptions {
   validationCursor?: D1ValidationRecordCursor;
   includeSummary: boolean;
+  userId?: string;
   requestId?: string;
 }
 

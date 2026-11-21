@@ -83,12 +83,12 @@ describe('batched D1 compatibility migrations', () => {
     const database = new DatabaseSync(':memory:');
     try {
       database.exec(`
-        CREATE TABLE RawDocumentIngestion (doc_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL);
+        CREATE TABLE RawDocumentIngestion (doc_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL, user_id TEXT);
         CREATE TABLE ValidationPreCheckRecord (
           record_id TEXT PRIMARY KEY NOT NULL, po_number TEXT NOT NULL, vendor_name TEXT NOT NULL,
           raw_desc TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        INSERT INTO RawDocumentIngestion VALUES ('DOC-A', 'TENANT-A'), ('DOC-B', 'TENANT-B');
+        INSERT INTO RawDocumentIngestion VALUES ('DOC-A', 'TENANT-A', 'usr-1'), ('DOC-B', 'TENANT-B', 'usr-2');
         INSERT INTO ValidationPreCheckRecord (record_id, po_number, vendor_name, raw_desc)
         VALUES ('REC-DOC-A-ROW-2', 'PO-A', 'Alpha', 'A'),
           ('REC-DOC-B-ROW-3', 'PO-B', 'Beta', 'B'), ('REC-ORPHAN-ROW-4', 'PO-X', 'Other', 'X');
@@ -117,6 +117,29 @@ describe('batched D1 compatibility migrations', () => {
         migratedTables: 0
       });
       expect(writeCommands).toHaveLength(1);
+    } finally {
+      database.close();
+    }
+  });
+
+  it('adds user_id to RawDocumentIngestion when missing and backfills from active users', () => {
+    const database = new DatabaseSync(':memory:');
+    try {
+      database.exec(`
+        CREATE TABLE User (id TEXT PRIMARY KEY, email TEXT, tenant_id TEXT, role TEXT, created_at TEXT);
+        CREATE TABLE RawDocumentIngestion (doc_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL);
+        INSERT INTO User VALUES ('usr-buyer', 'buyer@example.test', 'TNT-GLOBAL-8902', 'USER', '2026-01-01');
+        INSERT INTO RawDocumentIngestion VALUES ('DOC-1', 'TNT-GLOBAL-8902');
+      `);
+      const { executeSqlCommand, writeCommands } = createMigrationExecutor(database);
+      const result = applyD1CompatibilityMigrations(executeSqlCommand);
+      expect(result.migratedTables).toBeGreaterThanOrEqual(1);
+      expect(writeCommands.length).toBeGreaterThanOrEqual(1);
+      const pragma = database.prepare("PRAGMA table_info('RawDocumentIngestion')").all() as Array<{ name: string }>;
+      expect(pragma.some((col) => col.name === 'user_id')).toBe(true);
+      expect(database.prepare('SELECT user_id FROM RawDocumentIngestion WHERE doc_id = ?').get('DOC-1')).toEqual({
+        user_id: 'usr-buyer'
+      });
     } finally {
       database.close();
     }

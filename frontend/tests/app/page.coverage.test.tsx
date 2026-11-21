@@ -1678,7 +1678,7 @@ describe('Home page: batch upload pipeline', () => {
     await uploadFile(makeTextFile('spend.csv', 'PO,Vendor\n1,Acme\n2,Beta\n', 'text/csv'));
 
     expect(apiClient.getIngestionData).toHaveBeenCalledTimes(2);
-    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith('TNT-TEST-1');
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith('TNT-TEST-1', { userId: 'USR-TEST-1' });
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([d1Document]);
     expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toHaveLength(1);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(3.25);
@@ -3458,7 +3458,10 @@ describe('Home page: FX and tenant mapping edge cases', () => {
     await renderPage();
 
     await runProp('module1', 'onSelectSavedDocument', doc2);
-    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(BUYER_USER.tenant_id, { queueDocumentId: 'DOC-2' });
+    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith(BUYER_USER.tenant_id, {
+      queueDocumentId: 'DOC-2',
+      userId: BUYER_USER.id
+    });
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([doc2]);
     expect(window.location.search).toContain('documentId=DOC-2');
     expect(screen.getByText(UI_STRINGS.module1.savedDatasetLoaded('Second.xlsx'))).toBeInTheDocument();

@@ -80,6 +80,7 @@ END;
 CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
   doc_id TEXT PRIMARY KEY NOT NULL,
   tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
+  user_id TEXT,
   file_name TEXT NOT NULL,
   file_type TEXT NOT NULL DEFAULT 'XLSX',
   file_size_mb REAL NOT NULL DEFAULT 1.0,
@@ -98,6 +99,7 @@ CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
 CREATE INDEX IF NOT EXISTS idx_raw_doc_tenant ON RawDocumentIngestion(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_raw_doc_uploaded ON RawDocumentIngestion(uploaded_at);
 CREATE INDEX IF NOT EXISTS idx_raw_doc_tenant_uploaded ON RawDocumentIngestion(tenant_id, uploaded_at DESC, doc_id DESC);
+CREATE INDEX IF NOT EXISTS idx_raw_doc_tenant_user ON RawDocumentIngestion(tenant_id, user_id, uploaded_at DESC, doc_id DESC);
 
 CREATE TABLE IF NOT EXISTS ValidationPreCheckRecord (
   record_id TEXT PRIMARY KEY NOT NULL,

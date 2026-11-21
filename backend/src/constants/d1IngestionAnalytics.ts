@@ -23,6 +23,7 @@ export const D1_INGESTION_MONTH_NAMES = [
 
 export const D1_INGESTION_ANALYTICS_SQL = {
   availableDocuments: `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?`,
+  availableDocumentsByUser: `SELECT * FROM ${D1_TABLES.ingestion} WHERE tenant_id = ? AND user_id = ? ORDER BY uploaded_at DESC, doc_id DESC LIMIT ?`,
   documentValidationSummary: `
     SELECT
       COUNT(*) AS totalRecords,

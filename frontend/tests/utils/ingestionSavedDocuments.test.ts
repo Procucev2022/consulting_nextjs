@@ -7,6 +7,7 @@ import {
   orderIngestionDocumentsForSelection,
   readSavedDocumentErrorReason,
   replaceDocumentQueryInHistory,
+  resolveEffectiveUserId,
   resolveSavedDocumentsList,
   sanitizeSavedDocumentsForTenant
 } from '../../src/utils/ingestionSavedDocuments';
@@ -39,6 +40,7 @@ describe('ingestionSavedDocuments utilities', () => {
     expect(isUsableSavedDocument(doc({ doc_id: '  ' }))).toBe(false);
     expect(isUsableSavedDocument(doc({ file_name: '' }))).toBe(false);
     expect(isUsableSavedDocument(doc({ file_type: '' }))).toBe(false);
+    expect(isUsableSavedDocument(doc({ file_type: undefined }))).toBe(true);
   });
 
   it('sanitizes, scopes by tenant, and deduplicates saved document lists', () => {
@@ -134,5 +136,11 @@ describe('ingestionSavedDocuments utilities', () => {
 
     expect(readSavedDocumentErrorReason(new Error('D1 failed'))).toBe('D1 failed');
     expect(readSavedDocumentErrorReason('string failure')).toBe('string failure');
+
+    expect(resolveEffectiveUserId(null)).toBeUndefined();
+    expect(resolveEffectiveUserId(undefined)).toBeUndefined();
+    expect(resolveEffectiveUserId({ role: 'ADMIN', id: 'USR-ADMIN' })).toBeUndefined();
+    expect(resolveEffectiveUserId({ role: 'USER', id: 'USR-BUYER' })).toBe('USR-BUYER');
+    expect(resolveEffectiveUserId({ role: 'USER', id: '' })).toBeUndefined();
   });
 });

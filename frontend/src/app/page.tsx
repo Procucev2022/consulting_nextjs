@@ -103,6 +103,7 @@ import {
   orderIngestionDocumentsForSelection,
   readSavedDocumentErrorReason,
   replaceDocumentQueryInHistory,
+  resolveEffectiveUserId,
   resolveSavedDocumentsList,
   sanitizeSavedDocumentsForTenant
 } from '@/utils/ingestionSavedDocuments';
@@ -649,7 +650,7 @@ export default function Home() {
     isOpen: boolean;
     title?: string;
     subtitle?: string;
-    metrics?: {
+    metrics: {
       totalRecords?: number;
       spendCrores?: number;
       uniqueVendors?: number;
@@ -664,9 +665,11 @@ export default function Home() {
     assignedTenantId?: string,
     targetDocumentId?: string,
     enterpriseNameFallback?: string,
-    warnOnMissingDocument = false
+    warnOnMissingDocument = false,
+    filterUserId?: string
   ): RawDocumentIngestion | undefined => {
-    const selection = orderIngestionDocumentsForSelection(ingestionResponse, assignedTenantId, targetDocumentId);
+    const activeUserId = filterUserId ?? resolveEffectiveUserId(currentUser);
+    const selection = orderIngestionDocumentsForSelection(ingestionResponse, assignedTenantId, targetDocumentId, activeUserId);
     if (targetDocumentId && !selection.requestedDocument && warnOnMissingDocument) {
       setToastMessage(UI_STRINGS.module1.savedDatasetNotFound(targetDocumentId));
     }
@@ -928,6 +931,7 @@ export default function Home() {
         } else {
           const storedUser = hydratedUser;
           const buyerUser = storedUser?.role !== 'ADMIN' ? storedUser : null;
+          const activeUserId = resolveEffectiveUserId(storedUser);
           const canReadTenantData = Boolean(storedUser?.tenant_id);
           if (storedUser && !storedUser.tenant_id) {
             frontendLogger.warn('Tenant dashboard reads skipped because the signed-in user has no assigned tenant', {
@@ -937,13 +941,14 @@ export default function Home() {
             });
           }
           const tenantDataRequest = canReadTenantData
-            ? apiClient.getTenant(buyerUser?.tenant_id || undefined)
+            ? apiClient.getTenant(storedUser?.tenant_id)
             : Promise.resolve(null);
           const ingestionDataRequest = canReadTenantData
-            ? apiClient.getIngestionData(buyerUser?.tenant_id || undefined, {
+            ? apiClient.getIngestionData(storedUser?.tenant_id, {
               queueDocumentId: typeof window !== 'undefined'
                 ? new URLSearchParams(window.location.search).get('documentId') || undefined
-                : undefined
+                : undefined,
+              userId: activeUserId
             })
             : Promise.resolve({ queue: [], validationRecords: [] });
           const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
@@ -1029,10 +1034,11 @@ export default function Home() {
                 total_spend_evaluated: 0
               }));
             } else {
-              const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate
-                .filter((doc: any) => typeof doc.doc_id === 'string' && doc.doc_id.trim().length > 0
-                  && typeof doc.file_name === 'string' && doc.file_name.trim().length > 0)
-                .map((doc: any) => doc as RawDocumentIngestion);
+              const sanitizedQueue = sanitizeSavedDocumentsForTenant(
+                queueToHydrate,
+                storedUser?.tenant_id,
+                activeUserId
+              );
               const requestedDocumentId = typeof window !== 'undefined'
                 ? new URLSearchParams(window.location.search).get('documentId')
                 : null;
@@ -1047,7 +1053,7 @@ export default function Home() {
                 : sanitizedQueue;
               setIngestionQueue(documentsInRequestedOrder.slice(0, 1));
               setSavedIngestionDocuments(
-                resolveSavedDocumentsList(ingestionData.value, buyerUser?.tenant_id || undefined, documentsInRequestedOrder)
+                resolveSavedDocumentsList(ingestionData.value, storedUser?.tenant_id, documentsInRequestedOrder, activeUserId)
               );
               if (hasDocumentAnalytics(ingestionData.value.documentAnalytics)) {
                 const analytics = ingestionData.value.documentAnalytics;
@@ -1593,7 +1599,8 @@ export default function Home() {
       showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
       return;
     }
-    const remainingScoped = sanitizeSavedDocumentsForTenant(remainingDocuments, assignedTenantId);
+    const activeUserId = resolveEffectiveUserId(loggedUser);
+    const remainingScoped = sanitizeSavedDocumentsForTenant(remainingDocuments, assignedTenantId, activeUserId);
     setSavedIngestionDocuments(remainingScoped);
     const deletedActiveDoc = ingestionQueue.some((doc) => doc.doc_id === docId) || ingestionQueue.length === 0;
     if (!deletedActiveDoc) {
@@ -1632,13 +1639,14 @@ export default function Home() {
     const docId = doc.doc_id ? String(doc.doc_id).trim() : '';
     const loggedUser = currentUser || authApiClient.getStoredUser();
     const assignedTenantId = loggedUser?.tenant_id || undefined;
+    const activeUserId = resolveEffectiveUserId(loggedUser);
     if (!docId || !assignedTenantId) {
       if (!assignedTenantId) showToast(UI_STRINGS.auth.tenantAssignmentRequired);
       return;
     }
     setIsLoadingSavedDocument(true);
     try {
-      const ingestionRes = await apiClient.getIngestionData(assignedTenantId, { queueDocumentId: docId });
+      const ingestionRes = await apiClient.getIngestionData(assignedTenantId, { queueDocumentId: docId, userId: activeUserId });
       setCanonicalModule1(null);
       setActiveAssessment(null);
       activeAssessmentIdRef.current = null;
@@ -1653,7 +1661,8 @@ export default function Home() {
         assignedTenantId,
         docId,
         loggedUser?.company_name,
-        true
+        true,
+        activeUserId
       );
       if (selected?.doc_id === docId) {
         replaceDocumentQueryInHistory(docId);
@@ -2362,12 +2371,14 @@ export default function Home() {
         datasetType: _datasetType,
         buyer_id: assignedTenantId,
         tenant_id: assignedTenantId,
+        user_id: loggedUser?.id,
         assessment_id: activeAssessment?.assessmentId
       });
       if (typeof uploadRes?.data?.docId === 'string') {
-        const persistedIngestion = await apiClient.getIngestionData(assignedTenantId);
+        const activeUserId = resolveEffectiveUserId(loggedUser);
+        const persistedIngestion = await apiClient.getIngestionData(assignedTenantId, { userId: activeUserId });
         setIngestionQueue(persistedIngestion.queue);
-        setSavedIngestionDocuments(resolveSavedDocumentsList(persistedIngestion, assignedTenantId));
+        setSavedIngestionDocuments(resolveSavedDocumentsList(persistedIngestion, assignedTenantId, undefined, activeUserId));
         setValidationRecords(persistedIngestion.validationRecords);
         setValidationDataSummary(persistedIngestion.summary);
         setValidationCursor(persistedIngestion.pagination?.validationRecords?.nextCursor ?? null);
@@ -3043,15 +3054,7 @@ export default function Home() {
           mode="overlay"
           title={analyzingLoaderState.title}
           subtitle={analyzingLoaderState.subtitle}
-          metrics={analyzingLoaderState.metrics || {
-            totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
-            spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
-            uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-            categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-            confidenceScore: lineItems.length > 0
-              ? Number((lineItems.reduce((total, item) => total + item.ai_confidence, 0) / lineItems.length).toFixed(1))
-              : undefined
-          }}
+          metrics={analyzingLoaderState.metrics}
           onComplete={analyzingLoaderState.onComplete}
           onCancel={() => setAnalyzingLoaderState(null)}
         />
