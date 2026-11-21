@@ -3,6 +3,7 @@ import {
   EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
 } from '../constants/executiveOpportunityBriefConstants';
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import type {
   CloudflareD1Database,
   ExecutiveOpportunityBriefDataClassification,
@@ -69,6 +70,22 @@ export const queryGroups = async (
   return (result.results ?? []).map(toGroup);
 };
 
+const queryValidationMaterialGroups = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  sourceId: string
+): Promise<ExecutiveOpportunityBriefMaterialGroupRow[]> => {
+  const keyRange = validationRecordKeyRange(sourceId);
+  const valRes = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromValidationDocument)
+    .bind(tenantId, keyRange.lowerBound, keyRange.upperBound, sourceId)
+    .all<ExecutiveOpportunityBriefMaterialGroupRow>();
+  if (valRes.results && valRes.results.length > 0) return valRes.results;
+
+  const tenantValRes = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromTenantValidation)
+    .bind(tenantId).all<ExecutiveOpportunityBriefMaterialGroupRow>();
+  return tenantValRes.results ?? [];
+};
+
 export const queryMaterialGroups = async (
   db: CloudflareD1Database,
   tenantId: string,
@@ -77,7 +94,8 @@ export const queryMaterialGroups = async (
   if (scoped.scopeType === 'DOCUMENT' && scoped.sourceId) {
     const res = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromDocument)
       .bind(tenantId, scoped.sourceId).all<ExecutiveOpportunityBriefMaterialGroupRow>();
-    return res.results ?? [];
+    if (res.results && res.results.length > 0) return res.results;
+    return queryValidationMaterialGroups(db, tenantId, scoped.sourceId);
   }
   if (scoped.scopeType === 'ASSESSMENT' && scoped.sourceId) {
     const res = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromAssessment)

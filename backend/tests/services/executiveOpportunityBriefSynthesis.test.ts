@@ -107,6 +107,50 @@ describe('executiveOpportunityBriefSynthesis', () => {
       row: null, scopeType: 'BASELINE'
     });
     expect(baselineGroups).toEqual([]);
+
+    const valFallbackDb: CloudflareD1Database = {
+      prepare(query: string) {
+        const stmt = {
+          bind: () => stmt,
+          first: async () => null,
+          all: async () => {
+            if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromValidationDocument) {
+              return { results: [{ label: 'Raw Materials', item_count: 8, spend_cr: 45 }] };
+            }
+            return { results: [] };
+          },
+          run: async () => ({})
+        };
+        return stmt;
+      }
+    };
+    const valGroups = await queryMaterialGroups(valFallbackDb, 'T1', {
+      row: null, scopeType: 'DOCUMENT', sourceId: 'DOC-VAL-1'
+    });
+    expect(valGroups.length).toBe(1);
+    expect(valGroups[0].label).toBe('Raw Materials');
+
+    const tenantValFallbackDb: CloudflareD1Database = {
+      prepare(query: string) {
+        const stmt = {
+          bind: () => stmt,
+          first: async () => null,
+          all: async () => {
+            if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromTenantValidation) {
+              return { results: [{ label: 'Logistics', item_count: 4, spend_cr: 22 }] };
+            }
+            return { results: [] };
+          },
+          run: async () => ({})
+        };
+        return stmt;
+      }
+    };
+    const tenantValGroups = await queryMaterialGroups(tenantValFallbackDb, 'T1', {
+      row: null, scopeType: 'DOCUMENT', sourceId: 'DOC-TENANT-1'
+    });
+    expect(tenantValGroups.length).toBe(1);
+    expect(tenantValGroups[0].label).toBe('Logistics');
   });
 
   it('builds synthetic opportunities from material group rows and handles empty group lists', () => {

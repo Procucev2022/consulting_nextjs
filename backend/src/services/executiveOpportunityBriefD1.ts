@@ -2,6 +2,7 @@ import {
   EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL,
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
 } from '../constants/executiveOpportunityBriefConstants';
+import { validationRecordKeyRange } from '../utils/validationRecordKeys';
 import type {
   CloudflareD1Database,
   ExecutiveOpportunityBriefAssessmentRow,
@@ -43,8 +44,10 @@ const queryDocumentTransactions = async (
     .bind(tenantId, documentId).first<ExecutiveOpportunityBriefTransactionMetricsRow>();
   if (toNumber(row?.transaction_count) > 0) return row;
 
+  const keyRange = validationRecordKeyRange(documentId);
   const validation = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.validationDocumentMetrics)
-    .bind(tenantId, documentId).first<ExecutiveOpportunityBriefTransactionMetricsRow>();
+    .bind(tenantId, keyRange.lowerBound, keyRange.upperBound, documentId)
+    .first<ExecutiveOpportunityBriefTransactionMetricsRow>();
   if (toNumber(validation?.transaction_count) > 0) return validation;
 
   return null;
@@ -90,6 +93,16 @@ const resolveLatestScopedMetrics = async (
     if (toNumber(row?.transaction_count) > 0) {
       return { row, scopeType: 'ASSESSMENT', sourceId: fallbackAssessmentId };
     }
+  }
+  const tenantValidation = await db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestTenantValidationMetrics)
+    .bind(tenantId).first<ExecutiveOpportunityBriefTransactionMetricsRow>();
+  if (toNumber(tenantValidation?.transaction_count) > 0) {
+    return {
+      row: tenantValidation,
+      scopeType: 'DOCUMENT',
+      documentName: latestDoc?.file_name,
+      sourceId: latestDoc?.doc_id ?? 'TENANT-VALIDATION'
+    };
   }
   return null;
 };

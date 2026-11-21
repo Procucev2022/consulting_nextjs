@@ -89,7 +89,31 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL = {
     MIN(transaction_date) AS first_transaction_date,
     MAX(transaction_date) AS last_transaction_date
     FROM ValidationPreCheckRecord
-    WHERE tenant_id = ? AND substr(record_id, 1, length('REC-' || ? || '-ROW-')) = 'REC-' || ? || '-ROW-'`,
+    WHERE tenant_id = ? AND ((record_id >= ? AND record_id < ?) OR record_id LIKE '%' || ? || '%')`,
+  materialGroupsFromValidationDocument: `SELECT
+    COALESCE(NULLIF(TRIM(core_category), ''), NULLIF(TRIM(column_l_code), ''), 'Materials') AS label,
+    COUNT(*) AS item_count,
+    COALESCE(SUM(inr_crores), 0) AS spend_cr
+    FROM ValidationPreCheckRecord
+    WHERE tenant_id = ? AND ((record_id >= ? AND record_id < ?) OR record_id LIKE '%' || ? || '%')
+    GROUP BY COALESCE(NULLIF(TRIM(core_category), ''), NULLIF(TRIM(column_l_code), ''), 'Materials')
+    ORDER BY spend_cr DESC LIMIT 8`,
+  latestTenantValidationMetrics: `SELECT COUNT(*) AS transaction_count,
+    COALESCE(SUM(inr_crores), 0) AS total_spend_cr,
+    COUNT(DISTINCT vendor_name) AS supplier_count,
+    COUNT(DISTINCT po_number) AS purchase_order_count,
+    MIN(transaction_date) AS first_transaction_date,
+    MAX(transaction_date) AS last_transaction_date
+    FROM ValidationPreCheckRecord
+    WHERE tenant_id = ?`,
+  materialGroupsFromTenantValidation: `SELECT
+    COALESCE(NULLIF(TRIM(core_category), ''), NULLIF(TRIM(column_l_code), ''), 'Materials') AS label,
+    COUNT(*) AS item_count,
+    COALESCE(SUM(inr_crores), 0) AS spend_cr
+    FROM ValidationPreCheckRecord
+    WHERE tenant_id = ?
+    GROUP BY COALESCE(NULLIF(TRIM(core_category), ''), NULLIF(TRIM(column_l_code), ''), 'Materials')
+    ORDER BY spend_cr DESC LIMIT 8`,
   materialGroupsFromDocument: `SELECT material_group AS label,
     COUNT(*) AS item_count,
     COALESCE(SUM(total_in_cr_raw), 0) AS spend_cr

@@ -2365,12 +2365,18 @@ describe('Home page: executive brief downloads', () => {
       expect(screen.getByText(UI_STRINGS.opportunityBrief.downloadNetworkFailed('PDF'))).toBeInTheDocument();
     });
     const [pdfUrl, pdfInit] = fetchMock.mock.calls[0];
-    expect(pdfUrl).toBe('/api/reports/executive-brief/download/opportunity-brief/pdf');
+    expect(pdfUrl).toContain('/api/reports/executive-brief/download/opportunity-brief/pdf');
+    expect(pdfUrl).toContain('documentId=DOC-PAGE-001');
+    expect(pdfUrl).toContain('client=Enterprise+Client');
     expect(new Headers(pdfInit?.headers).get('Authorization')).toBe('Bearer token-123');
+    expect(new Headers(pdfInit?.headers).get('x-document-id')).toBe('DOC-PAGE-001');
     expect(new Headers(pdfInit?.headers).get('x-request-id')).toMatch(/^[A-Za-z0-9._:-]+$/u);
     const [pptxUrl, pptxInit] = fetchMock.mock.calls[2];
-    expect(pptxUrl).toBe('/api/reports/executive-brief/download/opportunity-brief/pptx');
+    expect(pptxUrl).toContain('/api/reports/executive-brief/download/opportunity-brief/pptx');
+    expect(pptxUrl).toContain('documentId=DOC-PAGE-001');
+    expect(pptxUrl).toContain('client=Enterprise+Client');
     expect(new Headers(pptxInit?.headers).get('Authorization')).toBe('Bearer token-123');
+    expect(new Headers(pptxInit?.headers).get('x-document-id')).toBe('DOC-PAGE-001');
     // Unmount while the URL stubs still exist, so the payload cleanup can revoke the object URL.
     cleanup();
   });

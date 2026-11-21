@@ -24,6 +24,7 @@ describe('executive brief presentation constants', () => {
 
   it('formats document scope, export failure, tenant mismatch, and publish failure messages', () => {
     expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.documentScope('dataset.xlsx')).toContain('dataset.xlsx');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed('req-111')).toContain('req-111');
     expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed('pdf', 'req-456')).toContain('PDF could not be generated');
     expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantMismatch('T-REQ', 'T-ACT')).toContain('T-REQ');
     expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.publishFailed('req-789')).toContain('req-789');

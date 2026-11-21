@@ -69,6 +69,7 @@ import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolve
 import {
   EMPTY_TENANT,
   EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER,
   EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT
 } from '@/constants/app';
 import {
@@ -245,15 +246,34 @@ export default function Home() {
     }
     const validatedFormat = formatValidation.data;
     const endpoint = EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT(validatedFormat);
-    const url = `${getApiBaseUrl()}${endpoint}`;
     const formatLabel = validatedFormat.toUpperCase();
+    const currentDocId = (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('documentId')
+      : null)
+      || ingestionQueue[0]?.doc_id
+      || savedIngestionDocuments[0]?.doc_id
+      || undefined;
+    const currentClient = activeCustomer?.customerName
+      || activeAssessment?.customerName
+      || (tenant.enterprise_name && tenant.enterprise_name !== 'Global Enterprise Procurement'
+        ? tenant.enterprise_name
+        : undefined);
     const assessmentScope = activeAssessment?.assessmentId?.trim();
+
+    const queryParams = new URLSearchParams();
+    if (assessmentScope) queryParams.set('assessmentId', assessmentScope);
+    if (currentDocId) queryParams.set('documentId', currentDocId);
+    if (currentClient) queryParams.set('client', currentClient);
+    const queryString = queryParams.toString();
+    const url = `${getApiBaseUrl()}${endpoint}${queryString ? `?${queryString}` : ''}`;
+
     setDownloadingBriefFormat(validatedFormat);
     try {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = {
         ...(token ? { Authorization: 'Bearer ' + token } : {}),
-        ...(assessmentScope ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: assessmentScope } : {})
+        ...(assessmentScope ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: assessmentScope } : {}),
+        ...(currentDocId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER]: currentDocId } : {})
       };
       const response = await apiFetch(url, { headers });
       if (!response.ok) {

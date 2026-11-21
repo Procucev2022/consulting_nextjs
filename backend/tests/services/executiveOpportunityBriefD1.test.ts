@@ -15,6 +15,7 @@ interface TestDbOptions {
   documentTransaction?: Record<string, unknown> | null;
   validationDocument?: Record<string, unknown> | null;
   latestDoc?: Record<string, unknown> | null;
+  tenantValidation?: Record<string, unknown> | null;
   customerFromAssessment?: Record<string, unknown> | null;
   latestCustomer?: Record<string, unknown> | null;
   materialGroups?: Array<Record<string, unknown>>;
@@ -52,6 +53,9 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.validationDocumentMetrics) {
           return (options.validationDocument ?? null) as T | null;
         }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestTenantValidationMetrics) {
+          return (options.tenantValidation ?? null) as T | null;
+        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestUploadedDocument) {
           return (options.latestDoc ?? null) as T | null;
         }
@@ -70,7 +74,9 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
         if (options.undefinedResults) return { results: undefined as unknown as T[] };
         if (
           query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromDocument ||
-          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromAssessment
+          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromAssessment ||
+          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromValidationDocument ||
+          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromTenantValidation
         ) {
           return { results: (options.materialGroups ?? []) as T[] };
         }
@@ -293,5 +299,22 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope);
+  });
+
+  it('resolves scoped transactions from latestTenantValidationMetrics when no assessment is set', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'PQR Cement Ltd' }],
+      latestDoc: null,
+      latestAssessment: null,
+      tenantValidation: { ...defaultTransaction(), total_spend_cr: '262.64', transaction_count: '19670' },
+      materialGroups: [{ label: 'Packaging', item_count: 5, spend_cr: 50 }]
+    }), 'T1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.tenant.enterpriseName).toBe('PQR Cement Ltd');
+    expect(result.report.metrics.transactionCount).toBe(19670);
+    expect(result.report.metrics.totalSpendCr).toBe(262.64);
+    expect(result.report.dataClassification).toBe('CUSTOMER_DATA');
   });
 });
