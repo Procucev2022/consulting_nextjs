@@ -2,6 +2,7 @@ import {
   EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN,
   EXECUTIVE_BRIEF_HTTP_STATUS,
   EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER,
   EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH,
   EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT,
   EXECUTIVE_OPPORTUNITY_BRIEF_REQUEST_ID_HEADER
@@ -10,6 +11,7 @@ import { UI_STRINGS } from '../constants/uiStrings';
 import { executiveBriefScopeQuerySchema, executiveOpportunityBriefResponseSchema } from '../constants/validation';
 import type {
   ExecutiveBriefDownloadFormat,
+  ExecutiveBriefHrefOptions,
   ExecutiveOpportunityBriefErrorDetails,
   ExecutiveOpportunityBriefErrorFormatOptions,
   ExecutiveOpportunityBriefFetchResult,
@@ -103,18 +105,59 @@ export const formatExecutiveOpportunityBriefError = (
   return formatReportLoadFailure(options.statusCode, requestId, options.serverMessage);
 };
 
-export const resolveExecutiveBriefAssessmentIdFromSearch = (search: string): string | undefined => {
-  const rawAssessmentId = new URLSearchParams(search).get('assessmentId')?.trim();
-  if (!rawAssessmentId) return undefined;
-  const parsed = executiveBriefScopeQuerySchema.safeParse({ assessmentId: rawAssessmentId });
-  return parsed.success ? parsed.data.assessmentId : undefined;
+export const resolveExecutiveBriefScopeFromSearch = (
+  search: string
+): { assessmentId?: string; documentId?: string; client?: string } => {
+  const params = new URLSearchParams(search);
+  const rawAssessmentId = params.get('assessmentId')?.trim() || undefined;
+  const rawDocumentId = params.get('documentId')?.trim() || undefined;
+  const rawClient = params.get('client')?.trim() || undefined;
+  const parsed = executiveBriefScopeQuerySchema.safeParse({
+    assessmentId: rawAssessmentId,
+    documentId: rawDocumentId,
+    client: rawClient
+  });
+  return parsed.success ? parsed.data : {};
 };
 
-export const resolveExecutiveBriefHref = (assessmentId?: string, origin?: string): string => {
-  const parsed = executiveBriefScopeQuerySchema.safeParse({ assessmentId: assessmentId?.trim() || undefined });
+export const resolveExecutiveBriefAssessmentIdFromSearch = (search: string): string | undefined =>
+  resolveExecutiveBriefScopeFromSearch(search).assessmentId;
+
+export const resolveExecutiveBriefDocumentIdFromSearch = (search: string): string | undefined =>
+  resolveExecutiveBriefScopeFromSearch(search).documentId;
+
+const buildExecutiveBriefQueryString = (options: ExecutiveBriefHrefOptions): string => {
+  const client = (options.client || options.clientName)?.trim();
+  const assessmentId = options.assessmentId?.trim();
+  const documentId = options.documentId?.trim();
+
+  const parsed = executiveBriefScopeQuerySchema.safeParse({
+    assessmentId: assessmentId || undefined,
+    documentId: documentId || undefined,
+    client: client || undefined
+  });
+
+  if (!parsed.success) return '';
+
+  const params = new URLSearchParams();
+  if (parsed.data.assessmentId) params.set('assessmentId', parsed.data.assessmentId);
+  if (parsed.data.documentId) params.set('documentId', parsed.data.documentId);
+  if (parsed.data.client) params.set('client', parsed.data.client);
+
+  return params.toString();
+};
+
+export const resolveExecutiveBriefHref = (
+  assessmentIdOrOptions?: string | ExecutiveBriefHrefOptions,
+  origin?: string
+): string => {
+  const options: ExecutiveBriefHrefOptions = typeof assessmentIdOrOptions === 'string'
+    ? { assessmentId: assessmentIdOrOptions }
+    : (assessmentIdOrOptions ?? {});
+
   const basePath = origin ? `${origin}${EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH}` : EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH;
-  const validatedId = parsed.success ? parsed.data.assessmentId : undefined;
-  return validatedId ? `${basePath}?assessmentId=${encodeURIComponent(validatedId)}` : basePath;
+  const query = buildExecutiveBriefQueryString(options);
+  return query ? `${basePath}?${query}` : basePath;
 };
 
 export const resolveExecutiveBriefDownloadFilename = (
@@ -129,27 +172,61 @@ export const resolveExecutiveBriefDownloadFilename = (
 };
 
 export const buildExecutiveOpportunityBriefHeaders = (
-  assessmentId?: string
+  options?: string | ExecutiveOpportunityBriefReportOptions
 ): Record<string, string> => {
   const token = authApiClient.getStoredToken();
+  const opts = typeof options === 'string' ? { assessmentId: options } : (options ?? {});
   const scopeCheck = executiveBriefScopeQuerySchema.safeParse({
-    assessmentId: assessmentId?.trim() || undefined
+    assessmentId: opts.assessmentId?.trim() || undefined,
+    documentId: opts.documentId?.trim() || undefined,
+    client: opts.client?.trim() || undefined
   });
-  const scopedAssessmentId = scopeCheck.success ? scopeCheck.data.assessmentId : undefined;
+  const data = scopeCheck.success ? scopeCheck.data : {};
   return {
     ...(token ? { Authorization: 'Bearer ' + token } : {}),
-    ...(scopedAssessmentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: scopedAssessmentId } : {})
+    ...(data.assessmentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: data.assessmentId } : {}),
+    ...(data.documentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER]: data.documentId } : {})
   };
+};
+
+const buildReportEndpoint = (options?: ExecutiveOpportunityBriefReportOptions): string => {
+  const params = new URLSearchParams();
+  if (options?.assessmentId) params.set('assessmentId', options.assessmentId);
+  if (options?.documentId) params.set('documentId', options.documentId);
+  if (options?.client) params.set('client', options.client);
+  const query = params.toString();
+  return `${getApiBaseUrl()}${EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT}${query ? `?${query}` : ''}`;
+};
+
+const logBriefResponseError = (
+  response: Response,
+  requestId: string | null,
+  details: { serverMessage?: string; reason?: string }
+): void => {
+  const context = {
+    action: 'executive-brief.report.response',
+    method: 'GET',
+    path: EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT,
+    statusCode: response.status,
+    requestId,
+    ...(details.serverMessage ? { serverMessage: details.serverMessage } : {}),
+    ...(details.reason ? { reason: details.reason } : {})
+  };
+  if (response.status >= EXECUTIVE_BRIEF_HTTP_STATUS.SERVER_ERROR_MIN) {
+    frontendLogger.error('Executive opportunity brief endpoint returned a server failure', context);
+  } else {
+    frontendLogger.warn('Executive opportunity brief endpoint returned an unsuccessful response', context);
+  }
 };
 
 export const fetchExecutiveOpportunityBriefReport = async (
   fetcher: typeof fetch = apiFetch,
   options?: ExecutiveOpportunityBriefReportOptions
 ): Promise<ExecutiveOpportunityBriefFetchResult> => {
-  const endpoint = `${getApiBaseUrl()}${EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT}`;
+  const endpoint = buildReportEndpoint(options);
   let response: Response;
   try {
-    const headers = buildExecutiveOpportunityBriefHeaders(options?.assessmentId);
+    const headers = buildExecutiveOpportunityBriefHeaders(options);
     response = await fetcher(endpoint, { headers });
   } catch (error: unknown) {
     frontendLogger.error('Executive opportunity brief request failed before a response was received', {
@@ -163,20 +240,7 @@ export const fetchExecutiveOpportunityBriefReport = async (
   const requestId = response.headers.get(EXECUTIVE_OPPORTUNITY_BRIEF_REQUEST_ID_HEADER);
   if (!response.ok) {
     const errorDetails = await readExecutiveOpportunityBriefErrorDetails(response);
-    const context = {
-      action: 'executive-brief.report.response',
-      method: 'GET',
-      path: EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT,
-      statusCode: response.status,
-      requestId,
-      ...(errorDetails.serverMessage ? { serverMessage: errorDetails.serverMessage } : {}),
-      ...(errorDetails.reason ? { reason: errorDetails.reason } : {})
-    };
-    if (response.status >= EXECUTIVE_BRIEF_HTTP_STATUS.SERVER_ERROR_MIN) {
-      frontendLogger.error('Executive opportunity brief endpoint returned a server failure', context);
-    } else {
-      frontendLogger.warn('Executive opportunity brief endpoint returned an unsuccessful response', context);
-    }
+    logBriefResponseError(response, requestId, errorDetails);
     return failed(response.status, requestId, errorDetails);
   }
   let payload: unknown;

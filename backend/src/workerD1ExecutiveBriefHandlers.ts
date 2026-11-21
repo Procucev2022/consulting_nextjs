@@ -24,7 +24,7 @@ import {
   toValidationIssues
 } from './workerD1ExecutiveBriefResponses';
 import type { ExecutiveBriefDownloadFormat } from './types/executiveBriefRoutes';
-import type { ExecutiveOpportunityBriefRequestLoad } from './types/executiveOpportunityBrief';
+import type { ExecutiveOpportunityBriefRequestLoad, ExecutiveOpportunityBriefScope } from './types/executiveOpportunityBrief';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { authenticateWorkerUser } from './workerAuth';
 import { sendCommercialEmail } from './services/workerCommercialShared';
@@ -52,11 +52,21 @@ const failureForMissingData = (
 const resolveScopeAssessmentId = (
   request: Request,
   requestId: string
-): { ok: true; assessmentId?: string } | { ok: false; response: Response } => {
-  const rawAssessmentId = new URL(request.url).searchParams.get('assessmentId')
+): { ok: true; scope: ExecutiveOpportunityBriefScope } | { ok: false; response: Response } => {
+  const url = new URL(request.url);
+  const rawAssessmentId = url.searchParams.get('assessmentId')
     ?? request.headers.get('x-assessment-id')
     ?? undefined;
-  const parsed = executiveBriefScopeQuerySchema.safeParse({ assessmentId: rawAssessmentId });
+  const rawDocumentId = url.searchParams.get('documentId')
+    ?? request.headers.get('x-document-id')
+    ?? undefined;
+  const rawClient = url.searchParams.get('client') ?? undefined;
+
+  const parsed = executiveBriefScopeQuerySchema.safeParse({
+    assessmentId: rawAssessmentId,
+    documentId: rawDocumentId,
+    client: rawClient
+  });
   if (!parsed.success) {
     logger.warn('Rejected executive brief request with invalid assessment scope parameter', {
       requestId,
@@ -69,7 +79,7 @@ const resolveScopeAssessmentId = (
       response: executiveBriefValidationResponse(request, requestId, toValidationIssues(parsed.error.issues))
     };
   }
-  return { ok: true, assessmentId: parsed.data.assessmentId };
+  return { ok: true, scope: parsed.data };
 };
 
 const loadReport = async (
@@ -121,7 +131,7 @@ const loadReport = async (
       environment.DB,
       environment.REQUEST_TENANT_ID ?? '',
       new Date(),
-      scope.assessmentId
+      scope.scope
     );
     if (!loaded.ok) {
       return { ok: false, response: failureForMissingData(request, requestId, loaded.reason) };

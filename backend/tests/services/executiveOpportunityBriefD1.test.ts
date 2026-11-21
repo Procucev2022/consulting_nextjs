@@ -12,6 +12,12 @@ interface TestDbOptions {
   transaction?: Record<string, unknown> | null;
   latestAssessment?: Record<string, unknown> | null;
   assessmentTransaction?: Record<string, unknown> | null;
+  documentTransaction?: Record<string, unknown> | null;
+  validationDocument?: Record<string, unknown> | null;
+  latestDoc?: Record<string, unknown> | null;
+  customerFromAssessment?: Record<string, unknown> | null;
+  latestCustomer?: Record<string, unknown> | null;
+  materialGroups?: Array<Record<string, unknown>>;
   opportunityMetrics?: Record<string, unknown> | null;
   opportunities?: Array<Record<string, unknown>>;
   groups?: Array<Record<string, unknown>>;
@@ -23,7 +29,10 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
   prepare(query: string) {
     let tenantId: unknown;
     const statement = {
-      bind: (value: unknown) => { tenantId = value; return statement; },
+      bind: (...args: unknown[]) => {
+        tenantId = args[0];
+        return statement;
+      },
       async first<T>(): Promise<T | null> {
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenant) {
           return (options.tenants ?? []).find((tenant) => tenant.tenant_id === tenantId) as T | undefined ?? null;
@@ -37,6 +46,21 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.assessmentTransactionMetrics) {
           return (options.assessmentTransaction ?? null) as T | null;
         }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.documentTransactionMetrics) {
+          return (options.documentTransaction ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.validationDocumentMetrics) {
+          return (options.validationDocument ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestUploadedDocument) {
+          return (options.latestDoc ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.customerFromAssessment) {
+          return (options.customerFromAssessment ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.latestCustomer) {
+          return (options.latestCustomer ?? null) as T | null;
+        }
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenantProvenance) {
           return (options.provenance ?? null) as T | null;
         }
@@ -44,7 +68,15 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
       },
       async all<T>(): Promise<{ results: T[] }> {
         if (options.undefinedResults) return { results: undefined as unknown as T[] };
-        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) return { results: (options.opportunities ?? []) as T[] };
+        if (
+          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromDocument ||
+          query === EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL.materialGroupsFromAssessment
+        ) {
+          return { results: (options.materialGroups ?? []) as T[] };
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) {
+          return { results: (options.opportunities ?? []) as T[] };
+        }
         return { results: (options.groups ?? []) as T[] };
       },
       async run(): Promise<unknown> { return {}; }
@@ -153,5 +185,113 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
     }), 'T1');
     expect(fallback.ok && fallback.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.assessmentScope);
     expect(fallback.ok && fallback.report.metrics.totalSpendCr).toBe(12.5);
+  });
+
+  it('scopes to an uploaded document with material groups and explicit client name', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise Default' }],
+      documentTransaction: { ...defaultTransaction(), total_spend_cr: '262.64', transaction_count: '19670' },
+      materialGroups: [
+        { label: 'Packaging Materials', item_count: 50, spend_cr: 100 },
+        { label: 'Raw Materials', item_count: 30, spend_cr: 162.64 }
+      ]
+    }), 'T1', new Date('2026-11-21T00:00:00.000Z'), {
+      documentId: 'DOC-123',
+      client: 'PQR Cement Ltd'
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.tenant.enterpriseName).toBe('PQR Cement Ltd');
+    expect(result.report.dataClassification).toBe('CUSTOMER_DATA');
+    expect(result.report.metrics.totalSpendCr).toBe(262.64);
+    expect(result.report.metrics.transactionCount).toBe(19670);
+    expect(result.report.opportunities.length).toBe(2);
+    expect(result.report.opportunities[0].category).toBe('Packaging Materials');
+    expect(result.report.opportunities[0].lever).toBe('Rate Harmonization');
+    expect(result.report.levers.length).toBeGreaterThan(0);
+    expect(result.report.scopeDescription).toContain('DOC-123');
+  });
+
+  it('falls back to validationDocumentMetrics when documentTransactionMetrics returns zero', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise Default' }],
+      documentTransaction: { ...defaultTransaction(), transaction_count: '0' },
+      validationDocument: { ...defaultTransaction(), total_spend_cr: '55.5', transaction_count: '450' }
+    }), 'T1', new Date('2026-11-21T00:00:00.000Z'), {
+      documentId: 'DOC-VAL-999'
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.metrics.totalSpendCr).toBe(55.5);
+    expect(result.report.metrics.transactionCount).toBe(450);
+  });
+
+  it('resolves latest uploaded document and latest customer when no scope is provided', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Default Enterprise' }],
+      latestDoc: { doc_id: 'DOC-LATEST-1', file_name: 'Cement2.xlsx', records_count: 100, converted_inr_crores: 50 },
+      documentTransaction: { ...defaultTransaction(), total_spend_cr: '50', transaction_count: '100' },
+      latestCustomer: { customer_name: 'Resolved Cement Ltd' }
+    }), 'T1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.tenant.enterpriseName).toBe('Resolved Cement Ltd');
+    expect(result.report.scopeDescription).toContain('Cement2.xlsx');
+  });
+
+  it('resolves customer from assessment record and builds material group opportunities for assessment scope', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Default Enterprise' }],
+      assessmentTransaction: { ...defaultTransaction(), total_spend_cr: '80', transaction_count: '200' },
+      customerFromAssessment: { customer_name: 'Assessment Client Inc' },
+      materialGroups: [
+        { label: 'Plant Maintenance', item_count: 20, spend_cr: 80 }
+      ]
+    }), 'T1', new Date(), {
+      assessmentId: 'AIC-303'
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.tenant.enterpriseName).toBe('Assessment Client Inc');
+    expect(result.report.opportunities[0].category).toBe('Plant Maintenance');
+  });
+
+  it('handles null document query results and whitespace-only client overrides', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Fallback Enterprise' }],
+      documentTransaction: null,
+      validationDocument: null,
+      transaction: defaultTransaction(),
+      customerFromAssessment: { customer_name: '   ' },
+      latestCustomer: { customer_name: null }
+    }), 'T1', new Date(), {
+      documentId: 'DOC-MISSING',
+      client: '   '
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.tenant.enterpriseName).toBe('Fallback Enterprise');
+    expect(result.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope);
+  });
+
+  it('handles latest uploaded doc returning zero rows and falls back to baseline', async () => {
+    const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Fallback Enterprise' }],
+      latestDoc: { doc_id: 'DOC-ZERO', file_name: 'zero.xlsx', records_count: 0, converted_inr_crores: 0 },
+      documentTransaction: { ...defaultTransaction(), transaction_count: '0' },
+      validationDocument: null,
+      latestAssessment: { assessment_id: 'AIC-EMPTY' },
+      assessmentTransaction: { ...defaultTransaction(), transaction_count: '0' },
+      transaction: defaultTransaction()
+    }), 'T1');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.report.scopeDescription).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope);
   });
 });

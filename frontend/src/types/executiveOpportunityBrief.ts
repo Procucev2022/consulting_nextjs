@@ -7,6 +7,15 @@ export interface ExecutiveOpportunityBriefDownloadPayload {
 
 export interface ExecutiveOpportunityBriefReportOptions {
   readonly assessmentId?: string;
+  readonly documentId?: string;
+  readonly client?: string;
+}
+
+export interface ExecutiveBriefHrefOptions {
+  readonly assessmentId?: string;
+  readonly documentId?: string;
+  readonly client?: string;
+  readonly clientName?: string;
 }
 
 export type ExecutiveOpportunityBriefDownloadState = ExecutiveBriefDownloadFormat | null;

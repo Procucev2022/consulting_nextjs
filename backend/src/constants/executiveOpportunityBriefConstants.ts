@@ -64,7 +64,50 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_SCOPED_SQL = {
     MAX(document_date_raw) AS last_transaction_date
     FROM ProcurementTransaction
     WHERE tenant_id = ? AND assessment_id = ?
-      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')`
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')`,
+  documentTransactionMetrics: `SELECT COUNT(*) AS transaction_count,
+    COALESCE(SUM(total_in_cr_raw), 0) AS total_spend_cr,
+    COUNT(DISTINCT supplier_name) AS supplier_count,
+    COUNT(DISTINCT material_code) AS material_count,
+    COUNT(DISTINCT plant) AS plant_count,
+    COUNT(DISTINCT po_number) AS purchase_order_count,
+    MIN(document_date_raw) AS first_transaction_date,
+    MAX(document_date_raw) AS last_transaction_date
+    FROM ProcurementTransaction
+    WHERE tenant_id = ? AND source_document_id = ?
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')`,
+  latestUploadedDocument: `SELECT doc_id, file_name, records_count, converted_inr_crores
+    FROM RawDocumentIngestion
+    WHERE tenant_id = ?
+    ORDER BY uploaded_at DESC LIMIT 1`,
+  customerFromAssessment: 'SELECT customer_name FROM AssessmentRecord WHERE assessment_id = ? LIMIT 1',
+  latestCustomer: 'SELECT customer_name FROM CustomerRecord WHERE tenant_id = ? ORDER BY updated_at DESC LIMIT 1',
+  validationDocumentMetrics: `SELECT COUNT(*) AS transaction_count,
+    COALESCE(SUM(inr_crores), 0) AS total_spend_cr,
+    COUNT(DISTINCT vendor_name) AS supplier_count,
+    COUNT(DISTINCT po_number) AS purchase_order_count,
+    MIN(transaction_date) AS first_transaction_date,
+    MAX(transaction_date) AS last_transaction_date
+    FROM ValidationPreCheckRecord
+    WHERE tenant_id = ? AND substr(record_id, 1, length('REC-' || ? || '-ROW-')) = 'REC-' || ? || '-ROW-'`,
+  materialGroupsFromDocument: `SELECT material_group AS label,
+    COUNT(*) AS item_count,
+    COALESCE(SUM(total_in_cr_raw), 0) AS spend_cr
+    FROM ProcurementTransaction
+    WHERE tenant_id = ? AND source_document_id = ?
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')
+      AND material_group IS NOT NULL AND material_group != ''
+    GROUP BY material_group
+    ORDER BY spend_cr DESC LIMIT 8`,
+  materialGroupsFromAssessment: `SELECT material_group AS label,
+    COUNT(*) AS item_count,
+    COALESCE(SUM(total_in_cr_raw), 0) AS spend_cr
+    FROM ProcurementTransaction
+    WHERE tenant_id = ? AND assessment_id = ?
+      AND COALESCE(deletion_indicator, '') NOT IN ('X', 'x', '1')
+      AND material_group IS NOT NULL AND material_group != ''
+    GROUP BY material_group
+    ORDER BY spend_cr DESC LIMIT 8`
 } as const;
 
 export const EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT = {
@@ -151,6 +194,8 @@ export const EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES = {
   mixedScope: 'This report contains both demo seed data and customer records. Separate the demo rows before using the figures for decisions.',
   customerScope: 'Baseline transaction rows exclude assessment-specific copies. Opportunities are included only when explicitly linked to this tenant in D1.',
   assessmentScope: 'Assessment-scoped transaction rows from the selected or most recently uploaded procurement dataset in D1.',
+  documentScope: (fileName: string): string =>
+    `This report summarizes validated procurement records from uploaded dataset "${fileName}". Figures reflect audited transactions and defensible value opportunities.`,
   reportFailed: (requestId: string): string =>
     `The Opportunity Brief could not be loaded from D1. Retry after checking the database connection; quote request ID ${requestId} if the problem continues.`,
   exportFailed: (format: string, requestId: string): string =>

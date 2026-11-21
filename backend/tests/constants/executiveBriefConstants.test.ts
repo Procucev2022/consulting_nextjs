@@ -21,4 +21,11 @@ describe('executive brief presentation constants', () => {
   it('formats an actionable email failure with its request correlation id', () => {
     expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed('request-123')).toContain('request ID request-123');
   });
+
+  it('formats document scope, export failure, tenant mismatch, and publish failure messages', () => {
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.documentScope('dataset.xlsx')).toContain('dataset.xlsx');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed('pdf', 'req-456')).toContain('PDF could not be generated');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantMismatch('T-REQ', 'T-ACT')).toContain('T-REQ');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.publishFailed('req-789')).toContain('req-789');
+  });
 });

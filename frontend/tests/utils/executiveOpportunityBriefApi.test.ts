@@ -10,6 +10,7 @@ import {
   formatExecutiveOpportunityBriefError,
   readExecutiveOpportunityBriefErrorDetails,
   resolveExecutiveBriefAssessmentIdFromSearch,
+  resolveExecutiveBriefDocumentIdFromSearch,
   resolveExecutiveBriefDownloadFilename,
   resolveExecutiveBriefHref
 } from '../../src/utils/executiveOpportunityBriefApi';
@@ -170,16 +171,22 @@ describe('fetchExecutiveOpportunityBriefReport', () => {
   it('forwards valid assessment scope headers and resolves brief links and filenames safely', async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
     await fetchExecutiveOpportunityBriefReport(fetcher, { assessmentId: 'AIC-101' });
-    expect(fetcher).toHaveBeenCalledWith(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT, {
+    expect(fetcher).toHaveBeenCalledWith(`${EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT}?assessmentId=AIC-101`, {
       headers: { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: 'AIC-101' }
     });
 
     expect(resolveExecutiveBriefAssessmentIdFromSearch('?assessmentId=AIC-202')).toBe('AIC-202');
     expect(resolveExecutiveBriefAssessmentIdFromSearch('?assessmentId=%20%20')).toBeUndefined();
+    expect(resolveExecutiveBriefDocumentIdFromSearch('?documentId=DOC-777')).toBe('DOC-777');
     expect(resolveExecutiveBriefHref(undefined)).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH);
     expect(resolveExecutiveBriefHref('AIC 1', 'https://app.test')).toBe(
-      `https://app.test${EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH}?assessmentId=AIC%201`
+      `https://app.test${EXECUTIVE_OPPORTUNITY_BRIEF_PAGE_PATH}?assessmentId=AIC+1`
     );
+    expect(resolveExecutiveBriefHref({
+      assessmentId: 'AIC-303',
+      documentId: 'DOC-999',
+      client: 'PQR Cement Ltd'
+    })).toContain('documentId=DOC-999');
     expect(resolveExecutiveBriefDownloadFilename('attachment; filename="Custom.pdf"', 'pdf')).toBe('Custom.pdf');
     expect(resolveExecutiveBriefDownloadFilename('attachment; filename=PlainName.pptx', 'pptx')).toBe('PlainName.pptx');
     expect(resolveExecutiveBriefDownloadFilename(null, 'pdf')).toBe(

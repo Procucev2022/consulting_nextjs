@@ -2696,10 +2696,17 @@ export default function Home() {
         }}
         onOpenReport={() => {
           if (typeof window !== 'undefined') {
-            const target = resolveExecutiveBriefHref(
-              activeAssessment?.assessmentId,
-              window.location.origin || undefined
-            );
+            const currentDocId = new URLSearchParams(window.location.search).get('documentId')
+              || ingestionQueue[0]?.doc_id
+              || savedIngestionDocuments[0]?.doc_id;
+            const currentClient = activeCustomer?.customerName
+              || activeAssessment?.customerName
+              || tenant.enterprise_name;
+            const target = resolveExecutiveBriefHref({
+              assessmentId: activeAssessment?.assessmentId,
+              documentId: currentDocId || undefined,
+              client: currentClient
+            }, window.location.origin || undefined);
             window.location.href = target;
           }
         }}
@@ -2764,6 +2771,10 @@ export default function Home() {
           totalSpendCr={tenant.total_spend_evaluated_inr}
           canonicalViewModel={canonicalModule1}
           activeAssessment={activeAssessment}
+          documentId={(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('documentId') : null) || ingestionQueue[0]?.doc_id || savedIngestionDocuments[0]?.doc_id}
+          clientName={activeCustomer?.customerName
+            || activeAssessment?.customerName
+            || tenant.enterprise_name}
           onDownloadReportPdf={() => {
             void handleBriefDownload('pdf');
           }}
@@ -2945,7 +2956,17 @@ export default function Home() {
             cleanRecordsCount={uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || validationRecords.filter((v) => v.issue_flag === 'Passed Clean').length || 0)}
             onOpenReport={() => {
               if (typeof window !== 'undefined') {
-                window.location.href = resolveExecutiveBriefHref(activeAssessment?.assessmentId);
+                const currentDocId = new URLSearchParams(window.location.search).get('documentId')
+                  || ingestionQueue[0]?.doc_id
+                  || savedIngestionDocuments[0]?.doc_id;
+                const currentClient = activeCustomer?.customerName
+                  || activeAssessment?.customerName
+                  || tenant.enterprise_name;
+                window.location.href = resolveExecutiveBriefHref({
+                  assessmentId: activeAssessment?.assessmentId,
+                  documentId: currentDocId || undefined,
+                  client: currentClient
+                });
               }
             }}
             onDownloadReportPdf={() => {

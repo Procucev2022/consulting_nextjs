@@ -17,6 +17,7 @@ import { ExecutiveOpportunityBriefSlideContent } from './ExecutiveOpportunityBri
 export const ExecutiveOpportunityBriefView: React.FC<ExecutiveOpportunityBriefViewProps> = ({
   clientName,
   assessmentId,
+  documentId,
   onDownloadPdf,
   onDownloadPptx,
   downloadingFormat = null,
@@ -38,7 +39,7 @@ export const ExecutiveOpportunityBriefView: React.FC<ExecutiveOpportunityBriefVi
     setLoadState({ status: 'loading' });
     void fetchExecutiveOpportunityBriefReport(
       undefined,
-      assessmentId ? { assessmentId } : undefined
+      { assessmentId, documentId, client: clientName }
     ).then((result) => {
       if (!isCurrent) return;
       if (result.ok === true) {
@@ -69,7 +70,7 @@ export const ExecutiveOpportunityBriefView: React.FC<ExecutiveOpportunityBriefVi
     return () => {
       isCurrent = false;
     };
-  }, [attempt, assessmentId]);
+  }, [attempt, assessmentId, documentId, clientName]);
 
   if (loadState.status === 'loading') {
     return (

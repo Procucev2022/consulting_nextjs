@@ -79,6 +79,8 @@ export interface PipelineBarProps {
   onLockedTabClick?: (tab: PipelineActiveTab) => void;
   canonicalViewModel?: Module1CanonicalViewModel | null;
   activeAssessment?: AssessmentRecord | null;
+  documentId?: string;
+  clientName?: string;
   onDownloadReportPdf?: () => void;
   onDownloadReportPptx?: () => void;
   downloadingReportFormat?: ExecutiveOpportunityBriefDownloadState;
@@ -636,6 +638,7 @@ export interface ReportDownloadActionsProps {
 export interface ExecutiveOpportunityBriefViewProps {
   readonly clientName?: string;
   readonly assessmentId?: string;
+  readonly documentId?: string;
   readonly onDownloadPdf?: () => void;
   readonly onDownloadPptx?: () => void;
   readonly downloadingFormat?: ExecutiveBriefDownloadFormat | null;

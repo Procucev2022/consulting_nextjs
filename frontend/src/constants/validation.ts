@@ -266,7 +266,9 @@ export const executiveBriefEmailRequestSchema = z.object({
 export const executiveBriefDownloadFormatSchema = z.enum(['pdf', 'pptx']);
 
 export const executiveBriefScopeQuerySchema = z.object({
-  assessmentId: z.string().trim().min(1).max(120).optional()
+  assessmentId: z.string().trim().min(1).max(120).optional(),
+  documentId: z.string().trim().min(1).max(120).optional(),
+  client: z.string().trim().min(1).max(120).optional()
 }).strict();
 
 // Outgoing API Request Validation Schemas (Frontend API Boundary)

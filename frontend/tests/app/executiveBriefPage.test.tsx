@@ -165,8 +165,24 @@ describe('ExecutiveBriefPage', () => {
       render(<ExecutiveBriefPage />);
       fireEvent.click(screen.getByTestId('download-pdf'));
       await waitFor(() => {
-        expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pdf', {
+        expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pdf?assessmentId=AIC-PAGE-1', {
           headers: { 'x-assessment-id': 'AIC-PAGE-1' }
+        });
+      });
+    } finally {
+      window.history.replaceState({}, '', originalSearch || '/executive-brief');
+    }
+  });
+
+  it('forwards documentId and client query parameters on brief downloads', async () => {
+    const originalSearch = window.location.search;
+    window.history.replaceState({}, '', '/executive-brief?documentId=DOC-PAGE-99&client=Cement+Corp');
+    try {
+      render(<ExecutiveBriefPage />);
+      fireEvent.click(screen.getByTestId('download-pdf'));
+      await waitFor(() => {
+        expectApiFetchCall(fetch, '/api/reports/executive-brief/download/opportunity-brief/pdf?documentId=DOC-PAGE-99&client=Cement+Corp', {
+          headers: { 'x-document-id': 'DOC-PAGE-99' }
         });
       });
     } finally {

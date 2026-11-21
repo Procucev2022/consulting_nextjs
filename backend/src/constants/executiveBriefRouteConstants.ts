@@ -71,7 +71,9 @@ export const EXECUTIVE_BRIEF_HEADER_NAMES = {
   CONTENT_DISPOSITION: 'Content-Disposition',
   CONTENT_LENGTH: 'Content-Length',
   CONTENT_TYPE: 'Content-Type',
-  EXPOSE_HEADERS: 'Access-Control-Expose-Headers'
+  EXPOSE_HEADERS: 'Access-Control-Expose-Headers',
+  ASSESSMENT_ID: 'x-assessment-id',
+  DOCUMENT_ID: 'x-document-id'
 } as const;
 export const EXECUTIVE_BRIEF_ATTACHMENT_PREFIX = 'attachment; filename="';
 export const EXECUTIVE_BRIEF_ATTACHMENT_SUFFIX = '"';

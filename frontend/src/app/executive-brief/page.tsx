@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ExecutiveOpportunityBriefView } from '@/components/presentation/ExecutiveOpportunityBriefView';
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER,
+  EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER,
   EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT
 } from '@/constants/app';
 import { UI_STRINGS } from '@/constants/uiStrings';
@@ -14,16 +15,16 @@ import { getApiBaseUrl } from '@/utils/apiBase';
 import {
   formatExecutiveOpportunityBriefError,
   readExecutiveOpportunityBriefErrorDetails,
-  resolveExecutiveBriefAssessmentIdFromSearch,
-  resolveExecutiveBriefDownloadFilename
+  resolveExecutiveBriefDownloadFilename,
+  resolveExecutiveBriefScopeFromSearch
 } from '@/utils/executiveOpportunityBriefApi';
 import { logger as frontendLogger } from '@/utils/logger';
 import { authApiClient } from '@/utils/authApi';
 
 export default function ExecutiveBriefPage(): React.ReactElement {
   const router = useRouter();
-  const [assessmentId] = useState<string | undefined>(() =>
-    typeof window === 'undefined' ? undefined : resolveExecutiveBriefAssessmentIdFromSearch(window.location.search)
+  const [scope] = useState<{ assessmentId?: string; documentId?: string; client?: string }>(() =>
+    typeof window === 'undefined' ? {} : resolveExecutiveBriefScopeFromSearch(window.location.search)
   );
   const [downloadingFormat, setDownloadingFormat] = useState<ExecutiveBriefDownloadFormat | null>(null);
   const [downloadPayload, setDownloadPayload] = useState<ExecutiveOpportunityBriefDownloadPayload | null>(null);
@@ -39,7 +40,12 @@ export default function ExecutiveBriefPage(): React.ReactElement {
 
   const handleDownload = async (format: ExecutiveBriefDownloadFormat): Promise<void> => {
     const endpoint = EXECUTIVE_OPPORTUNITY_BRIEF_DOWNLOAD_ENDPOINT(format);
-    const url = `${getApiBaseUrl()}${endpoint}`;
+    const queryParams = new URLSearchParams();
+    if (scope.assessmentId) queryParams.set('assessmentId', scope.assessmentId);
+    if (scope.documentId) queryParams.set('documentId', scope.documentId);
+    if (scope.client) queryParams.set('client', scope.client);
+    const queryString = queryParams.toString();
+    const url = `${getApiBaseUrl()}${endpoint}${queryString ? `?${queryString}` : ''}`;
     const formatLabel = format.toUpperCase();
     setDownloadError(null);
     setDownloadingFormat(format);
@@ -47,7 +53,8 @@ export default function ExecutiveBriefPage(): React.ReactElement {
       const token = authApiClient.getStoredToken();
       const headers: Record<string, string> = {
         ...(token ? { Authorization: 'Bearer ' + token } : {}),
-        ...(assessmentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: assessmentId } : {})
+        ...(scope.assessmentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_ASSESSMENT_HEADER]: scope.assessmentId } : {}),
+        ...(scope.documentId ? { [EXECUTIVE_OPPORTUNITY_BRIEF_DOCUMENT_HEADER]: scope.documentId } : {})
       };
       const response = await apiFetch(url, { headers });
       if (!response.ok) {
@@ -98,7 +105,9 @@ export default function ExecutiveBriefPage(): React.ReactElement {
           </p>
         )}
         <ExecutiveOpportunityBriefView
-          assessmentId={assessmentId}
+          assessmentId={scope.assessmentId}
+          documentId={scope.documentId}
+          clientName={scope.client}
           downloadingFormat={downloadingFormat}
           onDownloadPdf={() => { void handleDownload('pdf'); }}
           onDownloadPptx={() => { void handleDownload('pptx'); }}

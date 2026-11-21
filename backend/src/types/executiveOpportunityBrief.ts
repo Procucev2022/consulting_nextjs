@@ -104,3 +104,36 @@ export interface ExecutiveOpportunityBriefGroupRow {
 export interface ExecutiveOpportunityBriefAssessmentRow {
   assessment_id: string | null;
 }
+
+export interface ExecutiveOpportunityBriefScope {
+  assessmentId?: string;
+  documentId?: string;
+  client?: string;
+}
+
+export interface ExecutiveOpportunityBriefMaterialGroupRow {
+  label: string | null;
+  item_count: number | string;
+  spend_cr: number | string;
+}
+
+export interface ExecutiveOpportunityBriefOpportunitySynthesis {
+  opportunities: ExecutiveOpportunityBriefOpportunity[];
+  levers: ExecutiveOpportunityBriefMetricGroup[];
+  statuses: ExecutiveOpportunityBriefMetricGroup[];
+  risks: ExecutiveOpportunityBriefMetricGroup[];
+  summary: {
+    opportunity_count: number;
+    estimated_savings_cr: number;
+    average_confidence: number;
+  };
+}
+
+export interface ExecutiveOpportunityBriefScopedTransactionsOutcome {
+  row: ExecutiveOpportunityBriefTransactionMetricsRow | null;
+  scopeType: 'DOCUMENT' | 'ASSESSMENT' | 'BASELINE';
+  documentName?: string;
+  sourceId?: string;
+}
+
+

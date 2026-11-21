@@ -2119,7 +2119,7 @@ describe('Home page: Modules 4 and 5, pipeline navigation', () => {
 
     const fakeLocation = stubLocation();
     await runProp('module5', 'onOpenReport');
-    expect(fakeLocation.href).toBe('/executive-brief');
+    expect(fakeLocation.href).toBe('/executive-brief?documentId=DOC-PAGE-001&client=Enterprise+Client');
   });
 
   it('opens the database schema view from the pipeline', async () => {
@@ -2220,7 +2220,7 @@ describe('Home page: header and shell actions', () => {
 
     await runProp('header', 'onOpenReport');
 
-    expect(fakeLocation.href).toBe('https://brief.example.com/executive-brief');
+    expect(fakeLocation.href).toBe('https://brief.example.com/executive-brief?documentId=DOC-PAGE-001&client=Enterprise+Client');
   });
 
   it('opens a relative report route when the origin is unavailable', async () => {
@@ -2229,7 +2229,7 @@ describe('Home page: header and shell actions', () => {
 
     await runProp('header', 'onOpenReport');
 
-    expect(fakeLocation.href).toBe('/executive-brief');
+    expect(fakeLocation.href).toBe('/executive-brief?documentId=DOC-PAGE-001&client=Enterprise+Client');
   });
 
   it('opens the management brief, shows the empty report state, and closes it', async () => {

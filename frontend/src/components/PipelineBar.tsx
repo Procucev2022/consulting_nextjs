@@ -17,7 +17,7 @@ import { ReportDownloadActions } from './presentation/ReportDownloadActions';
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,
   onSelectTab,
-  tenant: _tenant,
+  tenant,
   opportunities: _opportunities,
   ingestionQueue,
   totalSpendCr: _totalSpendCr,
@@ -29,6 +29,8 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   onLockedTabClick,
   canonicalViewModel,
   activeAssessment,
+  documentId,
+  clientName,
   onDownloadReportPdf,
   onDownloadReportPptx,
   downloadingReportFormat = null
@@ -251,12 +253,20 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
-              href={resolveExecutiveBriefHref(activeAssessment?.assessmentId)}
+              href={resolveExecutiveBriefHref({
+                assessmentId: activeAssessment?.assessmentId,
+                documentId: documentId || ingestionQueue?.[0]?.doc_id,
+                client: clientName || activeAssessment?.customerName || tenant?.enterprise_name
+              })}
               data-testid="pipeline-executive-brief-btn"
               onClick={(e) => {
                 e.preventDefault();
                 if (typeof window !== 'undefined') {
-                  window.location.href = resolveExecutiveBriefHref(activeAssessment?.assessmentId);
+                  window.location.href = resolveExecutiveBriefHref({
+                    assessmentId: activeAssessment?.assessmentId,
+                    documentId: documentId || ingestionQueue?.[0]?.doc_id,
+                    client: clientName || activeAssessment?.customerName || tenant?.enterprise_name
+                  });
                 }
               }}
               className="ent-btn-primary text-[11px] px-3 py-1.5"

@@ -207,7 +207,7 @@ describe('PipelineBar Component', () => {
 
     expect(screen.getByTestId('pipeline-executive-brief-btn')).toHaveAttribute(
       'href',
-      '/executive-brief?assessmentId=AIC-REP-1'
+      '/executive-brief?assessmentId=AIC-REP-1&client=Acme+Corp'
     );
     fireEvent.click(screen.getByTestId('pipeline-download-report-pdf-btn'));
     fireEvent.click(screen.getByTestId('pipeline-download-report-pptx-btn'));
