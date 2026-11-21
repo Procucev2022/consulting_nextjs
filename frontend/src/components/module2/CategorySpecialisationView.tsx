@@ -2,7 +2,10 @@
 import { apiFetch } from '../../utils/apiFetch';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { CategorySpecialisationResult } from '../../types/module2CategorySpecialisation';
+import type {
+  CategorySpecialisationResult,
+  CategorySpecialisationViewProps
+} from '../../types/module2CategorySpecialisation';
 import { CATEGORY_SPECIALISATION_UI_STRINGS } from '../../constants/module2CategorySpecialisation';
 import { CategorySpecialisationOverviewTab } from './CategorySpecialisationOverviewTab';
 import { CategorySpecialisationCategoriesTab } from './CategorySpecialisationCategoriesTab';
@@ -10,13 +13,9 @@ import { CategorySpecialisationOpportunitiesTab } from './CategorySpecialisation
 import { CategorySpecialisationOverlapTab } from './CategorySpecialisationOverlapTab';
 import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
-interface CategorySpecialisationViewProps {
-  assessmentId: string;
-  onBackToOverview?: () => void;
-}
-
 export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProps> = ({
   assessmentId,
+  documentId,
   onBackToOverview
 }) => {
   const [data, setData] = useState<CategorySpecialisationResult | null>(null);
@@ -28,20 +27,32 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
 
   const fetchData = useCallback(async () => {
     const requestId = beginRequest();
+    if (!assessmentId && !documentId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     setData(null);
     try {
+      const params = new URLSearchParams();
+      if (assessmentId) params.set('assessmentId', assessmentId);
+      if (documentId) params.set('documentId', documentId);
       const res = await apiFetch(
-        `/api/module2/sourcing/category-specialisation?assessmentId=${encodeURIComponent(assessmentId)}`
+        `/api/module2/sourcing/category-specialisation?${params.toString()}`
       );
+      if (res.status === 409) {
+        setData(null);
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Failed to fetch Lever 6 Category Specialisation analysis (HTTP ${res.status})`);
       }
       const json = await res.json();
       if (!isCurrentRequest(requestId)) return;
       if (!json.success || !json.data) {
-        throw new Error(json.message || 'Invalid API response payload');
+        throw new Error(json.message || CATEGORY_SPECIALISATION_UI_STRINGS.ERROR_FALLBACK);
       }
       setData(json.data);
     } catch (err: unknown) {
@@ -51,7 +62,7 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
     } finally {
       if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, documentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
     void fetchData();
@@ -66,16 +77,20 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
   if (loading) {
     return (
       <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
-        <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing procurement categories and opportunity heads...</div>
+        <div style={{ fontSize: '14px', fontWeight: 600 }}>{CATEGORY_SPECIALISATION_UI_STRINGS.LOADING_MESSAGE}</div>
       </div>
     );
   }
 
-  if (error || !data) {
+  if (error !== null) {
     return (
       <div style={{ padding: '24px', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px' }}>
-        <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '14px' }}>Unable to load Category Specialisation analysis</div>
-        <p style={{ margin: '8px 0', fontSize: '13px', color: '#b91c1c' }}>{error || 'No data returned.'}</p>
+        <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '14px' }}>
+          {CATEGORY_SPECIALISATION_UI_STRINGS.ERROR_TITLE}
+        </div>
+        <p style={{ margin: '8px 0', fontSize: '13px', color: '#b91c1c' }}>
+          {error || CATEGORY_SPECIALISATION_UI_STRINGS.ERROR_FALLBACK}
+        </p>
         <button
           type="button"
           onClick={fetchData}
@@ -89,8 +104,21 @@ export const CategorySpecialisationView: React.FC<CategorySpecialisationViewProp
             fontSize: '13px'
           }}
         >
-          Retry Analysis
+          {CATEGORY_SPECIALISATION_UI_STRINGS.RETRY_BUTTON}
         </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div style={{ padding: '24px', backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px' }}>
+        <div style={{ fontWeight: 700, color: '#92400e', fontSize: '14px' }}>
+          {CATEGORY_SPECIALISATION_UI_STRINGS.ASSESSMENT_REQUIRED_TITLE}
+        </div>
+        <p style={{ margin: '8px 0', fontSize: '13px', color: '#b45309' }}>
+          {CATEGORY_SPECIALISATION_UI_STRINGS.ASSESSMENT_REQUIRED_MESSAGE}
+        </p>
       </div>
     );
   }

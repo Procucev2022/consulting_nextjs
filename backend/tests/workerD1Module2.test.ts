@@ -251,6 +251,19 @@ describe('workerD1Module2 handler', () => {
       });
       expect((await handleModule2Route(fixture.d1, '/sourcing/category-specialisation', headerRequest,
         new URL(headerRequest.url))).data).toMatchObject({ assessmentId: 'A1' });
+
+      fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, source_document_id, supplier_name, short_text, material_group,
+        order_quantity, order_unit, net_price, currency, total_inr_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'LEVER6-DOC-TX', 'T1', 'DOC-INGEST-L6', 'Supplier Doc', 'Box packaging', 'Packaging', 5, 'KG', 100, 'INR', 500, '{}'
+      );
+      const docRequest = req('/sourcing/category-specialisation?documentId=DOC-INGEST-L6&tenantId=T1');
+      const docData = await handleModule2Route(fixture.d1, '/sourcing/category-specialisation', docRequest,
+        new URL(docRequest.url));
+      expect(docData.data).toMatchObject({
+        assessmentId: 'DOC-INGEST-L6', summary: { tenantId: 'T1', totalProcurementSpendInr: 500 }
+      });
     } finally {
       fixture.close();
     }

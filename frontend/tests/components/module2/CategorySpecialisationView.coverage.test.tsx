@@ -138,4 +138,30 @@ describe('CategorySpecialisationView coverage', () => {
     fireEvent.click(screen.getAllByRole('button')[0]);
     expect(onBackToOverview).toHaveBeenCalledTimes(1);
   });
+
+  it('renders assessment required notice when neither assessmentId nor documentId is provided', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CategorySpecialisationView />);
+
+    expect(await screen.findByText(CATEGORY_SPECIALISATION_UI_STRINGS.ASSESSMENT_REQUIRED_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(CATEGORY_SPECIALISATION_UI_STRINGS.ASSESSMENT_REQUIRED_MESSAGE)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('fetches with documentId when provided and handles HTTP 409 gracefully', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: vi.fn().mockResolvedValue({ success: false, message: 'Scope required' })
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CategorySpecialisationView documentId="DOC-INGEST-L6" />);
+
+    expect(await screen.findByText(CATEGORY_SPECIALISATION_UI_STRINGS.ASSESSMENT_REQUIRED_TITLE)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('documentId=DOC-INGEST-L6'),
+      expect.anything()
+    );
+  });
 });

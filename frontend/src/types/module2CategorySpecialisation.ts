@@ -184,3 +184,9 @@ export interface CategorySpecialisationCalculationOptions {
   verifiedAlternativeSuppliers?: Record<string, { hasVerifiedAlternativeSupplier: boolean; evidence: string }>;
   distinctScopeFromLever2Categories?: Record<string, { hasDistinctScope: boolean; evidence: string }>;
 }
+
+export interface CategorySpecialisationViewProps {
+  assessmentId?: string;
+  documentId?: string;
+  onBackToOverview?: () => void;
+}

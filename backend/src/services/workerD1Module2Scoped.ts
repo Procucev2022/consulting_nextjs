@@ -52,13 +52,24 @@ const loadAnalysis = async (
   db: CloudflareD1Database, scope: ProcurementTransactionScope, refresh: boolean, requestId: string
 ): Promise<ScopedModule2Analysis> => getOrLoadScopedModule2Analysis(db, scope, refresh, requestId, async () => {
     const startedAt = Date.now();
-    const filters = [scope.assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
-    const params: string[] = scope.assessmentId ? [scope.assessmentId] : [];
+    const filters = scope.documentId ? ['(source_document_id = ? OR transaction_id LIKE ?)']
+      : [scope.assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
+    const params: string[] = scope.documentId ? [scope.documentId, `%${scope.documentId}%`]
+      : (scope.assessmentId ? [scope.assessmentId] : []);
     if (scope.tenantId) { filters.push('tenant_id = ?'); params.push(scope.tenantId); }
     filters.push(MODULE2_D1_VALID_TRANSACTION_FILTER);
-    const rows = await queryD1Rows(db,
+    let rows = await queryD1Rows(db,
       `SELECT ${MODULE2_D1_PROJECTION} FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ` +
       'ORDER BY source_row_number ASC', params, requestId);
+    if (rows.length === 0 && scope.documentId) {
+      const vRows = await queryD1Rows<D1Record>(db,
+        'SELECT record_id AS id, po_number, vendor_name, vendor_name AS vendor_code, material_code, ' +
+        'raw_desc AS material_desc, material_group AS spend_category, order_quantity AS quantity, ' +
+        'net_price AS unit_price, amount_inr AS total_spend_inr, raw_currency AS currency ' +
+        `FROM ${D1_TABLES.validation} WHERE tenant_id = ? AND record_id LIKE ? LIMIT 5000`,
+        [scope.tenantId || '', `%${scope.documentId}%`], requestId);
+      if (vRows.length > 0) rows = vRows;
+    }
     const categoryMappingRows = await queryD1Rows(db,
       `SELECT material_group_code, category_name FROM ${D1_TABLES.procurementCategoryMappings}`,
       [], requestId);
@@ -132,12 +143,12 @@ const isCustomerScopedPath = (path: string): boolean =>
   path.startsWith('/procurement-compliance');
 
 const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResult => {
-  const assessmentId = url.searchParams.get('assessmentId') ??
-    request.headers.get('x-assessment-id') ?? undefined;
+  const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined;
+  const documentId = url.searchParams.get('documentId') ?? undefined;
   const tenantId = url.searchParams.get('tenantId') ?? request.headers.get('x-tenant-id') ??
     request.headers.get('x-resolved-tenant-id') ?? undefined;
-  if (assessmentId === undefined && tenantId === undefined) return { kind: 'none' };
-  const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId });
+  if (assessmentId === undefined && tenantId === undefined && documentId === undefined) return { kind: 'none' };
+  const parsed = d1DatasetScopeSchema.safeParse({ assessmentId, tenantId, documentId });
   if (!parsed.success) return { kind: 'invalid', error: { status: 400, data: {
     success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: parsed.error.issues
   } } };
@@ -145,19 +156,14 @@ const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResu
 };
 
 const resolveTrustedDatasetScope = async (
-  db: CloudflareD1Database,
-  request: Request,
-  requestedScope: ProcurementTransactionScope,
-  requestId: string
+  db: CloudflareD1Database, request: Request, requestedScope: ProcurementTransactionScope, requestId: string
 ): Promise<ScopedModule2TrustedScopeResult> => {
   const trustedTenantId = request.headers.get('x-resolved-tenant-id');
   if (!trustedTenantId) return { error: { status: 403, data: {
     success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired
   } } };
   if (requestedScope.tenantId && requestedScope.tenantId !== trustedTenantId) {
-    return { error: { status: 403, data: {
-      success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch
-    } } };
+    return { error: { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeMismatch } } };
   }
   const scope = { ...requestedScope, tenantId: trustedTenantId };
   if (scope.assessmentId) {
@@ -169,7 +175,7 @@ const resolveTrustedDatasetScope = async (
     } } };
     return { scope, customerName: String(rows[0].customer_name || scope.assessmentId) };
   }
-  return { scope, customerName: '' };
+  return { scope, customerName: scope.documentId || '' };
 };
 
 const isHandledByScopedProjection = (path: string): boolean =>
@@ -227,36 +233,33 @@ const canonicalAnalysisDetails = (
   return null;
 };
 
-const analysisDetails = (
-  result: ScopedModule2Analysis, path: string, assessmentId = '', eauctionOptions: EAuctionBuildOptions = {},
-  directPriceOptions: DirectPriceD1BuildOptions = {}, customerName = assessmentId, tenantId?: string
-): WorkerD1Result => {
+const buildSpecialisedRoute = (
+  result: ScopedModule2Analysis, path: string, assessmentId = '', customerName = assessmentId,
+  tenantId?: string, documentId?: string
+): WorkerD1Result | null => {
+  const scopeId = assessmentId || documentId || '';
   if (path === '/specification-rationalisation') return { data: buildSpecificationRationalisationFromD1({
-    assessmentId,
-    tenantId: tenantId || '',
-    customerName,
-    transactions: result.transactions
+    assessmentId: scopeId, tenantId: tenantId || '', customerName, transactions: result.transactions
   }) };
   if (path === '/category-specialisation') return { data: buildCategorySpecialisationFromD1({
-    assessmentId,
-    tenantId: tenantId || '',
-    customerName,
-    scopedAnalysis: result
+    assessmentId: scopeId, tenantId: tenantId || '', customerName: customerName || scopeId, scopedAnalysis: result
   }) };
-  const leverDetails = analysisLeverDetails(
-    result, path, assessmentId, eauctionOptions, directPriceOptions, customerName
-  );
-  if (leverDetails) return leverDetails;
-  if (path === '/export') {
-    return { data: { success: true, dossier: buildModule2D1AuditDossier(
-      assessmentId, tenantId, result
-    ) } };
-  }
-  const categoryResult = categoryDetails(result, path);
-  if (categoryResult) return categoryResult;
-  const analysisResult = canonicalAnalysisDetails(result, path, assessmentId, customerName);
-  if (analysisResult) return analysisResult;
-  return { status: 404, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unknownRoute } };
+  if (path === '/export') return { data: { success: true, dossier: buildModule2D1AuditDossier(assessmentId, tenantId, result) } };
+  return null;
+};
+
+const analysisDetails = (
+  result: ScopedModule2Analysis, path: string, assessmentId = '', eauctionOptions: EAuctionBuildOptions = {},
+  directPriceOptions: DirectPriceD1BuildOptions = {}, customerName = assessmentId, tenantId?: string,
+  documentId?: string
+): WorkerD1Result => {
+  const specialised = buildSpecialisedRoute(result, path, assessmentId, customerName, tenantId, documentId);
+  if (specialised) return specialised;
+  const lever = analysisLeverDetails(result, path, assessmentId, eauctionOptions, directPriceOptions, customerName);
+  if (lever) return lever;
+  return categoryDetails(result, path)
+    ?? canonicalAnalysisDetails(result, path, assessmentId, customerName)
+    ?? { status: 404, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unknownRoute } };
 };
 
 export const handleScopedModule2Route = async (
@@ -265,7 +268,6 @@ export const handleScopedModule2Route = async (
   const scopeResult = requestDatasetScope(request, url);
   if (scopeResult.kind === 'none') return null;
   if (scopeResult.kind === 'invalid') return scopeResult.error;
-  // These routes already have their own scoped row projection in the main handler.
   if (isHandledByScopedProjection(path)) return null;
   const filterOptions = validateScopedModule2Filters(path, url);
   if (filterOptions.error) return filterOptions.error;
@@ -278,14 +280,12 @@ export const handleScopedModule2Route = async (
     loadCustomerName: (_db, customerScope, customerPath) =>
       loadCustomerName(customerScope, customerPath, resolvedCustomerName)
   };
-  const specialRoute = await handleScopedSpecialRoute(
-    db, path, scope, url, requestId, filterOptions, loaders
-  );
+  const specialRoute = await handleScopedSpecialRoute(db, path, scope, url, requestId, filterOptions, loaders);
   if (specialRoute) return specialRoute;
   const result = await loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const customerName = await loadCustomerName(scope, path, resolvedCustomerName);
   return analysisCollections(result, path) ?? analysisDetails(
     result, path, scope.assessmentId, filterOptions.eauctionOptions,
-    filterOptions.directPriceOptions, customerName, scope.tenantId
+    filterOptions.directPriceOptions, customerName, scope.tenantId, scope.documentId
   );
 };

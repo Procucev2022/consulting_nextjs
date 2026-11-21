@@ -80,7 +80,7 @@ const readOpportunityHandoff = (
     throw new Error(message);
   }
   if (typeof payload.data !== 'object' || payload.data === null ||
-      (payload.data as { opp_id?: unknown }).opp_id !== opportunityId) {
+    (payload.data as { opp_id?: unknown }).opp_id !== opportunityId) {
     throw new Error(UI_STRINGS.databaseData.invalidOpportunityHandoff);
   }
   return payload.data as SavingsOpportunity;

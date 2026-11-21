@@ -55,8 +55,9 @@ export const handleModule2ReportRoute = async (
     } }) };
   }
   if (normalized.startsWith('/category-specialisation')) {
-    const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id');
-    if (!assessmentId) return { status: 409, data: {
+    const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined;
+    const documentId = url.searchParams.get('documentId') ?? undefined;
+    if (!assessmentId && !documentId) return { status: 409, data: {
       success: false, message: MODULE2_D1_SCOPED_MESSAGES.scopeRequired
     } };
     if (normalized !== '/category-specialisation' && normalized !== '/category-specialisation/export-excel') {
@@ -67,8 +68,9 @@ export const handleModule2ReportRoute = async (
     if (report.status && report.status >= 400) return report;
     if (normalized === '/category-specialisation') return report;
     const workbook = buildCategorySpecialisationWorkbook(report.data as CategorySpecialisationResult);
+    const exportId = assessmentId || documentId || 'Category_Specialisation';
     const filename = `${MODULE2_D1_CATEGORY_SPECIALISATION.EXPORT.FILENAME_PREFIX}` +
-      `${assessmentId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
+      `${exportId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
     return { data: null, response: new Response(workbook, { status: 200, headers: {
       'Content-Type': MODULE2_D1_CATEGORY_SPECIALISATION.EXPORT.MIME_TYPE,
       'Content-Disposition': `attachment; filename="${filename}"`

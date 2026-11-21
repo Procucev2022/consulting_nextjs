@@ -86,7 +86,7 @@ export const handleScopedSpecialRoute = async (
   filterOptions: ScopedModule2FilterOptions,
   loaders: ScopedModule2RouteLoaders
 ): Promise<WorkerD1Result | null> => {
-  if (path.startsWith('/category-specialisation') && !scope.assessmentId) return scopeRequired();
+  if (path.startsWith('/category-specialisation') && !scope.assessmentId && !scope.documentId) return scopeRequired();
   if (path.startsWith('/procurement-compliance')) return handleProcurementComplianceRoute(
     db, scope, path, url, requestId, loaders
   );

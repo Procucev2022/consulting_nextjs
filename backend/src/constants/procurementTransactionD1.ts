@@ -3,7 +3,8 @@ import { D1_TABLES } from './d1';
 
 export const procurementTransactionScopeSchema = z.object({
   tenantId: z.string().trim().min(1).optional(),
-  assessmentId: z.string().trim().min(1).optional()
+  assessmentId: z.string().trim().min(1).optional(),
+  documentId: z.string().trim().min(1).optional()
 }).strict();
 
 export const D1_LOCAL_SQLITE_PATH_ENV = 'D1_LOCAL_SQLITE_PATH';

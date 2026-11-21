@@ -561,6 +561,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       {activeTab === 'categorySpecialisation' && (
         <CategorySpecialisationView
           assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}

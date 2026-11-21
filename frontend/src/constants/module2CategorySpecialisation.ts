@@ -206,5 +206,12 @@ export const CATEGORY_SPECIALISATION_UI_STRINGS = {
   CATEGORIES_TABLE_TITLE: 'Category Assessment Register & Drill-Down',
   OPPORTUNITIES_TABLE_TITLE: '10 Opportunity Head Planning Estimates',
   OVERLAP_TABLE_TITLE: 'Cross-Lever Overlap & Deduplication Register',
-  GOVERNANCE_DISCLOSURE_TITLE: 'Lever 6 Governance, Double-Counting Safeguards & Methodology Rules'
+  GOVERNANCE_DISCLOSURE_TITLE: 'Lever 6 Governance, Double-Counting Safeguards & Methodology Rules',
+  ERROR_TITLE: 'Unable to load Category Specialisation analysis',
+  ERROR_FALLBACK: 'No data returned.',
+  RETRY_BUTTON: 'Retry Analysis',
+  LOADING_MESSAGE: 'Analyzing procurement categories and opportunity heads...',
+  ASSESSMENT_REQUIRED_TITLE: 'Assessment or Dataset Required',
+  ASSESSMENT_REQUIRED_MESSAGE:
+    'Select an assessment in the header or upload a procurement dataset in Module 1 to view Category Specialisation analysis.'
 } as const;
