@@ -36,6 +36,44 @@ const toLineItem = (row: D1Record, mapping?: MaterialMappingEntry): D1Record => 
   raw_currency: row.currency, invoice_date: row.document_date_raw, po_number: row.po_number
 });
 
+const fetchLineItemsRows = async (
+  db: CloudflareD1Database,
+  tenantId: string,
+  assessmentId?: string,
+  documentId?: string,
+  limit: number = D1_REPORTING.datasetLimit
+): Promise<D1Record[]> => {
+  const filters: string[] = [];
+  const values: unknown[] = [];
+  if (documentId) {
+    filters.push('(source_document_id = ? OR transaction_id LIKE ?)');
+    values.push(documentId, `%${documentId}%`);
+  } else if (assessmentId) {
+    filters.push('assessment_id = ?');
+    values.push(assessmentId);
+  } else {
+    filters.push('assessment_id IS NULL');
+  }
+  filters.push('tenant_id = ?');
+  values.push(tenantId);
+  values.push(limit);
+  const items = await queryAll(db,
+    `SELECT transaction_id, po_number, supplier_code, supplier_name, material_code, short_text, total_inr_raw, ` +
+    'net_price, currency, order_quantity, document_date_raw ' +
+    `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC LIMIT ?`, values);
+  if (items.length === 0 && documentId) {
+    const validationRows = await queryAll(db,
+      `SELECT record_id AS transaction_id, po_number, vendor_name AS supplier_name, ` +
+      `raw_desc AS short_text, amount_inr AS total_inr_raw, net_price, raw_currency AS currency, ` +
+      `order_quantity, transaction_date AS document_date_raw ` +
+      `FROM ${D1_TABLES.validation} WHERE tenant_id = ? AND record_id LIKE ? LIMIT ?`,
+      [tenantId, `%${documentId}%`, limit]
+    );
+    if (validationRows.length > 0) return validationRows;
+  }
+  return items;
+};
+
 const buildDashboardData = (
   categories: D1Record[],
   opportunities: D1Record[],
@@ -148,6 +186,7 @@ export const handleModule2DataRoute = async (
     } };
     const scope = d1DatasetScopeSchema.safeParse({
       assessmentId: url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined,
+      documentId: url.searchParams.get('documentId') ?? undefined,
       tenantId: requestedTenantId,
       limit: url.searchParams.get('limit') ?? undefined
     });
@@ -159,21 +198,14 @@ export const handleModule2DataRoute = async (
         success: false, message: D1_ROUTE_MESSAGES.invalidDatasetScope, errors: scope.error.issues
       } };
     }
-    const { assessmentId, limit } = scope.data;
+    const { assessmentId, documentId, limit } = scope.data;
     if (!tenantId) return { status: 403, data: { success: false, message: D1_ROUTE_MESSAGES.tenantScopeRequired } };
     if (assessmentId) {
       const owner = await queryFirst(db,
         `SELECT assessment_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ? AND tenant_id = ?`, [assessmentId, tenantId]);
       if (!owner) return { status: 404, data: { success: false, message: D1_ROUTE_MESSAGES.module2LogisticsAssessmentNotFound } };
     }
-    const filters = [assessmentId ? 'assessment_id = ?' : 'assessment_id IS NULL'];
-    const values: unknown[] = assessmentId ? [assessmentId] : [];
-    filters.push('tenant_id = ?'); values.push(tenantId);
-    values.push(limit);
-    const items = await queryAll(db,
-      `SELECT transaction_id, po_number, supplier_code, supplier_name, material_code, short_text, total_inr_raw, ` +
-      'net_price, currency, order_quantity, document_date_raw ' +
-      `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC LIMIT ?`, values);
+    const items = await fetchLineItemsRows(db, tenantId, assessmentId, documentId, limit);
     if (!normalized.startsWith('/line-items')) return { data: items };
     const savedMappings = assessmentId ? await loadAssessmentMaterialMappings(db, assessmentId, {
       requestId: request.headers.get('x-request-id') || undefined, tenantId

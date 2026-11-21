@@ -893,6 +893,35 @@ describe('Module2Categorization Component', () => {
     expect(screen.queryByRole('button', { name: new RegExp(`^${UI_STRINGS.module2.btnConfirm}$`, 'i') })).toBeNull();
     expect(screen.getByRole('button', { name: UI_STRINGS.module2.btnReassign })).toBeInTheDocument();
   });
+
+  it('uses totalRecordsCount and uniqueVendorsCount when lineItems is empty during AI categorization', async () => {
+    const onLineItemsLoaded = vi.fn();
+    await renderAndSettleIndustryCatalog(
+      <Module2Categorization
+        categories={sampleSpendCategories}
+        lineItems={[]}
+        totalRecordsCount={450}
+        uniqueVendorsCount={15}
+        documentId="DOC-TEST-123"
+        onLineItemsLoaded={onLineItemsLoaded}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    const startAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
+    fireEvent.click(startAiBtn);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.recordsValue(450))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.vendorsValue(15))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.confidenceValue(94.8))).toBeInTheDocument();
+
+    const cancelLoaderBtn = screen.getByRole('button', { name: UI_STRINGS.analyzingLoader.cancelButton });
+    fireEvent.click(cancelLoaderBtn);
+  });
 });
 
 

@@ -181,4 +181,27 @@ describe('AnalyzingLoader Component', () => {
 
     expect(screen.getByText('Neural Sparkles')).toBeInTheDocument();
   });
+
+  it('renders dynamic taxonomy description with totalRecords and formatted metrics', () => {
+    render(
+      <AnalyzingLoader
+        isOpen={true}
+        metrics={{
+          totalRecords: 450,
+          spendCrores: 3485.87,
+          uniqueVendors: 12,
+          confidenceScore: 94.8
+        }}
+        autoProgress={false}
+      />
+    );
+
+    expect(
+      screen.getByText(UI_STRINGS.analyzingLoader.phases.taxonomyDescWithCount(450))
+    ).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.recordsValue(450))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.spendValue(3485.87))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.vendorsValue(12))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.metrics.confidenceValue(94.8))).toBeInTheDocument();
+  });
 });

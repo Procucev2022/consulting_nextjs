@@ -165,11 +165,16 @@ export const apiClient = {
   },
 
   // Module 2 Canonical Data
-  async getModule2CanonicalLineItems(limit?: number, assessmentId?: string): Promise<LineItemMapping[]> {
-    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId });
+  async getModule2CanonicalLineItems(
+    limit?: number,
+    assessmentId?: string,
+    documentId?: string
+  ): Promise<LineItemMapping[]> {
+    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId, documentId });
     const query = new URLSearchParams();
     if (limit != null) query.set('limit', String(limit));
     if (assessmentId) query.set('assessmentId', assessmentId);
+    if (documentId) query.set('documentId', documentId);
     const res = await apiFetch(`${API_BASE}/api/module2/sourcing/line-items?${query.toString()}`);
     const json = await res.json();
     return json.data?.lineItems || [];

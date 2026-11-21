@@ -1000,6 +1000,10 @@ describe('workerD1Module2 handler', () => {
     const lineItems = await handleModule2Route(db, '/sourcing/line-items', lineItemsRequest, new URL(lineItemsRequest.url));
     expect(lineItems.data).toHaveProperty('lineItems', [expect.objectContaining({ mapping_id: 'TX-1' })]);
 
+    const docLineItemsRequest = req('/sourcing/line-items?tenantId=T1&documentId=DOC-TEST-1');
+    const docLineItems = await handleModule2Route(db, '/sourcing/line-items', docLineItemsRequest, new URL(docLineItemsRequest.url));
+    expect(docLineItems.data).toHaveProperty('lineItems');
+
     const handoff = await handleModule2Route(db, '/sourcing/handoff', req('/sourcing/handoff'), new URL('https://consulting.edge/api/module2/sourcing/handoff'));
     expect(handoff).toEqual({ status: 409, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.handoffScope } });
 

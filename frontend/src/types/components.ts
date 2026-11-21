@@ -171,6 +171,9 @@ export interface Module2CategorizationProps {
   targetSection?: string | null;
   assessmentId?: string;
   documentId?: string;
+  totalRecordsCount?: number;
+  uniqueVendorsCount?: number;
+  onLineItemsLoaded?: (items: LineItemMapping[]) => void;
 }
 
 export type Module3ChartViewMode = 'CORRELATED' | 'UPLOADED_SPEND' | 'BENCHMARK';

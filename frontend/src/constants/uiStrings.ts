@@ -2871,7 +2871,9 @@ export const UI_STRINGS = {
       ingestionTitle: 'Data Ingestion & Currency Parity',
       ingestionDesc: 'Parsing multi-currency ERP documents with transaction-date D1 FX conversion to INR (₹ Cr).',
       taxonomyTitle: 'UNSPSC Column L AI Classification',
-      taxonomyDesc: 'Matching 7,357 line items across Commodity & Class codes with neural semantic validation.',
+      taxonomyDesc: 'Matching line items across Commodity & Class codes with neural semantic validation.',
+      taxonomyDescWithCount: (count: number) =>
+        `Matching ${count.toLocaleString()} line items across Commodity & Class codes with neural semantic validation.`,
       vendorSupplyTitle: 'Vendor Supply & Spend Dimension Analytics',
       vendorSupplyDesc: 'Detecting single vs multi-category vendor supply trends and identifying maverick leakage across top 50 vendors.',
       anomalyTitle: 'Savings Opportunity & Governance Matrix',

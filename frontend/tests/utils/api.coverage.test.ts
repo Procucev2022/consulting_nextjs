@@ -376,6 +376,14 @@ describe('apiClient coverage', () => {
       expectApiFetchCall(fetchMock, '/api/module2/sourcing/line-items?limit=25&assessmentId=ASM-1');
     });
 
+    it('requests Module 2 line items with documentId filter', async () => {
+      const lineItems = [{ line_id: 'LI-DOC-1' }];
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { lineItems } }));
+
+      await expect(apiClient.getModule2CanonicalLineItems(undefined, undefined, 'DOC-123')).resolves.toEqual(lineItems);
+      expectApiFetchCall(fetchMock, '/api/module2/sourcing/line-items?documentId=DOC-123');
+    });
+
     it('keeps a zero limit and returns an empty list when the response has no line items', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
 

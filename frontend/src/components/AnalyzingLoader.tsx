@@ -344,7 +344,9 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
-                      {phase.description}
+                      {phase.id === 'phase_taxonomy' && metrics.totalRecords
+                        ? UI_STRINGS.analyzingLoader.phases.taxonomyDescWithCount(metrics.totalRecords)
+                        : phase.description}
                     </p>
                   </div>
                 </div>
