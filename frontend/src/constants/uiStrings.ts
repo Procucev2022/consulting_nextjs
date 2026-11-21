@@ -5323,6 +5323,9 @@ export const UI_STRINGS = {
     workingCapitalNote: 'Working capital released is a balance-sheet liquidity metric and is strictly segregated from purchase-price savings.',
     loadingMessage: 'Loading cross-lever savings deduplication analysis...',
     errorMessage: 'Error loading cross-lever deduplication data',
+    assessmentRequiredTitle: 'Assessment Required',
+    assessmentRequiredMessage:
+      'Select an assessment in the application header or Assessment Centre to view cross-lever savings deduplication analysis. Or upload a dataset to generate sourcing opportunities.',
     btnRetry: 'Retry',
     btnRefresh: 'Refresh',
     lever5SectionTitle: 'Lever 5 Payment Terms & Working Capital Segregation (Rule 5 Safeguard)',

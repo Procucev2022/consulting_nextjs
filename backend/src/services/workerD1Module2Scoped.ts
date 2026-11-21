@@ -28,6 +28,7 @@ import type {
   ScopedModule2RouteLoaders, ScopedModule2ScopeResult, ScopedModule2TrustedScopeResult
 } from '../types/module2D1ScopedRoutes';
 import { buildModule2D1AuditDossier } from './workerD1SourcingAuditDossier';
+import { buildModule2ConsolidatedSavingsSummary } from './workerD1Module2ConsolidatedSavings';
 import { buildCategorySpecialisationFromD1 } from './workerD1CategorySpecialisation';
 import { buildSpecificationRationalisationFromD1 } from './workerD1SpecificationRationalisation';
 import { handleScopedSpecialRoute } from './workerD1Module2ScopedSpecialRoutes';
@@ -194,7 +195,12 @@ const categoryDetails = (result: ScopedModule2Analysis, path: string): WorkerD1R
   return { data: Module2StrategicSourcingEngine.buildCategoryProfile(key, groups.get(key) || []) };
 };
 
-const canonicalAnalysisDetails = (result: ScopedModule2Analysis, path: string): WorkerD1Result | null => {
+const canonicalAnalysisDetails = (
+  result: ScopedModule2Analysis,
+  path: string,
+  assessmentId = '',
+  customerName = ''
+): WorkerD1Result | null => {
   const { analysis, transactions } = result;
   if (path.startsWith('/opportunity-ledger') || path.startsWith('/attribution-ledger')) {
     const ledger = Module2CanonicalCalculators.buildOpportunityLedger(analysis.profiles, transactions);
@@ -215,7 +221,8 @@ const canonicalAnalysisDetails = (result: ScopedModule2Analysis, path: string): 
   const ledger = Module2CanonicalCalculators.buildOpportunityLedger(analysis.profiles, transactions);
   if (path.startsWith('/opportunities')) return { data: ledger };
   if (path.startsWith('/consolidated-savings')) {
-    return { data: { success: true, opportunities: ledger, count: ledger.length } };
+    const summary = buildModule2ConsolidatedSavingsSummary(assessmentId, customerName, ledger);
+    return { data: { success: true, ...summary } };
   }
   return null;
 };
@@ -247,7 +254,7 @@ const analysisDetails = (
   }
   const categoryResult = categoryDetails(result, path);
   if (categoryResult) return categoryResult;
-  const analysisResult = canonicalAnalysisDetails(result, path);
+  const analysisResult = canonicalAnalysisDetails(result, path, assessmentId, customerName);
   if (analysisResult) return analysisResult;
   return { status: 404, data: { success: false, message: MODULE2_D1_SCOPED_MESSAGES.unknownRoute } };
 };

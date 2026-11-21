@@ -20,17 +20,18 @@ import { useLatestRequestSequence } from '../../utils/useLatestRequestSequence';
 
 export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavingsViewProps> = ({
   assessmentId = '',
+  documentId = '',
   initialData = null
 }) => {
   const strings = UI_STRINGS.module2SavingsDeduplication;
   const [data, setData] = useState<Module2ConsolidatedSavingsSummary | null>(initialData);
-  const [loading, setLoading] = useState<boolean>(!initialData && !!assessmentId);
+  const [loading, setLoading] = useState<boolean>(!initialData && (!!assessmentId || !!documentId));
   const [error, setError] = useState<string | null>(null);
   const { beginRequest, isCurrentRequest, invalidateRequests } = useLatestRequestSequence();
 
   const fetchData = useCallback(async () => {
     const requestId = beginRequest();
-    if (!assessmentId) {
+    if (!assessmentId && !documentId) {
       setData(null);
       setLoading(false);
       return;
@@ -39,7 +40,10 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
     setError(null);
     setData(null);
     try {
-      const res = await apiFetch(`/api/module2/sourcing/consolidated-savings?assessmentId=${encodeURIComponent(assessmentId)}`);
+      const params = new URLSearchParams();
+      if (assessmentId) params.set('assessmentId', assessmentId);
+      if (documentId) params.set('documentId', documentId);
+      const res = await apiFetch(`/api/module2/sourcing/consolidated-savings?${params.toString()}`);
       if (!res.ok) {
         throw new Error(`Failed to load consolidated savings: HTTP ${res.status}`);
       }
@@ -53,12 +57,12 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
     } catch (err: unknown) {
       if (!isCurrentRequest(requestId)) return;
       const msg = err instanceof Error ? err.message : String(err);
-      logger.error('Error fetching consolidated savings', { assessmentId }, err);
+      logger.error('Error fetching consolidated savings', { assessmentId, documentId }, err);
       setError(msg);
     } finally {
       if (isCurrentRequest(requestId)) setLoading(false);
     }
-  }, [assessmentId, beginRequest, isCurrentRequest]);
+  }, [assessmentId, documentId, beginRequest, isCurrentRequest]);
 
   useEffect(() => {
     if (!initialData) {
@@ -76,14 +80,14 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
     );
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <div className="p-6 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-800 dark:text-rose-200">
         <div className="flex items-center gap-2 font-bold mb-1">
           <AlertTriangle className="w-4 h-4" />
           <span>{strings.errorMessage}</span>
         </div>
-        <p className="text-xs">{error || 'Data is unavailable'}</p>
+        <p className="text-xs">{error}</p>
         <button
           type="button"
           onClick={fetchData}
@@ -91,6 +95,20 @@ export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavings
         >
           {strings.btnRetry}
         </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="p-6 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-900 dark:text-amber-200">
+        <div className="flex items-center gap-2 font-bold mb-1">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span>{strings.assessmentRequiredTitle}</span>
+        </div>
+        <p className="text-xs text-amber-800 dark:text-amber-300">
+          {strings.assessmentRequiredMessage}
+        </p>
       </div>
     );
   }

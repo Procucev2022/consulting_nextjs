@@ -55,6 +55,7 @@ export interface StrategicSupplierDeepDiveViewProps {
 export interface Module2StrategicSourcingWorkspaceProps {
   initialProfiles?: CategoryStrategicSourcingProfile[];
   assessmentId?: string;
+  documentId?: string;
 }
 
 export interface LeverOverviewItem {

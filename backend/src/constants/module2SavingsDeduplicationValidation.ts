@@ -7,7 +7,8 @@
 import { z } from 'zod';
 
 export const consolidatedSavingsQuerySchema = z.object({
-  assessmentId: z.string().min(1, 'Assessment identifier (assessmentId) is required'),
+  assessmentId: z.string().optional(),
+  documentId: z.string().optional(),
   refresh: z.string().optional().transform((val) => val === 'true'),
   allowUnverifiedIncremental: z.string().optional().transform((val) => val === 'true')
 });

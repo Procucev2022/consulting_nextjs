@@ -43,13 +43,21 @@ describe('Module 2 Savings Deduplication Validation (constants/module2SavingsDed
       }
     });
 
-    it('should require an assessment identifier with its specific message', () => {
-      const blank = consolidatedSavingsQuerySchema.safeParse({ assessmentId: '' });
-      expect(blank.success).toBe(false);
-      if (!blank.success) {
-        expect(issueMessages(blank.error)).toContain('Assessment identifier (assessmentId) is required');
+    it('should accept documentId without assessmentId', () => {
+      const result = consolidatedSavingsQuerySchema.safeParse({ documentId: 'DOC-123' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({ documentId: 'DOC-123', refresh: false, allowUnverifiedIncremental: false });
       }
-      expect(consolidatedSavingsQuerySchema.safeParse({}).success).toBe(false);
+    });
+
+    it('should allow empty payload with defaulted boolean flags', () => {
+      const empty = consolidatedSavingsQuerySchema.safeParse({});
+      expect(empty.success).toBe(true);
+      if (empty.success) {
+        expect(empty.data.refresh).toBe(false);
+        expect(empty.data.allowUnverifiedIncremental).toBe(false);
+      }
     });
   });
 

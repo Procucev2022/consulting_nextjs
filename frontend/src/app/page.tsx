@@ -2931,6 +2931,7 @@ export default function Home() {
             onUpgrade={handleUpgradeTier}
             targetSection={targetSection}
             assessmentId={activeAssessment?.assessmentId}
+            documentId={(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('documentId') : null) || ingestionQueue[0]?.doc_id || savedIngestionDocuments[0]?.doc_id}
           />
         )}
 

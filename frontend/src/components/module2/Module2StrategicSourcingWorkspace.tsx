@@ -29,7 +29,8 @@ import { Module2ConsolidatedSavingsView } from './Module2ConsolidatedSavingsView
 import { logger } from '../../utils/logger';
 
 export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = ({
-  assessmentId
+  assessmentId,
+  documentId
 }) => {
   const strings = UI_STRINGS.module2Sourcing;
 
@@ -515,7 +516,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       )}
 
       {activeTab === 'consolidatedSavings' && (
-        <Module2ConsolidatedSavingsView assessmentId={effectiveAssessmentId || ''} />
+        <Module2ConsolidatedSavingsView
+          assessmentId={effectiveAssessmentId || ''}
+          documentId={documentId}
+        />
       )}
 
       {activeTab === 'directPrice' && (

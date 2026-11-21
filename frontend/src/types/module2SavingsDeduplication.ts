@@ -128,6 +128,7 @@ export interface Module2ConsolidatedSavingsSummary {
 
 export interface Module2ConsolidatedSavingsViewProps {
   assessmentId?: string;
+  documentId?: string;
   initialData?: Module2ConsolidatedSavingsSummary | null;
 }
 

@@ -170,6 +170,7 @@ export interface Module2CategorizationProps {
   onUpgrade?: (tier: SubscriptionTier) => void;
   targetSection?: string | null;
   assessmentId?: string;
+  documentId?: string;
 }
 
 export type Module3ChartViewMode = 'CORRELATED' | 'UPLOADED_SPEND' | 'BENCHMARK';

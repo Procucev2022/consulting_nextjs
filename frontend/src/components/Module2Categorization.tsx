@@ -62,7 +62,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   currentTier = 'GOLD',
   onUpgrade,
   targetSection,
-  assessmentId: propAssessmentId
+  assessmentId: propAssessmentId,
+  documentId
 }) => {
   const taxonomyState = useUNSPSCTaxonomy();
   const assessmentId =
@@ -951,7 +952,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           id="module2-strategic-sourcing-workspace-section"
           data-testid="module2-strategic-sourcing-workspace-container"
         >
-          <Module2StrategicSourcingWorkspace assessmentId={assessmentId} />
+          <Module2StrategicSourcingWorkspace assessmentId={assessmentId} documentId={documentId} />
         </div>
       </div>
 

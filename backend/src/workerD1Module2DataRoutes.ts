@@ -6,6 +6,7 @@ import type { D1Record, WorkerD1Result } from './types/d1';
 import type { MaterialMappingEntry } from './types/module2MaterialMapping';
 import { queryD1Rows as queryAll } from './services/workerD1Query';
 import { loadAssessmentMaterialMappings } from './services/workerD1MaterialMappings';
+import { loadModule2ConsolidatedSavingsFromD1 } from './services/workerD1Module2ConsolidatedSavings';
 import logger from './utils/logger';
 
 const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T | null> => {
@@ -189,11 +190,14 @@ export const handleModule2DataRoute = async (
   }
 
   if (normalized.startsWith('/consolidated-savings')) {
-    const opportunities = await queryAll(db,
-      `SELECT opportunity.* FROM ${D1_TABLES.opportunities} AS opportunity ` +
-      `INNER JOIN ${D1_TABLES.opportunityTenantScope} AS scope ON scope.opp_id = opportunity.opp_id ` +
-      'WHERE scope.tenant_id = ? ORDER BY opportunity.est_savings_inr_cr DESC', [tenantId]);
-    return { data: { success: true, opportunities, count: opportunities.length } };
+    const assessmentId = url.searchParams.get('assessmentId') || undefined;
+    const documentId = url.searchParams.get('documentId') || undefined;
+    const summary = await loadModule2ConsolidatedSavingsFromD1(db, tenantId, {
+      assessmentId,
+      documentId,
+      requestId: request.headers.get('x-request-id') || undefined
+    });
+    return { data: { success: true, ...summary } };
   }
 
   return null;

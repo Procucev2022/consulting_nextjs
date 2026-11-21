@@ -175,14 +175,14 @@ describe('Module2ConsolidatedSavingsView coverage', () => {
     expect(screen.queryByText(strings.arithmeticBalancedBadge)).not.toBeInTheDocument();
   });
 
-  it('does not call the API and shows the error panel when no assessment id is given', () => {
+  it('does not call the API and shows the guidance panel when no assessment id is given', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
     render(<Module2ConsolidatedSavingsView />);
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(screen.getByText(strings.errorMessage)).toBeInTheDocument();
-    expect(screen.getByText(strings.btnRetry)).toBeInTheDocument();
+    expect(screen.getByText(strings.assessmentRequiredTitle)).toBeInTheDocument();
+    expect(screen.getByText(strings.assessmentRequiredMessage)).toBeInTheDocument();
   });
 
   it('does not refetch when initial data is supplied', () => {
@@ -222,7 +222,7 @@ describe('Module2ConsolidatedSavingsView coverage', () => {
     expect(await screen.findByText(/503/)).toBeInTheDocument();
     expect(frontendLogger.error).toHaveBeenCalledWith(
       expect.any(String),
-      { assessmentId: ASSESSMENT_ID },
+      expect.objectContaining({ assessmentId: ASSESSMENT_ID }),
       expect.any(Error)
     );
   });
@@ -269,5 +269,19 @@ describe('Module2ConsolidatedSavingsView coverage', () => {
 
     expect(await screen.findByText(strings.title)).toBeInTheDocument();
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('fetches data using documentId when assessmentId is not provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      jsonResponse({ success: true, data: SUMMARY })
+    );
+
+    render(<Module2ConsolidatedSavingsView documentId="DOC-999" />);
+
+    expect(await screen.findByText(strings.title)).toBeInTheDocument();
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('documentId=DOC-999'),
+      expect.anything()
+    );
   });
 });
